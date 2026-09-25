@@ -6,7 +6,7 @@ Use `scripts/cost_router.py` with a fresh backend registry, the ordinary capabil
 
 Default policy treats Codex Compute as the primary low-cost compute and GitHub Actions as expensive. Relative weights are policy values, not currency conversion. A ready cheaper compatible backend always wins over an expensive backend.
 
-A Codex setup/network/provider/runtime failure is not, by itself, evidence that GitHub Actions should be spent. For portable work:
+A Codex setup/network/provider/runtime failure is not, by itself, evidence that GitHub Actions should be spent. These are transient infrastructure failures unless fresh evidence proves otherwise. For portable work:
 1. respect a bounded cooldown;
 2. perform a deliberately distinct primary recovery/probe when one has information gain;
 3. prefer another cheaper compatible backend if available;
