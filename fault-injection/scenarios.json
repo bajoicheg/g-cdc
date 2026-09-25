@@ -1,0 +1,72 @@
+{
+  "schema": "cdc-fault-scenarios/v1",
+  "scenarios": [
+    {
+      "id": "orphan-lease",
+      "fault": "owner_invocation_terminal_lease_owned",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "takeover_without_quiescence",
+        "product_write"
+      ]
+    },
+    {
+      "id": "stale-snapshot",
+      "fault": "fleet_snapshot_exceeds_freshness",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "merge"
+      ]
+    },
+    {
+      "id": "package-drift",
+      "fault": "version_equal_package_tree_differs",
+      "expected": "DRIFT",
+      "forbidden_authorities": [
+        "auto_merge"
+      ]
+    },
+    {
+      "id": "audit-tamper",
+      "fault": "audit_previous_hash_or_event_hash_changed",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "ignore_audit_failure"
+      ]
+    },
+    {
+      "id": "duplicate-event",
+      "fault": "same_continuation_dedupe_key_redelivered",
+      "expected": "IDEMPOTENT",
+      "forbidden_authorities": [
+        "duplicate_external_start"
+      ]
+    },
+    {
+      "id": "backend-unavailable",
+      "fault": "no_fresh_compatible_backend",
+      "expected": "WAITING_EXTERNAL",
+      "forbidden_authorities": [
+        "blind_launch"
+      ]
+    },
+    {
+      "id": "live-owner-adoption",
+      "fault": "target_version_newer_owner_active",
+      "expected": "WAIT_SAFE_BOUNDARY",
+      "forbidden_authorities": [
+        "policy_fast_forward",
+        "takeover_by_ttl"
+      ]
+    },
+    {
+      "id": "bootstrap-self-corruption",
+      "fault": "candidate_runtime_green_bootstrap_red",
+      "expected": "RELEASE_BLOCKED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    }
+  ]
+}

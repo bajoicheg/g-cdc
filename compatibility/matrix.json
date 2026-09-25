@@ -1,0 +1,25 @@
+{
+  "schema": "cdc-compatibility-matrix/v1",
+  "target_version": "2.7.0",
+  "developed_under_version": "2.6.0",
+  "supported_from_versions": [
+    "2.6.0"
+  ],
+  "checkpoint_schemas": [
+    "development-work-status/v4"
+  ],
+  "lease_schemas": [
+    "execution-lease/v2"
+  ],
+  "resume_schemas": [
+    "resume-capsule/v1"
+  ],
+  "consumer_contract": "cdc-consumer-lock/v1",
+  "migration": {
+    "requires_released_or_verified_quiescent_owner": true,
+    "requires_reconciled_or_empty_guard": true,
+    "preserve_budget_history": true,
+    "preserve_validation_history": true,
+    "preserve_audit_history": true
+  }
+}

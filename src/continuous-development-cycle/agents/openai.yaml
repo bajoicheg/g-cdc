@@ -1,0 +1,16 @@
+name: Continuous Development Cycle
+description: Recoverable development with canonical-source releases, immutable consumer locks and audited fleet control planes.
+version: 2.7.0
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
+interface:
+  display_name: Continuous Development Cycle
+  short_description: Durable canonical-source development with immutable consumer release locks
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+  default_prompt: Use $continuous-development-cycle to continue durable development through CDC 2.7 canonical-source, release-lock, fleet and audit controls.
