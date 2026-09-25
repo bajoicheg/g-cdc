@@ -85,6 +85,22 @@
       "forbidden_authorities": [
         "blind_launch"
       ]
+    },
+    {
+      "id": "continue-primitive-stop",
+      "fault": "bare_continue_executor_stops_after_status",
+      "expected": "CONTINUE_TO_TERMINAL_STATE",
+      "forbidden_authorities": [
+        "primitive_only_completion"
+      ]
+    },
+    {
+      "id": "public-actions-mispriced",
+      "fault": "public_unmetered_actions_marked_expensive",
+      "expected": "ROUTE_BY_VISIBILITY_AWARE_COST",
+      "forbidden_authorities": [
+        "forced_codex_due_to_private_cost_assumption"
+      ]
     }
   ]
 }
