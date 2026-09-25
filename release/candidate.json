@@ -5,7 +5,7 @@
   "canonical_repository": "bajoicheg/g-cdc",
   "source_commit": "24fb84ca8b4c83cb7c6dc4e4b4c370f4818e4361",
   "package_tree": "a667549d48c2e93cba36359335c1b1ff4534ac86",
-  "status": "candidate",
+  "status": "released",
   "evidence": {
     "bootstrap": [
       "actions:36113950233:job:108003514888"
