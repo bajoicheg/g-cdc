@@ -1,0 +1,41 @@
+name: CDC 2.7 Release Validation
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    name: Independent bootstrap
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Bootstrap contract before candidate imports
+        run: python -B bootstrap/validate_release.py --mode bootstrap
+      - name: Bootstrap meta-contract
+        run: python -B -m unittest discover -s bootstrap/tests -v
+
+  candidate:
+    name: Candidate package
+    needs: bootstrap
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install validator dependency
+        run: python -m pip install -r src/continuous-development-cycle/scripts/requirements.txt
+      - name: Validate package
+        working-directory: src/continuous-development-cycle
+        run: python -B scripts/validate_package.py
+      - name: Full candidate tests
+        run: python -B -m unittest discover -s src/continuous-development-cycle/tests -v
+      - name: Full bootstrap binding
+        run: python -B bootstrap/validate_release.py --mode full
