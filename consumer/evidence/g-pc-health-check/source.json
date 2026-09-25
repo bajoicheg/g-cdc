@@ -1,8 +1,8 @@
 {
   "schema": "cdc-consumer-validation-source/v1",
   "repository": "bajoicheg/g-pc-health-check",
-  "source_commit": "92e03babf3a63797852d7cb331af0629950a5793",
-  "vendored_cdc_version": "2.6.0",
-  "candidate_version": "2.7.1",
-  "candidate_package_tree": "a78b8e7df4bfdd5a067f9e9da5a3a8a4b33394fc"
+  "source_commit": "5afac455f6d4d10a0f8e71258c0250ecdbb1fb1a",
+  "vendored_cdc_version": "2.7.1",
+  "candidate_version": "2.7.2",
+  "candidate_package_tree": "eb527958b32d2426ec81612ff4acff13a7bf84d6"
 }

@@ -2,9 +2,9 @@
 schema: development-work-status/v4
 repository: bajoicheg-private/g-ad-control
 branch: codex/build-0.2.0-engineer-attribute-workflow
-policy_revision: 2026-09-24-cdc-2.6.0-fleet-control-plane
-policy_digest: 9027ef09bc7b13f844cf4eb70b66b341aafd1185be70810ab9344bc34b200345
-observed_at_utc: '2026-09-25T05:31:00Z'
+policy_revision: 2026-09-25-cdc-2.7.1-autonomy-lease-v2
+policy_digest: 567ecb4abcadada50bcfae447bda2c06925928724a4f220902d9ebb6fe51a1a3
+observed_at_utc: '2026-09-25T12:16:00Z'
 orchestration_origin: chat
 active_executor: none
 lease_state: released
@@ -21,50 +21,114 @@ execution_continuity:
   runnable_next_action: false
   meaningful_progress: true
   primitive_steps_since_progress: 0
-  completion_gate: resumable_blocker
-  last_progress_ref: 'cdc26-converged:git-tree:e2cf6199eb60ca998012184b460c9a05c9f33b80'
+  completion_gate: scope_complete
+  last_progress_ref: 'cdc-release:8e97192ef89bf37657a4444a954530f22e8b2267'
 control:
   execution_lease_ref: refs/heads/cdc/coordination
-  execution_lease_revision: abf3f335344a2c5bf87c940820fb99d77d550b88
+  execution_lease_revision: null
   executor_id: null
-  lease_generation: 26
+  lease_generation: 34
   budget_ref: https://github.com/bajoicheg-private/g-ad-control/blob/cdc/coordination/budget-ledger.json
   recovery_snapshot_ref: null
   external_wait_ref: null
-active_change: build-0.2.0-engineer-attribute-workflow
-current_task: 0.2.0/8.3
-phase: validation
-implementation_sha: adb912d1aa4537615136cdcaac526a5c2432d4e4
-candidate_sha: adb912d1aa4537615136cdcaac526a5c2432d4e4
-last_green_sha: 060b358a35b07286de614c04eae715ae2873bb0f
-last_green_evidence: https://github.com/bajoicheg-private/g-ad-control/pull/1#issuecomment-5807875527
+active_change: ''
+current_task: ''
+phase: complete
+implementation_sha: b8bd8573eb815801c5b4cf0e49e942d197e83f6d
+candidate_sha: 3d449fe00927ab367a52d9ab680612c250dc2ee1
+last_green_sha: 3d449fe00927ab367a52d9ab680612c250dc2ee1
+last_green_evidence: https://github.com/bajoicheg-private/g-ad-control/actions/runs/36118643314
 active_compute: ''
 active_ci_run_id: ''
-last_ci_run_id: '36043963217'
-last_ci_status: completed/failure
+last_ci_run_id: '36117227433'
+last_ci_status: completed/success
 release_version: 0.2.0
-release_candidate_sha: ''
-release_state: not-started
-blocker: 'task83_portable_validation_blocked; bounded payload correction adb912d1 includes docs/runbook/pilot-v0.1.0.md, but this runtime has no dotnet and the Codex PR execution path has no fresh recovery evidence after repeated setup failures; Windows/PostPublish final remains forbidden before exact-SHA portable GREEN'
-next_action: 'Route exact candidate adb912d1 through fresh capability evidence. If the Codex PR execution path gains specific recovery evidence or an independent dotnet10 Linux runtime is available, run one guarded COMPUTE_ONLY exact-SHA portable GREEN. Only then dispatch the already-routable Windows/PostPublish final gate under the conserve repair authorization.'
+release_candidate_sha: b8bd8573eb815801c5b4cf0e49e942d197e83f6d
+release_state: released
+blocker: 'none'
+next_action: 'No runnable action; 0.2.0 scope is complete and archived. Await the next authorized OpenSpec change.'
 ---
 
-# Task 8.3 — portable payload correction
+# 0.2.0 — terminal scope checkpoint
 
-Exact Windows evidence run `36043963217` established the RED: `docs/runbook/pilot-v0.1.0.md` was absent from the generated portable payload. Commit `adb912d1aa4537615136cdcaac526a5c2432d4e4` adds that existing repository runbook to the package file-set assertion and copy list for both products. No stale CI run was repeated. Exact-SHA portable GREEN and Windows final evidence are still pending.
+OpenSpec change `build-0.2.0-engineer-attribute-workflow` is complete and archived at
+`openspec/changes/archive/2026-09-25-build-0.2.0-engineer-attribute-workflow`.
+Task 8.3 is checked complete in the archived task list.
 
-# CDC 2.6 integrated policy checkpoint
+## Final Windows evidence
 
-Validated package source `bajoicheg/g-pc-health-check@1e20edd807e3bae60b82aafdb2b9daa503e37715`, package tree `e2cf6199eb60ca998012184b460c9a05c9f33b80`; validation run `36051402864` passed package validation, 233/233 CDC tests, adapter and checkpoint validation. Live package tree was independently re-read as the same `e2cf6199eb60ca998012184b460c9a05c9f33b80`. Task 8.3 product RED and conserve budget remain unchanged.
+Exact product candidate `b8bd8573eb815801c5b4cf0e49e942d197e83f6d` passed GitHub Actions run
+`36117227433`:
 
-# CDC 2.5 integrated policy checkpoint
+- solution build: 0 warnings / 0 errors;
+- PrePublish: 684/684 passed across 11 suites;
+- PostPublish: 28/28 passed;
+- Central portable smoke: `SMOKE_VERIFIED`;
+- Engineer fake-directory-writer portable smoke: `SMOKE_VERIFIED`;
+- final release gate: `RELEASE_GATES_PASSED`.
 
-CDC 2.5 is live on the product branch. All 90 vendored CDC blobs are byte-identical to canonical commit `116d0a6ae6c3f35a22fc6170a25eece3e011eff5`. Live coordination is released `execution-lease/v2` generation 25, the exact a7 external guard is terminal/reconciled, and backend registry, continuation queue and resume capsule are initialized. The CDC migration does not claim Task 8.3 product GREEN.
+The verified pilot release bundle is Actions artifact `10855727566`
+(`portable-pilot-36117227433-1`). Its two application ZIPs and sidecars were
+read back and hashed independently:
 
-# Task 8.3 — historical portable validation before current Windows RED
+- `GAdControl-0.2.0-win-x64.zip` — SHA-256
+  `ac4c56f9d8f45860255d2cf7f91802a72099f61ed7c6dc4560d29858a9b38412`;
+- `GAdEngineer-0.2.0-win-x64.zip` — SHA-256
+  `268e432c8331cfc8047304c90e25e9719c47b0782443ae2b166e9eda2e222d52`.
 
-The integrated generated-PowerShell fixture and authenticated-context implementation are present. Exact SHA `30b12d64502e83e557f0ddb6dd805df6c23fc3af` passed OpenSpec strict validation, Engineer Application build and focused test `1/1`, Architecture build and dependency/graph tests `35/35`, with a clean unchanged worktree. Its Windows-only execution body remained `NOT_RUN` on Linux.
+Both sidecar checksums match the corresponding ZIP bytes. The artifacts are
+explicitly `UNSIGNED-NOT-FOR-PRODUCTION`, which is the accepted pilot state
+and does not claim protected production signing.
 
-The same run established the corrected compute toolchain: PyYAML `6.0.3` and pinned OpenSpec `1.13.2`. The overall gate stayed RED only because this checkpoint used the unsupported free-form phase `powershell-auth-context-portable-green`; this status-only commit normalizes it to the schema value `validation`.
+## OpenSpec closure evidence
 
-That earlier portable checkpoint predated the current Windows attempts. The authoritative current evidence is now Actions run `36043963217` on candidate `833c5d11d8d73197b9a230d53f5b4ceb69a72bab`: it is terminal `failure` in PostPublish because the portable payload is missing `docs/runbook/pilot-v0.1.0.md`. Actions remain `conserve`; do not repeat the stale attempt without the bounded corrective change recorded in frontmatter.
+Closure commit `3d449fe00927ab367a52d9ab680612c250dc2ee1` synchronized the five
+0.2.0 delta capabilities into canonical specs, marked task 8.3 complete and
+moved the change into the dated archive.
+
+Isolated validation run `36118643314` checked that exact closure SHA:
+canonical specs strict = 9/9 passed, archived changes strict = 2/2 passed,
+active change absent, archived task 8.3 checked, worktree unchanged.
+
+No active OpenSpec task or external operation remains.
+
+
+## CDC 2.7 canonical core adoption — 2026-09-25
+
+At released execution-lease/v2 safe boundary generation 31, the vendored CDC core
+was replaced with immutable canonical CDC 2.7.0 from `bajoicheg/g-cdc`.
+Consumer lock: `docs/cdc-consumer-lock.json`; release ref
+`refs/heads/release/v2.7.0`; release commit
+`5b84c89596e04d8411bf6cc24d8aa882a24c483a`; required exact package tree
+`a667549d48c2e93cba36359335c1b1ff4534ac86`.
+
+This process-only adoption does not alter the already terminal/released 0.2.0
+product evidence or create a new OpenSpec scope.
+
+Adapter reconciliation completed under generation 33: policy minimum and
+convergence target are CDC 2.7.0, with semantic policy digest `7011536eaa123f009f02bdf0d4a4cb8b6c50b6d3d8a96d3337a5959cfb25a9a3`.
+
+
+## CDC 2.7.1 autonomy + lease-v2 hotfix convergence — 2026-09-25
+
+At released generation 33, generation 34 acquired an invocation-bound v2 lease only
+for process convergence. The vendored canonical core was advanced from CDC 2.7.0 to
+released CDC 2.7.1 from `bajoicheg/g-cdc`, release ref
+`refs/heads/release/v2.7.1`, release commit
+`8e97192ef89bf37657a4444a954530f22e8b2267`.
+
+The exact vendored subtree is
+`a78b8e7df4bfdd5a067f9e9da5a3a8a4b33394fc` and
+`docs/cdc-consumer-lock.json` binds that exact identity. Adapter policy minimum and
+convergence target are 2.7.1. The semantic adapter digest was independently recomputed
+from the live YAML with the same canonical JSON/SHA-256 algorithm as
+`contracts.digest`; the implementation was first checked against the prior known
+2.7.0 digest before use. Result:
+`567ecb4abcadada50bcfae447bda2c06925928724a4f220902d9ebb6fe51a1a3`.
+
+Two Codex COMPUTE_ONLY attempts returned service-level
+`Codex couldn't complete this request` before producing repository execution evidence;
+both reservations/intents were reconciled terminal and no product/Actions work was
+started. Convergence therefore used immutable canonical release identity plus local
+deterministic policy-digest verification. Product scope 0.2.0 remains terminal,
+released and unchanged.
