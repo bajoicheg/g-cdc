@@ -1,0 +1,8 @@
+{
+  "schema": "cdc-consumer-validation-source/v1",
+  "repository": "bajoicheg-private/g-supervisor",
+  "source_commit": "64af977d9320a95ce1e47defddb9bc8df720a29c",
+  "vendored_cdc_version": "2.6.0",
+  "candidate_version": "2.7.0",
+  "candidate_package_tree": "a667549d48c2e93cba36359335c1b1ff4534ac86"
+}
