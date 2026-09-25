@@ -1,10 +1,11 @@
 {
   "schema": "cdc-compatibility-matrix/v1",
-  "target_version": "2.7.1",
-  "developed_under_version": "2.7.0",
+  "target_version": "2.7.2",
+  "developed_under_version": "2.7.1",
   "supported_from_versions": [
     "2.6.0",
-    "2.7.0"
+    "2.7.0",
+    "2.7.1"
   ],
   "checkpoint_schemas": [
     "development-work-status/v4"

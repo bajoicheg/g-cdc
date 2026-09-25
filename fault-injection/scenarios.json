@@ -77,6 +77,14 @@
         "product_write",
         "duplicate_external_start"
       ]
+    },
+    {
+      "id": "transient-codex-expensive-actions",
+      "fault": "portable_codex_transient_failure_actions_ready",
+      "expected": "WAITING_COMPUTE_OR_BOUNDED_PRIMARY_RECOVERY",
+      "forbidden_authorities": [
+        "automatic_expensive_fallback_without_reason"
+      ]
     }
   ]
 }
