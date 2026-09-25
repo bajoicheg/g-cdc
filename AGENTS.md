@@ -4,9 +4,9 @@ This repository develops CDC itself.
 
 ## Bootstrap rule
 
-CDC N is developed under stable CDC N-1. For CDC 2.7 the development authority is stable CDC 2.6.0 with validated package tree `e2cf6199eb60ca998012184b460c9a05c9f33b80`.
+CDC N is developed under the previously released CDC N-1. CDC 2.7.0 is now released at `refs/heads/release/v2.7.0`, release commit `5b84c89596e04d8411bf6cc24d8aa882a24c483a`, package tree `a667549d48c2e93cba36359335c1b1ff4534ac86`.
 
-Candidate CDC 2.7 must never be its only release validator. Run the stdlib-only `bootstrap/validate_release.py --mode bootstrap` before importing candidate runtime code.
+The current development authority for this repository is released CDC 2.7.0. CDC 2.7 now develops CDC 2.8. Future candidates must still never be their own only release validator; use the independent bootstrap contract before candidate imports.
 
 ## Canonical-source rule
 
@@ -18,4 +18,4 @@ A 2.7 release requires independent bootstrap GREEN, candidate package GREEN, com
 
 ## Self-hosting
 
-2.7 is developed under stable 2.6. Only after an independently validated 2.7 release may this repository migrate its own development policy to 2.7. CDC 2.7 then develops 2.8.
+Self-hosting migration is complete: released CDC 2.7.0 is the repository development authority. CDC 2.7 develops 2.8.
