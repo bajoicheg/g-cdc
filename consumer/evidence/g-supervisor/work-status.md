@@ -4,12 +4,12 @@ repository: bajoicheg-private/g-supervisor
 branch: design/0.1.0-android-local-first
 policy_revision: 2026-09-25-cdc-2.6.0-fleet-control-plane
 policy_digest: e525afe9714dac0a1d08e96986e79a92c570feca62958916f46f2a0c7da9d891
-observed_at_utc: '2026-09-25T08:16:00Z'
+observed_at_utc: '2026-09-25T12:03:00Z'
 orchestration_origin: chat
-active_executor: b2d6f880-7854-46ce-9040-f56f03ac2c56
-lease_state: active
-executor_heartbeat_at_utc: '2026-09-25T08:15:10Z'
-execution_lease_until_utc: '2026-09-25T08:35:10Z'
+active_executor: none
+lease_state: released
+executor_heartbeat_at_utc: null
+execution_lease_until_utc: null
 waiting_external_kind: null
 waiting_external_id: null
 waiting_external_sha: null
@@ -17,37 +17,62 @@ operation_intent_ref: null
 operation_key: null
 resume_capsule_ref: 'https://github.com/bajoicheg-private/g-supervisor/blob/cdc/coordination/resume.json'
 execution_continuity:
-  invocation_id: 'chat-2026-09-25T075000Z-task4-validation'
-  runnable_next_action: true
+  invocation_id: null
+  runnable_next_action: false
   meaningful_progress: true
   primitive_steps_since_progress: 0
-  completion_gate: meaningful_progress
-  last_progress_ref: 'github-actions:36111041100:success'
+  completion_gate: task_complete
+  last_progress_ref: 'github-actions:36131221292-task5-green-apk'
 control:
   execution_lease_ref: https://api.github.com/repos/bajoicheg-private/g-supervisor/contents/lease.json?ref=cdc%2Fcoordination
-  execution_lease_revision: b485902eb41290d5058e55bd7532c68300ea3e3c
-  executor_id: b2d6f880-7854-46ce-9040-f56f03ac2c56
-  lease_generation: 56
+  execution_lease_revision: null
+  executor_id: null
+  lease_generation: 60
   budget_ref: https://github.com/bajoicheg-private/g-supervisor/blob/cdc/coordination/budget.json
   recovery_snapshot_ref: null
   external_wait_ref: null
 active_change: D6-executive-ui
-current_task: 'D6 Task 5: Projects overview and project details navigation'
-phase: red
-implementation_sha: ''
-candidate_sha: 7dbea6386cb6be166f4eaeae99aa8ec670d02331
-last_green_sha: 7dbea6386cb6be166f4eaeae99aa8ec670d02331
-last_green_evidence: docs/validation/D6-task4-green.json
+current_task: 'D6 Task 5: Projects overview and project details navigation — GREEN and complete'
+phase: complete
+implementation_sha: 4894c1f79ceffe12058bd6d487a026e014276510
+candidate_sha: 0c5d0a03a98f04a681f12450844af0d6398e26e6
+last_green_sha: 0c5d0a03a98f04a681f12450844af0d6398e26e6
+last_green_evidence: docs/validation/D6-task5-green.json
 active_compute: none
 active_ci_run_id: ''
-last_ci_run_id: '36111041100'
+last_ci_run_id: '36131221292'
 last_ci_status: success
 release_version: 0.1.0
 release_candidate_sha: ''
 release_state: not-started
 blocker: 'none'
-next_action: 'Continue sequential D6 Task 5 tests-first: add Compose/navigation RED coverage for real-project Open routing, long names, 200% font and TalkBack semantics; then implement Projects overview/details using the Task 4 presentation model. This wake has no remaining ci_start capacity, so source commits must use [skip ci] until a fresh wake validates the next exact candidate.'
+next_action: 'Task 6 is unlocked but intentionally not started in this user-scoped invocation. Next CDC wake: begin D6 Task 6 tests-first for the real cached Events screen, preserving Task 5 exact-SHA GREEN evidence and using a fresh wake budget.'
 ---
+
+## D6 Task 5 GREEN — 2026-09-25
+
+Exact candidate `0c5d0a03a98f04a681f12450844af0d6398e26e6` passed GitHub Actions run `36131221292`. Exact-SHA/policy checks, Android SDK setup, domain/app JVM tests, lint, debug APK assembly, emulator boot, 53/53 instrumentation tests, D6 persistence, WorkManager/Doze evidence, clean install/cold launch and final evidence validation all passed with zero failures/errors/skips.
+
+Artifact `10862946311` (`android-d6-evidence-0c5d0a03a98f04a681f12450844af0d6398e26e6`) has digest `sha256:d15fd0633521eb351072d26900fa2c401e3fff8810af6c16fad55639f3006a5f`. The validated debug APK is 20,783,008 bytes, SHA-256 `3527a3463f9d81f696e37c92f02945492074adbd6e73bebdeca62f4753d6ed92`, signed by the Android debug certificate SHA-256 `7c85fd17a932616dc1eba467d4b1eafb112ec7c319cc64fd4089465fd8184ad8`.
+
+Task 5 acceptance is closed. Task 6 is the next sequential D6 slice and was intentionally not started because this invocation's requested scope ended at a verified APK.
+
+## Ownership recovery and Task 5 device RED — 2026-09-25
+
+Generation 58 was not merely expired: coordination commit `56fa75d5d409e19356f7b72b521ff06c021d2b38` acquired an `execution-lease/v2` record by patching only legacy owner/generation/timestamp fields, leaving mandatory `invocation` and `finalization` null. The stale external guard also still described Actions run `36118401656` as running after GitHub had made it terminal failure. PR evidence comment `5830980337` records the RCA. Attempt 066 and its budget reservation were reconciled terminal; generation 59 was then acquired as a valid invocation-bound v2 owner with the old invocation independently established stopped and external effects reconciled.
+
+Run `36118401656` had failed only at Android-test compilation because `D6ProjectNavigationUiTest.kt` imported `androidx.compose.ui.test.assertDoesNotExist` as a top-level symbol. Candidate `2ca12efe724f22f1a2219561ef61dfda13d41a3c` removed that invalid import. New run `36125095860` proved exact-SHA policy, unit tests, lint, debug APK and emulator GREEN and ran all 53 instrumentation tests. Exactly one test failed: `cachedDetailsRemainVisibleOfflineWithSourceAge`, because the provenance/source timestamp existed in Overview but was below the four section controls and therefore not displayed in the offline viewport. Artifact `10860420052` has digest `sha256:cbd1b5ae3b24857915be8c521b20974f9a6b4717e635c8de1336aba2234f4d81`.
+
+Corrective commit `4894c1f79ceffe12058bd6d487a026e014276510` keeps offline provenance/source age immediately visible before the section controls and records a repository-level fail-closed rule forbidding v1-style direct ownership-field patches in a v2 lease. It uses `[skip ci]` because this wake's one Actions start was consumed. No Task 5 GREEN is claimed until a fresh-wake exact-SHA Android gate passes.
+
+## D6 Task 5 preflight RED and correction — 2026-09-25
+
+Task 5 source work is present: real project cards now expose enabled Open and pin controls; Projects overview uses the Task 4 presentation model with persisted search/account-filter/pin state; details navigation is keyed by repositoryId; details expose Overview/History/Technical/Actions, cached offline source timestamps and only a validated GitHub URL action; no ChatGPT/D8 action or demo fixture was added to production runtime. Compose RED coverage is `D6ProjectNavigationUiTest` with three tests for enabled routing, long names at 200% font/TalkBack pin semantics, safe D6 actions and offline cached details.
+
+Exact candidate `5aca51659690b2c1a489877097a8f84719ca3f52` started Actions run `36116655431`. Checkout, JDK and exact SHA passed. The mandatory policy/tooling preflight then failed in `tools/tests/test_android_evidence.py`: the workflow correctly requires 53 instrumentation tests and `D6ProjectNavigationUiTest`, but two negative-test fixtures still synthesized 50 tests, so their intended missing-class/failure assertions were masked by the earlier count assertion. Android SDK, Gradle, emulator, product tests and instrumentation did not run.
+
+Artifact `10855620268` has digest `sha256:3c6486d1699f0af6f0b5a4115045c1c3da853d085027edb846f540d8c29df4da`. Corrective commit `8cda46deb5d4d79d5dbebffb7e3a0dd49b608f33` changes the remaining fixtures from 50 to 53 and the incomplete fixture from 49 to 52; the durable failure-circuit remedy is `product:8cda46deb5d4d79d5dbebffb7e3a0dd49b608f33-task5-evidence-fixture-53`. No second Actions start was made in this wake.
+
 ## D6 Task 4 GREEN — 2026-09-25
 
 Exact candidate `7dbea6386cb6be166f4eaeae99aa8ec670d02331` passed GitHub Actions run `36111041100`: 93/93 domain tests, 122/122 app JVM tests, lint, APK assembly, emulator boot, 50/50 instrumentation tests, D6 persistence, WorkManager/Doze evidence, clean install, cold launch and final evidence validation. All failures/errors/skips were zero.

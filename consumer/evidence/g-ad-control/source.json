@@ -1,8 +1,8 @@
 {
   "schema": "cdc-consumer-validation-source/v1",
   "repository": "bajoicheg-private/g-ad-control",
-  "source_commit": "73f697e31b17d8c0579a1fc93c15c8f6c9a4db2a",
-  "vendored_cdc_version": "2.6.0",
-  "candidate_version": "2.7.1",
-  "candidate_package_tree": "a78b8e7df4bfdd5a067f9e9da5a3a8a4b33394fc"
+  "source_commit": "a65c36461d56aa80f129b65a0782be02529e1fc7",
+  "vendored_cdc_version": "2.7.1",
+  "candidate_version": "2.7.2",
+  "candidate_package_tree": "6e22d252374634662c95488ba9e7245febf6771a"
 }

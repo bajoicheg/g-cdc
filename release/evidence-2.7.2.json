@@ -1,0 +1,37 @@
+{
+  "schema": "cdc-release-evidence/v1",
+  "version": "2.7.2",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "candidate_source_commit": "653369c808a28ae8684059e6377e9c6fcd085704",
+  "package_tree": "6e22d252374634662c95488ba9e7245febf6771a",
+  "release_validation": {
+    "provider": "codex_compute",
+    "evidence_comment": "https://github.com/bajoicheg/g-cdc/pull/3#issuecomment-5833856461",
+    "task_url": "https://chatgpt.com/s/cd_6ab6812d87848191a545785ca19d100a",
+    "conclusion": "success",
+    "bootstrap": "success",
+    "package": {
+      "result": "success",
+      "tests": "262/262"
+    },
+    "consumers": [
+      {
+        "repository": "bajoicheg-private/g-supervisor",
+        "source_commit": "f250ace4cf0f5a4086c31099c0017d53770008bd",
+        "result": "success"
+      },
+      {
+        "repository": "bajoicheg-private/g-ad-control",
+        "source_commit": "a65c36461d56aa80f129b65a0782be02529e1fc7",
+        "result": "success"
+      },
+      {
+        "repository": "bajoicheg/g-pc-health-check",
+        "source_commit": "5afac455f6d4d10a0f8e71258c0250ecdbb1fb1a",
+        "result": "success"
+      }
+    ],
+    "final_head_clean": true
+  },
+  "release_ref": "refs/heads/release/v2.7.2"
+}
