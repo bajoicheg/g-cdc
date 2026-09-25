@@ -1,0 +1,28 @@
+{
+  "schema": "cdc-release-candidate/v1",
+  "version": "2.7.0",
+  "developed_under_version": "2.6.0",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "source_commit": "0000000000000000000000000000000000000000",
+  "package_tree": "0000000000000000000000000000000000000000",
+  "status": "candidate",
+  "evidence": {
+    "bootstrap": [
+      "bootstrap:replace-me"
+    ],
+    "package": [
+      "package:replace-me"
+    ],
+    "compatibility": [
+      "compatibility:replace-me"
+    ],
+    "fault_injection": [
+      "fault:replace-me"
+    ],
+    "consumers": [
+      "consumer:g-supervisor",
+      "consumer:g-ad-control",
+      "consumer:g-pc-health-check"
+    ]
+  }
+}
