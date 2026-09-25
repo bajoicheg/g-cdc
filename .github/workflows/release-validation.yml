@@ -1,4 +1,4 @@
-name: CDC 2.7 Release Validation
+name: CDC Release Validation
 
 on:
   pull_request:
@@ -54,6 +54,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Resolve exact candidate package tree
+        id: package
+        shell: bash
+        run: echo "tree=$(git rev-parse HEAD:src/continuous-development-cycle)" >> "$GITHUB_OUTPUT"
       - name: Install validator dependency
         run: python -m pip install -r src/continuous-development-cycle/scripts/requirements.txt
       - name: Validate consumer adapter under CDC 2.7
@@ -66,10 +70,13 @@ jobs:
           import json, os, pathlib
           name=os.environ["CONSUMER"]
           d=json.loads((pathlib.Path("consumer/evidence")/name/"source.json").read_text())
-          assert d["candidate_version"]=="2.7.0"
-          assert d["candidate_package_tree"]=="a667549d48c2e93cba36359335c1b1ff4534ac86"
+          candidate=pathlib.Path("VERSION").read_text().strip()
+          package_tree=os.environ["PACKAGE_TREE"]
+          assert d["candidate_version"]==candidate
+          assert d["candidate_package_tree"]==package_tree
           assert len(d["source_commit"])==40
           print("CONSUMER_GREEN", name, d["repository"], d["source_commit"], d["vendored_cdc_version"])
           PY
         env:
           CONSUMER: ${{ matrix.consumer }}
+          PACKAGE_TREE: ${{ steps.package.outputs.tree }}

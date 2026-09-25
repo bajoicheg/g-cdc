@@ -13,7 +13,9 @@ def ver(v):
 def source_lock(d):
     target=ver(d["target_version"]);base=ver(d["development_driver_version"])
     if d.get("schema")!="cdc-source-lock/v1" or d.get("canonical_repository")!="bajoicheg/g-cdc":raise ValueError("canonical source lock invalid")
-    if target[0]!=base[0] or target[1]!=base[1]+1 or target[2]!=0:raise ValueError("N-1 -> N invariant failed")
+    minor=(target[0]==base[0] and target[1]==base[1]+1 and target[2]==0)
+    patch=(target[0]==base[0] and target[1]==base[1] and target[2]==base[2]+1)
+    if not (minor or patch):raise ValueError("stable minor or patch release invariant failed")
     if not SHA.fullmatch(d.get("base_validation_commit","")) or not SHA.fullmatch(d.get("base_package_tree","")):raise ValueError("base binding invalid")
     if d.get("direct_product_repo_development") is not False:raise ValueError("product repo cannot be canonical CDC source")
 def matrix(d):
@@ -30,15 +32,16 @@ def syntax_check():
 def full_source():
     pkg=ROOT/"src"/"continuous-development-cycle"
     if not pkg.is_dir():raise ValueError("source_package_missing")
-    if (pkg/"VERSION").read_text(encoding="utf-8").strip()!="2.7.0":raise ValueError("candidate VERSION must be 2.7.0")
-    if json.loads((pkg/"manifest.json").read_text(encoding="utf-8")).get("version")!="2.7.0":raise ValueError("candidate manifest mismatch")
+    target=load("release/source.lock.json")["target_version"]
+    if (pkg/"VERSION").read_text(encoding="utf-8").strip()!=target:raise ValueError("candidate VERSION must match source lock")
+    if json.loads((pkg/"manifest.json").read_text(encoding="utf-8")).get("version")!=target:raise ValueError("candidate manifest mismatch")
 def main(argv=None):
     p=argparse.ArgumentParser();p.add_argument("--mode",choices=("bootstrap","full"),default="full");a=p.parse_args(argv)
     try:
-        if (ROOT/"VERSION").read_text().strip()!="2.7.0":raise ValueError("repository VERSION mismatch")
+        if (ROOT/"VERSION").read_text().strip()!=load("release/source.lock.json")["target_version"]:raise ValueError("repository VERSION mismatch")
         source_lock(load("release/source.lock.json"));matrix(load("compatibility/matrix.json"));faults(load("fault-injection/scenarios.json"));syntax_check()
         if a.mode=="full":full_source()
     except (OSError,ValueError,json.JSONDecodeError,SyntaxError) as e:
         print("BOOTSTRAP_RED:",e,file=sys.stderr);return 1
-    print("BOOTSTRAP_GREEN: CDC 2.7 independent bootstrap contract");return 0
+    print("BOOTSTRAP_GREEN: CDC independent bootstrap contract");return 0
 if __name__=="__main__":raise SystemExit(main())
