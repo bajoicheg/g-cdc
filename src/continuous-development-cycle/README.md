@@ -1,4 +1,4 @@
-# Continuous Development Cycle v2.7.3
+# Continuous Development Cycle v2.8.0
 
 Installable ChatGPT/Codex/agent skill for recoverable, long-running software development.
 
@@ -123,3 +123,13 @@ Read `references/canonical-source-and-release.md`. Validate consumer pins with
 - Repository visibility is part of compute economics.
 - Public repositories may treat standard GitHub-hosted Actions as unmetered and route to them normally.
 - Private/internal repositories retain Codex-first cost controls and expensive-Actions fallback reasoning.
+
+
+## v2.8.0 Autonomous Continuity & Isolation
+
+- Terminal-State v2 makes No-Idle executable: runnable work forbids terminal response.
+- Execution-channel supervision automatically fails over across compatible authorized backends.
+- Concurrent-writer reconciliation replays non-overlapping fast-forwards on fresh HEAD and never force-pushes.
+- Sensitive-context scanning covers organization/domain/topology leaks that secret scanners miss.
+- Publication guard covers tree, refs, conversations, artifacts and control-plane paths.
+- Internal control-plane state is excluded from the publishable product surface; findings require sanitized export.
