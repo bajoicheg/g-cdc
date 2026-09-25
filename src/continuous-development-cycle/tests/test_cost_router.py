@@ -43,6 +43,9 @@ class T(unittest.TestCase):
   reg=copy.deepcopy(REG);reg["backends"][0]["state"]="degraded";reg["backends"][1]["state"]="unavailable"
   ctx=copy.deepcopy(CTX);ctx["primary_failure_class"]="product"
   r=self.route(reg=reg,ctx=ctx);self.assertEqual(r["reason"],"product_failure_requires_fix_before_more_compute");self.assertIsNone(r["backend_id"])
+ def test_product_failure_blocks_even_when_all_backends_ready(self):
+  ctx=copy.deepcopy(CTX);ctx["primary_failure_class"]="product"
+  r=self.route(ctx=ctx);self.assertEqual(r["action"],"blocked");self.assertIsNone(r["backend_id"]);self.assertFalse(r["expensive_fallback"])
  def test_never_grants_authority(self):
   r=self.route()
   for k in ("authorizes_external_start","authorizes_product_write","authorizes_takeover","authorizes_scheduler_mutation"):self.assertFalse(r[k])
