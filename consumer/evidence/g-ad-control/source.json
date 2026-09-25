@@ -2,7 +2,7 @@
   "schema": "cdc-consumer-validation-source/v1",
   "repository": "bajoicheg-private/g-ad-control",
   "source_commit": "a65c36461d56aa80f129b65a0782be02529e1fc7",
-  "vendored_cdc_version": "2.7.1",
-  "candidate_version": "2.7.2",
-  "candidate_package_tree": "6e22d252374634662c95488ba9e7245febf6771a"
+  "vendored_cdc_version": "2.7.2",
+  "candidate_version": "2.7.3",
+  "candidate_package_tree": "cc0a22eacce91f542da50076ae49b9bef51dc197"
 }
