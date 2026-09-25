@@ -101,6 +101,10 @@ def route(registry,request,policy,context,now_utc):
     ready.sort(key=order); compatible.sort(key=order); primary.sort(key=order)
     cheap_ready=[b for b in ready if b["kind"] not in expensive_kinds]
     expensive_ready=[b for b in ready if b["kind"] in expensive_kinds]
+    failure=context["primary_failure_class"]
+
+    if failure in set(policy["product_failure_classes"]):
+        return _result("blocked","product_failure_requires_fix_before_more_compute",missing=missing)
 
     if cheap_ready:
         return _result("route","lowest_cost_compatible_ready_backend",cheap_ready[0],missing=missing)
@@ -113,10 +117,6 @@ def route(registry,request,policy,context,now_utc):
             return _result("waiting_compute","expensive_fallback_reason_not_allowed",missing=missing)
         return _result("route","expensive_backend_required_by_capability_or_evidence",expensive_ready[0],
                        expensive=True,expensive_reason=reason,missing=missing)
-
-    failure=context["primary_failure_class"]
-    if failure in set(policy["product_failure_classes"]):
-        return _result("blocked","product_failure_requires_fix_before_more_compute",missing=missing)
 
     if failure=="incompatible" or context["required_capability_gap_on_primary"]:
         if expensive_ready and "required_capability" in set(policy["expensive_fallback_reasons"]):
@@ -134,7 +134,8 @@ def route(registry,request,policy,context,now_utc):
         if context["distinct_primary_recovery_attempts"]<policy["bounded_primary_recovery_attempts"]:
             backend=primary[0] if primary else cheap_compatible[0]
             return _result("probe_primary","bounded_low_cost_primary_recovery",backend,missing=missing)
-        if context["provider_outage_confirmed"] and expensive_ready:
+        outage_ok=context["provider_outage_confirmed"] or not policy["provider_outage_confirmation_required"]
+        if outage_ok and expensive_ready:
             if "confirmed_provider_outage" in set(policy["expensive_fallback_reasons"]):
                 return _result("route","confirmed_primary_provider_outage",expensive_ready[0],
                                expensive=True,expensive_reason="confirmed_provider_outage",missing=missing)
