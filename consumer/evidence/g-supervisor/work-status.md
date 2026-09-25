@@ -2,9 +2,9 @@
 schema: development-work-status/v4
 repository: bajoicheg-private/g-supervisor
 branch: design/0.1.0-android-local-first
-policy_revision: 2026-09-25-cdc-2.6.0-fleet-control-plane
-policy_digest: e525afe9714dac0a1d08e96986e79a92c570feca62958916f46f2a0c7da9d891
-observed_at_utc: '2026-09-25T12:03:00Z'
+policy_revision: 2026-09-25-cdc-2.7.1-owner-ux-corrective
+policy_digest: cdc-2.7.1-release-8e97192ef89bf37657a4444a954530f22e8b2267
+observed_at_utc: '2026-09-25T17:36:27.234Z'
 orchestration_origin: chat
 active_executor: none
 lease_state: released
@@ -21,33 +21,51 @@ execution_continuity:
   runnable_next_action: false
   meaningful_progress: true
   primitive_steps_since_progress: 0
-  completion_gate: task_complete
-  last_progress_ref: 'github-actions:36131221292-task5-green-apk'
+  completion_gate: fresh_wake_exact_sha_android_gate
+  last_progress_ref: 'product:0e920f63c474c9eaf6ec6377f9a65727d434142a-events-scroll-reachable'
 control:
   execution_lease_ref: https://api.github.com/repos/bajoicheg-private/g-supervisor/contents/lease.json?ref=cdc%2Fcoordination
-  execution_lease_revision: null
+  execution_lease_revision: 'f27bae65b60e25637ee1a5d53cff9f67f5b55bdd'
   executor_id: null
-  lease_generation: 60
+  lease_generation: 64
   budget_ref: https://github.com/bajoicheg-private/g-supervisor/blob/cdc/coordination/budget.json
   recovery_snapshot_ref: null
   external_wait_ref: null
 active_change: D6-executive-ui
-current_task: 'D6 Task 5: Projects overview and project details navigation — GREEN and complete'
-phase: complete
-implementation_sha: 4894c1f79ceffe12058bd6d487a026e014276510
-candidate_sha: 0c5d0a03a98f04a681f12450844af0d6398e26e6
-last_green_sha: 0c5d0a03a98f04a681f12450844af0d6398e26e6
-last_green_evidence: docs/validation/D6-task5-green.json
+current_task: 'D6 Task 6: real cached Events — corrective candidate ready for fresh-wake gate'
+phase: validation
+implementation_sha: 0e920f63c474c9eaf6ec6377f9a65727d434142a
+candidate_sha: 0e920f63c474c9eaf6ec6377f9a65727d434142a
+last_green_sha: a2b6297f80fe8b6e6866191ea70afe0a9a805f52
+last_green_evidence: docs/validation/D6-task5-owner-ux-green.json
 active_compute: none
 active_ci_run_id: ''
-last_ci_run_id: '36131221292'
-last_ci_status: success
+last_ci_run_id: '36166189120'
+last_ci_status: failure
 release_version: 0.1.0
 release_candidate_sha: ''
 release_state: not-started
-blocker: 'none'
-next_action: 'Task 6 is unlocked but intentionally not started in this user-scoped invocation. Next CDC wake: begin D6 Task 6 tests-first for the real cached Events screen, preserving Task 5 exact-SHA GREEN evidence and using a fresh wake budget.'
+blocker: 'Current wake consumed its single baseline Actions start. Corrective candidate 0e920f63... is ready but requires a fresh-wake exact-SHA Android gate before Task 6 can be called GREEN.'
+next_action: 'On the next CDC wake, acquire a fresh lease and spend at most its one baseline Actions start on exact SHA 0e920f63c474c9eaf6ec6377f9a65727d434142a. Do not change product code unless that gate finds a new defect.'
 ---
+
+## D6 Task 6 runtime RED corrected — 2026-09-25
+
+Task 6 now renders only persisted cached events from Room-backed `ProjectEvent` data. The presentation layer deduplicates stable provider identities, orders facts by occurrence time with observation time kept separate, maps project/source/error provenance, preserves cached facts when a source is currently failing, and exposes only validated `https://github.com` source links. The Events UI includes truthful empty/offline states, source-error surfaces, occurred/observed timestamps plus age, 48dp source actions, TalkBack labels and long-text wrapping.
+
+Exact candidate `0954a762f348192f47e6f1e1e55f24eb90a462cf` ran once in Actions run `36166189120`. Exact-SHA/policy checks, Android SDK setup, unit tests, lint, debug APK assembly, Android-test compilation and emulator boot all passed. Instrumentation executed 56 tests: 55 passed and exactly one failed. The failure was `D6EventsUiTest.longTitleRemainsReachableAtTwoHundredPercentFontWithTalkBackSourceAction`: at 200% font the correctly labelled source button was below the initial LazyColumn viewport, while the test incorrectly required it to be immediately displayed.
+
+Artifact `10878410650` has digest `sha256:58a0c082d108c4d552c7581d58c7da9b42824aa6f445774f7015884a2668fb16`. Corrective commit `0e920f63c474c9eaf6ec6377f9a65727d434142a` changes the accessibility test to `performScrollTo()` before display/click assertions, preserving the product UI and testing the intended requirement: the TalkBack-labelled action remains reachable at 200% font. The current wake's single Actions grant is consumed, so no second run is legal. Task 6 is not claimed GREEN until a fresh-wake exact-SHA Android gate passes the corrective candidate.
+
+## D6 Task 5 owner UX corrective GREEN — 2026-09-25
+
+Owner feedback from PR comment `5832606658` is implemented and validated on exact SHA `a2b6297f80fe8b6e6866191ea70afe0a9a805f52`, Actions run `36162909212`.
+
+Projects is now a compact high-level card dashboard. Search/account filtering/manual refresh/background-check information and About (`G-Supervisor 0.1.0`, `V.Vasilev 2026 ©`) live behind the small project-settings gear. The persistent shield/title header is removed. Project cards open on card tap and use a compact pin icon instead of full-width Open/Pin buttons. The redundant stale-data sentence and literal `Источник:` prefix are removed. Settings no longer exposes appearance selection and the app follows Android system theme; verbose OAuth/delete explanatory clutter was removed.
+
+The reported search defect `first → irstf` is corrected with local `TextFieldValue` cursor state and asynchronous persistence. Run `36156655029` independently proved production `EditableText='first'` and cursor `TextRange(5,5)`; its only RED was a test-contract misuse of `assertTextEquals`, which merges the field label with editable text. Candidate `a2b6297f...` asserts `SemanticsProperties.EditableText` directly.
+
+Final GREEN evidence: domain 93/93, app JVM 122/122, instrumentation 53/53, emulator, D6 persistence, scheduler/Doze, clean install, cold launch and final evidence gate all pass. Artifact `10877460007` digest `sha256:9294e28bd7fa1e908f8c2fa6c80efc86e1ecced633a8733dc79196d61ba6ead0`. APK size 20,783,008 bytes; SHA-256 `5e91c1a15db7337a935d76de288cbc884b20e7c7e23ccdd1d612f4de893b21c2`; debug certificate SHA-256 `0f818f8a1106441391722c32c9ed3744804aae4b6eb7886036638dad6ece9d49`.
 
 ## D6 Task 5 GREEN — 2026-09-25
 
