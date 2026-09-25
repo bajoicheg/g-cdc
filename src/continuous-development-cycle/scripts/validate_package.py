@@ -28,6 +28,11 @@ from version_convergence import validate_target as validate_convergence_target, 
 from control_plane_audit import validate as validate_audit_log, append as append_audit
 from fleet_supervisor import validate_registry as validate_fleet_registry, validate_snapshot as validate_fleet_snapshot, assess_fleet
 from consumer_lock import validate as validate_consumer_lock
+from terminal_state_v2 import evaluate as evaluate_terminal_state
+from execution_channel_supervisor import validate as validate_channel_supervision
+from concurrent_writer import reconcile as reconcile_writer
+from sensitive_context import validate_policy as validate_sensitive_context_policy
+from publication_guard import assess as assess_publication
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -90,6 +95,15 @@ REQUIRED = [
     'references/cost-aware-routing.md', 'scripts/cost_router.py',
     'templates/cost-routing-policy.json', 'templates/cost-routing-context.json',
     'tests/test_cost_router.py', 'tests/test_v272_guidance.py', 'tests/test_v273_guidance.py',
+    'references/autonomous-continuity-and-isolation.md', 'references/publication-safety.md',
+    'scripts/terminal_state_v2.py', 'scripts/execution_channel_supervisor.py',
+    'scripts/concurrent_writer.py', 'scripts/sensitive_context.py', 'scripts/publication_guard.py',
+    'templates/terminal-state-v2.json', 'templates/channel-supervision.json',
+    'templates/writer-reconciliation.json', 'templates/sensitive-context-policy.json',
+    'templates/publication-inventory.json',
+    'tests/test_terminal_state_v2.py', 'tests/test_execution_channel_supervisor.py',
+    'tests/test_concurrent_writer.py', 'tests/test_sensitive_context.py',
+    'tests/test_publication_guard.py', 'tests/test_v280_guidance.py',
 ]
 
 
@@ -195,6 +209,18 @@ def validate():
     health = assess_watchdog_health(json.loads((ROOT / 'templates/watchdog-health.json').read_text()))
     if health['overall'] != 'HEALTHY' or any(health[name] for name in ('authorizes_takeover', 'authorizes_external_start', 'authorizes_product_write')):
         raise ContractError('invalid watchdog health template/authority contract')
+    terminal = evaluate_terminal_state(json.loads((ROOT / 'templates/terminal-state-v2.json').read_text()))
+    if not terminal['allowed'] or not terminal['final_response_allowed'] or terminal['reason'] != 'proven_resumable_blocker':
+        raise ContractError('invalid CDC 2.8 terminal-state template')
+    validate_channel_supervision(json.loads((ROOT / 'templates/channel-supervision.json').read_text()))
+    writer = reconcile_writer(json.loads((ROOT / 'templates/writer-reconciliation.json').read_text()))
+    if writer['action'] != 'PROCEED' or writer['force_push_allowed']:
+        raise ContractError('invalid concurrent-writer reconciliation template')
+    sensitive = json.loads((ROOT / 'templates/sensitive-context-policy.json').read_text())
+    validate_sensitive_context_policy(sensitive)
+    publication = assess_publication(json.loads((ROOT / 'templates/publication-inventory.json').read_text()), sensitive)
+    if not publication['pass'] or publication['authorizes_visibility_change']:
+        raise ContractError('invalid publication-safety template')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.
