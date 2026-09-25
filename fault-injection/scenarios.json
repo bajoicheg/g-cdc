@@ -67,6 +67,16 @@
       "forbidden_authorities": [
         "release"
       ]
+    },
+    {
+      "id": "malformed-v2-direct-patch",
+      "fault": "v2_owner_set_without_invocation_or_finalization",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "takeover_without_quiescence",
+        "product_write",
+        "duplicate_external_start"
+      ]
     }
   ]
 }

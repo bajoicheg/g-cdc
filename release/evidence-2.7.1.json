@@ -1,0 +1,39 @@
+{
+  "schema": "cdc-release-evidence/v1",
+  "version": "2.7.1",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "candidate_source_commit": "102d71cbc7687d85a26bbcb2474843821b8f0788",
+  "package_tree": "a78b8e7df4bfdd5a067f9e9da5a3a8a4b33394fc",
+  "release_validation": {
+    "run_id": 36130007262,
+    "url": "https://github.com/bajoicheg/g-cdc/actions/runs/36130007262",
+    "conclusion": "success",
+    "bootstrap": {
+      "job_id": 108054853618,
+      "result": "success"
+    },
+    "package": {
+      "job_id": 108054901488,
+      "result": "success",
+      "tests": "247/247"
+    },
+    "consumers": [
+      {
+        "repository": "bajoicheg-private/g-supervisor",
+        "job_id": 108055001905,
+        "result": "success"
+      },
+      {
+        "repository": "bajoicheg-private/g-ad-control",
+        "job_id": 108055001956,
+        "result": "success"
+      },
+      {
+        "repository": "bajoicheg/g-pc-health-check",
+        "job_id": 108055001801,
+        "result": "success"
+      }
+    ]
+  },
+  "release_ref": "refs/heads/release/v2.7.1"
+}

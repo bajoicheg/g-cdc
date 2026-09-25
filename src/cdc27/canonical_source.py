@@ -11,7 +11,9 @@ def validate_source_lock(d):
     if not isinstance(d,dict) or set(d)!=required or d["schema"]!="cdc-source-lock/v1": raise ValueError("invalid source lock")
     if d["canonical_repository"]!="bajoicheg/g-cdc": raise ValueError("unexpected canonical repository")
     target=semver(d["target_version"]); driver=semver(d["development_driver_version"])
-    if target[0]!=driver[0] or target[1]!=driver[1]+1 or target[2]!=0: raise ValueError("N-1 must develop next minor N")
+    minor=target[0]==driver[0] and target[1]==driver[1]+1 and target[2]==0
+    patch=target[0]==driver[0] and target[1]==driver[1] and target[2]==driver[2]+1
+    if not (minor or patch): raise ValueError("stable driver must develop next minor or patch")
     if not SHA.fullmatch(d["base_validation_commit"]) or not TREE.fullmatch(d["base_package_tree"]): raise ValueError("invalid base evidence")
     if type(d["base_validation_run_id"]) is not int or d["base_validation_run_id"]<=0: raise ValueError("validation run id required")
     if d["bootstrap_contract"]!="cdc-bootstrap/v1" or d["direct_product_repo_development"] is not False: raise ValueError("bootstrap/canonical invariant violated")

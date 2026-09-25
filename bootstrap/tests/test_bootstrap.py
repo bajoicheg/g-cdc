@@ -9,9 +9,11 @@ from src.cdc27.faults import validate_scenarios
 def load(p):return json.loads((ROOT/p).read_text())
 class Tests(unittest.TestCase):
  def test_source_lock(self):validate_source_lock(load("release/source.lock.json"))
- def test_n_minus_one_is_enforced(self):
-  d=load("release/source.lock.json");d["development_driver_version"]="2.7.0"
+ def test_prior_stable_release_is_enforced(self):
+  d=load("release/source.lock.json");d["development_driver_version"]="2.5.0"
   with self.assertRaises(ValueError):validate_source_lock(d)
+ def test_patch_release_is_supported(self):
+  validate_source_lock(load("release/source.lock.json"))
  def test_compatibility_preserves_history(self):validate_matrix(load("compatibility/matrix.json"))
  def test_fault_suite(self):validate_scenarios(load("fault-injection/scenarios.json"))
  def test_fault_suite_has_release_self_corruption(self):self.assertIn("bootstrap-self-corruption",{x["id"] for x in load("fault-injection/scenarios.json")["scenarios"]})
