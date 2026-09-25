@@ -20,7 +20,7 @@ def validate_coordination_record(record):
     if schema == 'execution-lease/v2':
         return execution_lease_v2.validate(record)
     if schema == 'execution-lease/v1':
-        return validate_coordination_record(record)
+        return execution_lease.validate(record)
     raise ValueError('unsupported lease schema')
 
 
