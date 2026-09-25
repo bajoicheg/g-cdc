@@ -7,76 +7,56 @@ on:
 permissions:
   contents: read
 
-jobs:
-  bootstrap:
-    name: Independent bootstrap
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Bootstrap contract before candidate imports
-        run: python -B bootstrap/validate_release.py --mode bootstrap
-      - name: Bootstrap meta-contract
-        run: python -B -m unittest discover -s bootstrap/tests -v
+concurrency:
+  group: cdc-release-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
-  candidate:
-    name: Candidate package
-    needs: bootstrap
+jobs:
+  release-validation:
+    name: Bootstrap + package + three consumers
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Independent bootstrap before candidate imports
+        run: |
+          python -B bootstrap/validate_release.py --mode bootstrap
+          python -B -m unittest discover -s bootstrap/tests -v
+
       - name: Install validator dependency
         run: python -m pip install -r src/continuous-development-cycle/scripts/requirements.txt
-      - name: Validate package
+
+      - name: Validate candidate package
         working-directory: src/continuous-development-cycle
         run: python -B scripts/validate_package.py
+
       - name: Full candidate tests
         run: python -B -m unittest discover -s src/continuous-development-cycle/tests -v
+
       - name: Full bootstrap binding
         run: python -B bootstrap/validate_release.py --mode full
 
-
-  consumers:
-    name: Three-consumer compatibility
-    needs: candidate
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        consumer: [g-supervisor, g-ad-control, g-pc-health-check]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Resolve exact candidate package tree
-        id: package
+      - name: Validate three live consumer snapshots
         shell: bash
-        run: echo "tree=$(git rev-parse HEAD:src/continuous-development-cycle)" >> "$GITHUB_OUTPUT"
-      - name: Install validator dependency
-        run: python -m pip install -r src/continuous-development-cycle/scripts/requirements.txt
-      - name: Validate consumer adapter under CDC 2.7
-        run: python -B src/continuous-development-cycle/scripts/validate_adapter.py "consumer/evidence/${{ matrix.consumer }}/development-cycle.yaml"
-      - name: Validate consumer checkpoint under CDC 2.7
-        run: python -B src/continuous-development-cycle/scripts/validate_checkpoint_24.py "consumer/evidence/${{ matrix.consumer }}/work-status.md" --adapter "consumer/evidence/${{ matrix.consumer }}/development-cycle.yaml"
-      - name: Bind validation to exact consumer source
         run: |
-          python - <<'PY'
-          import json, os, pathlib
-          name=os.environ["CONSUMER"]
-          d=json.loads((pathlib.Path("consumer/evidence")/name/"source.json").read_text())
-          candidate=pathlib.Path("VERSION").read_text().strip()
-          package_tree=os.environ["PACKAGE_TREE"]
-          assert d["candidate_version"]==candidate
-          assert d["candidate_package_tree"]==package_tree
-          assert len(d["source_commit"])==40
-          print("CONSUMER_GREEN", name, d["repository"], d["source_commit"], d["vendored_cdc_version"])
-          PY
-        env:
-          CONSUMER: ${{ matrix.consumer }}
-          PACKAGE_TREE: ${{ steps.package.outputs.tree }}
+          set -euo pipefail
+          PACKAGE_TREE="$(git rev-parse HEAD:src/continuous-development-cycle)"
+          CANDIDATE="$(cat VERSION)"
+          for consumer in g-supervisor g-ad-control g-pc-health-check; do
+            python -B src/continuous-development-cycle/scripts/validate_adapter.py "consumer/evidence/$consumer/development-cycle.yaml"
+            python -B src/continuous-development-cycle/scripts/validate_checkpoint_24.py "consumer/evidence/$consumer/work-status.md" --adapter "consumer/evidence/$consumer/development-cycle.yaml"
+            CONSUMER="$consumer" PACKAGE_TREE="$PACKAGE_TREE" CANDIDATE="$CANDIDATE" python - <<'PY'
+import json, os, pathlib
+name=os.environ["CONSUMER"]
+d=json.loads((pathlib.Path("consumer/evidence")/name/"source.json").read_text())
+assert d["candidate_version"]==os.environ["CANDIDATE"]
+assert d["candidate_package_tree"]==os.environ["PACKAGE_TREE"]
+assert len(d["source_commit"])==40
+print("CONSUMER_GREEN", name, d["repository"], d["source_commit"], d["vendored_cdc_version"])
+PY
+          done
+          echo "THREE_CONSUMERS_GREEN package_tree=$PACKAGE_TREE"
