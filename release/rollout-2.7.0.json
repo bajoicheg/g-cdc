@@ -1,0 +1,59 @@
+{
+  "schema": "cdc-release-rollout/v1",
+  "version": "2.7.0",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "release_ref": "refs/heads/release/v2.7.0",
+  "release_commit": "5b84c89596e04d8411bf6cc24d8aa882a24c483a",
+  "package_tree": "a667549d48c2e93cba36359335c1b1ff4534ac86",
+  "release_state": "released",
+  "self_hosting_state": "complete",
+  "rollout_state": "waiting_safe_boundary",
+  "observed_at_utc": "2026-09-25T08:57:00Z",
+  "consumers": [
+    {
+      "repository": "bajoicheg/g-pc-health-check",
+      "source_ref": "refs/heads/design/0.17.0-security-posture",
+      "head": "45b3129a45931fe8d0e3d83f784ae62dcbc651af",
+      "state": "converged",
+      "vendored_version": "2.7.0",
+      "package_tree": "a667549d48c2e93cba36359335c1b1ff4534ac86",
+      "consumer_lock": "docs/cdc-consumer-lock.json",
+      "lease_generation": 4,
+      "owner_id": null,
+      "external_guard": false
+    },
+    {
+      "repository": "bajoicheg-private/g-supervisor",
+      "source_ref": "refs/heads/design/0.1.0-android-local-first",
+      "head": "64af977d9320a95ce1e47defddb9bc8df720a29c",
+      "state": "wait_safe_boundary",
+      "vendored_version": "2.6.0",
+      "lease_generation": 57,
+      "owner_id": "9fb9ef8c-9f97-461e-bd32-e29e9ddc0f57",
+      "heartbeat_at_utc": "2026-09-25T08:54:00Z",
+      "lease_expires_at_utc": "2026-09-25T09:14:00Z",
+      "external_guard": false,
+      "reason": "fresh_owner_after_generation_56_orphan_recovery"
+    },
+    {
+      "repository": "bajoicheg-private/g-ad-control",
+      "source_ref": "refs/heads/codex/build-0.2.0-engineer-attribute-workflow",
+      "head": "b8bd8573eb815801c5b4cf0e49e942d197e83f6d",
+      "state": "wait_safe_boundary",
+      "vendored_version": "2.6.0",
+      "lease_generation": 29,
+      "owner_id": "d22cfd24-7c0b-4e2e-b458-15bf8c28d658",
+      "invocation_id": "chat-2026-09-25T083200Z-task83-final-recovery",
+      "heartbeat_at_utc": "2026-09-25T08:53:00Z",
+      "lease_expires_at_utc": "2026-09-25T09:13:00Z",
+      "external_guard": false,
+      "reason": "fresh_owner_after_windows_final_reconciliation"
+    }
+  ],
+  "automation_state": {
+    "g_supervisor_watchdog": "enabled_target_2.7",
+    "g_ad_control_watchdog": "enabled_target_2.7",
+    "fleet_supervisor": "enabled_target_2.7"
+  },
+  "terminal_reason": "canonical_release_and_self_hosting_complete; remaining consumers are blocked only by fresh live ownership and must converge at the next safe boundary"
+}
