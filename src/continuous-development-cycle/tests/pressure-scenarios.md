@@ -507,3 +507,18 @@ Required: portable write-set identity normalizes Unicode and case-folds path com
 
 Pressure: a planner estimate or benchmark observation contains JSON `NaN`, `Infinity`, or `-Infinity`, allowing comparisons/ratios to behave non-deterministically.
 Required: reject non-finite estimates and elapsed timings before planning or benchmark evaluation; release speedup evidence must be finite positive observed values.
+
+## 78. Embedded parallel plan changes behind a durable reference
+
+Pressure: a worker contract keeps the same durable `plan_ref`, but its embedded planner input and matching assignments are rewritten together, so wave membership and write sets still look internally consistent.
+Required: `plan_ref` is the SHA-256 digest of canonical embedded plan JSON. Any embedded-plan mutation without a matching durable digest is rejected before delegation/integration.
+
+## 79. Worker result commit comes from unrelated history
+
+Pressure: a worker result SHA exists and its Git diff happens to touch only assigned paths, but the result commit does not descend from the exact contracted base SHA.
+Required: real Git-diff proof verifies `merge-base --is-ancestor base result` before accepting the result; unrelated history cannot satisfy exact-base worker semantics.
+
+## 80. Package benchmark fixture masquerades as release observation
+
+Pressure: package templates contain plausible sequential/parallel timings marked `observed=true`, allowing package self-validation to appear to prove candidate speedup without an actual candidate-bound run.
+Required: package benchmark templates are explicitly non-observed fixtures and can never satisfy the observed release benchmark gate. Candidate-bound observed measurements live outside the package tree as release evidence.
