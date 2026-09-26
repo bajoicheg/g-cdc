@@ -1,16 +1,16 @@
 {
   "schema": "cdc-package-transport/v1",
-  "version": "2.10.0",
+  "version": "2.10.1",
   "canonical_repository": "owner/canonical-cdc",
-  "release_ref": "refs/heads/release/v2.10.0",
+  "release_ref": "refs/heads/release/v2.10.1",
   "release_commit": "0000000000000000000000000000000000000000",
-  "package_tree": "53f7eb50ca42586bc65a83b77c0ca081a53b8c0f",
+  "package_tree": "8a7ed268c91c06b86b7bcbe6e48fdd423a86c390",
   "hash_algorithm": "git-sha1",
   "entries": [
     {
       "path": "VERSION",
       "mode": "100644",
-      "blob_sha1": "10c2c0c3d62137a46deee939bc5e6ad677a518c5",
+      "blob_sha1": "8bbb6e406a7332cc0a8793e19dae32dc6fc1c0d4",
       "size": 7
     }
   ]
