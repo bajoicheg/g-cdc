@@ -91,3 +91,33 @@ These items are explicit future CDC roadmap candidates. They do not reopen the c
 - proposal is concise: problem → fix formulation → expected invariant/benefit;
 - low-value noise is prevented by allowing an existing item to receive additional evidence instead of forcing a new item.
 
+### RCA-derived fix — canonical package distribution
+
+**Observed failure class:** consumer GitHub Actions could not fetch private canonical `g-cdc` using its repository-scoped `GITHUB_TOKEN`; cross-repository checkout failed before migration logic.
+
+**Root cause:** CDC release provenance and CDC package distribution currently share one private repository boundary, while consumer automation tokens are intentionally repository-scoped.
+
+**Fix formulation:** publish or expose an immutable **CDC package transport** that can be consumed without broadening consumer repository credentials. The transport must remain bound to canonical release commit + exact package Git tree and must not require making the canonical development repository public.
+
+**Expected invariant:** a consumer can fetch a released CDC package with least privilege while independently verifying the canonical release identity and exact package tree.
+
+### RCA-derived fix — Git-tree fidelity in package transport
+
+**Observed failure class:** archive/tarball transport preserved file contents but produced a different vendored subtree SHA because Git mode metadata was not faithfully reconstructed.
+
+**Root cause:** filesystem/archive transport is content-oriented, while CDC package identity is a Git tree identity that includes path/mode/object metadata.
+
+**Fix formulation:** CDC package transport and adoption tooling must be **Git-object-aware** or carry a signed/validated mode manifest sufficient to reconstruct the exact canonical subtree. Adoption must fail closed when reconstructed subtree SHA differs.
+
+**Expected invariant:** every consumer that claims CDC version X has vendored subtree SHA exactly equal to the canonical package tree for X.
+
+### RCA-derived fix — pre-run CI failure classification
+
+**Observed failure class:** several GitHub Actions runs failed at `Set up job` / zero executable steps; treating those as product RED would trigger wrong remediation.
+
+**Root cause:** CI state classification does not always distinguish runner/provider/pre-execution failure from executed test failure early enough.
+
+**Fix formulation:** classify CI evidence into at least `pre_run_infrastructure`, `setup`, `product_test`, and `terminal_success` before applying recovery policy. Zero-step/pre-job failure must route to execution-channel recovery/failover rather than product correction.
+
+**Expected invariant:** no source change is made solely in response to a run where product validation never executed.
+
