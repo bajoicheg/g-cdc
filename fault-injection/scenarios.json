@@ -444,6 +444,22 @@
       "forbidden_authorities": [
         "product_write"
       ]
+    },
+    {
+      "id": "parallel-write-path-nonportable",
+      "fault": "writer_ownership_uses_backslash_or_nonportable_path_form",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "parallel-benchmark-duplicate-evidence",
+      "fault": "benchmark_claims_two_observations_using_duplicate_durable_evidence_ref",
+      "expected": "RELEASE_BLOCKED",
+      "forbidden_authorities": [
+        "release"
+      ]
     }
   ]
 }
