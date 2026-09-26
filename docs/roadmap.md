@@ -24,7 +24,7 @@ Release: `refs/heads/release/v2.9.0`.
 
 Evidence reinforcement (2026-09-26): a release-validation job reached terminal failure before any executable step began. It was classified as `pre_run_infrastructure`; CDC made no product/source correction and routed to an alternate validation channel. This confirms the existing classifier/failover fix rather than creating a duplicate roadmap item.
 
-### 2.9.1 — Transactional Migration & Provider Reconciliation — P1 / ACTIVE
+### 2.9.1 — Transactional Migration & Provider Reconciliation — P1 / RELEASED
 
 - Idempotent section-aware adapter/policy migration on a freshly re-read target HEAD; duplicate canonical top-level sections are forbidden.
 - Schema-typed checkpoint builders and pre-commit checkpoint validation.
@@ -37,7 +37,12 @@ Acceptance:
 - tool-operation limits cannot leave a product/adoption ref partially migrated;
 - provider-terminal tasks cannot remain indefinitely represented as running, while provider terminal state or TTL alone never grants takeover.
 
-### 2.9.2 — Continuous Autonomy & Learning — P2 / AUTHORIZED AFTER 2.9.1
+Release: `refs/heads/release/v2.9.1`.
+- release commit: `5579ac73e4df820ee163ecfb68829f3bf08173bf`;
+- package tree: `a6a9ac4e4060112d77b58e8ac6aa67442dbb95c8`;
+- independent evidence: PR #9 comment `5847492291` — bootstrap 12/12, package 378/378, 202 files, 35 fault scenarios, 3/3 consumers, 12/12 targeted 2.9.1 assertions, aggregate 402/402.
+
+### 2.9.2 — Continuous Autonomy & Learning — P2 / ACTIVE
 
 - Enforce the Progress-Is-Not-Terminal invariant as executable continuation control: after every milestone/update, immediately repeat observe → reconcile → choose-next → act until Terminal-State v2 proves a real boundary.
 - Emit one compact MSK timestamp for every user command handled under CDC as evidence metadata only.
@@ -52,7 +57,7 @@ Acceptance:
 - Fleet Watcher cannot terminate without exactly one bounded improvement/reinforcement record;
 - no novelty spam: repeated evidence strengthens one canonical roadmap item.
 
-Roadmap state: 2.9.0 is independently GREEN and released. 2.9.1 is the current runnable CDC development scope under released 2.9.0. 2.9.2 remains explicitly authorized and becomes runnable only after 2.9.1 is independently GREEN and released.
+Roadmap state: 2.9.0 and 2.9.1 are independently GREEN and released. 2.9.2 is the current runnable CDC development scope under released 2.9.1.
 
 ## CDC 2.8 — COMPLETE / TERMINAL
 
