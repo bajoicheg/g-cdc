@@ -444,16 +444,12 @@ def validate():
                                                'authorizes_merge','authorizes_release','authorizes_scope_expansion'))):
         raise ContractError('invalid CDC 2.10.2 integration gate template')
     benchmark_template = json.loads((ROOT / 'templates/parallel-benchmark.json').read_text())
-    benchmark_fixtures = load_parallel_benchmark_observations(benchmark_template, ROOT)
-    if any(observation['observed'] for observation in benchmark_fixtures):
-        raise ContractError('CDC 2.10.2 package benchmark templates must be non-observed fixtures')
-    try:
-        evaluate_parallel_benchmark_files(benchmark_template, ROOT)
-    except ValueError as exc:
-        if 'must be observed' not in str(exc):
-            raise ContractError('invalid CDC 2.10.2 benchmark fixture: ' + str(exc)) from exc
-    else:
-        raise ContractError('CDC 2.10.2 benchmark fixture must never satisfy observed release evidence')
+    benchmark = evaluate_parallel_benchmark_files(benchmark_template, ROOT)
+    if (not benchmark['passed'] or benchmark['blockers'] or benchmark['evidence_class'] != 'fixture'
+            or benchmark['release_evidence_eligible']
+            or any(benchmark[name] for name in ('authorizes_worker_launch','authorizes_product_write',
+                                                 'authorizes_merge','authorizes_release'))):
+        raise ContractError('invalid CDC 2.10.2 fixture-only benchmark template')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.
