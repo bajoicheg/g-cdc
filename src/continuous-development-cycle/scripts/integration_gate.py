@@ -24,6 +24,19 @@ def _within(path,allowed):
 def _sha(v,n):
     if not isinstance(v,str) or not SHA.fullmatch(v):raise ValueError(f"{n} invalid")
 
+def resolve_shared_head(worktree, shared_branch):
+    root=Path(worktree)
+    if not root.is_dir():raise ValueError("git worktree missing")
+    _text(shared_branch,"shared_branch")
+    ref="refs/heads/"+shared_branch.removeprefix("refs/heads/")
+    try:
+        head=subprocess.check_output(["git","-C",str(root),"rev-parse","--verify",ref],
+                                     text=True,stderr=subprocess.PIPE,timeout=15).strip()
+    except (OSError,subprocess.SubprocessError) as exc:
+        raise ValueError(f"cannot resolve live shared branch {ref}: {exc}") from exc
+    _sha(head,"live shared head")
+    return head
+
 def resolve_git_diff(worktree, *, worker_id, task_id, base_sha, result_sha, evidence_ref):
     root=Path(worktree)
     if not root.is_dir():raise ValueError("git worktree missing")
@@ -170,6 +183,9 @@ def main(argv=None):
         d=json.loads(Path(a.input).read_text())
         if any(r.get("role")=="writer" and r.get("state")=="success" for r in d.get("worker_results",[])):
             if not a.git_worktree:raise ValueError("--git-worktree is required for integration with successful writers")
+            live_head=resolve_shared_head(a.git_worktree,d["shared_branch"])
+            if live_head!=d["observed_shared_head"]:
+                raise ValueError("observed_shared_head does not match live shared branch")
             verify_git_diff_proofs(d,a.git_worktree)
         r=evaluate(d)
     except (OSError,ValueError,json.JSONDecodeError) as e:print(f"FAIL: {e}",file=sys.stderr);return 2
