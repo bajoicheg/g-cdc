@@ -130,6 +130,8 @@ These items are explicit future CDC roadmap candidates. They do not reopen the c
 - no `MSK` label, seconds or synthetic minute advancement;
 - no duplicate timestamp spam inside one command.
 
+**Evidence reinforcement — 2026-09-26:** one live CDC invocation emitted a second fresh timestamp on a later progress update within the same user command. Freshness alone is insufficient: the per-command ledger is authoritative. After the first emitted `[HH:MM DD.MM]` marker, all later progress updates in that same command must suppress additional timestamps even if real time has advanced.
+
 ### RCA-to-roadmap feedback loop
 
 **Problem:** anomalous or unclear CDC behavior can be diagnosed and fixed locally but then recur because the systemic correction never becomes roadmap input.
