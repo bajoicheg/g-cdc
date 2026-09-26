@@ -17,12 +17,9 @@ def _refs(v,n,allow_empty=False):
     if not allow_empty and not v:raise ValueError(f"{n} must not be empty")
     if len(v)!=len(set(v)):raise ValueError(f"{n} contains duplicates")
 def _path(path):
-    if not isinstance(path,str) or not path.strip() or "\\" in path or path.startswith("/") or path.endswith("/") or "//" in path:
-        raise ValueError("unsafe changed path")
-    if any(x in {"",".",".."} for x in path.split("/")):raise ValueError("unsafe changed path")
-    return path
+    return validate_write_path(path)
 def _within(path,allowed):
-    path=path.rstrip("/");allowed=allowed.rstrip("/")
+    path=portable_path_key(path);allowed=portable_path_key(allowed)
     return path==allowed or path.startswith(allowed+"/")
 def _sha(v,n):
     if not isinstance(v,str) or not SHA.fullmatch(v):raise ValueError(f"{n} invalid")
