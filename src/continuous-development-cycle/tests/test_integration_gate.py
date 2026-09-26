@@ -1,5 +1,5 @@
 from pathlib import Path
-import json,sys,unittest
+import copy,json,sys,unittest
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/"scripts"))
 from integration_gate import evaluate
 
@@ -12,19 +12,35 @@ class T(unittest.TestCase):
  def test_moved_shared_head_requires_reconcile(self):
   d=self.base();d["observed_shared_head"]="5"*40
   self.assertIn("shared_head_moved_reconcile_required",evaluate(d)["blockers"])
- def test_failed_or_stale_worker_blocks(self):
-  d=self.base();d["worker_results"][0]["state"]="failed";d["worker_results"][1]["base_sha"]="6"*40
-  r=evaluate(d);self.assertIn("worker_not_success:task-model",r["blockers"]);self.assertIn("worker_base_stale:task-ui",r["blockers"])
- def test_same_wave_worker_result_overlap_blocks(self):
-  d=self.base();d["worker_results"][1]["changed_paths"]=["src/model/other.py"]
-  self.assertTrue(any(x.startswith("same_wave_worker_result_path_overlap:") for x in evaluate(d)["blockers"]))
+ def test_failed_worker_blocks(self):
+  d=self.base();d["worker_results"][0]["state"]="failed"
+  self.assertIn("worker_not_success:task-model",evaluate(d)["blockers"])
+ def test_missing_worker_result_blocks(self):
+  d=self.base();d["worker_results"]=d["worker_results"][:1]
+  self.assertIn("missing_worker_result:task-ui",evaluate(d)["blockers"])
+ def test_result_identity_must_match_contract(self):
+  d=self.base();d["worker_results"][0]["worker_id"]="other-worker"
+  with self.assertRaises(ValueError):evaluate(d)
+ def test_result_base_must_match_assignment(self):
+  d=self.base();d["worker_results"][0]["base_sha"]="6"*40
+  with self.assertRaises(ValueError):evaluate(d)
+ def test_changed_path_must_stay_inside_assigned_write_set(self):
+  d=self.base();d["worker_results"][0]["changed_paths"]=["src/ui/foreign.py"]
+  with self.assertRaises(ValueError):evaluate(d)
  def test_force_push_never_allowed(self):
   d=self.base();d["force_push_requested"]=True
   r=evaluate(d);self.assertIn("force_push_forbidden",r["blockers"]);self.assertFalse(r["authorizes_force_push"])
  def test_unresolved_conflict_blocks(self):
   d=self.base();d["unresolved_conflicts"]=["src/model/model.py"]
   self.assertIn("unresolved_conflicts",evaluate(d)["blockers"])
+ def test_contract_change_mismatch_rejected(self):
+  d=self.base();d["worker_contract"]["change_id"]="other-change"
+  with self.assertRaises(ValueError):evaluate(d)
  def test_non_writer_result_cannot_mutate(self):
-  d=self.base();d["worker_results"]=[{"worker_id":"reviewer","task_id":"review","role":"review","base_sha":d["expected_shared_head"],"result_sha":"4"*40,"state":"success","changed_paths":["src/fix.py"],"evidence_refs":["review:green"]}]
+  d=self.base()
+  a=d["worker_contract"]["assignments"][0]
+  a["role"]="review";a["write_paths"]=[];a["worker_id"]="reviewer";a["task_id"]="review"
+  d["worker_contract"]["assignments"]= [a]
+  d["worker_results"]=[{"worker_id":"reviewer","task_id":"review","role":"review","base_sha":d["expected_shared_head"],"result_sha":"4"*40,"state":"success","changed_paths":["src/fix.py"],"evidence_refs":["review:green"]}]
   with self.assertRaises(ValueError):evaluate(d)
 if __name__=="__main__":unittest.main()
