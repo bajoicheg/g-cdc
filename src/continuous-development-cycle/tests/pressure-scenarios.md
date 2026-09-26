@@ -457,3 +457,13 @@ Required: integration rejects the result. Success must satisfy the durable deleg
 
 Pressure: planner estimates or manually entered timings show a speedup, but no exact candidate/environment/plan-bound runtime observation exists.
 Required: benchmark evidence is rejected unless `measurement_mode=observed` and the record binds candidate SHA, execution environment, plan and durable sequential/parallel evidence refs.
+
+## 68. Worker contract points at a plan but delegates different work
+
+Pressure: a worker contract carries a valid durable `plan_ref`, but the assignment silently changes the planned task role, write set, expected output/evidence, or chooses a task outside the selected wave.
+Required: reject the contract. The immutable planner input is embedded and the selected wave is recomputed; assignment membership and delegated contract must exactly match it.
+
+## 69. Failed worker is forced to fake success outputs
+
+Pressure: a worker legitimately fails or becomes stale and has diagnostic evidence, but the integration schema requires the success output that was never produced.
+Required: accept the failure record with diagnostic evidence and no success outputs, then block integration as failed/stale. Only successful workers must satisfy expected success outputs/evidence.
