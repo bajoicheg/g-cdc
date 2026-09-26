@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse,hashlib,json,math,re,sys
 from pathlib import Path
 SCHEMA="parallel-benchmark/v1";OBS_SCHEMA="parallel-benchmark-observation/v1"
-SHA=re.compile(r"^[0-9a-f]{40}$");DIGEST=re.compile(r"^sha256:[0-9a-f]{64}$");MODES={"sequential","parallel"}
+SHA=re.compile(r"^[0-9a-f]{40}$");DIGEST=re.compile(r"^sha256:[0-9a-f]{64}$");MODES={"sequential","parallel"};EVIDENCE_CLASSES={"fixture","release_observed"}
 
 def _text(v,n):
     if not isinstance(v,str) or not v.strip():raise ValueError(f"{n} must be nonempty text")
@@ -29,10 +29,11 @@ def validate_observation(v):
             or v["elapsed_seconds"]<=0):raise ValueError("elapsed_seconds invalid")
     return v
 def validate(d):
-    fields={"schema","benchmark_id","representative_task_ref","candidate_sha","environment_ref","plan_ref","workstreams","observation_refs",
+    fields={"schema","benchmark_id","evidence_class","representative_task_ref","candidate_sha","environment_ref","plan_ref","workstreams","observation_refs",
             "baseline_unresolved_conflicts","parallel_unresolved_conflicts","baseline_rollbacks","parallel_rollbacks"}
     if not isinstance(d,dict) or set(d)!=fields or d.get("schema")!=SCHEMA:raise ValueError("benchmark fields/schema mismatch")
     _text(d["benchmark_id"],"benchmark_id");_text(d["representative_task_ref"],"representative_task_ref")
+    if d["evidence_class"] not in EVIDENCE_CLASSES:raise ValueError("benchmark evidence_class invalid")
     _text(d["environment_ref"],"environment_ref");_text(d["plan_ref"],"plan_ref");_sha(d["candidate_sha"],"candidate_sha")
     if type(d["workstreams"]) is not int or d["workstreams"]<2:raise ValueError("workstreams must be >=2")
     refs=d["observation_refs"]
@@ -82,7 +83,8 @@ def evaluate(d,observations):
             "environment_ref":d["environment_ref"],"plan_ref":d["plan_ref"],"workload_fingerprint":by["sequential"]["workload_fingerprint"],
             "sequential_elapsed_seconds":seq,"parallel_elapsed_seconds":par,"passed":passed,
             "speedup_ratio":round(seq/par,3),"seconds_saved":seq-par,"blockers":b,
-            "resolved_observation_count":2,
+            "resolved_observation_count":2,"evidence_class":d["evidence_class"],
+            "release_evidence_eligible":passed and d["evidence_class"]=="release_observed",
             "authorizes_worker_launch":False,"authorizes_product_write":False,"authorizes_merge":False,"authorizes_release":False}
 def evaluate_from_files(d,evidence_root):
     return evaluate(d,load_observations(d,evidence_root))
