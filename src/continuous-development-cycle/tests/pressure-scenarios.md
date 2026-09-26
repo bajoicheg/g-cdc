@@ -497,3 +497,13 @@ Required: require a Git-resolved complete diff proof bound to base/result SHA an
 
 Pressure: a caller writes `observed=true` and plausible timings but the sequential and parallel records do not share exact candidate/environment/plan/workload bindings or independent durable evidence.
 Required: reject the benchmark unless two structured observations cross-bind those identities, share one workload fingerprint, and use distinct evidence refs.
+
+## 76. Case-only or Unicode-equivalent writer collision
+
+Pressure: two writer tasks declare paths such as `src/UI` and `src/ui/sub`, or canonically equivalent Unicode path components, and a case-sensitive Linux planner treats them as independent.
+Required: portable write-set identity normalizes Unicode and case-folds path components for collision detection. Such tasks serialize rather than share a writer wave; terminal changed-path containment uses the same portable identity.
+
+## 77. Non-finite timing passes a speedup gate
+
+Pressure: a planner estimate or benchmark observation contains JSON `NaN`, `Infinity`, or `-Infinity`, allowing comparisons/ratios to behave non-deterministically.
+Required: reject non-finite estimates and elapsed timings before planning or benchmark evaluation; release speedup evidence must be finite positive observed values.
