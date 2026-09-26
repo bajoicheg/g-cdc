@@ -428,6 +428,22 @@
       "forbidden_authorities": [
         "release"
       ]
+    },
+    {
+      "id": "worker-contract-plan-spoof",
+      "fault": "worker_contract_plan_ref_is_valid_but_assignment_differs_from_selected_planner_wave",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "failed-worker-success-output-forced",
+      "fault": "failed_or_stale_worker_cannot_be_represented_without_fabricating_expected_success_output",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
     }
   ]
 }
