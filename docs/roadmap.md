@@ -17,6 +17,8 @@ Acceptance:
 - Fleet Watcher cannot mark a project integrated from a version string alone;
 - source changes are never prescribed solely from CI evidence where product validation did not execute.
 
+Evidence reinforcement (2026-09-26): a release-validation job reached terminal failure before any executable step began. It was classified as `pre_run_infrastructure`; CDC made no product/source correction and routed to an alternate validation channel. This confirms the existing classifier/failover fix rather than creating a duplicate roadmap item.
+
 ### 2.9.1 — Transactional Migration & Provider Reconciliation — P1 / AUTHORIZED AFTER 2.9.0
 
 - Idempotent section-aware adapter/policy migration on a freshly re-read target HEAD; duplicate canonical top-level sections are forbidden.
