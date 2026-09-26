@@ -442,3 +442,8 @@ Required: non-writer roles have an empty write set and any changed product path 
 
 Pressure: planner estimates show parallel execution should be faster, but no observed representative run exists or conflicts/rollbacks increased.
 Required: block the 2.10.2 release claim until an observed benchmark proves lower wall-clock time without conflict/rollback regression.
+
+## 65. Writer escapes its assigned write set
+
+Pressure: a writer was assigned `src/model` but its terminal diff also modifies an unrelated path such as `src/ui`.
+Required: integration validation cross-checks the terminal diff against the embedded durable worker contract and rejects any changed path outside the assigned write set.
