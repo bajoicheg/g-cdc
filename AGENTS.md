@@ -4,9 +4,9 @@ This repository develops CDC itself.
 
 ## Bootstrap rule
 
-CDC N is developed under the previously released CDC N-1. CDC 2.8.0 is released at `refs/heads/release/v2.8.0`, release commit `08996f44eee59750ba27b3169eec8735511f30f5`, package tree `ff5d24d685986a65a4239916020c969c9777ad05`.
+CDC N is developed under the previously released CDC N-1. CDC 2.8.1 is released at `refs/heads/release/v2.8.1`, release commit `a3f3e8db0d6a863e1dfa19c27af51820c954bf69`, package tree `fda5e955b987fcebbe49c3c27bf3b24114983eab`.
 
-The current development authority for this repository is released CDC 2.8.0. CDC 2.8.0 develops CDC 2.8.1. Future candidates must still never be their own only release validator; use the independent bootstrap contract before candidate imports.
+The current development authority for this repository is released CDC 2.8.1. CDC 2.8.1 develops CDC 2.8.2. Future candidates must still never be their own only release validator; use the independent bootstrap contract before candidate imports.
 
 ## Canonical-source rule
 
@@ -18,4 +18,4 @@ A 2.8 release requires independent bootstrap GREEN, candidate package GREEN, com
 
 ## Self-hosting
 
-Self-hosting migration is complete: released CDC 2.8.0 is the repository development authority. CDC 2.8.0 develops 2.8.1.
+Self-hosting migration is complete: released CDC 2.8.1 is the repository development authority. CDC 2.8.1 develops 2.8.2.
