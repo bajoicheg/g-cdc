@@ -1,5 +1,52 @@
 # CDC roadmap
 
+## CDC 2.9 — ACCEPTED / ACTIVE
+
+Owner acceptance authorizes this roadmap. CDC 2.9 is developed under released CDC 2.8.2 and preserves the N-1 bootstrap/release rule. The line is intentionally split so distribution/convergence becomes stable before migration/reconciliation depends on it, and the autonomy/learning layer is then developed under the released transactional core.
+
+### 2.9.0 — Deterministic Distribution & Convergence — P0 / ACTIVE
+
+- Least-privilege immutable CDC package transport that does not require broad cross-repository credentials.
+- Git-tree-faithful transport identity: path, mode and object identity are verified so reconstructed/vendored package tree must equal the canonical package tree exactly.
+- Canonical Fleet Watcher convergence vector binding source ref + exact HEAD, CDC version, exact package tree, consumer lock, semantic policy digest, checkpoint validity, lease/guard state and adoption state.
+- CI evidence classification into `pre_run_infrastructure`, `setup`, `product_test` and `terminal_success`; pre-run/zero-step failures route to execution-channel recovery rather than product correction.
+
+Acceptance:
+- a consumer can acquire/verify a released package without repository-wide canonical credentials;
+- a consumer claiming version X cannot be integrated unless the exact canonical package tree is proven;
+- Fleet Watcher cannot mark a project integrated from a version string alone;
+- source changes are never prescribed solely from CI evidence where product validation did not execute.
+
+### 2.9.1 — Transactional Migration & Provider Reconciliation — P1 / AUTHORIZED AFTER 2.9.0
+
+- Idempotent section-aware adapter/policy migration on a freshly re-read target HEAD; duplicate canonical top-level sections are forbidden.
+- Schema-typed checkpoint builders and pre-commit checkpoint validation.
+- Operation-budget-aware Git-object migration transactions with bounded chunks and detached intermediate tree checkpoints; product refs move only after exact subtree convergence.
+- Terminal-provider reconciliation trigger for guarded external operations, preserving split-brain safety and requiring explicit executor-stopped evidence before any takeover.
+
+Acceptance:
+- repeated/concurrent adoption converges to one semantically valid policy document;
+- every CDC-written checkpoint is schema-valid at the commit boundary;
+- tool-operation limits cannot leave a product/adoption ref partially migrated;
+- provider-terminal tasks cannot remain indefinitely represented as running, while provider terminal state or TTL alone never grants takeover.
+
+### 2.9.2 — Continuous Autonomy & Learning — P2 / AUTHORIZED AFTER 2.9.1
+
+- Enforce the Progress-Is-Not-Terminal invariant as executable continuation control: after every milestone/update, immediately repeat observe → reconcile → choose-next → act until Terminal-State v2 proves a real boundary.
+- Emit one compact MSK timestamp for every user command handled under CDC as evidence metadata only.
+- Bounded RCA-to-roadmap feedback loop: every material anomaly ends with a deduplicated systemic fix formulation, reinforcement or confirmation.
+- Every CDC Fleet Watcher run emits exactly one evidence-based improvement proposal or deduplicated reinforcement.
+- Dogfooding tracks premature milestone stops and feedback-loop closure without granting release or mutation authority.
+
+Acceptance:
+- reporting progress can never by itself end an authorized invocation;
+- timestamps never become authority or control-plane state;
+- material RCA cannot terminate without a systemic correction disposition;
+- Fleet Watcher cannot terminate without exactly one bounded improvement/reinforcement record;
+- no novelty spam: repeated evidence strengthens one canonical roadmap item.
+
+Roadmap state: 2.9.0 is the current runnable CDC development scope. 2.9.1 and 2.9.2 are explicitly authorized roadmap scope but become runnable release-development stages only after the preceding release is independently GREEN and released.
+
 ## CDC 2.8 — COMPLETE / TERMINAL
 
 The 2.8 roadmap is fully released and has no remaining runnable scope.
