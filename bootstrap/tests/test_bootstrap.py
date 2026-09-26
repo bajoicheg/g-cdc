@@ -14,6 +14,12 @@ class Tests(unittest.TestCase):
   with self.assertRaises(ValueError):validate_source_lock(d)
  def test_patch_release_is_supported(self):
   validate_source_lock(load("release/source.lock.json"))
+ def test_external_base_evidence_requires_ref(self):
+  d=load("release/source.lock.json");d["base_validation_evidence_ref"]=None
+  with self.assertRaises(ValueError):validate_source_lock(d)
+ def test_actions_base_evidence_mode_is_supported(self):
+  d=load("release/source.lock.json");d["base_validation_run_id"]=123;d["base_validation_evidence_ref"]=None
+  validate_source_lock(d)
  def test_compatibility_preserves_history(self):validate_matrix(load("compatibility/matrix.json"))
  def test_fault_suite(self):validate_scenarios(load("fault-injection/scenarios.json"))
  def test_fault_suite_has_release_self_corruption(self):self.assertIn("bootstrap-self-corruption",{x["id"] for x in load("fault-injection/scenarios.json")["scenarios"]})

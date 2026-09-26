@@ -6,7 +6,8 @@
   "base_validation_repository": "bajoicheg/g-cdc",
   "base_validation_commit": "88ee8a209caf562c02fe2ad53e047d7feee0e007",
   "base_package_tree": "806a66cd973954b3d5348ac36d39631717d9fe7b",
-  "base_validation_run_id": 36130007262,
+  "base_validation_run_id": 0,
   "bootstrap_contract": "cdc-bootstrap/v1",
-  "direct_product_repo_development": false
+  "direct_product_repo_development": false,
+  "base_validation_evidence_ref": "https://github.com/bajoicheg/g-cdc/pull/4#issuecomment-5837074953"
 }

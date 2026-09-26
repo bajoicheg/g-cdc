@@ -17,6 +17,10 @@ def source_lock(d):
     patch=(target[0]==base[0] and target[1]==base[1] and target[2]==base[2]+1)
     if not (minor or patch):raise ValueError("stable minor or patch release invariant failed")
     if not SHA.fullmatch(d.get("base_validation_commit","")) or not SHA.fullmatch(d.get("base_package_tree","")):raise ValueError("base binding invalid")
+    run_id=d.get("base_validation_run_id"); evidence_ref=d.get("base_validation_evidence_ref")
+    if type(run_id) is not int or run_id<0:raise ValueError("base validation run id invalid")
+    if evidence_ref is not None and (not isinstance(evidence_ref,str) or not evidence_ref.strip()):raise ValueError("base validation evidence ref invalid")
+    if (run_id>0)==(evidence_ref is not None):raise ValueError("exactly one base validation evidence mode required")
     if d.get("direct_product_repo_development") is not False:raise ValueError("product repo cannot be canonical CDC source")
 def matrix(d):
     if d.get("schema")!="cdc-compatibility-matrix/v1" or d.get("developed_under_version") not in d.get("supported_from_versions",[]):raise ValueError("compatibility matrix invalid")
