@@ -6,7 +6,7 @@ CDC 2.10.1 adopts the Superpowers design/plan/review discipline without importin
 
 Brainstorming is required only when a material product/design choice is genuinely ambiguous. Routine fixes, mechanically specified work and already-authorized continuation must not be blocked merely because no brainstorming conversation occurred.
 
-`scripts/spec_plan_queue.py` binds an approved specification to an implementation plan and then to durable continuation items. Every task must reference the specification requirement it implements and the evidence expected for completion. A task marked complete without evidence is invalid. Every runnable non-blocked task must remain represented in the continuation queue.
+`scripts/spec_plan_queue.py` binds an approved specification to an implementation plan and then to durable continuation items. Every task must reference the specification requirement it implements and the evidence expected for completion. The dependency graph must be acyclic. A task marked complete without evidence is invalid. Every runnable non-blocked task must remain represented in the continuation queue.
 
 This mapping prevents a prose plan from becoming an unverified completion claim. It also lets CDC continue automatically after a task milestone because remaining work is explicit and durable.
 
@@ -17,7 +17,7 @@ Material changes pass reviews in this order:
 1. **Spec compliance** — did the implementation satisfy the approved request/spec without scope drift?
 2. **Code quality** — is the implementation safe, maintainable, testable and appropriately simple?
 
-`scripts/review_pipeline.py` enforces that code-quality review cannot substitute for or precede a GREEN spec-compliance review. Completed reviews use independent reviewer identities, ordered evidence and no unresolved findings before `REVIEW_GREEN`.
+`scripts/review_pipeline.py` enforces that code-quality review cannot substitute for or precede a GREEN spec-compliance review. Completed reviews use independent reviewer identities and ordered evidence. Findings are typed as `open`, `resolved` or `dispositioned`: open findings block `REVIEW_GREEN`; resolved/dispositioned findings require a durable resolution/disposition reference and do not disappear silently.
 
 Reviewers are evidence/recommendation roles. Review GREEN creates **no merge authority**, no release authority, no product-write authority and no scope-expansion authority.
 
@@ -49,9 +49,9 @@ CDC 2.10.1 release evidence must prove:
 
 - clear work can proceed without a brainstorming gate;
 - ambiguous material work requires a brainstorming/design reference before execution mapping is considered ready;
-- completed plan tasks require evidence and runnable tasks remain in the continuation queue;
+- completed plan tasks require evidence, task dependencies are acyclic, and runnable tasks remain in the continuation queue;
 - code-quality GREEN before spec-compliance GREEN is rejected;
 - the two completed reviews are independent and ordered;
-- unresolved findings keep the change non-terminal;
+- open findings keep the change non-terminal; resolved/dispositioned findings require durable evidence;
 - branch finishing fails on stale validation, moved HEAD, wrong check SHA or unresolved findings;
 - all new controls remain evidence-only and create no merge/release authority.
