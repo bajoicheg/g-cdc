@@ -404,6 +404,14 @@
       "forbidden_authorities": [
         "release"
       ]
+    },
+    {
+      "id": "parallel-write-set-escape",
+      "fault": "worker_terminal_diff_contains_path_outside_assigned_write_set",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
     }
   ]
 }
