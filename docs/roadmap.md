@@ -179,3 +179,13 @@ These items are explicit future CDC roadmap candidates. They do not reopen the c
 
 **Expected invariant/benefit:** fleet status cannot show a project as fully converged from a version string alone; rollout state becomes deterministic, comparable across projects, and safe under concurrent writers.
 
+### RCA-derived fix — terminal-provider guard reconciliation
+
+**Observed failure class:** a guarded external CI operation becomes terminal at the provider, but the CDC lease/control-plane record remains `active` with `external_guard.state=running` and pending finalization.
+
+**Root cause:** provider-terminal observation and owner/finalization reconciliation are decoupled; a foreground owner can stop or lose execution after the provider finishes, leaving truthful provider state and durable CDC guard state inconsistent.
+
+**Fix formulation:** add a **terminal-provider reconciliation trigger**. Whenever Fleet Watcher/watchdog/provider observation proves a guarded task terminal, CDC must immediately schedule/re-enter reconciliation for that exact operation key. Reconciliation updates the guard/operation observation and prompts owner finalization. If the original executor is independently proven stopped and no pending shared writes/effects exist, recovery may construct explicit `executor_stopped` takeover evidence. Provider terminal state or lease TTL alone never grants takeover.
+
+**Expected invariant:** no provider-terminal task remains indefinitely represented as running in CDC state, while split-brain safety remains intact.
+
