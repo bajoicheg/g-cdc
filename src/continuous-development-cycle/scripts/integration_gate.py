@@ -56,7 +56,7 @@ def validate(d):
         raise ValueError("worker_results must be list")
     seen_tasks=set();seen_workers=set()
     for i,r in enumerate(d["worker_results"]):
-        f={"worker_id","task_id","role","base_sha","result_sha","state","changed_paths","evidence_refs"}
+        f={"worker_id","task_id","role","base_sha","result_sha","state","changed_paths","output_refs","evidence_refs"}
         if not isinstance(r,dict) or set(r)!=f:
             raise ValueError("worker result fields mismatch")
         for n in ("worker_id","task_id"):
@@ -76,12 +76,24 @@ def validate(d):
                 raise ValueError("worker SHA invalid")
         if r["base_sha"]!=a["base_sha"]:
             raise ValueError("result base does not match assignment")
+        _refs(r["output_refs"],"worker outputs")
         _refs(r["evidence_refs"],"worker evidence")
+        if not set(a["expected_outputs"])<=set(r["output_refs"]):
+            raise ValueError("worker result missing expected output")
+        if not set(a["expected_evidence"])<=set(r["evidence_refs"]):
+            raise ValueError("worker result missing expected evidence")
         if not isinstance(r["changed_paths"],list) or any(not isinstance(x,str) or not x.strip() for x in r["changed_paths"]):
             raise ValueError("changed_paths invalid")
-        if r["role"]!="writer" and r["changed_paths"]:
-            raise ValueError("non-writer changed paths forbidden")
+        if r["role"]!="writer":
+            if r["changed_paths"]:
+                raise ValueError("non-writer changed paths forbidden")
+            if r["state"]=="success" and r["result_sha"]!=r["base_sha"]:
+                raise ValueError("non-writer result SHA must remain at base")
         if r["role"]=="writer":
+            if r["state"]=="success" and not r["changed_paths"]:
+                raise ValueError("successful writer requires changed paths")
+            if r["state"]=="success" and r["result_sha"]==r["base_sha"]:
+                raise ValueError("successful writer result SHA must differ from base")
             for changed in r["changed_paths"]:
                 if not any(_within(changed,allowed) for allowed in a["write_paths"]):
                     raise ValueError("worker changed path outside assigned write set")
