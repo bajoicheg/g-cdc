@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """CDC 2.10.2 resolved observed parallel-execution benchmark evidence contract."""
 from __future__ import annotations
-import argparse,hashlib,json,re,sys
+import argparse,hashlib,json,math,re,sys
 from pathlib import Path
 SCHEMA="parallel-benchmark/v1";OBS_SCHEMA="parallel-benchmark-observation/v1"
 SHA=re.compile(r"^[0-9a-f]{40}$");DIGEST=re.compile(r"^sha256:[0-9a-f]{64}$");MODES={"sequential","parallel"}
@@ -25,7 +25,8 @@ def validate_observation(v):
     _sha(v["candidate_sha"],"observation candidate_sha")
     for k in ("environment_ref","plan_ref","evidence_ref"):_text(v[k],k)
     if not isinstance(v["workload_fingerprint"],str) or not DIGEST.fullmatch(v["workload_fingerprint"]):raise ValueError("workload_fingerprint invalid")
-    if type(v["elapsed_seconds"]) not in {int,float} or v["elapsed_seconds"]<=0:raise ValueError("elapsed_seconds invalid")
+    if (type(v["elapsed_seconds"]) not in {int,float} or not math.isfinite(v["elapsed_seconds"])
+            or v["elapsed_seconds"]<=0):raise ValueError("elapsed_seconds invalid")
     return v
 def validate(d):
     fields={"schema","benchmark_id","representative_task_ref","candidate_sha","environment_ref","plan_ref","workstreams","observation_refs",
