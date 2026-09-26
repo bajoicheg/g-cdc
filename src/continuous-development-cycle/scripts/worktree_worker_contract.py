@@ -3,6 +3,8 @@
 from __future__ import annotations
 import argparse,json,re,sys
 from pathlib import Path
+from parallel_task_planner import validate as validate_parallel_plan, plan as build_parallel_plan
+
 SCHEMA="worktree-worker-contract/v1";SHA=re.compile(r"^[0-9a-f]{40}$");ROLES={"writer","read_only","review"}
 
 def _text(v,n):
@@ -11,16 +13,39 @@ def _refs(v,n,allow_empty=False):
     if not isinstance(v,list) or any(not isinstance(x,str) or not x.strip() for x in v):raise ValueError(f"{n} invalid")
     if not allow_empty and not v:raise ValueError(f"{n} must not be empty")
     if len(v)!=len(set(v)):raise ValueError(f"{n} contains duplicates")
+def _path(p):
+    if not isinstance(p,str) or not p.strip() or p.startswith("/") or p.endswith("/") or "//" in p:
+        raise ValueError("unsafe write path")
+    if any(x in {"",".",".."} for x in p.split("/")):raise ValueError("unsafe write path")
+    return p
 def overlap(a,b):
     a=a.rstrip("/");b=b.rstrip("/")
     return a==b or a.startswith(b+"/") or b.startswith(a+"/")
+
 def validate(d):
-    if not isinstance(d,dict) or set(d)!={"schema","change_id","plan_ref","wave","base_sha","integrator_id","shared_branch","assignments"} or d.get("schema")!=SCHEMA:
+    fields={"schema","change_id","plan_ref","plan","wave","base_sha","integrator_id","shared_branch","assignments"}
+    if not isinstance(d,dict) or set(d)!=fields or d.get("schema")!=SCHEMA:
         raise ValueError("worker contract fields/schema mismatch")
     for n in ("change_id","plan_ref","integrator_id","shared_branch"):_text(d[n],n)
     if type(d["wave"]) is not int or d["wave"]<1:raise ValueError("wave invalid")
     if not isinstance(d["base_sha"],str) or not SHA.fullmatch(d["base_sha"]):raise ValueError("base_sha invalid")
+
+    plan=validate_parallel_plan(d["plan"])
+    if plan["change_id"]!=d["change_id"]:raise ValueError("plan change mismatch")
+    if plan["integrator_id"]!=d["integrator_id"]:raise ValueError("plan integrator mismatch")
+    if plan["shared_branch"]!=d["shared_branch"]:raise ValueError("plan shared branch mismatch")
+    planned=build_parallel_plan(plan)
+    if d["wave"]>len(planned["waves"]):raise ValueError("wave not present in plan")
+    planned_wave=planned["waves"][d["wave"]-1]
+    planned_ids=set(planned_wave["task_ids"])
+    if d["wave"]==1 and d["base_sha"]!=plan["base_sha"]:
+        raise ValueError("first wave base must match plan base")
+
     if not isinstance(d["assignments"],list) or not d["assignments"]:raise ValueError("assignments required")
+    if {a.get("task_id") for a in d["assignments"]}!=planned_ids:
+        raise ValueError("assignments must exactly match planned wave")
+    plan_tasks={t["id"]:t for t in plan["tasks"]}
+
     seen={k:set() for k in ("worker","task","branch","worktree")}
     writers=[]
     for i,a in enumerate(d["assignments"]):
@@ -34,23 +59,35 @@ def validate(d):
         if type(a["can_write_shared_branch"]) is not bool or a["can_write_shared_branch"]:raise ValueError("worker shared-branch write forbidden")
         _refs(a["expected_outputs"],"expected_outputs");_refs(a["expected_evidence"],"expected_evidence")
         if not isinstance(a["write_paths"],list):raise ValueError("write_paths invalid")
+        for p in a["write_paths"]:_path(p)
+        if len(a["write_paths"])!=len(set(a["write_paths"])):raise ValueError("duplicate write path")
         if a["role"]=="writer" and not a["write_paths"]:raise ValueError("writer requires write_paths")
         if a["role"]!="writer" and a["write_paths"]:raise ValueError("non-writer write_paths forbidden")
+
+        pt=plan_tasks[a["task_id"]]
+        if a["role"]!=pt["role"]:raise ValueError("assignment role differs from plan")
+        if set(a["write_paths"])!=set(pt["write_paths"]):raise ValueError("assignment write set differs from plan")
+        if set(a["expected_outputs"])!=set(pt["expected_outputs"]):raise ValueError("assignment outputs differ from plan")
+        if set(a["expected_evidence"])!=set(pt["expected_evidence"]):raise ValueError("assignment evidence differs from plan")
+
         for key,val in (("worker",a["worker_id"]),("task",a["task_id"]),("branch",a["branch"]),("worktree",a["worktree_id"])):
             if val in seen[key]:raise ValueError("duplicate "+key+" assignment")
             seen[key].add(val)
         if a["role"]=="writer":writers.append(a)
+
     for i,a in enumerate(writers):
         for b in writers[i+1:]:
             if any(overlap(x,y) for x in a["write_paths"] for y in b["write_paths"]):
                 raise ValueError("same-wave writer path overlap")
     return d
+
 def assess(d):
     validate(d)
     return {"schema":"worktree-worker-contract-result/v1","valid":True,"wave":d["wave"],"assignment_count":len(d["assignments"]),
             "base_sha":d["base_sha"],"plan_ref":d["plan_ref"],"integrator_id":d["integrator_id"],"shared_branch":d["shared_branch"],
             "authorizes_worker_launch":False,"authorizes_shared_branch_write":False,
             "authorizes_merge":False,"authorizes_release":False,"authorizes_scope_expansion":False}
+
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument("input");a=p.parse_args(argv)
     try:r=assess(json.loads(Path(a.input).read_text()))
