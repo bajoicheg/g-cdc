@@ -1,6 +1,6 @@
 name: Continuous Development Cycle
-description: Transactional CDC migration with typed checkpoints, bounded Git transfer and terminal-provider reconciliation.
-version: 2.9.1
+description: Continuous CDC autonomy with exact command timestamps, RCA feedback closure and fleet improvement harvesting.
+version: 2.9.2
 policy:
   products:
   - chatgpt
@@ -10,7 +10,7 @@ policy:
   allow_implicit_invocation: true
 interface:
   display_name: Continuous Development Cycle
-  short_description: Transactional migration and provider reconciliation
+  short_description: Continuous autonomy, timestamps and learning feedback
   icon_small: assets/icon.svg
   icon_large: assets/icon.svg
-  default_prompt: Use $continuous-development-cycle to continue durable development through CDC 2.9.1 transactional migration and terminal-state controls.
+  default_prompt: Use $continuous-development-cycle to continue durable development through CDC 2.9.2 continuous autonomy and learning controls.

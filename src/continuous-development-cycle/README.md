@@ -1,4 +1,4 @@
-# Continuous Development Cycle v2.9.1
+# Continuous Development Cycle v2.9.2
 
 Installable ChatGPT/Codex/agent skill for recoverable, long-running software development.
 
@@ -171,3 +171,12 @@ Read references/deterministic-distribution-and-convergence.md.
 - Schema-typed checkpoint builders validate v4 state before commit boundaries.
 - Migration transactions reserve tool operations, chunk Git objects through detached trees and keep product refs unchanged until exact convergence.
 - Terminal-provider reconciliation wakes the exact guarded operation while terminal provider state or TTL never grants takeover.
+
+
+## v2.9.2 Continuous Autonomy & Learning
+
+- Progress reports never terminate runnable work; execution continues until Terminal-State v2 permits a real boundary.
+- Every user command in every CDC-managed chat gets one freshly observed Moscow timestamp in exact format `[HH:MM DD.MM]`; timestamps are never extrapolated from previous messages.
+- Material RCA closes through one deduplicated, sanitized systemic fix disposition.
+- Every Fleet Watcher run returns exactly one evidence-based improvement proposal or reinforcement.
+- Dogfooding measures timestamp accuracy, premature-stop avoidance, feedback closure and improvement harvesting without granting authority.
