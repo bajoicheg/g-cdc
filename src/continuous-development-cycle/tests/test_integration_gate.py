@@ -49,6 +49,16 @@ class T(unittest.TestCase):
  def test_changed_path_backslash_rejected(self):
   d=self.base();d["worker_results"][0]["changed_paths"]=["src\\model\\escape.py"]
   with self.assertRaises(ValueError):evaluate(d)
+ def test_windows_reserved_terminal_path_rejected(self):
+  d=self.base();d["worker_results"][0]["changed_paths"]=["src/model/CON"]
+  with self.assertRaises(ValueError):evaluate(d)
+ def test_casefold_write_set_membership_is_portable(self):
+  d=self.base()
+  a=d["worker_contract"]["assignments"][0];t=d["worker_contract"]["plan"]["tasks"][0]
+  a["write_paths"]=["src/Model"];t["write_paths"]=["src/Model"]
+  d["worker_results"][0]["changed_paths"]=["src/model/model.py"]
+  d["diff_proofs"][0]["changed_paths"]=["src/model/model.py"]
+  self.assertTrue(evaluate(d)["ready"])
  def test_force_push_never_allowed(self):
   d=self.base();d["force_push_requested"]=True
   r=evaluate(d);self.assertIn("force_push_forbidden",r["blockers"]);self.assertFalse(r["authorizes_force_push"])
