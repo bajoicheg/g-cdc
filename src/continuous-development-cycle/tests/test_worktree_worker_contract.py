@@ -31,6 +31,9 @@ class T(unittest.TestCase):
   with self.assertRaises(ValueError):assess(d)
   d=self.base();d["assignments"][0]["role"]="review";d["assignments"][0]["write_paths"]=[]
   with self.assertRaises(ValueError):assess(d)
+ def test_backslash_write_path_rejected(self):
+  d=self.base();d["plan"]["tasks"][0]["write_paths"]=["src\\model"];d["assignments"][0]["write_paths"]=["src\\model"]
+  with self.assertRaises(ValueError):assess(d)
  def test_unsafe_write_path_rejected_even_if_plan_and_assignment_match(self):
   d=self.base();d["plan"]["tasks"][0]["write_paths"]=["../escape"];d["assignments"][0]["write_paths"]=["../escape"]
   with self.assertRaises(ValueError):assess(d)
