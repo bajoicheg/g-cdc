@@ -17,7 +17,7 @@ Material changes pass reviews in this order:
 1. **Spec compliance** — did the implementation satisfy the approved request/spec without scope drift?
 2. **Code quality** — is the implementation safe, maintainable, testable and appropriately simple?
 
-`scripts/review_pipeline.py` enforces that code-quality review cannot substitute for or precede a GREEN spec-compliance review. Completed reviews use independent reviewer identities and ordered evidence. Findings are typed as `open`, `resolved` or `dispositioned`: open findings block `REVIEW_GREEN`; resolved/dispositioned findings require a durable resolution/disposition reference and do not disappear silently.
+Non-material changes with no review started may return `REVIEW_NOT_REQUIRED`; CDC must not manufacture review overhead merely because the pipeline exists. `scripts/review_pipeline.py` enforces that code-quality review cannot substitute for or precede a GREEN spec-compliance review when review is required or voluntarily started. Completed reviews use independent reviewer identities and ordered evidence. Findings are typed as `open`, `resolved` or `dispositioned`: open findings block `REVIEW_GREEN`; resolved/dispositioned findings require a durable resolution/disposition reference and do not disappear silently.
 
 Reviewers are evidence/recommendation roles. Review GREEN creates **no merge authority**, no release authority, no product-write authority and no scope-expansion authority.
 
