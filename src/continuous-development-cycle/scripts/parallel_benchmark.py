@@ -21,7 +21,7 @@ def validate_observation(v):
     if not isinstance(v,dict) or set(v)!=fields or v.get("schema")!=OBS_SCHEMA:raise ValueError("benchmark observation fields/schema mismatch")
     _text(v["observation_id"],"observation_id")
     if v["mode"] not in MODES:raise ValueError("observation mode invalid")
-    if v["observed"] is not True:raise ValueError("benchmark observation must be observed")
+    if type(v["observed"]) is not bool:raise ValueError("benchmark observation observed must be boolean")
     _sha(v["candidate_sha"],"observation candidate_sha")
     for k in ("environment_ref","plan_ref","evidence_ref"):_text(v[k],k)
     if not isinstance(v["workload_fingerprint"],str) or not DIGEST.fullmatch(v["workload_fingerprint"]):raise ValueError("workload_fingerprint invalid")
@@ -64,6 +64,7 @@ def evaluate(d,observations):
     validate(d)
     if not isinstance(observations,list) or len(observations)!=2:raise ValueError("resolved observations required")
     obs=[validate_observation(x) for x in observations];by={x["mode"]:x for x in obs}
+    if any(x["observed"] is not True for x in obs):raise ValueError("resolved benchmark observations must be observed")
     if set(by)!=MODES:raise ValueError("benchmark requires one sequential and one parallel observation")
     if len({x["observation_id"] for x in obs})!=2:raise ValueError("observation_id must be distinct")
     if len({x["evidence_ref"] for x in obs})!=2:raise ValueError("observation evidence refs must be distinct")
