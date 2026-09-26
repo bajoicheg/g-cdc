@@ -1,7 +1,7 @@
 from pathlib import Path
 import copy,json,subprocess,sys,tempfile,unittest
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/"scripts"))
-from integration_gate import evaluate,resolve_git_diff,verify_git_diff_proofs
+from integration_gate import evaluate,resolve_git_diff,verify_git_diff_proofs,main
 from parallel_task_planner import canonical_plan_ref
 
 class T(unittest.TestCase):
@@ -101,6 +101,8 @@ class T(unittest.TestCase):
   with self.assertRaises(ValueError):evaluate(d)
   d=self.base();self.proof(d,"task-model")["result_sha"]="9"*40
   with self.assertRaises(ValueError):evaluate(d)
+ def test_cli_requires_live_git_proof_for_successful_writers(self):
+  self.assertEqual(main([str(ROOT/"templates"/"integration-gate.json")]),2)
  def test_git_diff_resolver_rejects_unrelated_result_history(self):
   with tempfile.TemporaryDirectory() as td:
    root=Path(td);subprocess.check_call(["git","init","-q",str(root)]);subprocess.check_call(["git","-C",str(root),"config","user.email","test@example.invalid"]);subprocess.check_call(["git","-C",str(root),"config","user.name","CDC Test"])
