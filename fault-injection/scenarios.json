@@ -524,6 +524,14 @@
       "forbidden_authorities": [
         "release"
       ]
+    },
+    {
+      "id": "worker-origin-unproven",
+      "fault": "writer_result_sha_is_valid_but_not_proven_to_come_from_assigned_branch_and_registered_worktree",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "auto_merge"
+      ]
     }
   ]
 }
