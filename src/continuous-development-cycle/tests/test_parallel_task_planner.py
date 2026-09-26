@@ -20,6 +20,9 @@ class T(unittest.TestCase):
  def test_cycle_rejected(self):
   d=self.base();d["tasks"][0]["dependencies"]=["task-ui"];d["tasks"][1]["dependencies"]=["task-model"]
   with self.assertRaises(ValueError):plan(d)
+ def test_backslash_write_path_rejected(self):
+  d=self.base();d["tasks"][0]["write_paths"]=["src\\model"]
+  with self.assertRaises(ValueError):plan(d)
  def test_non_writer_cannot_claim_write_set(self):
   d=self.base();d["tasks"].append({"id":"task-review","role":"review","dependencies":[],"write_paths":["docs/review.md"],"expected_outputs":["review:x"],"expected_evidence":["review:green"],"estimated_seconds":10})
   with self.assertRaises(ValueError):plan(d)
