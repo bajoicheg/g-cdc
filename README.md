@@ -2,15 +2,6 @@
 
 `bajoicheg/g-cdc` is the canonical source repository for CDC 2.7+.
 
-CDC uses an independently bootstrappable release model:
+CDC 2.9.2 is the current released authority at `refs/heads/release/v2.9.2` (release commit `0dd30a888be852d2820f690be04dbd374d732c06`, package tree `f9087eacbffee774c143eabf854c2cf08d610ec7`).
 
-- stable CDC N-1 develops N;
-- candidate CDC never serves as its only release validator;
-- consumers pin canonical repository + version + release commit + exact package Git tree;
-- product repositories vendor immutable releases but are not CDC source repositories;
-- compatibility, fault-injection and cross-consumer evidence are mandatory release classes;
-- migration never crosses an active owner or unresolved external guard.
-
-CDC 2.9.1 is the current released authority at `refs/heads/release/v2.9.1` (release commit `5579ac73e4df820ee163ecfb68829f3bf08173bf`, package tree `a6a9ac4e4060112d77b58e8ac6aa67442dbb95c8`).
-
-CDC 2.9 is active. The current candidate is 2.9.2 Continuous Autonomy & Learning, developed under released 2.9.1. Release requires the normal independent bootstrap, package, compatibility, fault-injection and three-consumer gates.
+CDC 2.9 is complete and terminal: 2.9.0 Deterministic Distribution & Convergence, 2.9.1 Transactional Migration & Provider Reconciliation, and 2.9.2 Continuous Autonomy & Learning are released.
