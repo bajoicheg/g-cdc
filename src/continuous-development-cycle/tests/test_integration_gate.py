@@ -30,6 +30,12 @@ class T(unittest.TestCase):
  def test_changed_path_must_stay_inside_assigned_write_set(self):
   d=self.base();d["worker_results"][0]["changed_paths"]=["src/ui/foreign.py"]
   with self.assertRaises(ValueError):evaluate(d)
+ def test_changed_path_traversal_rejected(self):
+  d=self.base();d["worker_results"][0]["changed_paths"]=["src/model/../ui/escape.py"]
+  with self.assertRaises(ValueError):evaluate(d)
+ def test_changed_path_backslash_rejected(self):
+  d=self.base();d["worker_results"][0]["changed_paths"]=["src\\model\\escape.py"]
+  with self.assertRaises(ValueError):evaluate(d)
  def test_force_push_never_allowed(self):
   d=self.base();d["force_push_requested"]=True
   r=evaluate(d);self.assertIn("force_push_forbidden",r["blockers"]);self.assertFalse(r["authorizes_force_push"])
