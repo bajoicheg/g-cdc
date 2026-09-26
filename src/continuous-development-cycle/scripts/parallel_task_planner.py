@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """CDC 2.10.2 dependency/write-set planner for safe parallel waves."""
 from __future__ import annotations
-import argparse,json,re,sys
+import argparse,json,math,re,sys,unicodedata
 from pathlib import Path
 
 SCHEMA="parallel-task-plan/v1";SHA=re.compile(r"^[0-9a-f]{40}$")
@@ -27,8 +27,12 @@ def validate_write_path(p):
         stem=part.split(".",1)[0].upper()
         if stem in WINDOWS_RESERVED:raise ValueError("non-portable write path")
     return p
+def portable_path_key(p):
+    validate_write_path(p)
+    return "/".join(unicodedata.normalize("NFC",part).casefold() for part in p.rstrip("/").split("/"))
+
 def overlaps(a,b):
-    a=a.rstrip("/");b=b.rstrip("/")
+    a=portable_path_key(a);b=portable_path_key(b)
     return a==b or a.startswith(b+"/") or b.startswith(a+"/")
 
 def _acyclic(tasks):
@@ -56,7 +60,8 @@ def validate(d):
         _refs(t["dependencies"],f"task[{i}].dependencies",allow_empty=True)
         _refs(t["expected_outputs"],f"task[{i}].expected_outputs")
         _refs(t["expected_evidence"],f"task[{i}].expected_evidence")
-        if type(t["estimated_seconds"]) not in {int,float} or t["estimated_seconds"]<=0:raise ValueError("estimated_seconds invalid")
+        if (type(t["estimated_seconds"]) not in {int,float} or not math.isfinite(t["estimated_seconds"])
+                or t["estimated_seconds"]<=0):raise ValueError("estimated_seconds invalid")
         if not isinstance(t["write_paths"],list):raise ValueError("write_paths invalid")
         for p in t["write_paths"]:validate_write_path(p)
         if len(t["write_paths"])!=len(set(t["write_paths"])):raise ValueError("duplicate write path")
