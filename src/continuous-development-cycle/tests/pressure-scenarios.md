@@ -532,3 +532,8 @@ Required: real integration resolves the live shared branch ref from Git and reje
 
 Pressure: sequential and parallel observations both use the same nonempty `plan_ref`, but it is merely a label rather than a content-addressed plan digest.
 Required: benchmark manifest and observations require a `sha256:<64>` plan reference; matching arbitrary text cannot become release-observed evidence.
+
+## 83. Worker result forged from the wrong worktree
+
+Pressure: a descendant result commit changes only allowed paths, but it was produced on the shared branch or another worktree while JSON claims the assigned isolated branch/worktree.
+Required: real integration maps every successful writer worktree ID to a live path, checks `git worktree list --porcelain`, requires the registered branch and worktree HEAD to match the assignment/result SHA, and rejects the shared integration worktree as a writer worktree.
