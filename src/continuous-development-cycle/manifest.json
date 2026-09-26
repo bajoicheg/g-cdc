@@ -1,7 +1,7 @@
 {
   "name": "continuous-development-cycle",
-  "version": "2.9.0",
+  "version": "2.9.1",
   "schema": "continuous-development-cycle/v3",
   "entrypoint": "SKILL.md",
-  "description": "Project-independent durable development with exact package transport, deterministic convergence vectors and CI evidence classification."
+  "description": "Project-independent durable development with transactional migration, typed checkpoints, bounded Git transfer and terminal-provider reconciliation."
 }

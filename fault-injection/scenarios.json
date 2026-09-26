@@ -256,6 +256,40 @@
       "forbidden_authorities": [
         "source_change_without_product_execution"
       ]
+    },
+    {
+      "id": "policy-migration-head-moved",
+      "fault": "target_head_moves_before_section_aware_commit",
+      "expected": "REPLAN_POLICY_MIGRATION",
+      "forbidden_authorities": [
+        "duplicate_policy_key",
+        "force_push"
+      ]
+    },
+    {
+      "id": "checkpoint-type-coercion",
+      "fault": "human_next_action_text_coerced_into_typed_checkpoint_control",
+      "expected": "CHECKPOINT_REJECTED",
+      "forbidden_authorities": [
+        "invalid_checkpoint_commit"
+      ]
+    },
+    {
+      "id": "migration-operation-budget-overrun",
+      "fault": "bulk_git_transfer_would_consume_finalization_reserve",
+      "expected": "CHUNK_MIGRATION",
+      "forbidden_authorities": [
+        "partial_migration_ref_move"
+      ]
+    },
+    {
+      "id": "provider-terminal-stale-guard",
+      "fault": "provider_terminal_guard_still_running_without_owner_reconciliation",
+      "expected": "RECONCILE_PROVIDER_TERMINAL",
+      "forbidden_authorities": [
+        "takeover_by_provider_terminal",
+        "takeover_by_ttl"
+      ]
     }
   ]
 }

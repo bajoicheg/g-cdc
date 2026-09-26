@@ -1,4 +1,4 @@
-# Continuous Development Cycle v2.9.0
+# Continuous Development Cycle v2.9.1
 
 Installable ChatGPT/Codex/agent skill for recoverable, long-running software development.
 
@@ -163,3 +163,11 @@ Read `references/canonical-source-and-release.md`. Validate consumer pins with
 - Version equality alone can never produce integrated fleet state.
 
 Read references/deterministic-distribution-and-convergence.md.
+
+
+## v2.9.1 Transactional Migration & Provider Reconciliation
+
+- Fresh-HEAD section-aware migration replaces canonical policy sections instead of appending duplicate keys.
+- Schema-typed checkpoint builders validate v4 state before commit boundaries.
+- Migration transactions reserve tool operations, chunk Git objects through detached trees and keep product refs unchanged until exact convergence.
+- Terminal-provider reconciliation wakes the exact guarded operation while terminal provider state or TTL never grants takeover.

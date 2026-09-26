@@ -48,6 +48,10 @@ from dogfood_metrics import measure as measure_dogfood
 from package_transport import validate_manifest as validate_transport_manifest
 from convergence_vector import normalize as normalize_convergence_vector
 from ci_evidence_classifier import classify as classify_ci_evidence
+from policy_migration import plan as plan_policy_migration
+from checkpoint_builder import build as build_typed_checkpoint
+from migration_transaction import plan as plan_migration_transaction
+from provider_reconciliation import reconcile as reconcile_provider_terminal
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -149,6 +153,14 @@ REQUIRED = [
     'templates/ci-execution-observation.json',
     'tests/test_package_transport.py', 'tests/test_convergence_vector.py',
     'tests/test_ci_evidence_classifier.py', 'tests/test_v290_guidance.py',
+    'references/transactional-migration-and-provider-reconciliation.md',
+    'scripts/policy_migration.py', 'scripts/checkpoint_builder.py',
+    'scripts/migration_transaction.py', 'scripts/provider_reconciliation.py',
+    'templates/policy-migration-request.json', 'templates/typed-checkpoint-build.json',
+    'templates/migration-transaction.json', 'templates/provider-terminal-observation.json',
+    'tests/test_policy_migration.py', 'tests/test_checkpoint_builder.py',
+    'tests/test_migration_transaction.py', 'tests/test_provider_reconciliation.py',
+    'tests/test_v291_guidance.py',
 ]
 
 
@@ -311,6 +323,23 @@ def validate():
     ci_class = classify_ci_evidence(json.loads((ROOT / 'templates/ci-execution-observation.json').read_text()))
     if ci_class['class'] != 'terminal_success' or ci_class['source_change_allowed']:
         raise ContractError('invalid CI evidence classification template')
+    policy_req = json.loads((ROOT / 'templates/policy-migration-request.json').read_text())
+    policy_plan = plan_policy_migration(policy_req)
+    if policy_plan['action'] != 'APPLY' or policy_plan['authorizes_product_write']:
+        raise ContractError('invalid policy migration template')
+    policy_req['current_policy_yaml'] = policy_plan['rendered_policy_yaml']
+    if plan_policy_migration(policy_req)['action'] != 'NOOP':
+        raise ContractError('policy migration template is not idempotent')
+    built_checkpoint = build_typed_checkpoint(
+        load_yaml(ROOT / 'templates/work-status-v4.md', frontmatter=True),
+        json.loads((ROOT / 'templates/typed-checkpoint-build.json').read_text()), adapter)
+    validate_checkpoint_24(built_checkpoint, adapter)
+    migration_plan = plan_migration_transaction(json.loads((ROOT / 'templates/migration-transaction.json').read_text()))
+    if migration_plan['action'] != 'APPLY_BATCH' or migration_plan['authorizes_ref_move']:
+        raise ContractError('invalid migration transaction template')
+    provider_plan = reconcile_provider_terminal(json.loads((ROOT / 'templates/provider-terminal-observation.json').read_text()))
+    if provider_plan['action'] != 'REENTER_RECONCILIATION' or not provider_plan['wake_required'] or provider_plan['authorizes_takeover']:
+        raise ContractError('invalid provider reconciliation template')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.

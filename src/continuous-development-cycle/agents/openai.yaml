@@ -1,6 +1,6 @@
 name: Continuous Development Cycle
-description: Project-independent durable development with exact package transport, convergence vectors and CI evidence classification.
-version: 2.9.0
+description: Transactional CDC migration with typed checkpoints, bounded Git transfer and terminal-provider reconciliation.
+version: 2.9.1
 policy:
   products:
   - chatgpt
@@ -10,7 +10,7 @@ policy:
   allow_implicit_invocation: true
 interface:
   display_name: Continuous Development Cycle
-  short_description: Exact package transport, convergence vectors and CI classification
+  short_description: Transactional migration and provider reconciliation
   icon_small: assets/icon.svg
   icon_large: assets/icon.svg
-  default_prompt: Use $continuous-development-cycle to continue durable development through CDC 2.9.0 distribution/convergence and terminal-state controls.
+  default_prompt: Use $continuous-development-cycle to continue durable development through CDC 2.9.1 transactional migration and terminal-state controls.
