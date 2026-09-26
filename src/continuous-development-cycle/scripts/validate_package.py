@@ -56,6 +56,9 @@ from continuation_cycle import decide as decide_continuation_cycle
 from command_timestamp import render as render_command_timestamp
 from rca_feedback import disposition as disposition_rca_feedback
 from fleet_improvement import harvest as harvest_fleet_improvement
+from behavioral_eval import evaluate_suite as evaluate_behavioral_suite
+from verification_gate import evaluate as evaluate_verification_gate
+from systematic_rca import analyze as analyze_systematic_rca
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -173,6 +176,12 @@ REQUIRED = [
     'tests/test_continuation_cycle.py', 'tests/test_command_timestamp.py',
     'tests/test_rca_feedback.py', 'tests/test_fleet_improvement.py',
     'tests/test_v292_guidance.py',
+    'references/behavioral-tdd-and-verification.md',
+    'scripts/behavioral_eval.py', 'scripts/verification_gate.py', 'scripts/systematic_rca.py',
+    'templates/behavioral-eval-suite.json', 'templates/verification-gate.json',
+    'templates/systematic-rca.json',
+    'tests/test_behavioral_eval.py', 'tests/test_verification_gate.py',
+    'tests/test_systematic_rca.py', 'tests/test_v2100_guidance.py',
 ]
 
 
@@ -364,6 +373,22 @@ def validate():
     improvement = harvest_fleet_improvement(json.loads((ROOT / 'templates/fleet-improvement-harvest.json').read_text()))
     if improvement['proposal_count'] != 1 or improvement['action'] != 'REINFORCE_EXISTING' or improvement['authorizes_roadmap_write']:
         raise ContractError('invalid fleet improvement template')
+    behavioral = evaluate_behavioral_suite(json.loads((ROOT / 'templates/behavioral-eval-suite.json').read_text()))
+    if (not behavioral['all_regressions_green'] or behavioral['case_count'] < 6 or
+            any(behavioral[name] for name in ('authorizes_product_write','authorizes_takeover','authorizes_release','authorizes_scope_expansion'))):
+        raise ContractError('invalid CDC 2.10 behavioral eval template')
+    verification = evaluate_verification_gate(json.loads((ROOT / 'templates/verification-gate.json').read_text()))
+    if (not verification['allowed'] or not verification['final_claim_allowed'] or verification['blockers'] or
+            any(verification[name] for name in ('authorizes_product_write','authorizes_takeover','authorizes_external_start',
+                                                'authorizes_merge','authorizes_release','authorizes_scope_expansion'))):
+        raise ContractError('invalid CDC 2.10 verification template')
+    systematic = analyze_systematic_rca(json.loads((ROOT / 'templates/systematic-rca.json').read_text()))
+    if (not systematic['ready_for_feedback_disposition'] or
+            any(systematic[name] for name in ('authorizes_product_write','authorizes_roadmap_write','authorizes_takeover'))):
+        raise ContractError('invalid CDC 2.10 systematic RCA template')
+    systematic_disposition = disposition_rca_feedback(systematic['feedback'])
+    if systematic_disposition['action'] != 'REINFORCE_EXISTING' or systematic_disposition['authorizes_roadmap_write']:
+        raise ContractError('systematic RCA did not preserve bounded feedback authority')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.
