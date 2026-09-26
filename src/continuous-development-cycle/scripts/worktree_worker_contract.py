@@ -24,7 +24,6 @@ def validate(d):
 
     plan=validate_parallel_plan(d["plan"])
     if d["plan_ref"]!=canonical_plan_ref(plan):raise ValueError("embedded plan does not match durable plan_ref")
-    if d["plan_ref"]!=canonical_plan_ref(plan):raise ValueError("plan_ref does not bind embedded plan")
     if plan["change_id"]!=d["change_id"]:raise ValueError("plan change mismatch")
     if plan["integrator_id"]!=d["integrator_id"]:raise ValueError("plan integrator mismatch")
     if plan["shared_branch"]!=d["shared_branch"]:raise ValueError("plan shared branch mismatch")
