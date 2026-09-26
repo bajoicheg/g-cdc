@@ -229,6 +229,8 @@ These items are explicit future CDC roadmap candidates. They do not reopen the c
 
 **Expected invariant:** every CDC-written checkpoint is schema-valid at commit time; descriptive text stays in descriptive fields and cannot leak into Boolean/enumerated control fields.
 
+**Evidence reinforcement — 2026-09-26:** a consumer checkpoint under CDC 2.9.2 stored a task-specific label in `execution_continuity.completion_gate` while runnable validation work remained. Strict v4 validation correctly rejected it. Corrective rule remains schema-typed construction: use the enum value `continue` for ongoing runnable work and keep task labels in descriptive fields.
+
 ### RCA-derived fix — bounded Git-object migration transactions
 
 **Observed failure class:** a bulk CDC vendor-copy operation exceeded the execution connector's per-call tool-operation limit before a target tree was created.
