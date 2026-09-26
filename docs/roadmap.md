@@ -121,3 +121,13 @@ These items are explicit future CDC roadmap candidates. They do not reopen the c
 
 **Expected invariant:** no source change is made solely in response to a run where product validation never executed.
 
+### RCA-derived fix — idempotent policy migration under concurrent writers
+
+**Observed failure class:** CDC adoption appended 2.8 policy sections after another writer had already introduced equivalent sections, producing duplicate strict-YAML keys even though package and lock identity were correct.
+
+**Root cause:** migration logic was presence-aware only at an earlier observation and did not re-read/reconcile the live adapter immediately before applying section additions.
+
+**Fix formulation:** CDC adoption/migration must be **idempotent and section-aware at commit time**. Re-read the current target adapter immediately before mutation; merge or replace canonical control sections by key, never append duplicate top-level keys. If HEAD moved, rerun semantic reconciliation on the fresh HEAD before commit.
+
+**Expected invariant:** repeated or concurrent CDC adoption converges to one valid semantic policy document; rerunning adoption is a no-op when the same target version is already represented.
+
