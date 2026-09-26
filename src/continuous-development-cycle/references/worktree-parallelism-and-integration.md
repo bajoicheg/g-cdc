@@ -14,23 +14,23 @@ Independent ready writers may share a wave only when their write sets do not ove
 
 ## Isolated worker/worktree contract
 
-`scripts/worktree_worker_contract.py` binds every delegated task to:
+`scripts/worktree_worker_contract.py` is **per-wave**. Before each wave starts, it binds every delegated task in that wave to:
 
 - durable worker and task identity;
 - exact common base SHA;
 - isolated branch and worktree identity;
-- execution wave;
+- the wave's exact current base SHA;
 - write set for writers;
 - expected outputs and evidence;
 - an explicit prohibition on shared-branch writes.
 
-The CDC integrator is not a delegated worker. Same-wave writer overlap is invalid. Read-only/review workers may not claim write paths.
+The CDC integrator is not a delegated worker. Same-wave writer overlap is invalid. Read-only/review workers may not claim write paths. A later writer wave is contracted only after the prior writer wave has been integrated/reconciled, so it receives the new exact shared-branch base instead of inheriting a stale original base.
 
 ## Single-integrator gate
 
-`scripts/integration_gate.py` evaluates terminal worker results before integration. It requires the shared branch to remain at the expected base, all workers to succeed on that base, writer result paths to remain non-overlapping, spec-compliance and code-quality review to be GREEN, no unresolved conflicts and no force-push request.
+`scripts/integration_gate.py` evaluates terminal results for **one wave** before the single integrator assembles that wave onto the shared integration branch. It requires the shared branch to remain at the wave's expected base, all workers to succeed on that base, same-wave writer result paths to remain non-overlapping, no unresolved conflicts and no force-push request.
 
-A GREEN result is only `READY_FOR_INTEGRATOR`. The gate creates no shared-branch write, merge or release authority. The integrator must still re-read HEAD, use normal concurrent-writer reconciliation, assemble the candidate, and then pass CDC 2.10.1 branch-finishing plus CDC 2.10.0 verification-before-terminal gates.
+A GREEN result is only `READY_FOR_INTEGRATOR`. The gate creates no shared-branch write, merge or release authority. The integrator must still re-read HEAD and use normal concurrent-writer reconciliation before the separately authorized assembly write. After all implementation waves are assembled, the combined candidate passes CDC 2.10.1 spec/code review and branch finishing, then CDC 2.10.0 verification-before-terminal.
 
 Failed or stale worker output is discarded/rebased/re-run in isolation. It is never force-pushed or partially integrated merely to preserve effort already spent.
 
