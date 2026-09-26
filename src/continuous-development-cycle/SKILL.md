@@ -3,7 +3,7 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.9.2
+# Continuous Development Cycle v2.10.0
 
 Durable repository state is the project state. Sessions, agents and schedulers are disposable. Apply the instruction hierarchy, preserve the source/scope of existing user authorization, and reconcile repository policy. Live remote facts override stale checkpoint/chat claims. A spinner, lease or submitted request is not progress evidence.
 
@@ -218,3 +218,15 @@ For **every user command in every CDC-managed chat**, read the **actual current 
 Close every material anomaly through the **RCA-to-roadmap** feedback contract in scripts/rca_feedback.py: classify, deduplicate by stable fix key, sanitize sensitive context and produce one systemic disposition.
 
 Every Fleet Watcher run must produce **exactly one improvement** result through scripts/fleet_improvement.py: either a new evidence-based proposal or a deduplicated reinforcement. Do not force novelty and do not allow an empty harvest. Read references/continuous-autonomy-and-learning.md.
+
+## CDC 2.10.0 Behavioral Skill TDD & Verification Gate
+
+Use **behavioral skill TDD** for material CDC behavior changes. A prose rule or helper unit test is not sufficient by itself: capture the pressure scenario, retain a **baseline RED** trace that demonstrates the failure, apply the control correction, and require a **corrected GREEN** trace under the same pressure facts. Run `scripts/behavioral_eval.py` and keep the case as release regression evidence.
+
+Use **systematic debugging** before material RCA disposition. `scripts/systematic_rca.py` requires competing hypotheses, discriminating tests, observed results, exactly one supported root-cause hypothesis, a bounded correction and defense-in-depth. Feed its result into the existing RCA feedback disposition; neither stage creates product or roadmap write authority.
+
+Before any terminal success claim (`COMPLETE`, `RELEASE_READY` or `INTEGRATED`), run the mandatory **verification-before-terminal** gate in `scripts/verification_gate.py` against freshly re-read authoritative evidence. Verify exact source HEAD, required checks and SHA binding, checkpoint/policy state, live coordination lease/guard, required artifacts and clean state where applicable. A stale checkpoint never overrides newer coordination state.
+
+Verification is evidence-only. GREEN verification can reject or permit the claim path, but it never authorizes product writes, external starts, takeover, merge, release, scheduler mutation or scope expansion. Normal CDC authority and terminal-state gates still apply.
+
+Superpowers is the engineering-quality layer here; CDC remains the authority/ownership/continuity control plane. Do not import redundant approval loops for routine fixes or already-authorized continuation. Read `references/behavioral-tdd-and-verification.md`.

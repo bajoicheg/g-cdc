@@ -314,6 +314,31 @@
       "forbidden_authorities": [
         "fleet_watcher_no_improvement"
       ]
+    },
+    {
+      "id": "behavioral-fix-no-baseline",
+      "fault": "material_behavior_change_has_no_retained_baseline_red_pressure_case",
+      "expected": "RELEASE_BLOCKED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "terminal-claim-stale-evidence",
+      "fault": "complete_or_integrated_claim_uses_cached_state_without_fresh_verification",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release",
+        "auto_merge"
+      ]
+    },
+    {
+      "id": "systematic-rca-ambiguous",
+      "fault": "rca_selects_root_cause_without_discriminating_competing_hypotheses",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
     }
   ]
 }

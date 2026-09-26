@@ -2,6 +2,6 @@
 
 `bajoicheg/g-cdc` is the canonical source repository for CDC 2.7+.
 
-CDC 2.9.2 is the current released authority at `refs/heads/release/v2.9.2` (release commit `0dd30a888be852d2820f690be04dbd374d732c06`, package tree `f9087eacbffee774c143eabf854c2cf08d610ec7`).
+CDC 2.10.0 is the current released authority at `refs/heads/release/v2.10.0` with package tree `63f25fb7402bf07d2e037de88194b7359c9e0f93`.
 
-CDC 2.9 is complete and terminal: 2.9.0 Deterministic Distribution & Convergence, 2.9.1 Transactional Migration & Provider Reconciliation, and 2.9.2 Continuous Autonomy & Learning are released.
+CDC 2.10 is active as a staged roadmap: 2.10.0 Behavioral Skill TDD & Verification Gate is released; 2.10.1 Specification Compliance & Two-Stage Review is the current runnable stage; 2.10.2 Worktree-Isolated Parallel Development remains dependency-gated.

@@ -11,7 +11,7 @@ CDC 2.10 preserves staged bootstrap/release discipline:
 
 The line is intentionally limited to three releases: first prove CDC behavior itself, then enforce specification/review quality, then safely increase parallelism.
 
-### 2.10.0 — Behavioral Skill TDD & Verification Gate — P0 / PROPOSED
+### 2.10.0 — Behavioral Skill TDD & Verification Gate — P0 / RELEASED
 
 Goal: make CDC behavior testable as an executable contract instead of relying only on prose, unit tests and post-hoc RCA.
 
@@ -37,6 +37,12 @@ Acceptance:
 - behavioral evals run deterministically enough to serve as release evidence, with nondeterministic cases explicitly bounded and classified.
 
 Expected benefit: CDC regressions become reproducible before fleet rollout, and “the instruction says so” is replaced by evidence that the agent actually behaves correctly under pressure.
+
+Release: `refs/heads/release/v2.10.0`.
+- candidate validation HEAD: `3a02384deb0ef9b6d9352c508c506a414d28290c`;
+- package tree: `63f25fb7402bf07d2e037de88194b7359c9e0f93`;
+- independent evidence: PR #11 comment `5849842887` — bootstrap 12/12, package 397/397, aggregate 409/409, 227 files, behavioral 6 RED→6 GREEN, 41 fault scenarios, 50 pressure scenarios and 3/3 consumers GREEN.
+- GitHub Actions attempts on the same candidate failed pre-run with zero executable steps and were classified as execution-channel infrastructure; no source correction was made from those runs.
 
 ### 2.10.1 — Specification Compliance & Two-Stage Review — P1 / PROPOSED
 
@@ -93,7 +99,7 @@ Recommended release sequence:
 
 Do **not** start with parallelism. The ordering is deliberate: first make CDC behavior measurable, then make implementation correctness reviewable, then scale execution concurrency.
 
-Roadmap state: CDC 2.10 is authorized for development but not yet released. The first runnable scope is 2.10.0 only; 2.10.1 and 2.10.2 remain dependency-gated until the preceding stage is independently GREEN and released.
+Roadmap state: CDC 2.10.0 is independently GREEN and released. The first runnable scope is now 2.10.1; 2.10.2 remains dependency-gated until 2.10.1 is independently GREEN and released.
 
 ## CDC 2.9 — COMPLETE / TERMINAL
 
