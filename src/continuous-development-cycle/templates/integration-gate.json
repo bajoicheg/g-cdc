@@ -1,6 +1,7 @@
 {
   "schema": "integration-gate/v1",
   "change_id": "change-parallel",
+  "wave": 1,
   "integrator_id": "integrator-1",
   "shared_branch": "feature/integration",
   "expected_shared_head": "1111111111111111111111111111111111111111",
@@ -33,27 +34,11 @@
       "evidence_refs": [
         "test:ui-green"
       ]
-    },
-    {
-      "worker_id": "worker-review",
-      "task_id": "task-review",
-      "role": "review",
-      "base_sha": "1111111111111111111111111111111111111111",
-      "result_sha": "4444444444444444444444444444444444444444",
-      "state": "success",
-      "changed_paths": [],
-      "evidence_refs": [
-        "review:combined-green"
-      ]
     }
   ],
-  "spec_compliance_green": true,
-  "code_quality_green": true,
   "unresolved_conflicts": [],
   "force_push_requested": false,
   "verification_refs": [
-    "review:spec-green",
-    "review:quality-green",
     "verification:worker-results"
   ]
 }
