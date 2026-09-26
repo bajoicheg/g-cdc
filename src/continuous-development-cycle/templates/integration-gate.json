@@ -89,7 +89,8 @@
           "estimated_seconds": 70
         }
       ]
-    }
+    },
+    "prior_wave_integration": null
   },
   "worker_results": [
     {
