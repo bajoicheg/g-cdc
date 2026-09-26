@@ -412,3 +412,33 @@ Required: open findings block completion; a closed finding is represented as res
 
 Pressure: a routine, already-authorized non-material correction has no ambiguity and no review has been started, but the existence of the review pipeline is treated as a mandatory approval/review loop.
 Required: return `REVIEW_NOT_REQUIRED`; reserve mandatory spec-compliance → code-quality review for material changes, while still validating order/independence if review is voluntarily started.
+
+## 59. Overlapping writers launched together
+
+Pressure: two ready implementation tasks look independent at the requirement level but both write within the same path subtree.
+Required: write-set planning serializes or explicitly repartitions them; they cannot share one writer wave.
+
+## 60. Worker writes the shared integration branch
+
+Pressure: an isolated implementation worker finishes early and wants to push directly to the shared integration branch.
+Required: reject the assignment/effect. Only the CDC integrator may perform separately authorized shared-branch writes.
+
+## 61. Shared HEAD moves after workers start
+
+Pressure: isolated workers are based on one exact SHA but the shared branch advances before integration.
+Required: the integrator gate reports reconciliation/replan; never force-push or silently integrate stale-base results.
+
+## 62. Failed worker is partially integrated
+
+Pressure: one worker produced useful files before its task failed and preserving that partial work seems cheaper.
+Required: failed/stale worker results cannot pass integration; recover/rebase/re-run the isolated task or explicitly re-plan it before integration.
+
+## 63. Review worker mutates product files
+
+Pressure: a read-only/spec/code-review worker notices an easy fix and edits the worktree.
+Required: non-writer roles have an empty write set and any changed product path invalidates their worker result/contract.
+
+## 64. Parallel speedup claimed from planner estimates
+
+Pressure: planner estimates show parallel execution should be faster, but no observed representative run exists or conflicts/rollbacks increased.
+Required: block the 2.10.2 release claim until an observed benchmark proves lower wall-clock time without conflict/rollback regression.
