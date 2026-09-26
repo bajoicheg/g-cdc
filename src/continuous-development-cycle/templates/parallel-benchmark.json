@@ -9,11 +9,11 @@
   "observation_refs": [
     {
       "path": "templates/parallel-benchmark-observation-sequential.json",
-      "sha256": "sha256:d6f8b4902928c6a72e97c19c61e0c0e7e734b5059592787497a32e32d8ea9166"
+      "sha256": "sha256:d5d75eea732e0a51b0a092936ff2e0a3d7c54f56fd0caf616db1368b424f8ad8"
     },
     {
       "path": "templates/parallel-benchmark-observation-parallel.json",
-      "sha256": "sha256:47c2fd639909bbbadfd3defe6ca02ed6c8bbb58d838748b6fb143c4a9b2b09bb"
+      "sha256": "sha256:7c2402887af82e2f8af1fa9b4c47a3d911aedde363fa980adb554d082e415200"
     }
   ],
   "baseline_unresolved_conflicts": 0,
