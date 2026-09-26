@@ -2,10 +2,10 @@
   "schema": "parallel-benchmark-observation/v1",
   "observation_id": "benchmark-1-sequential",
   "mode": "sequential",
-  "observed": true,
+  "observed": false,
   "candidate_sha": "1111111111111111111111111111111111111111",
   "environment_ref": "provider:benchmark-environment",
-  "plan_ref": "plan:parallel-task-plan@durable-ref",
+  "plan_ref": "sha256:a05a841272888778dc7300d8c397925b475f70097dedef1ee4ab2a3cf750a9f5",
   "workload_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
   "elapsed_seconds": 190,
   "evidence_ref": "template:sequential-observation"
