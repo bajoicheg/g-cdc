@@ -151,3 +151,23 @@ These items are explicit future CDC roadmap candidates. They do not reopen the c
 
 **Expected invariant:** CDC never pauses merely because it has something useful to report. It reports progress and keeps working until a genuine terminal state.
 
+### RCA-derived fix — schema-typed checkpoint migration
+
+**Observed failure class:** an adoption checkpoint stored explanatory text in `execution_continuity.runnable_next_action`, while checkpoint v4 requires a Boolean; package, adapter and lock were GREEN but the terminal checkpoint failed validation.
+
+**Root cause:** migration logic reused human-readable next-action text for a typed control field instead of constructing checkpoint fields from the checkpoint schema.
+
+**Fix formulation:** checkpoint migration must be **schema-typed by construction**. Typed control fields are generated from schema-aware builders/templates, never inferred from arbitrary display text. Run checkpoint validation before committing a migration boundary; if a field type is wrong, correct the migration logic rather than weakening the validator.
+
+**Expected invariant:** every CDC-written checkpoint is schema-valid at commit time; descriptive text stays in descriptive fields and cannot leak into Boolean/enumerated control fields.
+
+### RCA-derived fix — bounded Git-object migration transactions
+
+**Observed failure class:** a bulk CDC vendor-copy operation exceeded the execution connector's per-call tool-operation limit before a target tree was created.
+
+**Root cause:** migration batching was sized by file count only and did not account for the execution channel's maximum nested tool-call budget.
+
+**Fix formulation:** CDC migration planning must calculate a conservative **operation budget per batch**, split large Git-object transfers into bounded chunks, and persist each intermediate result only as an unreferenced/detached tree checkpoint. Product/adoption refs move only after exact subtree convergence and final policy reconciliation.
+
+**Expected invariant:** channel/tool-call limits cannot leave a branch partially migrated; oversized migrations automatically chunk and resume from the last detached tree checkpoint.
+
