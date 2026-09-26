@@ -34,6 +34,13 @@ def resolve_git_diff(worktree, *, worker_id, task_id, base_sha, result_sha, evid
         except (OSError,subprocess.SubprocessError) as exc:raise ValueError(f"cannot resolve worker commit {sha}: {exc}") from exc
         if t!="commit":raise ValueError("worker diff endpoint is not a commit")
     try:
+        ancestry=subprocess.run(["git","-C",str(root),"merge-base","--is-ancestor",base_sha,result_sha],
+                               stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=15)
+    except (OSError,subprocess.SubprocessError) as exc:
+        raise ValueError(f"cannot verify worker ancestry: {exc}") from exc
+    if ancestry.returncode!=0:
+        raise ValueError("worker result does not descend from contracted base")
+    try:
         out=subprocess.check_output(["git","-C",str(root),"diff","--name-only","--no-renames",base_sha,result_sha,"--"],text=True,stderr=subprocess.PIPE,timeout=30)
     except (OSError,subprocess.SubprocessError) as exc:raise ValueError(f"cannot resolve worker diff: {exc}") from exc
     paths=[x for x in out.splitlines() if x.strip()]
