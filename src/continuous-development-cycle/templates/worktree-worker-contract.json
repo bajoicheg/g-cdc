@@ -42,5 +42,6 @@
       ],
       "can_write_shared_branch": false
     }
-  ]
+  ],
+  "plan_ref": "plan:parallel-task-plan@durable-ref"
 }
