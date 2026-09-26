@@ -45,6 +45,9 @@ from stuck_state import detect as detect_stuck
 from counterfactual_recovery import choose as choose_counterfactual
 from public_export_planner import plan as plan_public_export
 from dogfood_metrics import measure as measure_dogfood
+from package_transport import validate_manifest as validate_transport_manifest
+from convergence_vector import normalize as normalize_convergence_vector
+from ci_evidence_classifier import classify as classify_ci_evidence
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -139,6 +142,13 @@ REQUIRED = [
     'tests/test_fleet_controller.py', 'tests/test_stuck_state.py',
     'tests/test_counterfactual_recovery.py', 'tests/test_public_export_planner.py',
     'tests/test_dogfood_metrics.py', 'tests/test_v282_guidance.py',
+    'references/deterministic-distribution-and-convergence.md',
+    'scripts/package_transport.py', 'scripts/convergence_vector.py',
+    'scripts/ci_evidence_classifier.py',
+    'templates/package-transport.json', 'templates/convergence-observation.json',
+    'templates/ci-execution-observation.json',
+    'tests/test_package_transport.py', 'tests/test_convergence_vector.py',
+    'tests/test_ci_evidence_classifier.py', 'tests/test_v290_guidance.py',
 ]
 
 
@@ -292,6 +302,15 @@ def validate():
     dogfood = measure_dogfood(json.loads((ROOT / 'templates/cdc-dogfood-input.json').read_text()))
     if dogfood['compliance_percent'] != 100.0 or dogfood['authorizes_release'] or dogfood['authorizes_policy_change']:
         raise ContractError('invalid dogfood metrics template')
+    transport = validate_transport_manifest(json.loads((ROOT / 'templates/package-transport.json').read_text()))
+    if transport['version'] != version:
+        raise ContractError('invalid package transport template version')
+    vector = normalize_convergence_vector(json.loads((ROOT / 'templates/convergence-observation.json').read_text()))
+    if not vector['integrated'] or vector['adoption_state'] != 'integrated' or vector['blockers']:
+        raise ContractError('invalid convergence vector template')
+    ci_class = classify_ci_evidence(json.loads((ROOT / 'templates/ci-execution-observation.json').read_text()))
+    if ci_class['class'] != 'terminal_success' or ci_class['source_change_allowed']:
+        raise ContractError('invalid CI evidence classification template')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.

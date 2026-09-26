@@ -1,0 +1,17 @@
+{
+  "schema": "cdc-package-transport/v1",
+  "version": "2.9.0",
+  "canonical_repository": "owner/canonical-cdc",
+  "release_ref": "refs/heads/release/v2.9.0",
+  "release_commit": "0000000000000000000000000000000000000000",
+  "package_tree": "6da82272e42dff9c7690322363d8a254f6300398",
+  "hash_algorithm": "git-sha1",
+  "entries": [
+    {
+      "path": "VERSION",
+      "mode": "100644",
+      "blob_sha1": "c8e38b614057b7e417c63fde44726a4143de9da0",
+      "size": 6
+    }
+  ]
+}

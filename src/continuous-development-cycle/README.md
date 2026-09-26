@@ -1,4 +1,4 @@
-# Continuous Development Cycle v2.8.2
+# Continuous Development Cycle v2.9.0
 
 Installable ChatGPT/Codex/agent skill for recoverable, long-running software development.
 
@@ -152,3 +152,14 @@ Read `references/canonical-source-and-release.md`. Validate consumer pins with
 - Counterfactual recovery requires a new information-gaining strategy.
 - Public publication uses sanitized export into new history, not direct visibility switching of internal development history.
 - Dogfooding metrics measure CDC's own compliance without granting release authority.
+
+
+## v2.9.0 Deterministic Distribution & Convergence
+
+- Carrier-neutral package transport binds an independently trusted release version/commit/tree to path, Git mode and blob identity.
+- Directory verification proves transported bytes; Git-subtree verification proves the consumer's vendored package tree is exactly canonical.
+- The fleet convergence vector binds exact HEAD, package tree, consumer lock, semantic policy digest, checkpoint, lease, guard and adoption state.
+- CI evidence is classified before remediation so pre-run/setup failures cannot be mistaken for product RED.
+- Version equality alone can never produce integrated fleet state.
+
+Read references/deterministic-distribution-and-convergence.md.

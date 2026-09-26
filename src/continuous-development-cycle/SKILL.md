@@ -3,7 +3,7 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.8.2
+# Continuous Development Cycle v2.9.0
 
 Durable repository state is the project state. Sessions, agents and schedulers are disposable. Apply the instruction hierarchy, preserve the source/scope of existing user authorization, and reconcile repository policy. Live remote facts override stale checkpoint/chat claims. A spinner, lease or submitted request is not progress evidence.
 
@@ -187,3 +187,12 @@ Use the **stuck-state detector** to identify repeated action/result fingerprints
 Use the **sanitized public export** planner for private-to-public publication. The target is a new public history built from allow-listed product paths after publication guard/history/control-plane checks; never turn the internal development repository public as the publication mechanism.
 
 Use **CDC dogfooding** metrics to measure CDC's own development against terminal-state accuracy, No-Idle, exact-SHA validation, recovery diversity, control-plane isolation and consumer evidence. Dogfooding is observability only and never grants release or policy authority. Read `references/fleet-and-publication-maturity.md`.
+
+
+## CDC 2.9.0 Deterministic Distribution & Convergence
+
+Treat released CDC package delivery as a carrier-neutral transport problem. The delivery channel is not trusted merely because it can copy bytes. Use scripts/package_transport.py to validate a transport manifest against an independently trusted release version, release commit and exact package Git tree; then verify transported file content and, after adoption, verify the actual vendored Git subtree. The manifest preserves path, Git file mode and blob identity, so archive/filesystem mode loss cannot silently become a different package tree. Read references/deterministic-distribution-and-convergence.md.
+
+Fleet convergence is stricter than a version label. Use scripts/convergence_vector.py to bind repository/source ref + exact HEAD, CDC version, exact package tree, consumer-lock release identity, semantic policy digest, checkpoint validity, lease state, guard state and adoption state. A project is integrated only when all required bindings agree on the same source HEAD and ownership/guard state is reconciled. A version string alone is never fleet convergence evidence.
+
+Classify CI evidence before choosing remediation with scripts/ci_evidence_classifier.py. Zero-step or pre-job failures are pre_run_infrastructure; setup that never reaches product validation is setup; executed product checks are product_test; terminal successful product validation is terminal_success. Never prescribe a source correction solely from evidence where product validation did not execute. Classifier output is diagnostic and never grants product writes, external starts, merge or release authority.
