@@ -42,6 +42,11 @@ class T(unittest.TestCase):
  def test_both_modes_required(self):
   d=self.base();obs=self.observations(d);obs[1]["mode"]="sequential"
   with self.assertRaises(ValueError):evaluate(d,obs)
+ def test_nonfinite_timing_rejected(self):
+  for bad in (float("nan"),float("inf"),float("-inf")):
+   d=self.base();obs=self.observations(d);obs[0]["elapsed_seconds"]=bad
+   with self.subTest(value=bad):
+    with self.assertRaises(ValueError):evaluate(d,obs)
  def test_slower_parallel_run_fails(self):
   d=self.base();obs=self.observations(d);obs[1]["elapsed_seconds"]=obs[0]["elapsed_seconds"]
   self.assertIn("no_wall_clock_improvement",evaluate(d,obs)["blockers"])
