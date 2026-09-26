@@ -21,6 +21,7 @@ def validate(d):
         if type(d[n]) is not int or d[n]<0:raise ValueError(n+" invalid")
     if not isinstance(d["evidence_refs"],list) or len(d["evidence_refs"])<2 or any(not isinstance(x,str) or not x.strip() for x in d["evidence_refs"]):
         raise ValueError("benchmark needs multiple evidence refs")
+    if len(d["evidence_refs"])!=len(set(d["evidence_refs"])):raise ValueError("benchmark evidence refs must be distinct")
     return d
 def evaluate(d):
     validate(d);b=[]
