@@ -13,4 +13,4 @@ interface:
   short_description: Autonomous durable development with self-repair and bounded operations
   icon_small: assets/icon.svg
   icon_large: assets/icon.svg
-    default_prompt: Use $continuous-development-cycle to continue durable development through CDC 2.8.1 operational hardening, autonomy and terminal-state routing.
+  default_prompt: Use $continuous-development-cycle to continue durable development through CDC 2.8.1 operational hardening, autonomy and terminal-state routing.
