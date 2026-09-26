@@ -161,13 +161,13 @@ def evaluate(d):
             "authorizes_release":False,"authorizes_scope_expansion":False}
 
 def main(argv=None):
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument("input");p.add_argument("--git-worktree")
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument("input");g=p.add_mutually_exclusive_group();g.add_argument("--git-worktree");g.add_argument("--contract-only",action="store_true")
     a=p.parse_args(argv)
     try:
         d=json.loads(Path(a.input).read_text())
         if any(r.get("role")=="writer" and r.get("state")=="success" for r in d.get("worker_results",[])):
-            if not a.git_worktree:raise ValueError("--git-worktree is required to verify successful writer diffs")
-            verify_git_diff_proofs(d,a.git_worktree)
+            if a.git_worktree:verify_git_diff_proofs(d,a.git_worktree)
+            elif not a.contract_only:raise ValueError("--git-worktree is required for integration; --contract-only is test/fixture validation only")
         r=evaluate(d)
     except (OSError,ValueError,json.JSONDecodeError) as e:print(f"FAIL: {e}",file=sys.stderr);return 2
     print(json.dumps(r,sort_keys=True));return 0 if r["ready"] else 1
