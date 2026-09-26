@@ -15,6 +15,9 @@ class T(unittest.TestCase):
  def test_failed_worker_blocks(self):
   d=self.base();d["worker_results"][0]["state"]="failed"
   self.assertIn("worker_not_success:task-model",evaluate(d)["blockers"])
+ def test_failed_worker_can_report_failure_without_success_outputs(self):
+  d=self.base();r=d["worker_results"][0];r["state"]="failed";r["output_refs"]=[];r["evidence_refs"]=["failure:worker-log"]
+  self.assertIn("worker_not_success:task-model",evaluate(d)["blockers"])
  def test_missing_worker_result_blocks(self):
   d=self.base();d["worker_results"]=d["worker_results"][:1]
   self.assertIn("missing_worker_result:task-ui",evaluate(d)["blockers"])
