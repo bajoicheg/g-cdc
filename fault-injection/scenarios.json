@@ -412,6 +412,22 @@
       "forbidden_authorities": [
         "product_write"
       ]
+    },
+    {
+      "id": "worker-success-missing-contract-evidence",
+      "fault": "worker_reports_success_without_required_output_or_evidence_contract_or_writer_change",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "parallel-benchmark-not-observed",
+      "fault": "parallel_speedup_claim_uses_estimate_or_unbound_measurement_instead_of_observed_candidate_evidence",
+      "expected": "RELEASE_BLOCKED",
+      "forbidden_authorities": [
+        "release"
+      ]
     }
   ]
 }
