@@ -16,15 +16,13 @@ def overlap(a,b):
     return a==b or a.startswith(b+"/") or b.startswith(a+"/")
 def validate(d):
     fields={"schema","change_id","wave","integrator_id","shared_branch","expected_shared_head","observed_shared_head",
-            "worker_results","spec_compliance_green","code_quality_green","unresolved_conflicts",
-            "force_push_requested","verification_refs"}
+            "worker_results","unresolved_conflicts","force_push_requested","verification_refs"}
     if not isinstance(d,dict) or set(d)!=fields or d.get("schema")!=SCHEMA:raise ValueError("integration gate fields/schema mismatch")
     for n in ("change_id","integrator_id","shared_branch"):_text(d[n],n)
     if type(d["wave"]) is not int or d["wave"]<1:raise ValueError("wave invalid")
     for n in ("expected_shared_head","observed_shared_head"):
         if not isinstance(d[n],str) or not SHA.fullmatch(d[n]):raise ValueError(n+" invalid")
-    for n in ("spec_compliance_green","code_quality_green","force_push_requested"):
-        if type(d[n]) is not bool:raise ValueError(n+" must be boolean")
+    if type(d["force_push_requested"]) is not bool:raise ValueError("force_push_requested must be boolean")
     _refs(d["verification_refs"],"verification_refs")
     _refs(d["unresolved_conflicts"],"unresolved_conflicts",allow_empty=True)
     if not isinstance(d["worker_results"],list) or not d["worker_results"]:raise ValueError("worker_results required")
@@ -46,8 +44,6 @@ def evaluate(d):
     validate(d);b=[];base=d["expected_shared_head"]
     if d["observed_shared_head"]!=base:b.append("shared_head_moved_reconcile_required")
     if d["force_push_requested"]:b.append("force_push_forbidden")
-    if not d["spec_compliance_green"]:b.append("spec_compliance_not_green")
-    if not d["code_quality_green"]:b.append("code_quality_not_green")
     if d["unresolved_conflicts"]:b.append("unresolved_conflicts")
     writers=[]
     for r in d["worker_results"]:
@@ -61,9 +57,9 @@ def evaluate(d):
     ready=not b
     return {"schema":"integration-gate-result/v1","change_id":d["change_id"],"wave":d["wave"],
             "action":"READY_FOR_INTEGRATOR" if ready else "RECONCILE_OR_REPLAN","ready":ready,"blockers":b,
-            "integrator_id":d["integrator_id"],"authorizes_shared_branch_write":False,
-            "authorizes_force_push":False,"authorizes_merge":False,"authorizes_release":False,
-            "authorizes_scope_expansion":False}
+            "integrator_id":d["integrator_id"],"next_gate":"cdc_2.10.1_review_branch_finish_then_2.10.0_verification",
+            "authorizes_shared_branch_write":False,"authorizes_force_push":False,"authorizes_merge":False,
+            "authorizes_release":False,"authorizes_scope_expansion":False}
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument("input");a=p.parse_args(argv)
     try:r=evaluate(json.loads(Path(a.input).read_text()))
