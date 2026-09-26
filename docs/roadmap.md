@@ -253,6 +253,8 @@ These items are explicit future CDC roadmap candidates. They do not reopen the c
 
 **Fleet Watcher reinforcement — 2026-09-26:** one consumer had canonical 2.9.2 version/tree plus all validation GREEN while its invocation-bound lease remained unreleased. Fleet status therefore correctly distinguishes package/policy adoption from full integrated convergence; exact version/tree evidence cannot erase live ownership state.
 
+**Evidence reinforcement — 2026-09-26:** a product checkpoint reported `lease_state: released` while the authoritative `cdc/coordination/lease.json` still held a newer active watchdog generation. Safe-boundary decisions must therefore read the live coordination lease/guard first; checkpoint ownership fields are historical/projected evidence only and may never override a newer coordination record.
+
 ### RCA-derived fix — terminal-provider guard reconciliation
 
 **Observed failure class:** a guarded external CI operation becomes terminal at the provider, but the CDC lease/control-plane record remains `active` with `external_guard.state=running` and pending finalization.
