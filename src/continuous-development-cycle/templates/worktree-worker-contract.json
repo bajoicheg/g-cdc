@@ -1,0 +1,64 @@
+{
+  "schema": "worktree-worker-contract/v1",
+  "change_id": "change-parallel",
+  "base_sha": "1111111111111111111111111111111111111111",
+  "integrator_id": "integrator-1",
+  "shared_branch": "feature/integration",
+  "assignments": [
+    {
+      "worker_id": "worker-model",
+      "task_id": "task-model",
+      "role": "writer",
+      "wave": 1,
+      "branch": "worker/model",
+      "worktree_id": "wt-model",
+      "base_sha": "1111111111111111111111111111111111111111",
+      "write_paths": [
+        "src/model"
+      ],
+      "expected_outputs": [
+        "commit:model"
+      ],
+      "expected_evidence": [
+        "test:model-green"
+      ],
+      "can_write_shared_branch": false
+    },
+    {
+      "worker_id": "worker-ui",
+      "task_id": "task-ui",
+      "role": "writer",
+      "wave": 1,
+      "branch": "worker/ui",
+      "worktree_id": "wt-ui",
+      "base_sha": "1111111111111111111111111111111111111111",
+      "write_paths": [
+        "src/ui"
+      ],
+      "expected_outputs": [
+        "commit:ui"
+      ],
+      "expected_evidence": [
+        "test:ui-green"
+      ],
+      "can_write_shared_branch": false
+    },
+    {
+      "worker_id": "worker-review",
+      "task_id": "task-review",
+      "role": "review",
+      "wave": 2,
+      "branch": "review/combined",
+      "worktree_id": "wt-review",
+      "base_sha": "1111111111111111111111111111111111111111",
+      "write_paths": [],
+      "expected_outputs": [
+        "review:combined"
+      ],
+      "expected_evidence": [
+        "review:green"
+      ],
+      "can_write_shared_branch": false
+    }
+  ]
+}
