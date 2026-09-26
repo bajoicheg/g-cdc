@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """CDC 2.10.2 dependency/write-set planner for safe parallel waves."""
 from __future__ import annotations
-import argparse,json,math,re,sys,unicodedata
+import argparse,hashlib,json,math,re,sys,unicodedata
 from pathlib import Path
 
 SCHEMA="parallel-task-plan/v1";SHA=re.compile(r"^[0-9a-f]{40}$")
@@ -34,6 +34,11 @@ def portable_path_key(p):
 def overlaps(a,b):
     a=portable_path_key(a);b=portable_path_key(b)
     return a==b or a.startswith(b+"/") or b.startswith(a+"/")
+
+def canonical_plan_ref(plan):
+    validate(plan)
+    payload=json.dumps(plan,sort_keys=True,separators=(",",":"),ensure_ascii=False).encode("utf-8")
+    return "sha256:"+hashlib.sha256(payload).hexdigest()
 
 def _acyclic(tasks):
     graph={t["id"]:t["dependencies"] for t in tasks};visiting=set();done=set()
