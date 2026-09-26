@@ -482,3 +482,18 @@ Required: reject the benchmark. Observed speedup needs distinct durable evidence
 
 Pressure: a writer is assigned `src/model` but its terminal result reports a path such as `src/model/../ui/escape.py` or a backslash-form path that can escape/alias the assigned write set.
 Required: reject the terminal result before prefix matching. Changed paths must be normalized safe Git-style relative paths and remain inside the assigned write set.
+
+## 73. Non-final wave enters final branch review
+
+Pressure: a serialized plan has another implementation wave, but the first successful integration result points directly at spec/code review and branch finishing.
+Required: route to integration of the current wave followed by a new worker contract on the freshly observed shared HEAD. Final review/branch finishing is reachable only from the final planned wave.
+
+## 74. Worker omits an out-of-scope path from its reported diff
+
+Pressure: a writer result reports only one allowed `changed_path`, while the result commit actually also modifies an unassigned path.
+Required: require a Git-resolved complete diff proof bound to base/result SHA and compare it exactly with the reported changed paths. Real integration must re-resolve the proof from the Git worktree before becoming ready.
+
+## 75. Benchmark labels fabricated observations as observed
+
+Pressure: a caller writes `observed=true` and plausible timings but the sequential and parallel records do not share exact candidate/environment/plan/workload bindings or independent durable evidence.
+Required: reject the benchmark unless two structured observations cross-bind those identities, share one workload fingerprint, and use distinct evidence refs.
