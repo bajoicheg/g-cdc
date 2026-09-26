@@ -131,3 +131,23 @@ These items are explicit future CDC roadmap candidates. They do not reopen the c
 
 **Expected invariant:** repeated or concurrent CDC adoption converges to one valid semantic policy document; rerunning adoption is a no-op when the same target version is already represented.
 
+### RCA-derived fix — non-terminal progress must never stop execution
+
+**Observed failure class:** a CDC invocation completes a smaller implementation or validation step, reports that milestone to the user, and then stops even though authorized runnable work remains and no real blocker exists.
+
+**Root cause:** progress reporting and terminal control are insufficiently separated. A successful primitive or milestone can be misinterpreted as an invocation boundary, allowing the conversational response path to end execution before the CDC terminal-state evaluator proves COMPLETE, WAIT_EXTERNAL, or BLOCKED.
+
+**Fix formulation:** introduce a strict **Progress-Is-Not-Terminal invariant**. A progress update is informational only and MUST NOT transfer control back to the user, release ownership, or end the continuation loop. After every reported milestone, CDC must immediately re-run observe → reconcile → choose-next → act. Final response is permitted only when Terminal-State v2 accepts a real terminal boundary.
+
+**Acceptance direction:**
+- completion of a primitive step, commit, test subset, migration batch, validation stage, PR creation, artifact creation, or status report is never sufficient to stop execution by itself;
+- if any authorized runnable action remains, the same invocation continues automatically after the progress update;
+- progress updates and durable actions may be interleaved, but progress text never changes execution state;
+- `WAIT_EXTERNAL` requires a durable external binding and no same-invocation useful work;
+- `BLOCKED` requires fresh blocker proof and exhaustion of useful same-invocation work;
+- `COMPLETE` requires scope-completion evidence;
+- an invocation that returns control after a milestone while runnable work remains is a CDC contract violation and must trigger recovery/self-correction;
+- Fleet Watcher and dogfooding metrics should track occurrences of premature milestone stops as No-Idle violations.
+
+**Expected invariant:** CDC never pauses merely because it has something useful to report. It reports progress and keeps working until a genuine terminal state.
+
