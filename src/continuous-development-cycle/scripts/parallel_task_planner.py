@@ -13,11 +13,19 @@ def _refs(v,n,allow_empty=False):
     if not isinstance(v,list) or any(not isinstance(x,str) or not x.strip() for x in v): raise ValueError(f"{n} invalid")
     if not allow_empty and not v: raise ValueError(f"{n} must not be empty")
     if len(v)!=len(set(v)): raise ValueError(f"{n} contains duplicates")
-def _path(p):
+WINDOWS_RESERVED={"CON","PRN","AUX","NUL"}|{f"COM{i}" for i in range(1,10)}|{f"LPT{i}" for i in range(1,10)}
+WINDOWS_FORBIDDEN=set('<>:"|?*')
+
+def validate_write_path(p):
     if not isinstance(p,str) or not p.strip() or "\\" in p or p.startswith("/") or p.endswith("/") or "//" in p:
         raise ValueError("unsafe write path")
     parts=p.split("/")
-    if any(x in {"",".",".."} for x in parts): raise ValueError("unsafe write path")
+    if any(x in {"",".",".."} for x in parts):raise ValueError("unsafe write path")
+    for part in parts:
+        if part.endswith((" ",".")) or any(ord(ch)<32 or ch in WINDOWS_FORBIDDEN for ch in part):
+            raise ValueError("non-portable write path")
+        stem=part.split(".",1)[0].upper()
+        if stem in WINDOWS_RESERVED:raise ValueError("non-portable write path")
     return p
 def overlaps(a,b):
     a=a.rstrip("/");b=b.rstrip("/")
@@ -50,7 +58,7 @@ def validate(d):
         _refs(t["expected_evidence"],f"task[{i}].expected_evidence")
         if type(t["estimated_seconds"]) not in {int,float} or t["estimated_seconds"]<=0:raise ValueError("estimated_seconds invalid")
         if not isinstance(t["write_paths"],list):raise ValueError("write_paths invalid")
-        for p in t["write_paths"]:_path(p)
+        for p in t["write_paths"]:validate_write_path(p)
         if len(t["write_paths"])!=len(set(t["write_paths"])):raise ValueError("duplicate write path")
         if t["role"]=="writer" and not t["write_paths"]:raise ValueError("writer requires write_paths")
         if t["role"]!="writer" and t["write_paths"]:raise ValueError("non-writer cannot declare write_paths")
