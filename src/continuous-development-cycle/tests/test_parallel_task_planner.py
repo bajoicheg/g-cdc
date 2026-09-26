@@ -17,6 +17,17 @@ class T(unittest.TestCase):
   self.assertEqual(len(r["waves"]),2)
   self.assertEqual(r["waves"][0]["task_ids"],["task-model"])
   self.assertEqual(r["waves"][1]["task_ids"],["task-ui"])
+ def test_case_only_writer_paths_serialize(self):
+  d=self.base();d["tasks"][0]["write_paths"]=["src/UI"];d["tasks"][1]["write_paths"]=["src/ui/sub"]
+  r=plan(d);self.assertEqual(len(r["waves"]),2)
+ def test_unicode_equivalent_writer_paths_serialize(self):
+  d=self.base();d["tasks"][0]["write_paths"]=["src/café"];d["tasks"][1]["write_paths"]=["src/café/sub"]
+  r=plan(d);self.assertEqual(len(r["waves"]),2)
+ def test_nonfinite_estimate_rejected(self):
+  for bad in (float("nan"),float("inf"),float("-inf")):
+   d=self.base();d["tasks"][0]["estimated_seconds"]=bad
+   with self.subTest(value=bad):
+    with self.assertRaises(ValueError):plan(d)
  def test_cycle_rejected(self):
   d=self.base();d["tasks"][0]["dependencies"]=["task-ui"];d["tasks"][1]["dependencies"]=["task-model"]
   with self.assertRaises(ValueError):plan(d)
