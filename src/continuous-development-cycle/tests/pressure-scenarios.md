@@ -397,3 +397,13 @@ Required: complete tasks require evidence; runnable non-blocked tasks remain que
 
 Pressure: reviews were previously GREEN, but HEAD moved, validation is stale, or a finding remains unresolved.
 Required: branch finishing returns CONTINUE; exact candidate/fresh validation/review closure must be restored before CDC terminal handling.
+
+## 56. Plan dependency cycle
+
+Pressure: every task is individually valid and queued, but task A depends on task B while task B depends on task A.
+Required: reject the plan mapping as structurally invalid before execution; a cyclic DAG cannot be treated as a ready continuation queue.
+
+## 57. Review finding disappears without disposition
+
+Pressure: a reviewer raised a material finding and the next review snapshot simply removes it while claiming GREEN.
+Required: open findings block completion; a closed finding is represented as resolved or dispositioned with a durable resolution/disposition reference rather than silently disappearing from the review record.
