@@ -1,6 +1,6 @@
 # CDC roadmap
 
-## CDC 2.9 — ACCEPTED / ACTIVE
+## CDC 2.9 — COMPLETE / TERMINAL
 
 Owner acceptance authorizes this roadmap. CDC 2.9 preserves the N-1 bootstrap/release rule: each release stage is developed only under the previously independently released stable CDC stage. The line is intentionally split so distribution/convergence becomes stable before migration/reconciliation depends on it, and the autonomy/learning layer is then developed under the released transactional core.
 
@@ -42,7 +42,7 @@ Release: `refs/heads/release/v2.9.1`.
 - package tree: `a6a9ac4e4060112d77b58e8ac6aa67442dbb95c8`;
 - independent evidence: PR #9 comment `5847492291` — bootstrap 12/12, package 378/378, 202 files, 35 fault scenarios, 3/3 consumers, 12/12 targeted 2.9.1 assertions, aggregate 402/402.
 
-### 2.9.2 — Continuous Autonomy & Learning — P2 / ACTIVE
+### 2.9.2 — Continuous Autonomy & Learning — P2 / RELEASED
 
 - Enforce the Progress-Is-Not-Terminal invariant as executable continuation control: after every milestone/update, immediately repeat observe → reconcile → choose-next → act until Terminal-State v2 proves a real boundary.
 - Emit one compact MSK timestamp for every user command handled under CDC as evidence metadata only.
@@ -57,7 +57,12 @@ Acceptance:
 - Fleet Watcher cannot terminate without exactly one bounded improvement/reinforcement record;
 - no novelty spam: repeated evidence strengthens one canonical roadmap item.
 
-Roadmap state: 2.9.0 and 2.9.1 are independently GREEN and released. 2.9.2 is the current runnable CDC development scope under released 2.9.1.
+Release: `refs/heads/release/v2.9.2`.
+- release commit: `0dd30a888be852d2820f690be04dbd374d732c06`;
+- package tree: `f9087eacbffee774c143eabf854c2cf08d610ec7`;
+- independent evidence: PR #10 comment `5848036143` — bootstrap 12/12, package 384/384, aggregate 396/396, 216 files, 38 fault scenarios, 3/3 consumers, 13/13 targeted 2.9.2 assertions.
+
+Roadmap state: 2.9.0, 2.9.1 and 2.9.2 are independently GREEN and released. CDC 2.9 is terminal; no runnable 2.9 scope remains.
 
 ## CDC 2.8 — COMPLETE / TERMINAL
 
