@@ -1,4 +1,4 @@
-# Continuous Development Cycle v2.9.2
+# Continuous Development Cycle v2.10.0
 
 Installable ChatGPT/Codex/agent skill for recoverable, long-running software development.
 
@@ -180,3 +180,12 @@ Read references/deterministic-distribution-and-convergence.md.
 - Material RCA closes through one deduplicated, sanitized systemic fix disposition.
 - Every Fleet Watcher run returns exactly one evidence-based improvement proposal or reinforcement.
 - Dogfooding measures timestamp accuracy, premature-stop avoidance, feedback closure and improvement harvesting without granting authority.
+
+## v2.10.0 behavioral skill TDD and verification
+
+- Executable pressure-scenario suites retain a baseline RED and corrected GREEN trace for material CDC behavior controls.
+- Systematic RCA requires competing hypotheses and discriminating evidence before selecting root cause and feeding the bounded roadmap disposition.
+- Verification-before-terminal re-reads exact authoritative source/check/ownership/artifact state before COMPLETE, RELEASE_READY or INTEGRATED claims.
+- The new quality gates are evidence-only and never grant product-write, takeover, merge, release, scheduler or scope authority.
+
+Read `references/behavioral-tdd-and-verification.md`.
