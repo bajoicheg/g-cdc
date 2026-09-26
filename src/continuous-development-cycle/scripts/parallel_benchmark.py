@@ -65,7 +65,10 @@ def evaluate(d,observations):
     validate(d)
     if not isinstance(observations,list) or len(observations)!=2:raise ValueError("resolved observations required")
     obs=[validate_observation(x) for x in observations];by={x["mode"]:x for x in obs}
-    if any(x["observed"] is not True for x in obs):raise ValueError("resolved benchmark observations must be observed")
+    if d["evidence_class"]=="release_observed" and any(x["observed"] is not True for x in obs):
+        raise ValueError("release benchmark observations must be observed")
+    if d["evidence_class"]=="fixture" and any(x["observed"] is not False for x in obs):
+        raise ValueError("fixture benchmark observations must be non-observed")
     if set(by)!=MODES:raise ValueError("benchmark requires one sequential and one parallel observation")
     if len({x["observation_id"] for x in obs})!=2:raise ValueError("observation_id must be distinct")
     if len({x["evidence_ref"] for x in obs})!=2:raise ValueError("observation evidence refs must be distinct")
