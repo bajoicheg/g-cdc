@@ -239,6 +239,20 @@ def validate_v281_controls(data):
         "stalled_requires_recovery_action": TRUE,
     }, "adapter.hardening")
 
+def validate_v282_controls(data):
+    check(data["maturity"], {
+        "fleet_control_schema": ("fleet-control-input/v1",),
+        "project_independent_fleet_control": TRUE,
+        "stuck_state_schema": ("stuck-state-input/v1",),
+        "stuck_requires_strategy_change": TRUE,
+        "counterfactual_recovery_schema": ("counterfactual-recovery/v1",),
+        "repeat_failed_strategy_forbidden": TRUE,
+        "public_export_schema": ("public-export-request/v1",),
+        "new_public_history_required": TRUE,
+        "dogfood_schema": ("cdc-dogfood-input/v1",),
+        "dogfood_is_authority": FALSE,
+    }, "adapter.maturity")
+
 def validate_adapter(data, skill_version=None):
     if isinstance(data, dict) and data.get("schema") in (
             "continuous-development-cycle/v1", "continuous-development-cycle/v2"):
@@ -247,7 +261,7 @@ def validate_adapter(data, skill_version=None):
     schema = dict(SCHEMA)
     if isinstance(data, dict) and "orchestration" in data:
         schema["orchestration"] = dict
-    for name in ("routing", "recovery_recipes", "continuation", "fleet", "convergence", "progress_slo", "audit", "autonomy", "publication", "hardening"):
+    for name in ("routing", "recovery_recipes", "continuation", "fleet", "convergence", "progress_slo", "audit", "autonomy", "publication", "hardening", "maturity"):
         if isinstance(data, dict) and name in data:
             schema[name] = dict
     check(data, schema)
@@ -292,6 +306,12 @@ def validate_adapter(data, skill_version=None):
         raise ContractError("CDC 2.8.1+ policy requires hardening controls")
     if "hardening" in data:
         validate_v281_controls(data)
+    if "maturity" in data and lower < (2, 8, 2):
+        raise ContractError("CDC 2.8.2 maturity controls require skill_min_version >= 2.8.2")
+    if lower >= (2, 8, 2) and "maturity" not in data:
+        raise ContractError("CDC 2.8.2+ policy requires maturity controls")
+    if "maturity" in data:
+        validate_v282_controls(data)
     if "orchestration" in data:
         if lower < (2, 3, 0):
             raise ContractError("orchestration controls require skill_min_version >= 2.3.0")

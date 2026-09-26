@@ -40,6 +40,11 @@ from blocker_proof import assess as assess_blocker_proof
 from decision_authority import classify as classify_decision
 from evidence_compactor import compact as compact_evidence
 from progress_enforcer import enforce as enforce_progress
+from fleet_controller import plan as plan_fleet_control
+from stuck_state import detect as detect_stuck
+from counterfactual_recovery import choose as choose_counterfactual
+from public_export_planner import plan as plan_public_export
+from dogfood_metrics import measure as measure_dogfood
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -124,6 +129,16 @@ REQUIRED = [
     'tests/test_coordination_retention.py', 'tests/test_blocker_proof.py',
     'tests/test_decision_authority.py', 'tests/test_evidence_compactor.py',
     'tests/test_progress_enforcer.py', 'tests/test_v281_guidance.py',
+    'references/fleet-and-publication-maturity.md',
+    'scripts/fleet_controller.py', 'scripts/stuck_state.py',
+    'scripts/counterfactual_recovery.py', 'scripts/public_export_planner.py',
+    'scripts/dogfood_metrics.py',
+    'templates/fleet-control-input.json', 'templates/stuck-state-input.json',
+    'templates/counterfactual-recovery.json', 'templates/public-export-request.json',
+    'templates/cdc-dogfood-input.json',
+    'tests/test_fleet_controller.py', 'tests/test_stuck_state.py',
+    'tests/test_counterfactual_recovery.py', 'tests/test_public_export_planner.py',
+    'tests/test_dogfood_metrics.py', 'tests/test_v282_guidance.py',
 ]
 
 
@@ -262,6 +277,21 @@ def validate():
     progress_plan = enforce_progress(json.loads((ROOT / 'templates/progress-enforcement.json').read_text()))
     if progress_plan['action'] != 'NOOP' or not progress_plan['final_response_allowed']:
         raise ContractError('invalid progress enforcement template')
+    fleet_plan = plan_fleet_control(json.loads((ROOT / 'templates/fleet-control-input.json').read_text()))
+    if fleet_plan['projects'][0]['action'] != 'NOOP' or fleet_plan['project_specific_code_required']:
+        raise ContractError('invalid fleet control template')
+    stuck = detect_stuck(json.loads((ROOT / 'templates/stuck-state-input.json').read_text()))
+    if stuck['stuck']:
+        raise ContractError('invalid stuck-state template')
+    counterfactual = choose_counterfactual(json.loads((ROOT / 'templates/counterfactual-recovery.json').read_text()))
+    if counterfactual['action'] != 'TRY_NEW_STRATEGY' or counterfactual['authorizes_external_start']:
+        raise ContractError('invalid counterfactual recovery template')
+    export = plan_public_export(json.loads((ROOT / 'templates/public-export-request.json').read_text()))
+    if export['action'] != 'EXPORT_NEW_HISTORY' or export['authorizes_visibility_change'] or export['authorizes_push']:
+        raise ContractError('invalid public export template')
+    dogfood = measure_dogfood(json.loads((ROOT / 'templates/cdc-dogfood-input.json').read_text()))
+    if dogfood['compliance_percent'] != 100.0 or dogfood['authorizes_release'] or dogfood['authorizes_policy_change']:
+        raise ContractError('invalid dogfood metrics template')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.
