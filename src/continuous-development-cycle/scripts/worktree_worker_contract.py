@@ -3,7 +3,7 @@
 from __future__ import annotations
 import argparse,json,re,sys
 from pathlib import Path
-from parallel_task_planner import validate as validate_parallel_plan, plan as build_parallel_plan, validate_write_path
+from parallel_task_planner import validate as validate_parallel_plan, plan as build_parallel_plan, validate_write_path, overlaps
 
 SCHEMA="worktree-worker-contract/v1";SHA=re.compile(r"^[0-9a-f]{40}$");ROLES={"writer","read_only","review"}
 
@@ -13,10 +13,6 @@ def _refs(v,n,allow_empty=False):
     if not isinstance(v,list) or any(not isinstance(x,str) or not x.strip() for x in v):raise ValueError(f"{n} invalid")
     if not allow_empty and not v:raise ValueError(f"{n} must not be empty")
     if len(v)!=len(set(v)):raise ValueError(f"{n} contains duplicates")
-def overlap(a,b):
-    a=a.rstrip("/");b=b.rstrip("/")
-    return a==b or a.startswith(b+"/") or b.startswith(a+"/")
-
 def validate(d):
     fields={"schema","change_id","plan_ref","plan","wave","base_sha","prior_wave_integration","integrator_id","shared_branch","assignments"}
     if not isinstance(d,dict) or set(d)!=fields or d.get("schema")!=SCHEMA:
@@ -80,7 +76,7 @@ def validate(d):
 
     for i,a in enumerate(writers):
         for b in writers[i+1:]:
-            if any(overlap(x,y) for x in a["write_paths"] for y in b["write_paths"]):
+            if any(overlaps(x,y) for x in a["write_paths"] for y in b["write_paths"]):
                 raise ValueError("same-wave writer path overlap")
     return d
 
