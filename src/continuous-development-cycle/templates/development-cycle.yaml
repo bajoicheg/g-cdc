@@ -2,7 +2,7 @@ schema: continuous-development-cycle/v3
 
 policy:
   revision: "1"
-  skill_min_version: "2.7.3"
+  skill_min_version: "2.8.0"
   skill_max_version_exclusive: "3.0.0"
   approved_exceptions: []
 
@@ -233,7 +233,7 @@ fleet:
   assessment_max_age_seconds: 900
 
 convergence:
-  target_version: "2.7.3"
+  target_version: "2.8.0"
   target_package_fingerprint_ref: "coordination:fleet-target.json"
   exact_package_fingerprint_required: true
   safe_boundary_required: true
@@ -251,3 +251,23 @@ audit:
   schema: control-plane-audit-log/v1
   append_only: true
   hash_chain_required: true
+
+
+# CDC 2.8 autonomous continuity and publication isolation.
+autonomy:
+  terminal_state_schema: terminal-state/v2
+  no_idle_invariant: true
+  execution_channel_supervisor: true
+  max_channel_failovers: 3
+  concurrent_writer_reconciliation: true
+  force_push_on_reconcile: false
+
+publication:
+  inventory_schema: publication-inventory/v1
+  sensitive_context_policy_ref: "templates/sensitive-context-policy.json"
+  scan_all_refs_required: true
+  scan_conversations_required: true
+  scan_artifacts_required: true
+  control_plane_externalized: true
+  direct_visibility_toggle_requires_guard_green: true
+  sanitized_export_on_findings: true

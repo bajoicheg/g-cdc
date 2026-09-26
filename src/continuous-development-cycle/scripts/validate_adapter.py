@@ -200,6 +200,26 @@ def validate_v26_controls(data):
         "hash_chain_required": TRUE,
     }, "adapter.audit")
 
+def validate_v28_controls(data):
+    check(data["autonomy"], {
+        "terminal_state_schema": ("terminal-state/v2",),
+        "no_idle_invariant": TRUE,
+        "execution_channel_supervisor": TRUE,
+        "max_channel_failovers": positive,
+        "concurrent_writer_reconciliation": TRUE,
+        "force_push_on_reconcile": FALSE,
+    }, "adapter.autonomy")
+    check(data["publication"], {
+        "inventory_schema": ("publication-inventory/v1",),
+        "sensitive_context_policy_ref": nonempty,
+        "scan_all_refs_required": TRUE,
+        "scan_conversations_required": TRUE,
+        "scan_artifacts_required": TRUE,
+        "control_plane_externalized": TRUE,
+        "direct_visibility_toggle_requires_guard_green": TRUE,
+        "sanitized_export_on_findings": TRUE,
+    }, "adapter.publication")
+
 def validate_adapter(data, skill_version=None):
     if isinstance(data, dict) and data.get("schema") in (
             "continuous-development-cycle/v1", "continuous-development-cycle/v2"):
@@ -208,7 +228,7 @@ def validate_adapter(data, skill_version=None):
     schema = dict(SCHEMA)
     if isinstance(data, dict) and "orchestration" in data:
         schema["orchestration"] = dict
-    for name in ("routing", "recovery_recipes", "continuation", "fleet", "convergence", "progress_slo", "audit"):
+    for name in ("routing", "recovery_recipes", "continuation", "fleet", "convergence", "progress_slo", "audit", "autonomy", "publication"):
         if isinstance(data, dict) and name in data:
             schema[name] = dict
     check(data, schema)
@@ -239,6 +259,14 @@ def validate_adapter(data, skill_version=None):
         raise ContractError("CDC 2.6+ policy requires fleet, convergence, progress_slo and audit")
     if all(v26_present):
         validate_v26_controls(data)
+    v28_names = ("autonomy", "publication")
+    v28_present = [name in data for name in v28_names]
+    if any(v28_present) and lower < (2, 8, 0):
+        raise ContractError("CDC 2.8 controls require skill_min_version >= 2.8.0")
+    if lower >= (2, 8, 0) and not all(v28_present):
+        raise ContractError("CDC 2.8+ policy requires autonomy and publication controls")
+    if all(v28_present):
+        validate_v28_controls(data)
     if "orchestration" in data:
         if lower < (2, 3, 0):
             raise ContractError("orchestration controls require skill_min_version >= 2.3.0")

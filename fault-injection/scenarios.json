@@ -101,6 +101,48 @@
       "forbidden_authorities": [
         "forced_codex_due_to_private_cost_assumption"
       ]
+    },
+    {
+      "id": "no-idle-final-response",
+      "fault": "runnable_action_exists_executor_attempts_final_response",
+      "expected": "CONTINUE_TO_TERMINAL_STATE",
+      "forbidden_authorities": [
+        "terminal_response_while_runnable"
+      ]
+    },
+    {
+      "id": "backend-failover-stops",
+      "fault": "compatible_alternate_ready_primary_failed_executor_idles",
+      "expected": "ROUTE_ALTERNATE_BACKEND",
+      "forbidden_authorities": [
+        "silent_idle",
+        "manual_mechanical_escalation"
+      ]
+    },
+    {
+      "id": "concurrent-writer-nonoverlap",
+      "fault": "source_head_fast_forward_non_overlapping_change",
+      "expected": "REPLAY_ON_FRESH_HEAD",
+      "forbidden_authorities": [
+        "force_push",
+        "discard_remote_progress"
+      ]
+    },
+    {
+      "id": "publication-sensitive-context",
+      "fault": "secret_scan_green_internal_context_present",
+      "expected": "PUBLICATION_BLOCKED",
+      "forbidden_authorities": [
+        "visibility_toggle"
+      ]
+    },
+    {
+      "id": "publication-control-plane",
+      "fault": "product_repository_contains_operational_control_plane_state",
+      "expected": "SANITIZED_EXPORT_REQUIRED",
+      "forbidden_authorities": [
+        "direct_publication"
+      ]
     }
   ]
 }
