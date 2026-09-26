@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CDC 2.10.2 single-integrator evidence gate for isolated worker results."""
+"""CDC 2.10.2 per-wave single-integrator evidence gate for isolated worker results."""
 from __future__ import annotations
 import argparse,json,re,sys
 from pathlib import Path
@@ -15,11 +15,12 @@ def overlap(a,b):
     a=a.rstrip("/");b=b.rstrip("/")
     return a==b or a.startswith(b+"/") or b.startswith(a+"/")
 def validate(d):
-    fields={"schema","change_id","integrator_id","shared_branch","expected_shared_head","observed_shared_head",
+    fields={"schema","change_id","wave","integrator_id","shared_branch","expected_shared_head","observed_shared_head",
             "worker_results","spec_compliance_green","code_quality_green","unresolved_conflicts",
             "force_push_requested","verification_refs"}
     if not isinstance(d,dict) or set(d)!=fields or d.get("schema")!=SCHEMA:raise ValueError("integration gate fields/schema mismatch")
     for n in ("change_id","integrator_id","shared_branch"):_text(d[n],n)
+    if type(d["wave"]) is not int or d["wave"]<1:raise ValueError("wave invalid")
     for n in ("expected_shared_head","observed_shared_head"):
         if not isinstance(d[n],str) or not SHA.fullmatch(d[n]):raise ValueError(n+" invalid")
     for n in ("spec_compliance_green","code_quality_green","force_push_requested"):
@@ -56,9 +57,9 @@ def evaluate(d):
     for i,a in enumerate(writers):
         for x in writers[i+1:]:
             if any(overlap(p,q) for p in a["changed_paths"] for q in x["changed_paths"]):
-                b.append("worker_result_path_overlap:"+a["task_id"]+":"+x["task_id"])
+                b.append("same_wave_worker_result_path_overlap:"+a["task_id"]+":"+x["task_id"])
     ready=not b
-    return {"schema":"integration-gate-result/v1","change_id":d["change_id"],
+    return {"schema":"integration-gate-result/v1","change_id":d["change_id"],"wave":d["wave"],
             "action":"READY_FOR_INTEGRATOR" if ready else "RECONCILE_OR_REPLAN","ready":ready,"blockers":b,
             "integrator_id":d["integrator_id"],"authorizes_shared_branch_write":False,
             "authorizes_force_push":False,"authorizes_merge":False,"authorizes_release":False,
