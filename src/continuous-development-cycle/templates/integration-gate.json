@@ -50,7 +50,7 @@
         "can_write_shared_branch": false
       }
     ],
-    "plan_ref": "sha256:a05a841272888778dc7300d8c397925b475f70097dedef1ee4ab2a3cf750a9f5",
+    "plan_ref": "plan:sha256:a05a841272888778dc7300d8c397925b475f70097dedef1ee4ab2a3cf750a9f5",
     "plan": {
       "schema": "parallel-task-plan/v1",
       "change_id": "change-parallel",
