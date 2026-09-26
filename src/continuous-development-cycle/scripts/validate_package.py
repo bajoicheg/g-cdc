@@ -425,7 +425,7 @@ def validate():
                                                  'authorizes_release','authorizes_scope_expansion'))):
         raise ContractError('invalid CDC 2.10.1 branch-finishing template')
     parallel_plan = plan_parallel_tasks(json.loads((ROOT / 'templates/parallel-task-plan.json').read_text()))
-    if (not parallel_plan['parallel_safe'] or len(parallel_plan['waves']) < 2 or
+    if (not parallel_plan['parallel_safe'] or not parallel_plan['waves'] or len(parallel_plan['waves'][0]['task_ids']) < 2 or
             parallel_plan['parallel_estimate_seconds'] >= parallel_plan['sequential_estimate_seconds'] or
             any(parallel_plan[name] for name in ('authorizes_worker_launch','authorizes_product_write',
                                                  'authorizes_merge','authorizes_release','authorizes_scope_expansion'))):
@@ -437,6 +437,7 @@ def validate():
         raise ContractError('invalid CDC 2.10.2 worker isolation template')
     integration = evaluate_integration_gate(json.loads((ROOT / 'templates/integration-gate.json').read_text()))
     if (not integration['ready'] or integration['action'] != 'READY_FOR_INTEGRATOR' or integration['blockers'] or
+            integration['next_gate'] != 'cdc_2.10.1_review_branch_finish_then_2.10.0_verification' or
             any(integration[name] for name in ('authorizes_shared_branch_write','authorizes_force_push',
                                                'authorizes_merge','authorizes_release','authorizes_scope_expansion'))):
         raise ContractError('invalid CDC 2.10.2 integration gate template')
