@@ -41,6 +41,12 @@ def resolve_git_diff(worktree, *, worker_id, task_id, base_sha, result_sha, evid
     if ancestry.returncode!=0:
         raise ValueError("worker result does not descend from contracted base")
     try:
+        ancestry=subprocess.run(["git","-C",str(root),"merge-base","--is-ancestor",base_sha,result_sha],
+                                stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=15)
+    except (OSError,subprocess.SubprocessError) as exc:raise ValueError(f"cannot verify worker ancestry: {exc}") from exc
+    if ancestry.returncode==1:raise ValueError("worker result does not descend from contracted base")
+    if ancestry.returncode!=0:raise ValueError("worker ancestry verification failed")
+    try:
         out=subprocess.check_output(["git","-C",str(root),"diff","--name-only","--no-renames",base_sha,result_sha,"--"],text=True,stderr=subprocess.PIPE,timeout=30)
     except (OSError,subprocess.SubprocessError) as exc:raise ValueError(f"cannot resolve worker diff: {exc}") from exc
     paths=[x for x in out.splitlines() if x.strip()]
@@ -165,13 +171,13 @@ def evaluate(d):
             "authorizes_release":False,"authorizes_scope_expansion":False}
 
 def main(argv=None):
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument("input");g=p.add_mutually_exclusive_group();g.add_argument("--git-worktree");g.add_argument("--contract-only",action="store_true")
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument("input");p.add_argument("--git-worktree")
     a=p.parse_args(argv)
     try:
         d=json.loads(Path(a.input).read_text())
         if any(r.get("role")=="writer" and r.get("state")=="success" for r in d.get("worker_results",[])):
-            if a.git_worktree:verify_git_diff_proofs(d,a.git_worktree)
-            elif not a.contract_only:raise ValueError("--git-worktree is required for integration; --contract-only is test/fixture validation only")
+            if not a.git_worktree:raise ValueError("--git-worktree is required for integration with successful writers")
+            verify_git_diff_proofs(d,a.git_worktree)
         r=evaluate(d)
     except (OSError,ValueError,json.JSONDecodeError) as e:print(f"FAIL: {e}",file=sys.stderr);return 2
     print(json.dumps(r,sort_keys=True));return 0 if r["ready"] else 1
