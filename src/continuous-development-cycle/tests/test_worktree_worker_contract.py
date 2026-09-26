@@ -42,6 +42,10 @@ class T(unittest.TestCase):
   d["plan"]["tasks"]=[{"id":"review","role":"review","dependencies":[],"write_paths":[],"expected_outputs":["review:report"],"expected_evidence":["review:green"],"estimated_seconds":10}]
   d["assignments"]=[{"worker_id":"reviewer","task_id":"review","role":"review","branch":"review/check","worktree_id":"wt-review","base_sha":d["base_sha"],"write_paths":[],"expected_outputs":["review:report"],"expected_evidence":["review:green"],"can_write_shared_branch":False}]
   self.assertTrue(assess(d)["valid"])
+ def test_case_only_writer_overlap_rejected(self):
+  d=self.base();d["plan"]["tasks"][0]["write_paths"]=["src/UI"];d["plan"]["tasks"][1]["write_paths"]=["src/ui/sub"]
+  # planner serializes them; forcing both into wave one is therefore invalid.
+  with self.assertRaises(ValueError):assess(d)
  def test_later_wave_can_bind_new_exact_base(self):
   d=self.base()
   d["plan"]["tasks"][1]["write_paths"]=["src/model/sub"]
