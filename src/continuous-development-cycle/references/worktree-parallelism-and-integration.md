@@ -14,7 +14,7 @@ Independent ready writers may share a wave only when their write sets do not ove
 
 ## Isolated worker/worktree contract
 
-`scripts/worktree_worker_contract.py` is **per-wave**. Before each wave starts, it binds every delegated task in that wave to:
+`scripts/worktree_worker_contract.py` is **per-wave**. The contract embeds the immutable planner input in addition to a durable plan reference, recomputes the selected wave, and requires the assignment set plus role/write-set/output/evidence contract to match that wave exactly. Before each wave starts, it binds every delegated task in that wave to:
 
 - durable worker and task identity;
 - exact common base SHA;
