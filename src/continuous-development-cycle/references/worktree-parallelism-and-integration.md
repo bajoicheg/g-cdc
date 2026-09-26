@@ -32,13 +32,13 @@ The CDC integrator is not a delegated worker. Same-wave writer overlap is invali
 
 A GREEN result is only `READY_FOR_INTEGRATOR`. The gate creates no shared-branch write, merge or release authority. The integrator must still re-read HEAD and use normal concurrent-writer reconciliation before the separately authorized assembly write. After all implementation waves are assembled, the combined candidate passes CDC 2.10.1 spec/code review and branch finishing, then CDC 2.10.0 verification-before-terminal.
 
-Failed or stale worker output is discarded/rebased/re-run in isolation. It is never force-pushed or partially integrated merely to preserve effort already spent.
+Failed or stale worker output is discarded/rebased/re-run in isolation. It is never force-pushed or partially integrated merely to preserve effort already spent. A successful worker result must satisfy the delegated output/evidence contract; successful writers must report a new result SHA plus changed paths inside the assigned write set, while read-only/review workers must remain at the base SHA.
 
 ## Observed parallel benchmark
 
 `scripts/parallel_benchmark.py` validates observed performance evidence. A benchmark is GREEN only when a representative task has at least two workstreams, measured parallel elapsed time is lower than the sequential baseline, and unresolved conflict/rollback counts do not regress.
 
-Estimated planner savings are not release evidence by themselves. CDC 2.10.2 release evidence must include at least one observed multi-workstream benchmark with durable evidence refs.
+Estimated planner savings are not release evidence by themselves. The benchmark contract must use `measurement_mode=observed`, bind the exact candidate SHA, the execution environment and the parallel plan, and include durable evidence refs for the sequential and parallel observations. CDC 2.10.2 release evidence must include at least one actually measured multi-workstream benchmark with those bindings.
 
 ## Superpowers relationship
 
