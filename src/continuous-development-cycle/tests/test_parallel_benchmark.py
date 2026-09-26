@@ -39,6 +39,12 @@ class T(unittest.TestCase):
   with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
   d=self.base();d["observation_refs"][0]["path"]="../escape.json"
   with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
+ def test_benchmark_plan_ref_requires_digest(self):
+  d=self.base();d["plan_ref"]="unbound-plan"
+  with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
+ def test_observation_plan_ref_requires_digest(self):
+  d,obs=self.release_case();obs[0]["plan_ref"]="unbound-plan"
+  with self.assertRaises(ValueError):evaluate(d,obs)
  def test_observation_candidate_must_match(self):
   d,obs=self.release_case();obs[0]["candidate_sha"]="2"*40
   with self.assertRaises(ValueError):evaluate(d,obs)
