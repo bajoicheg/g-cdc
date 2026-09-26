@@ -1,5 +1,5 @@
 from pathlib import Path
-import json,sys,unittest
+import copy,json,sys,unittest
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/"scripts"))
 from worktree_worker_contract import assess
 
@@ -20,7 +20,33 @@ class T(unittest.TestCase):
  def test_stale_assignment_base_rejected(self):
   d=self.base();d["assignments"][0]["base_sha"]="2"*40
   with self.assertRaises(ValueError):assess(d)
- def test_review_assignment_can_be_read_only(self):
-  d=self.base();d["assignments"]=[{"worker_id":"reviewer","task_id":"review","role":"review","branch":"review/check","worktree_id":"wt-review","base_sha":d["base_sha"],"write_paths":[],"expected_outputs":["review:report"],"expected_evidence":["review:green"],"can_write_shared_branch":False}]
+ def test_first_wave_contract_base_must_match_plan(self):
+  d=self.base();d["base_sha"]="2"*40
+  for a in d["assignments"]:a["base_sha"]=d["base_sha"]
+  with self.assertRaises(ValueError):assess(d)
+ def test_assignment_must_match_plan_contract(self):
+  d=self.base();d["assignments"][0]["expected_evidence"]=["test:other"]
+  with self.assertRaises(ValueError):assess(d)
+  d=self.base();d["assignments"][0]["expected_outputs"]=["commit:other"]
+  with self.assertRaises(ValueError):assess(d)
+  d=self.base();d["assignments"][0]["role"]="review";d["assignments"][0]["write_paths"]=[]
+  with self.assertRaises(ValueError):assess(d)
+ def test_unsafe_write_path_rejected_even_if_plan_and_assignment_match(self):
+  d=self.base();d["plan"]["tasks"][0]["write_paths"]=["../escape"];d["assignments"][0]["write_paths"]=["../escape"]
+  with self.assertRaises(ValueError):assess(d)
+ def test_review_assignment_can_be_read_only_when_plan_says_review(self):
+  d=self.base()
+  d["plan"]["tasks"]=[{"id":"review","role":"review","dependencies":[],"write_paths":[],"expected_outputs":["review:report"],"expected_evidence":["review:green"],"estimated_seconds":10}]
+  d["assignments"]=[{"worker_id":"reviewer","task_id":"review","role":"review","branch":"review/check","worktree_id":"wt-review","base_sha":d["base_sha"],"write_paths":[],"expected_outputs":["review:report"],"expected_evidence":["review:green"],"can_write_shared_branch":False}]
   self.assertTrue(assess(d)["valid"])
+ def test_later_wave_can_bind_new_exact_base(self):
+  d=self.base()
+  d["plan"]["tasks"][1]["write_paths"]=["src/model/sub"]
+  d["wave"]=2;d["base_sha"]="2"*40
+  a=copy.deepcopy(d["assignments"][1]);a["base_sha"]=d["base_sha"];a["write_paths"]=["src/model/sub"]
+  d["assignments"]=[a]
+  r=assess(d);self.assertTrue(r["valid"]);self.assertEqual(r["wave"],2);self.assertEqual(r["base_sha"],"2"*40)
+ def test_assignment_set_must_equal_planned_wave(self):
+  d=self.base();d["assignments"]=d["assignments"][:1]
+  with self.assertRaises(ValueError):assess(d)
 if __name__=="__main__":unittest.main()
