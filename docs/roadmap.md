@@ -217,6 +217,8 @@ These items are explicit future CDC roadmap candidates. They do not reopen the c
 
 **Expected invariant:** CDC never pauses merely because it has something useful to report. It reports progress and keeps working until a genuine terminal state.
 
+**Evidence reinforcement — 2026-09-26:** a consumer adoption reached `finalization.state=reconciled` with `pending_shared_writes=false` and all exact-head validation GREEN, but ownership remained unreleased and no independent `executor_stopped` proof existed. TTL expiry was correctly rejected as takeover evidence. This strengthens the existing Progress-Is-Not-Terminal control: `reconciled` is still a continuation point; the owning invocation must immediately proceed to ready/release, while other executors may only observe or wake/re-enter the owner until explicit quiescence is proven.
+
 ### RCA-derived fix — schema-typed checkpoint migration
 
 **Observed failure class:** an adoption checkpoint stored explanatory text in `execution_continuity.runnable_next_action`, while checkpoint v4 requires a Boolean; package, adapter and lock were GREEN but the terminal checkpoint failed validation.
