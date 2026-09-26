@@ -122,6 +122,24 @@ class T(unittest.TestCase):
    d["diff_proofs"]=[resolve_git_diff(root,worker_id=r["worker_id"],task_id=r["task_id"],base_sha=base,result_sha=result,evidence_ref="git-diff:live-head")]
    p=root/"gate.json";p.write_text(json.dumps(d))
    self.assertEqual(main([str(p),"--git-worktree",str(root)]),2)
+ def test_cli_proves_assigned_registered_worker_worktree(self):
+  with tempfile.TemporaryDirectory() as td:
+   parent=Path(td);root=parent/"repo";worker=parent/"wt-model"
+   subprocess.check_call(["git","init","-q",str(root)]);subprocess.check_call(["git","-C",str(root),"config","user.email","test@example.invalid"]);subprocess.check_call(["git","-C",str(root),"config","user.name","CDC Test"])
+   (root/"src/model").mkdir(parents=True);(root/"src/model/model.py").write_text("base\n")
+   subprocess.check_call(["git","-C",str(root),"add","."]);subprocess.check_call(["git","-C",str(root),"commit","-q","-m","base"]);subprocess.check_call(["git","-C",str(root),"branch","-M","feature/integration"])
+   base=subprocess.check_output(["git","-C",str(root),"rev-parse","HEAD"],text=True).strip()
+   subprocess.check_call(["git","-C",str(root),"worktree","add","-q","-b","worker/model",str(worker),base])
+   (worker/"src/model/model.py").write_text("worker\n");subprocess.check_call(["git","-C",str(worker),"commit","-qam","worker"])
+   result=subprocess.check_output(["git","-C",str(worker),"rev-parse","HEAD"],text=True).strip()
+   d=self.base();d["shared_branch"]="feature/integration";d["expected_shared_head"]=base;d["observed_shared_head"]=base
+   wc=d["worker_contract"];wc["shared_branch"]="feature/integration";wc["base_sha"]=base;wc["plan"]["shared_branch"]="feature/integration";wc["plan"]["base_sha"]=base;wc["plan"]["tasks"]=wc["plan"]["tasks"][:1];self.rebind_plan(d);wc["assignments"]=wc["assignments"][:1]
+   a=wc["assignments"][0];a["branch"]="worker/model";a["worktree_id"]="wt-model";a["base_sha"]=base
+   r=d["worker_results"][0];d["worker_results"]=[r];r["base_sha"]=base;r["result_sha"]=result;r["changed_paths"]=["src/model/model.py"]
+   d["diff_proofs"]=[resolve_git_diff(root,worker_id=r["worker_id"],task_id=r["task_id"],base_sha=base,result_sha=result,evidence_ref="git-diff:origin")]
+   p=parent/"gate.json";p.write_text(json.dumps(d))
+   self.assertEqual(main([str(p),"--git-worktree",str(root),"--worker-worktree",f"wt-model={worker}"]),0)
+   self.assertEqual(main([str(p),"--git-worktree",str(root),"--worker-worktree",f"wt-model={root}"]),2)
  def test_git_diff_resolver_rejects_unrelated_result_history(self):
   with tempfile.TemporaryDirectory() as td:
    root=Path(td);subprocess.check_call(["git","init","-q",str(root)]);subprocess.check_call(["git","-C",str(root),"config","user.email","test@example.invalid"]);subprocess.check_call(["git","-C",str(root),"config","user.name","CDC Test"])
