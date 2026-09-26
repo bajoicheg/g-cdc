@@ -44,7 +44,7 @@ Release: `refs/heads/release/v2.10.0`.
 - independent evidence: PR #11 comment `5849842887` — bootstrap 12/12, package 397/397, aggregate 409/409, 227 files, behavioral 6 RED→6 GREEN, 41 fault scenarios, 50 pressure scenarios and 3/3 consumers GREEN.
 - GitHub Actions attempts on the same candidate failed pre-run with zero executable steps and were classified as execution-channel infrastructure; no source correction was made from those runs.
 
-### 2.10.1 — Specification Compliance & Two-Stage Review — P1 / PROPOSED
+### 2.10.1 — Specification Compliance & Two-Stage Review — P1 / RELEASED
 
 Goal: distinguish “tests are GREEN” from “we implemented the requested thing correctly and well.”
 
@@ -66,6 +66,12 @@ Acceptance:
 - branch finishing cannot discard open review findings, stale validation or ownership/guard state.
 
 Expected benefit: fewer “GREEN but wrong” outcomes, especially for UI/UX and cross-cutting behavior where automated tests alone are insufficient.
+
+Release: `refs/heads/release/v2.10.1`.
+- candidate validation HEAD: `5f3e75847db9c4651bacdc36d44ec1eaa79ecbd1`;
+- package tree: `07bea03a6cc23f658c1cefe41aba40c174474f25`;
+- independent evidence: PR #12 comment `5849987854` — bootstrap 12/12, package 418/418, aggregate 430/430, 227 validated files/templates, 14/14 targeted review assertions, 45 fault scenarios, 58 numbered pressure scenarios and 3/3 consumers GREEN.
+- GitHub Actions run `36272377691` failed before executable steps and was classified as `pre_run_infrastructure`; no source correction or blind rerun was used as release evidence.
 
 ### 2.10.2 — Worktree-Isolated Parallel Development & Single Integrator — P2 / PROPOSED
 
@@ -99,7 +105,7 @@ Recommended release sequence:
 
 Do **not** start with parallelism. The ordering is deliberate: first make CDC behavior measurable, then make implementation correctness reviewable, then scale execution concurrency.
 
-Roadmap state: CDC 2.10.0 is independently GREEN and released. The first runnable scope is now 2.10.1; 2.10.2 remains dependency-gated until 2.10.1 is independently GREEN and released.
+Roadmap state: CDC 2.10.0 and 2.10.1 are independently GREEN and released. The first runnable scope is now 2.10.2.
 
 ## CDC 2.9 — COMPLETE / TERMINAL
 
