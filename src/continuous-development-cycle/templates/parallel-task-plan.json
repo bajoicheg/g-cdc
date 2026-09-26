@@ -34,22 +34,6 @@
         "test:ui-green"
       ],
       "estimated_seconds": 70
-    },
-    {
-      "id": "task-review",
-      "role": "review",
-      "dependencies": [
-        "task-model",
-        "task-ui"
-      ],
-      "write_paths": [],
-      "expected_outputs": [
-        "review:combined"
-      ],
-      "expected_evidence": [
-        "review:green"
-      ],
-      "estimated_seconds": 30
     }
   ]
 }
