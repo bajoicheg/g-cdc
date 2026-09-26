@@ -2,9 +2,12 @@ from pathlib import Path
 import copy,json,sys,unittest
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/"scripts"))
 from worktree_worker_contract import assess
+from parallel_task_planner import canonical_plan_ref
 
 class T(unittest.TestCase):
  def base(self):return json.loads((ROOT/"templates"/"worktree-worker-contract.json").read_text())
+ def rebind(self,d):
+  d["plan_ref"]=canonical_plan_ref(d["plan"]);return d
  def test_template_isolated_and_non_authoritative(self):
   r=assess(self.base());self.assertTrue(r["valid"]);self.assertEqual(r["assignment_count"],2);self.assertEqual(r["wave"],1)
   self.assertFalse(r["authorizes_worker_launch"]);self.assertFalse(r["authorizes_shared_branch_write"])
@@ -41,20 +44,20 @@ class T(unittest.TestCase):
   d=self.base()
   d["plan"]["tasks"]=[{"id":"review","role":"review","dependencies":[],"write_paths":[],"expected_outputs":["review:report"],"expected_evidence":["review:green"],"estimated_seconds":10}]
   d["assignments"]=[{"worker_id":"reviewer","task_id":"review","role":"review","branch":"review/check","worktree_id":"wt-review","base_sha":d["base_sha"],"write_paths":[],"expected_outputs":["review:report"],"expected_evidence":["review:green"],"can_write_shared_branch":False}]
-  self.assertTrue(assess(d)["valid"])
+  self.rebind(d);self.assertTrue(assess(d)["valid"])
  def test_case_only_writer_overlap_rejected(self):
-  d=self.base();d["plan"]["tasks"][0]["write_paths"]=["src/UI"];d["plan"]["tasks"][1]["write_paths"]=["src/ui/sub"]
+  d=self.base();d["plan"]["tasks"][0]["write_paths"]=["src/UI"];d["plan"]["tasks"][1]["write_paths"]=["src/ui/sub"];self.rebind(d)
   # planner serializes them; forcing both into wave one is therefore invalid.
   with self.assertRaises(ValueError):assess(d)
  def test_later_wave_can_bind_new_exact_base(self):
   d=self.base()
-  d["plan"]["tasks"][1]["write_paths"]=["src/model/sub"]
+  d["plan"]["tasks"][1]["write_paths"]=["src/model/sub"];self.rebind(d)
   d["wave"]=2;d["base_sha"]="2"*40;d["prior_wave_integration"]={"wave":1,"integrated_head":d["base_sha"],"evidence_ref":"integration:wave-1"}
   a=copy.deepcopy(d["assignments"][1]);a["base_sha"]=d["base_sha"];a["write_paths"]=["src/model/sub"]
   d["assignments"]=[a]
   r=assess(d);self.assertTrue(r["valid"]);self.assertEqual(r["wave"],2);self.assertEqual(r["base_sha"],"2"*40)
  def test_later_wave_requires_matching_prior_integration(self):
-  d=self.base();d["plan"]["tasks"][1]["write_paths"]=["src/model/sub"];d["wave"]=2;d["base_sha"]="2"*40
+  d=self.base();d["plan"]["tasks"][1]["write_paths"]=["src/model/sub"];self.rebind(d);d["wave"]=2;d["base_sha"]="2"*40
   a=copy.deepcopy(d["assignments"][1]);a["base_sha"]=d["base_sha"];a["write_paths"]=["src/model/sub"];d["assignments"]=[a]
   with self.assertRaises(ValueError):assess(d)
   d["prior_wave_integration"]={"wave":1,"integrated_head":"3"*40,"evidence_ref":"integration:wave-1"}
@@ -66,6 +69,10 @@ class T(unittest.TestCase):
    d=self.base();d["plan"]["tasks"][0]["write_paths"]=[bad];d["assignments"][0]["write_paths"]=[bad]
    with self.subTest(path=bad):
     with self.assertRaises(ValueError):assess(d)
+ def test_embedded_plan_must_match_plan_digest(self):
+  d=self.base();d["plan"]["tasks"][0]["expected_outputs"]=["commit:tampered"]
+  d["assignments"][0]["expected_outputs"]=["commit:tampered"]
+  with self.assertRaises(ValueError):assess(d)
  def test_assignment_set_must_equal_planned_wave(self):
   d=self.base();d["assignments"]=d["assignments"][:1]
   with self.assertRaises(ValueError):assess(d)
