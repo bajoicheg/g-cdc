@@ -10,7 +10,7 @@ Parallel writer delegation is available only when the actual orchestration runti
 
 `scripts/parallel_task_planner.py` turns a dependency DAG into execution waves. Tasks may be `writer`, `read_only` or `review`. Writers declare bounded relative write paths; read-only/review tasks declare none.
 
-Independent ready writers may share a wave only when their write sets do not overlap by exact or ancestor/descendant path. Overlapping ready writers are serialized into later waves. Cyclic dependencies are rejected. The planner reports sequential and parallel estimates for observability only and never launches workers.
+Independent ready writers may share a wave only when their write sets do not overlap by exact or ancestor/descendant path under a portable case-folded Unicode-normalized identity. This prevents Linux-only case distinctions from creating collisions on Windows/macOS. Overlapping ready writers are serialized into later waves. Cyclic dependencies are rejected. The planner reports sequential and parallel estimates for observability only and never launches workers.
 
 ## Isolated worker/worktree contract
 
@@ -38,7 +38,7 @@ Failed or stale worker output is discarded/rebased/re-run in isolation. It is ne
 
 `scripts/parallel_benchmark.py` validates observed performance evidence. A benchmark is GREEN only when a representative task has at least two workstreams, measured parallel elapsed time is lower than the sequential baseline, and unresolved conflict/rollback counts do not regress.
 
-Estimated planner savings are not release evidence by themselves. The benchmark contract contains exactly one structured sequential observation and one structured parallel observation. Both must be marked observed, bind the same exact candidate SHA, environment, plan and `sha256:` workload fingerprint, and carry distinct durable evidence refs. Timings are derived from those observations; arbitrary top-level timing labels are not accepted. CDC 2.10.2 release evidence must include at least one actually measured multi-workstream benchmark with those bindings.
+Estimated planner savings are not release evidence by themselves. The benchmark contract contains exactly one structured sequential observation and one structured parallel observation. Both must be marked observed, bind the same exact candidate SHA, environment, plan and `sha256:` workload fingerprint, and carry distinct durable evidence refs. Timings are derived from those observations; arbitrary top-level timing labels are not accepted. Estimates and observed timings must be finite positive numbers; NaN and infinities are invalid evidence. CDC 2.10.2 release evidence must include at least one actually measured multi-workstream benchmark with those bindings.
 
 ## Superpowers relationship
 
