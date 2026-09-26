@@ -45,10 +45,23 @@ class T(unittest.TestCase):
  def test_later_wave_can_bind_new_exact_base(self):
   d=self.base()
   d["plan"]["tasks"][1]["write_paths"]=["src/model/sub"]
-  d["wave"]=2;d["base_sha"]="2"*40
+  d["wave"]=2;d["base_sha"]="2"*40;d["prior_wave_integration"]={"wave":1,"integrated_head":d["base_sha"],"evidence_ref":"integration:wave-1"}
   a=copy.deepcopy(d["assignments"][1]);a["base_sha"]=d["base_sha"];a["write_paths"]=["src/model/sub"]
   d["assignments"]=[a]
   r=assess(d);self.assertTrue(r["valid"]);self.assertEqual(r["wave"],2);self.assertEqual(r["base_sha"],"2"*40)
+ def test_later_wave_requires_matching_prior_integration(self):
+  d=self.base();d["plan"]["tasks"][1]["write_paths"]=["src/model/sub"];d["wave"]=2;d["base_sha"]="2"*40
+  a=copy.deepcopy(d["assignments"][1]);a["base_sha"]=d["base_sha"];a["write_paths"]=["src/model/sub"];d["assignments"]=[a]
+  with self.assertRaises(ValueError):assess(d)
+  d["prior_wave_integration"]={"wave":1,"integrated_head":"3"*40,"evidence_ref":"integration:wave-1"}
+  with self.assertRaises(ValueError):assess(d)
+  d["prior_wave_integration"]={"wave":2,"integrated_head":d["base_sha"],"evidence_ref":"integration:wrong-wave"}
+  with self.assertRaises(ValueError):assess(d)
+ def test_windows_reserved_or_drive_relative_path_rejected(self):
+  for bad in ("C:temp","src/CON","src/com1.txt","src/name.","src/name "):
+   d=self.base();d["plan"]["tasks"][0]["write_paths"]=[bad];d["assignments"][0]["write_paths"]=[bad]
+   with self.subTest(path=bad):
+    with self.assertRaises(ValueError):assess(d)
  def test_assignment_set_must_equal_planned_wave(self):
   d=self.base();d["assignments"]=d["assignments"][:1]
   with self.assertRaises(ValueError):assess(d)
