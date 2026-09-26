@@ -3,15 +3,15 @@
   "version": "2.10.2",
   "developed_under_version": "2.10.1",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "e976cfe467bc9ff1370bad0c236867fe83cc3e36",
-  "package_tree": "ed2da90bc1d428265ea542cfc108a624fe556bf2",
+  "source_commit": "24724e9b3eeb5ea712a4d2aba1cffaee7d1ca9ee",
+  "package_tree": "57f9697f62a4dbfd7e5bdc5e9bdc9d9b16ca21df",
   "status": "candidate",
   "evidence": {
     "bootstrap": [
       "base-release:2.10.1@408408c0fa5a0126f649a7328f8f667d27f5ff18"
     ],
     "package": [
-      "codex:pr14:frozen-package-validation-pending"
+      "codex:pr14:current-head-package-validation"
     ],
     "compatibility": [
       "consumer:evidence/g-supervisor",
