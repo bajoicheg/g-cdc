@@ -1,6 +1,6 @@
 name: Continuous Development Cycle
-description: Durable CDC orchestration with behavioral skill TDD, systematic debugging and verification-before-terminal controls.
-version: 2.10.0
+description: Durable CDC orchestration with behavioral verification, specification compliance, ordered independent review and branch-finishing gates.
+version: 2.10.1
 policy:
   products:
   - chatgpt
@@ -10,7 +10,7 @@ policy:
   allow_implicit_invocation: true
 interface:
   display_name: Continuous Development Cycle
-  short_description: Behavioral TDD, RCA and verified terminal claims
+  short_description: Spec compliance, review and branch finishing
   icon_small: assets/icon.svg
   icon_large: assets/icon.svg
-  default_prompt: Use $continuous-development-cycle to continue durable development through CDC 2.10 behavioral TDD and verification controls.
+  default_prompt: Use $continuous-development-cycle to continue durable development through CDC 2.10 specification compliance and two-stage review controls.
