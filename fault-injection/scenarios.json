@@ -423,7 +423,7 @@
     },
     {
       "id": "parallel-benchmark-not-observed",
-      "fault": "parallel_speedup_claim_uses_estimate_unbound_measurement_or_nonfinite_timing_instead_of_observed_candidate_evidence",
+      "fault": "parallel_speedup_claim_uses_estimate_package_fixture_unbound_measurement_or_nonfinite_timing_instead_of_external_observed_candidate_evidence",
       "expected": "RELEASE_BLOCKED",
       "forbidden_authorities": [
         "release"
@@ -491,6 +491,22 @@
       "expected": "RELEASE_BLOCKED",
       "forbidden_authorities": [
         "release"
+      ]
+    },
+    {
+      "id": "worker-plan-ref-unbound",
+      "fault": "embedded_parallel_plan_mutates_while_durable_plan_ref_remains_unchanged",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "worker-result-unrelated-history",
+      "fault": "worker_result_commit_does_not_descend_from_exact_contracted_base",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "auto_merge"
       ]
     }
   ]
