@@ -3,7 +3,7 @@
 from __future__ import annotations
 import argparse,json,re,sys
 from pathlib import Path
-from parallel_task_planner import validate as validate_parallel_plan, plan as build_parallel_plan
+from parallel_task_planner import validate as validate_parallel_plan, plan as build_parallel_plan, validate_write_path
 
 SCHEMA="worktree-worker-contract/v1";SHA=re.compile(r"^[0-9a-f]{40}$");ROLES={"writer","read_only","review"}
 
@@ -13,17 +13,12 @@ def _refs(v,n,allow_empty=False):
     if not isinstance(v,list) or any(not isinstance(x,str) or not x.strip() for x in v):raise ValueError(f"{n} invalid")
     if not allow_empty and not v:raise ValueError(f"{n} must not be empty")
     if len(v)!=len(set(v)):raise ValueError(f"{n} contains duplicates")
-def _path(p):
-    if not isinstance(p,str) or not p.strip() or "\\" in p or p.startswith("/") or p.endswith("/") or "//" in p:
-        raise ValueError("unsafe write path")
-    if any(x in {"",".",".."} for x in p.split("/")):raise ValueError("unsafe write path")
-    return p
 def overlap(a,b):
     a=a.rstrip("/");b=b.rstrip("/")
     return a==b or a.startswith(b+"/") or b.startswith(a+"/")
 
 def validate(d):
-    fields={"schema","change_id","plan_ref","plan","wave","base_sha","integrator_id","shared_branch","assignments"}
+    fields={"schema","change_id","plan_ref","plan","wave","base_sha","prior_wave_integration","integrator_id","shared_branch","assignments"}
     if not isinstance(d,dict) or set(d)!=fields or d.get("schema")!=SCHEMA:
         raise ValueError("worker contract fields/schema mismatch")
     for n in ("change_id","plan_ref","integrator_id","shared_branch"):_text(d[n],n)
@@ -38,8 +33,16 @@ def validate(d):
     if d["wave"]>len(planned["waves"]):raise ValueError("wave not present in plan")
     planned_wave=planned["waves"][d["wave"]-1]
     planned_ids=set(planned_wave["task_ids"])
-    if d["wave"]==1 and d["base_sha"]!=plan["base_sha"]:
-        raise ValueError("first wave base must match plan base")
+    prior=d["prior_wave_integration"]
+    if d["wave"]==1:
+        if prior is not None:raise ValueError("first wave cannot have prior integration")
+        if d["base_sha"]!=plan["base_sha"]:raise ValueError("first wave base must match plan base")
+    else:
+        if not isinstance(prior,dict) or set(prior)!={"wave","integrated_head","evidence_ref"}:raise ValueError("later wave requires prior integration proof")
+        if type(prior["wave"]) is not int or prior["wave"]!=d["wave"]-1:raise ValueError("prior integration wave mismatch")
+        if not isinstance(prior["integrated_head"],str) or not SHA.fullmatch(prior["integrated_head"]):raise ValueError("prior integrated_head invalid")
+        _text(prior["evidence_ref"],"prior integration evidence_ref")
+        if d["base_sha"]!=prior["integrated_head"]:raise ValueError("later wave base must equal prior integrated head")
 
     if not isinstance(d["assignments"],list) or not d["assignments"]:raise ValueError("assignments required")
     if {a.get("task_id") for a in d["assignments"]}!=planned_ids:
@@ -59,7 +62,7 @@ def validate(d):
         if type(a["can_write_shared_branch"]) is not bool or a["can_write_shared_branch"]:raise ValueError("worker shared-branch write forbidden")
         _refs(a["expected_outputs"],"expected_outputs");_refs(a["expected_evidence"],"expected_evidence")
         if not isinstance(a["write_paths"],list):raise ValueError("write_paths invalid")
-        for p in a["write_paths"]:_path(p)
+        for p in a["write_paths"]:validate_write_path(p)
         if len(a["write_paths"])!=len(set(a["write_paths"])):raise ValueError("duplicate write path")
         if a["role"]=="writer" and not a["write_paths"]:raise ValueError("writer requires write_paths")
         if a["role"]!="writer" and a["write_paths"]:raise ValueError("non-writer write_paths forbidden")
