@@ -1,4 +1,4 @@
-# Continuous Development Cycle v2.8.1
+# Continuous Development Cycle v2.8.2
 
 Installable ChatGPT/Codex/agent skill for recoverable, long-running software development.
 
@@ -143,3 +143,12 @@ Read `references/canonical-source-and-release.md`. Validate consumer pins with
 - Decision authority removes unnecessary human prompts while preserving real human boundaries.
 - Evidence compaction preserves durable refs and source digest.
 - Progress enforcement turns degraded/stalled states into concrete continuation actions.
+
+
+## v2.8.2 Fleet & Publication Maturity
+
+- Project-independent fleet control drives normalized projects without becoming a super-writer.
+- Stuck-state detection prevents repeated no-progress loops.
+- Counterfactual recovery requires a new information-gaining strategy.
+- Public publication uses sanitized export into new history, not direct visibility switching of internal development history.
+- Dogfooding metrics measure CDC's own compliance without granting release authority.

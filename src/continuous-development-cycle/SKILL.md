@@ -3,7 +3,7 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.8.1
+# Continuous Development Cycle v2.8.2
 
 Durable repository state is the project state. Sessions, agents and schedulers are disposable. Apply the instruction hierarchy, preserve the source/scope of existing user authorization, and reconcile repository policy. Live remote facts override stale checkpoint/chat claims. A spinner, lease or submitted request is not progress evidence.
 
@@ -176,3 +176,14 @@ A **blocker proof** is required before BLOCKED can end an invocation: dependency
 Use **decision authority** to avoid unnecessary owner interruptions. Reversible/compensatable low-or-medium-risk work inside existing scope proceeds only when durable policy already pre-authorizes it. Human boundaries remain for scope expansion, high risk, destructive/irreversible actions, missing secrets and protected gates.
 
 Use **evidence compaction** to preserve result counts, durable refs and deterministic source digest without copying verbose diagnostics into canonical state. Use **progress enforcement** so DEGRADED/STALLED/RECOVERY_REQUIRED produce concrete continuation/recovery actions. Read `references/operational-hardening.md` and `references/decision-authority.md`.
+
+
+## CDC 2.8.2 Fleet & Publication Maturity
+
+Use **project-independent fleet control** to supervise normalized project state without product-specific code or super-writer authority. Owners and guards are observed, runnable unowned projects are woken, and stalled projects receive watchdog recovery actions.
+
+Use the **stuck-state detector** to identify repeated action/result fingerprints or unchanged HEAD without meaningful progress. When stuck, **counterfactual recovery** must select a different compatible strategy with positive expected information gain; blindly repeating a failed strategy is forbidden.
+
+Use the **sanitized public export** planner for private-to-public publication. The target is a new public history built from allow-listed product paths after publication guard/history/control-plane checks; never turn the internal development repository public as the publication mechanism.
+
+Use **CDC dogfooding** metrics to measure CDC's own development against terminal-state accuracy, No-Idle, exact-SHA validation, recovery diversity, control-plane isolation and consumer evidence. Dogfooding is observability only and never grants release or policy authority. Read `references/fleet-and-publication-maturity.md`.
