@@ -22,4 +22,7 @@ class T(unittest.TestCase):
  def test_runnable_task_requires_continuation(self):
   d=self.base();d["continuation_queue"]=[]
   self.assertIn("runnable_task_missing_continuation:task-2",evaluate(d)["blockers"])
+ def test_cyclic_plan_is_rejected(self):
+  d=self.base();d["tasks"][0]["dependencies"]=["task-2"]
+  with self.assertRaises(ValueError): evaluate(d)
 if __name__=="__main__": unittest.main()
