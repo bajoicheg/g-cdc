@@ -1,31 +1,31 @@
 {
   "schema": "cdc-release-candidate/v1",
-  "version": "2.10.1",
-  "developed_under_version": "2.10.0",
+  "version": "2.10.2",
+  "developed_under_version": "2.10.1",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "a959c8c81483c704e2b360204538efd3829d2d2a",
-  "package_tree": "07bea03a6cc23f658c1cefe41aba40c174474f25",
-  "status": "released",
+  "source_commit": "e976cfe467bc9ff1370bad0c236867fe83cc3e36",
+  "package_tree": "ed2da90bc1d428265ea542cfc108a624fe556bf2",
+  "status": "candidate",
   "evidence": {
     "bootstrap": [
-      "codex:pr12:comment-5849987854:12/12"
+      "base-release:2.10.1@408408c0fa5a0126f649a7328f8f667d27f5ff18"
     ],
     "package": [
-      "codex:pr12:comment-5849987854:418/418",
-      "review-controls:14/14"
+      "codex:pr14:frozen-package-validation-pending"
     ],
     "compatibility": [
-      "codex:pr12:comment-5849987854:3/3",
-      "compatibility/matrix.json"
+      "consumer:evidence/g-supervisor",
+      "consumer:evidence/g-ad-control",
+      "consumer:evidence/g-pc-health-check"
     ],
     "fault_injection": [
-      "fault-injection/scenarios.json:45",
-      "pressure-scenarios.md:58"
+      "fault-injection/scenarios.json",
+      "pressure-scenarios.md"
     ],
     "consumers": [
-      "consumer:g-supervisor:GREEN",
-      "consumer:g-ad-control:GREEN",
-      "consumer:g-pc-health-check:GREEN"
+      "consumer:g-supervisor",
+      "consumer:g-ad-control",
+      "consumer:g-pc-health-check"
     ]
   }
 }
