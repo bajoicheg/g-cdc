@@ -51,6 +51,13 @@ def validate(data):
 
 def evaluate(data):
     validate(data);s=data["spec_compliance"];q=data["code_quality"];b=[]
+    if not data["material_change"] and s["state"]=="not_run" and q["state"]=="not_run":
+        return {
+          "schema":"review-pipeline-result/v1","change_id":data["change_id"],"action":"REVIEW_NOT_REQUIRED",
+          "review_green":True,"blockers":[],
+          "authorizes_product_write":False,"authorizes_merge":False,"authorizes_release":False,
+          "authorizes_scope_expansion":False,
+        }
     if data["material_change"] and s["state"]!="green":
         b.append("spec_compliance_not_green")
     if q["state"]!="not_run" and s["state"]!="green":
