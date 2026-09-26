@@ -4,16 +4,16 @@
   "representative_task_ref": "change-parallel",
   "candidate_sha": "1111111111111111111111111111111111111111",
   "environment_ref": "provider:benchmark-environment",
-  "plan_ref": "plan:parallel-task-plan@durable-ref",
+  "plan_ref": "sha256:a05a841272888778dc7300d8c397925b475f70097dedef1ee4ab2a3cf750a9f5",
   "workstreams": 2,
   "observation_refs": [
     {
       "path": "templates/parallel-benchmark-observation-sequential.json",
-      "sha256": "sha256:1098468681bdc5171905b02210be0ac34a79febb88da539d29bcfae91ea9e6ef"
+      "sha256": "sha256:3868d69d664013dfb2106d27ed58892bb317268b592a201bbe08119894ad88e2"
     },
     {
       "path": "templates/parallel-benchmark-observation-parallel.json",
-      "sha256": "sha256:bcc252990d8e55d3fdd7f26e8b419337ec0fc03cb2242c4825bd20d1af615550"
+      "sha256": "sha256:a673881f7d6cfaa3661260b416c7e6f5945de8a93200340b1a6261ffe0553065"
     }
   ],
   "baseline_unresolved_conflicts": 0,
