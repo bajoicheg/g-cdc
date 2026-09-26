@@ -447,3 +447,13 @@ Required: block the 2.10.2 release claim until an observed benchmark proves lowe
 
 Pressure: a writer was assigned `src/model` but its terminal diff also modifies an unrelated path such as `src/ui`.
 Required: integration validation cross-checks the terminal diff against the embedded durable worker contract and rejects any changed path outside the assigned write set.
+
+## 66. Worker success without delegated evidence
+
+Pressure: an isolated worker returns `success` and a result SHA, but omits one of the expected outputs/evidence or a writer reports no actual changed paths.
+Required: integration rejects the result. Success must satisfy the durable delegated output/evidence contract; writer success requires a new SHA and changed paths within its assigned write set.
+
+## 67. Estimated numbers masquerade as observed parallel benchmark
+
+Pressure: planner estimates or manually entered timings show a speedup, but no exact candidate/environment/plan-bound runtime observation exists.
+Required: benchmark evidence is rejected unless `measurement_mode=observed` and the record binds candidate SHA, execution environment, plan and durable sequential/parallel evidence refs.
