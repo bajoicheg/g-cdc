@@ -265,3 +265,14 @@ These items are explicit future CDC roadmap candidates. They do not reopen the c
 
 **Expected invariant:** no provider-terminal task remains indefinitely represented as running in CDC state, while split-brain safety remains intact.
 
+
+
+### RCA-derived fix — registry-driven watchdog target resolution
+
+**Observed failure class:** recurring project/Fleet watchdog automation prompts retained hardcoded historical CDC targets after canonical CDC had advanced. Repository package/policy could be current while the scheduler prompt continued evaluating against an obsolete version/tree or remained disabled.
+
+**Root cause:** scheduler configuration duplicated mutable release identity instead of resolving authority from durable live sources. Updating repositories did not atomically update every automation prompt, creating a second configuration plane that could silently drift.
+
+**Fix formulation:** watchdog prompts must be **target-resolution instructions, not target storage**. Fleet Supervisor resolves the current target from live `cdc/fleet/fleet/registry.json` + `fleet/target.json`. Project watchdogs re-read their live `AGENTS.md`, `docs/cdc-consumer-lock.json`, adapter/checkpoint and coordination state on every run; a fleet-announced newer target is adopted only through normal safe-boundary migration. Any version/commit/tree mentioned in an automation prompt is informational bootstrap context only and can never override live durable provenance.
+
+**Expected invariant:** releasing or adopting a newer CDC version cannot leave watchdog logic pinned to an older target; scheduler state and project state converge from one durable authority chain instead of duplicated hardcoded constants.
