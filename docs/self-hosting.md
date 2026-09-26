@@ -1,11 +1,11 @@
 # Self-hosting model
 
-CDC 2.9.2 is independently released and is the current development authority for `bajoicheg/g-cdc`.
+CDC 2.10.0 is independently released and is the current development authority for `bajoicheg/g-cdc`.
 
 Release identity:
-- ref: `refs/heads/release/v2.9.2`;
-- release commit: `0dd30a888be852d2820f690be04dbd374d732c06`;
-- package tree: `f9087eacbffee774c143eabf854c2cf08d610ec7`;
-- independent release evidence: `release/evidence-2.9.2.json` (Codex bootstrap 12/12, package 384/384, aggregate 396/396, 216 files, 38 fault scenarios, three-consumer GREEN, 13/13 targeted assertions).
+- ref: `refs/heads/release/v2.10.0`;
+- package tree: `63f25fb7402bf07d2e037de88194b7359c9e0f93`;
+- candidate validation HEAD: `3a02384deb0ef9b6d9352c508c506a414d28290c`;
+- independent release evidence: `release/evidence-2.10.0.json` (bootstrap 12/12, package 397/397, aggregate 409/409, 227 files, behavioral 6 RED→6 GREEN, 41 fault scenarios, 50 pressure scenarios and three-consumer GREEN).
 
-The CDC 2.9 roadmap is terminal at 2.9.2. Any future CDC candidate must start from a new explicit roadmap and use released 2.9.2 as its N-1 development authority unless a later stable release supersedes it.
+CDC 2.10.1 is the next authorized staged candidate and must be developed under released 2.10.0. CDC 2.10.2 remains dependency-gated until 2.10.1 is independently released.
