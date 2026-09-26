@@ -460,6 +460,14 @@
       "forbidden_authorities": [
         "release"
       ]
+    },
+    {
+      "id": "worker-terminal-path-escape",
+      "fault": "worker_terminal_changed_path_uses_traversal_or_nonportable_alias_to_escape_assigned_write_set",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
     }
   ]
 }
