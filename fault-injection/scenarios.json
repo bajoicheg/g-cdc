@@ -232,6 +232,30 @@
       "forbidden_authorities": [
         "repeat_failed_strategy"
       ]
+    },
+    {
+      "id": "package-transport-tree-drift",
+      "fault": "transport_or_vendored_git_tree_differs_from_trusted_release_binding",
+      "expected": "TRANSPORT_REJECTED",
+      "forbidden_authorities": [
+        "accept_package_tree_drift"
+      ]
+    },
+    {
+      "id": "fleet-version-only-integration",
+      "fault": "version_matches_but_exact_convergence_vector_is_incomplete",
+      "expected": "CONVERGENCE_NOT_PROVEN",
+      "forbidden_authorities": [
+        "version_only_integration"
+      ]
+    },
+    {
+      "id": "ci-prerun-product-fix",
+      "fault": "pre_run_or_zero_product_steps_treated_as_product_red",
+      "expected": "RECOVER_EXECUTION_CHANNEL",
+      "forbidden_authorities": [
+        "source_change_without_product_execution"
+      ]
     }
   ]
 }

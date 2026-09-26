@@ -1,0 +1,46 @@
+{
+  "schema": "cdc-release-evidence/v1",
+  "version": "2.9.0",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "candidate_source_commit": "77dd7a89c41763a4a3022245ded145984cdaac25",
+  "candidate_validation_head": "04013879a649ac52f3c1db914b204043144893ee",
+  "package_tree": "75702b88df4ac8c7e91a4e5055f8aa734dddeeae",
+  "release_validation": {
+    "provider": "codex_compute",
+    "evidence_comment": "https://github.com/bajoicheg/g-cdc/pull/8#issuecomment-5847395070",
+    "conclusion": "success",
+    "bootstrap": {
+      "result": "success",
+      "tests": "12/12"
+    },
+    "package": {
+      "result": "success",
+      "tests": "361/361",
+      "validated_files": 188
+    },
+    "fault_scenarios": 31,
+    "aggregate_unittests": "373/373",
+    "explicit_contract_tests": "5/5",
+    "source_lock": {
+      "result": "success",
+      "driver_version": "2.8.2",
+      "mode": "durable_evidence_ref"
+    },
+    "consumers": [
+      {
+        "repository": "bajoicheg-private/g-supervisor",
+        "result": "success"
+      },
+      {
+        "repository": "bajoicheg-private/g-ad-control",
+        "result": "success"
+      },
+      {
+        "repository": "bajoicheg/g-pc-health-check",
+        "result": "success"
+      }
+    ],
+    "final_head_clean": true
+  },
+  "release_ref": "refs/heads/release/v2.9.0"
+}
