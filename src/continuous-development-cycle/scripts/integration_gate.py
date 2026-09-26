@@ -21,6 +21,12 @@ def _refs(v,n,allow_empty=False):
     if len(v)!=len(set(v)):
         raise ValueError(f"{n} contains duplicates")
 
+def _path(path):
+    if not isinstance(path,str) or not path.strip() or "\\" in path or path.startswith("/") or path.endswith("/") or "//" in path:
+        raise ValueError("unsafe changed path")
+    if any(x in {"",".",".."} for x in path.split("/")):raise ValueError("unsafe changed path")
+    return path
+
 def _within(path,allowed):
     path=path.rstrip("/");allowed=allowed.rstrip("/")
     return path==allowed or path.startswith(allowed+"/")
@@ -82,8 +88,9 @@ def validate(d):
             raise ValueError("worker result missing expected output")
         if r["state"]=="success" and not set(a["expected_evidence"])<=set(r["evidence_refs"]):
             raise ValueError("worker result missing expected evidence")
-        if not isinstance(r["changed_paths"],list) or any(not isinstance(x,str) or not x.strip() for x in r["changed_paths"]):
-            raise ValueError("changed_paths invalid")
+        if not isinstance(r["changed_paths"],list):raise ValueError("changed_paths invalid")
+        for changed in r["changed_paths"]:_path(changed)
+        if len(r["changed_paths"])!=len(set(r["changed_paths"])):raise ValueError("duplicate changed path")
         if r["role"]!="writer":
             if r["changed_paths"]:
                 raise ValueError("non-writer changed paths forbidden")
