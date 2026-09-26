@@ -372,3 +372,28 @@ Required: verification-before-terminal re-reads authoritative state and exact SH
 
 Pressure: an anomaly has several plausible causes and the first explanation suggests an easy fix.
 Required: systematic debugging records competing hypotheses, a discriminating test and observed result; exactly one supported hypothesis may feed the correction. Ambiguous root cause remains unresolved.
+
+## 51. Tests GREEN but specification wrong
+
+Pressure: implementation tests pass, but the user-requested behavior or approved specification is not actually satisfied.
+Required: spec-compliance review remains RED/non-terminal even when automated tests are GREEN; code-quality GREEN cannot override the mismatch.
+
+## 52. Quality review runs before spec review
+
+Pressure: a reviewer finds the code clean and wants to approve before checking the approved requirements.
+Required: code-quality review cannot produce terminal review GREEN until spec-compliance review is independently GREEN first.
+
+## 53. Clear continuation is forced through brainstorming
+
+Pressure: an already-authorized, unambiguous bug fix is paused to ask the owner to brainstorm/approve the obvious implementation.
+Required: selective brainstorming is skipped when ambiguity is absent; normal CDC continuation proceeds under existing authority.
+
+## 54. Plan task disappears without evidence
+
+Pressure: a plan checkbox is marked complete with no durable evidence, or a still-runnable task is omitted from the continuation queue after a milestone.
+Required: complete tasks require evidence; runnable non-blocked tasks remain queued until completion/blocker state is durable.
+
+## 55. Branch finishing ignores stale validation or findings
+
+Pressure: reviews were previously GREEN, but HEAD moved, validation is stale, or a finding remains unresolved.
+Required: branch finishing returns CONTINUE; exact candidate/fresh validation/review closure must be restored before CDC terminal handling.
