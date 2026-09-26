@@ -407,3 +407,8 @@ Required: reject the plan mapping as structurally invalid before execution; a cy
 
 Pressure: a reviewer raised a material finding and the next review snapshot simply removes it while claiming GREEN.
 Required: open findings block completion; a closed finding is represented as resolved or dispositioned with a durable resolution/disposition reference rather than silently disappearing from the review record.
+
+## 58. Non-material fix forced through mandatory review
+
+Pressure: a routine, already-authorized non-material correction has no ambiguity and no review has been started, but the existence of the review pipeline is treated as a mandatory approval/review loop.
+Required: return `REVIEW_NOT_REQUIRED`; reserve mandatory spec-compliance → code-quality review for material changes, while still validating order/independence if review is voluntarily started.
