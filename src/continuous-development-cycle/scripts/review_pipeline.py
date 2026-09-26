@@ -6,9 +6,22 @@ from pathlib import Path
 
 SCHEMA="review-pipeline/v1"
 STATES={"not_run","green","red"}
+FINDING_STATES={"open","resolved","dispositioned"}
 
 def _text(v,n):
     if not isinstance(v,str) or not v.strip(): raise ValueError(f"{n} must be nonempty text")
+
+def _finding(v,n):
+    if not isinstance(v,dict) or set(v)!={"id","summary","state","resolution_ref"}:
+        raise ValueError(f"{n} fields mismatch")
+    _text(v["id"],f"{n}.id");_text(v["summary"],f"{n}.summary")
+    if v["state"] not in FINDING_STATES: raise ValueError(f"{n}.state invalid")
+    if v["state"]=="open":
+        if v["resolution_ref"] is not None: raise ValueError(f"{n}.open resolution_ref must be null")
+    else:
+        _text(v["resolution_ref"],f"{n}.resolution_ref")
+    return v
+
 def _review(v,n):
     if not isinstance(v,dict) or set(v)!={"state","reviewer_ref","sequence","evidence_refs","findings"}:
         raise ValueError(f"{n} fields mismatch")
@@ -21,8 +34,11 @@ def _review(v,n):
         if type(v["sequence"]) is not int or v["sequence"]<1: raise ValueError(f"{n}.sequence invalid")
         if not isinstance(v["evidence_refs"],list) or not v["evidence_refs"] or any(not isinstance(x,str) or not x.strip() for x in v["evidence_refs"]):
             raise ValueError(f"{n}.evidence_refs invalid")
-        if not isinstance(v["findings"],list) or any(not isinstance(x,str) or not x.strip() for x in v["findings"]):
-            raise ValueError(f"{n}.findings invalid")
+        if not isinstance(v["findings"],list): raise ValueError(f"{n}.findings invalid")
+        ids=[]
+        for i,f in enumerate(v["findings"]):
+            _finding(f,f"{n}.findings[{i}]");ids.append(f["id"])
+        if len(ids)!=len(set(ids)): raise ValueError(f"{n}.duplicate finding id")
     return v
 
 def validate(data):
@@ -42,8 +58,8 @@ def evaluate(data):
     if s["state"]!="not_run" and q["state"]!="not_run":
         if s["reviewer_ref"]==q["reviewer_ref"]: b.append("reviewers_not_independent")
         if s["sequence"]>=q["sequence"]: b.append("review_order_invalid")
-    if s["findings"]: b.append("unresolved_spec_findings")
-    if q["findings"]: b.append("unresolved_quality_findings")
+    if any(f["state"]=="open" for f in s["findings"]): b.append("unresolved_spec_findings")
+    if any(f["state"]=="open" for f in q["findings"]): b.append("unresolved_quality_findings")
     if s["state"]=="green" and q["state"]=="not_run": b.append("code_quality_review_required")
     if q["state"]=="red": b.append("code_quality_red")
     if s["state"]=="red": b.append("spec_compliance_red")
