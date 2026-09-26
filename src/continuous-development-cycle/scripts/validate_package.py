@@ -65,7 +65,7 @@ from branch_finish import evaluate as evaluate_branch_finish
 from parallel_task_planner import plan as plan_parallel_tasks
 from worktree_worker_contract import assess as assess_worker_contract
 from integration_gate import evaluate as evaluate_integration_gate
-from parallel_benchmark import evaluate_from_files as evaluate_parallel_benchmark_files
+from parallel_benchmark import evaluate_from_files as evaluate_parallel_benchmark_files, load_observations as load_parallel_benchmark_observations
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -443,11 +443,17 @@ def validate():
             any(integration[name] for name in ('authorizes_shared_branch_write','authorizes_force_push',
                                                'authorizes_merge','authorizes_release','authorizes_scope_expansion'))):
         raise ContractError('invalid CDC 2.10.2 integration gate template')
-    benchmark = evaluate_parallel_benchmark_files(json.loads((ROOT / 'templates/parallel-benchmark.json').read_text()), ROOT)
-    if (not benchmark['passed'] or benchmark['speedup_ratio'] <= 1 or benchmark['blockers'] or
-            any(benchmark[name] for name in ('authorizes_worker_launch','authorizes_product_write',
-                                             'authorizes_merge','authorizes_release'))):
-        raise ContractError('invalid CDC 2.10.2 parallel benchmark template')
+    benchmark_template = json.loads((ROOT / 'templates/parallel-benchmark.json').read_text())
+    benchmark_fixtures = load_parallel_benchmark_observations(benchmark_template, ROOT)
+    if any(observation['observed'] for observation in benchmark_fixtures):
+        raise ContractError('CDC 2.10.2 package benchmark templates must be non-observed fixtures')
+    try:
+        evaluate_parallel_benchmark_files(benchmark_template, ROOT)
+    except ValueError as exc:
+        if 'must be observed' not in str(exc):
+            raise ContractError('invalid CDC 2.10.2 benchmark fixture: ' + str(exc)) from exc
+    else:
+        raise ContractError('CDC 2.10.2 benchmark fixture must never satisfy observed release evidence')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.
