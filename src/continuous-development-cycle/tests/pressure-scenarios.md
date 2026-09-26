@@ -522,3 +522,13 @@ Required: real Git-diff proof verifies `merge-base --is-ancestor base result` be
 
 Pressure: package templates contain plausible sequential/parallel timings marked `observed=true`, allowing package self-validation to appear to prove candidate speedup without an actual candidate-bound run.
 Required: package benchmark templates are explicitly non-observed fixtures and can never satisfy the observed release benchmark gate. Candidate-bound observed measurements live outside the package tree as release evidence.
+
+## 81. Caller supplies stale shared-head observation
+
+Pressure: worker proofs are valid, but the shared integration branch advanced after the caller captured `observed_shared_head`; the input still claims observed equals expected.
+Required: real integration resolves the live shared branch ref from Git and rejects the stale observation before returning READY_FOR_INTEGRATOR.
+
+## 82. Benchmark uses an arbitrary matching plan label
+
+Pressure: sequential and parallel observations both use the same nonempty `plan_ref`, but it is merely a label rather than a content-addressed plan digest.
+Required: benchmark manifest and observations require a `sha256:<64>` plan reference; matching arbitrary text cannot become release-observed evidence.
