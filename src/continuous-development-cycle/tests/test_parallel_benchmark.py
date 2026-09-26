@@ -8,6 +8,12 @@ class T(unittest.TestCase):
  def test_template_demonstrates_benefit(self):
   r=evaluate(self.base());self.assertTrue(r["passed"]);self.assertGreater(r["speedup_ratio"],1)
   self.assertFalse(r["authorizes_worker_launch"]);self.assertFalse(r["authorizes_release"])
+ def test_unobserved_benchmark_rejected(self):
+  d=self.base();d["measurement_mode"]="estimated"
+  with self.assertRaises(ValueError):evaluate(d)
+ def test_candidate_sha_required(self):
+  d=self.base();d["candidate_sha"]="not-a-sha"
+  with self.assertRaises(ValueError):evaluate(d)
  def test_slower_parallel_run_fails(self):
   d=self.base();d["parallel_elapsed_seconds"]=d["sequential_baseline_seconds"]
   self.assertIn("no_wall_clock_improvement",evaluate(d)["blockers"])
