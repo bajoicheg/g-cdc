@@ -3,7 +3,7 @@
 from __future__ import annotations
 import argparse,json,re,sys
 from pathlib import Path
-from parallel_task_planner import validate as validate_parallel_plan, plan as build_parallel_plan, validate_write_path, overlaps
+from parallel_task_planner import validate as validate_parallel_plan, plan as build_parallel_plan, validate_write_path, overlaps, canonical_plan_ref
 
 SCHEMA="worktree-worker-contract/v1";SHA=re.compile(r"^[0-9a-f]{40}$");ROLES={"writer","read_only","review"}
 
@@ -22,6 +22,7 @@ def validate(d):
     if not isinstance(d["base_sha"],str) or not SHA.fullmatch(d["base_sha"]):raise ValueError("base_sha invalid")
 
     plan=validate_parallel_plan(d["plan"])
+    if d["plan_ref"]!=canonical_plan_ref(plan):raise ValueError("plan_ref does not bind embedded plan")
     if plan["change_id"]!=d["change_id"]:raise ValueError("plan change mismatch")
     if plan["integrator_id"]!=d["integrator_id"]:raise ValueError("plan integrator mismatch")
     if plan["shared_branch"]!=d["shared_branch"]:raise ValueError("plan shared branch mismatch")
