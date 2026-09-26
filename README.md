@@ -2,7 +2,7 @@
 
 `bajoicheg/g-cdc` is the canonical source repository for CDC 2.7+.
 
-CDC 2.7 introduces an independently bootstrappable release model:
+CDC uses an independently bootstrappable release model:
 
 - stable CDC N-1 develops N;
 - candidate CDC never serves as its only release validator;
@@ -11,4 +11,6 @@ CDC 2.7 introduces an independently bootstrappable release model:
 - compatibility, fault-injection and cross-consumer evidence are mandatory release classes;
 - migration never crosses an active owner or unresolved external guard.
 
-CDC 2.8.1 is released at `refs/heads/release/v2.8.1` (release commit `a3f3e8db0d6a863e1dfa19c27af51820c954bf69`, package tree `fda5e955b987fcebbe49c3c27bf3b24114983eab`). `g-cdc` uses released 2.8.1 to develop CDC 2.8.2 Fleet & Publication Maturity.
+CDC 2.8.2 is released at `refs/heads/release/v2.8.2` (release commit `d926f98f01017e9c007a6cbb66023f729516eb9a`, package tree `bdf18b8dedb2f0cf62728935d92e6260b4a64ef0`).
+
+The CDC 2.8 roadmap is complete: 2.8.0 Autonomous Continuity & Isolation, 2.8.1 Operational Hardening, and 2.8.2 Fleet & Publication Maturity are all released.
