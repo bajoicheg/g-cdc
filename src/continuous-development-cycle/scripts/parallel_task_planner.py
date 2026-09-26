@@ -14,7 +14,7 @@ def _refs(v,n,allow_empty=False):
     if not allow_empty and not v: raise ValueError(f"{n} must not be empty")
     if len(v)!=len(set(v)): raise ValueError(f"{n} contains duplicates")
 def _path(p):
-    if not isinstance(p,str) or not p.strip() or p.startswith("/") or p.endswith("/") or "//" in p:
+    if not isinstance(p,str) or not p.strip() or "\\" in p or p.startswith("/") or p.endswith("/") or "//" in p:
         raise ValueError("unsafe write path")
     parts=p.split("/")
     if any(x in {"",".",".."} for x in parts): raise ValueError("unsafe write path")
