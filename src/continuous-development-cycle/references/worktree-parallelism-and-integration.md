@@ -28,7 +28,7 @@ The CDC integrator is not a delegated worker. Same-wave writer overlap is invali
 
 ## Single-integrator gate
 
-`scripts/integration_gate.py` evaluates terminal results for **one wave** before the single integrator assembles that wave onto the shared integration branch. It requires the shared branch to remain at the wave's expected base, all workers to succeed on that base, same-wave writer result paths to remain non-overlapping, no unresolved conflicts and no force-push request.
+`scripts/integration_gate.py` evaluates terminal results for **one wave** before the single integrator assembles that wave onto the shared integration branch. The integration input embeds the exact worker contract for that wave. The gate cross-checks worker/task/role/base identity and requires every changed path to remain inside that worker's assigned write set. It also requires the shared branch to remain at the wave's expected base, all workers to succeed, no unresolved conflicts and no force-push request.
 
 A GREEN result is only `READY_FOR_INTEGRATOR`. The gate creates no shared-branch write, merge or release authority. The integrator must still re-read HEAD and use normal concurrent-writer reconciliation before the separately authorized assembly write. After all implementation waves are assembled, the combined candidate passes CDC 2.10.1 spec/code review and branch finishing, then CDC 2.10.0 verification-before-terminal.
 
