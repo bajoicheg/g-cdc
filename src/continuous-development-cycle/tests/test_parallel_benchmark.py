@@ -5,11 +5,13 @@ from parallel_benchmark import evaluate,evaluate_from_files,load_observations
 
 class T(unittest.TestCase):
  def base(self):return json.loads((ROOT/"templates"/"parallel-benchmark.json").read_text())
- def observations(self,d=None):return load_observations(d or self.base(),ROOT)
- def test_template_demonstrates_resolved_observed_benefit(self):
-  r=evaluate_from_files(self.base(),ROOT);self.assertTrue(r["passed"]);self.assertGreater(r["speedup_ratio"],1)
-  self.assertEqual(r["candidate_sha"],"1"*40);self.assertEqual(r["resolved_observation_count"],2)
-  self.assertFalse(r["authorizes_worker_launch"]);self.assertFalse(r["authorizes_release"])
+ def observations(self,d=None):
+  obs=load_observations(d or self.base(),ROOT)
+  for x in obs:x["observed"]=True
+  return obs
+ def test_template_is_non_authoritative_fixture(self):
+  obs=load_observations(self.base(),ROOT);self.assertTrue(all(x["observed"] is False for x in obs))
+  with self.assertRaises(ValueError):evaluate_from_files(self.base(),ROOT)
  def test_candidate_sha_required(self):
   d=self.base();d["candidate_sha"]="not-a-sha"
   with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
