@@ -3,18 +3,33 @@
   "benchmark_id": "benchmark-1",
   "representative_task_ref": "change-parallel",
   "candidate_sha": "1111111111111111111111111111111111111111",
-  "measurement_mode": "observed",
   "environment_ref": "provider:benchmark-environment",
   "plan_ref": "plan:parallel-task-plan@durable-ref",
   "workstreams": 2,
-  "sequential_baseline_seconds": 190,
-  "parallel_elapsed_seconds": 120,
+  "observations": [
+    {
+      "mode": "sequential",
+      "observed": true,
+      "candidate_sha": "1111111111111111111111111111111111111111",
+      "environment_ref": "provider:benchmark-environment",
+      "plan_ref": "plan:parallel-task-plan@durable-ref",
+      "workload_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "elapsed_seconds": 190,
+      "evidence_ref": "benchmark:sequential-observation"
+    },
+    {
+      "mode": "parallel",
+      "observed": true,
+      "candidate_sha": "1111111111111111111111111111111111111111",
+      "environment_ref": "provider:benchmark-environment",
+      "plan_ref": "plan:parallel-task-plan@durable-ref",
+      "workload_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "elapsed_seconds": 120,
+      "evidence_ref": "benchmark:parallel-observation"
+    }
+  ],
   "baseline_unresolved_conflicts": 0,
   "parallel_unresolved_conflicts": 0,
   "baseline_rollbacks": 0,
-  "parallel_rollbacks": 0,
-  "evidence_refs": [
-    "benchmark:sequential-observation",
-    "benchmark:parallel-observation"
-  ]
+  "parallel_rollbacks": 0
 }
