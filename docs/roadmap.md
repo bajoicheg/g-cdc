@@ -115,13 +115,15 @@ These items are explicit future CDC roadmap candidates. They do not reopen the c
 
 **Problem:** long-running CDC conversations make it hard to correlate a user command with repository, watchdog and compute events after the fact.
 
-**Proposed fix:** after every user command handled under CDC, emit a compact chat timestamp in Moscow time (MSK, UTC+3) before or with the first progress update. The timestamp is evidence metadata only; it must not be treated as authorization, lease ownership or a repository event.
+**Accepted fix:** after every user command handled under CDC in any conversation, read the actual current Moscow time (MSK, UTC+3) from a runtime/authoritative clock and emit exactly one compact timestamp before or with the first substantive progress update. Never extrapolate from the previous timestamp and never manually increment minutes. The timestamp is evidence metadata only; it must not be treated as authorization, lease ownership or a repository event.
 
 **Acceptance direction:**
-- one MSK timestamp per user command;
+- one timestamp per user command in every CDC-managed chat;
 - timestamp appears before substantive CDC progress for that command;
-- format is compact and unambiguous, for example `[MSK 14:42]`;
-- no duplicate timestamp spam inside one command unless a later update crosses a meaningful time boundary.
+- exact display format: `[HH:MM DD.MM]`, for example `[19:31 26.09]`;
+- source time is freshly observed for that command, not derived from an earlier chat timestamp;
+- no `MSK` label, seconds or synthetic minute advancement;
+- no duplicate timestamp spam inside one command.
 
 ### RCA-to-roadmap feedback loop
 
