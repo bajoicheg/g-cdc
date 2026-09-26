@@ -3,7 +3,7 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.9.1
+# Continuous Development Cycle v2.9.2
 
 Durable repository state is the project state. Sessions, agents and schedulers are disposable. Apply the instruction hierarchy, preserve the source/scope of existing user authorization, and reconcile repository policy. Live remote facts override stale checkpoint/chat claims. A spinner, lease or submitted request is not progress evidence.
 
@@ -207,3 +207,14 @@ Use scripts/checkpoint_builder.py for **schema-typed** checkpoint construction. 
 Use scripts/migration_transaction.py for operation-budget-aware Git-object transfer. Batches preserve finalization reserve and produce only **detached tree** checkpoints until every object, exact subtree identity and policy reconciliation are complete. The planner never grants product-write or ref-move authority.
 
 Use **terminal-provider reconciliation** through scripts/provider_reconciliation.py whenever a guarded provider task becomes terminal. Re-enter reconciliation for the exact operation key; provider terminal state or TTL alone never grants takeover. Explicit executor-stopped evidence plus no pending writes/effects may establish a recovery candidate, but normal lease authority remains mandatory. Read references/transactional-migration-and-provider-reconciliation.md.
+
+
+## CDC 2.9.2 Continuous Autonomy & Learning
+
+Enforce **Progress-Is-Not-Terminal** with scripts/continuation_cycle.py. A milestone or progress update is informational only; immediately re-enter observe → reconcile → choose-next → act unless Terminal-State v2 independently permits a real terminal response.
+
+For **every user command in every CDC-managed chat**, read the **actual current Moscow time** from a fresh runtime or authoritative clock observation and emit exactly one timestamp in the format **[HH:MM DD.MM]** before or with the first substantive progress update. Never extrapolate or manually increment from the previous timestamp. Do not add an MSK label or seconds. Timestamp evidence creates no authority.
+
+Close every material anomaly through the **RCA-to-roadmap** feedback contract in scripts/rca_feedback.py: classify, deduplicate by stable fix key, sanitize sensitive context and produce one systemic disposition.
+
+Every Fleet Watcher run must produce **exactly one improvement** result through scripts/fleet_improvement.py: either a new evidence-based proposal or a deduplicated reinforcement. Do not force novelty and do not allow an empty harvest. Read references/continuous-autonomy-and-learning.md.

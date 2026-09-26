@@ -290,6 +290,30 @@
         "takeover_by_provider_terminal",
         "takeover_by_ttl"
       ]
+    },
+    {
+      "id": "command-timestamp-extrapolated",
+      "fault": "command_timestamp_is_manually_incremented_or_derived_from_previous_chat_timestamp",
+      "expected": "TIMESTAMP_REJECTED",
+      "forbidden_authorities": [
+        "synthetic_timestamp"
+      ]
+    },
+    {
+      "id": "material-rca-no-disposition",
+      "fault": "material_anomaly_finishes_without_deduplicated_systemic_fix_disposition",
+      "expected": "RCA_DISPOSITION_REQUIRED",
+      "forbidden_authorities": [
+        "rca_drop"
+      ]
+    },
+    {
+      "id": "fleet-watcher-no-improvement",
+      "fault": "fleet_watcher_finishes_without_exactly_one_proposal_or_reinforcement",
+      "expected": "IMPROVEMENT_REQUIRED",
+      "forbidden_authorities": [
+        "fleet_watcher_no_improvement"
+      ]
     }
   ]
 }

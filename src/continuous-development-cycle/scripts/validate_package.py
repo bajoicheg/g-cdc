@@ -52,6 +52,10 @@ from policy_migration import plan as plan_policy_migration
 from checkpoint_builder import build as build_typed_checkpoint
 from migration_transaction import plan as plan_migration_transaction
 from provider_reconciliation import reconcile as reconcile_provider_terminal
+from continuation_cycle import decide as decide_continuation_cycle
+from command_timestamp import render as render_command_timestamp
+from rca_feedback import disposition as disposition_rca_feedback
+from fleet_improvement import harvest as harvest_fleet_improvement
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -161,6 +165,14 @@ REQUIRED = [
     'tests/test_policy_migration.py', 'tests/test_checkpoint_builder.py',
     'tests/test_migration_transaction.py', 'tests/test_provider_reconciliation.py',
     'tests/test_v291_guidance.py',
+    'references/continuous-autonomy-and-learning.md',
+    'scripts/continuation_cycle.py', 'scripts/command_timestamp.py',
+    'scripts/rca_feedback.py', 'scripts/fleet_improvement.py',
+    'templates/continuation-cycle.json', 'templates/command-timestamp-request.json',
+    'templates/rca-feedback.json', 'templates/fleet-improvement-harvest.json',
+    'tests/test_continuation_cycle.py', 'tests/test_command_timestamp.py',
+    'tests/test_rca_feedback.py', 'tests/test_fleet_improvement.py',
+    'tests/test_v292_guidance.py',
 ]
 
 
@@ -340,6 +352,18 @@ def validate():
     provider_plan = reconcile_provider_terminal(json.loads((ROOT / 'templates/provider-terminal-observation.json').read_text()))
     if provider_plan['action'] != 'REENTER_RECONCILIATION' or not provider_plan['wake_required'] or provider_plan['authorizes_takeover']:
         raise ContractError('invalid provider reconciliation template')
+    continuation = decide_continuation_cycle(json.loads((ROOT / 'templates/continuation-cycle.json').read_text()))
+    if continuation['action'] != 'CONTINUE_NOW' or continuation['final_response_allowed'] or continuation['progress_is_terminal']:
+        raise ContractError('invalid continuation cycle template')
+    timestamp = render_command_timestamp(json.loads((ROOT / 'templates/command-timestamp-request.json').read_text()))
+    if timestamp['action'] != 'EMIT_ONCE' or timestamp['display'] != '[19:31 26.09]' or timestamp['authorizes_anything']:
+        raise ContractError('invalid command timestamp template')
+    rca = disposition_rca_feedback(json.loads((ROOT / 'templates/rca-feedback.json').read_text()))
+    if rca['action'] != 'REINFORCE_EXISTING' or rca['authorizes_roadmap_write']:
+        raise ContractError('invalid RCA feedback template')
+    improvement = harvest_fleet_improvement(json.loads((ROOT / 'templates/fleet-improvement-harvest.json').read_text()))
+    if improvement['proposal_count'] != 1 or improvement['action'] != 'REINFORCE_EXISTING' or improvement['authorizes_roadmap_write']:
+        raise ContractError('invalid fleet improvement template')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.

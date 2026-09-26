@@ -1,7 +1,7 @@
 {
   "name": "continuous-development-cycle",
-  "version": "2.9.1",
+  "version": "2.9.2",
   "schema": "continuous-development-cycle/v3",
   "entrypoint": "SKILL.md",
-  "description": "Project-independent durable development with transactional migration, typed checkpoints, bounded Git transfer and terminal-provider reconciliation."
+  "description": "Project-independent durable development with continuous no-idle execution, exact command timestamps, RCA feedback closure and fleet improvement harvesting."
 }
