@@ -36,11 +36,29 @@ class T(unittest.TestCase):
  def test_contract_change_mismatch_rejected(self):
   d=self.base();d["worker_contract"]["change_id"]="other-change"
   with self.assertRaises(ValueError):evaluate(d)
+ def test_missing_expected_evidence_rejected(self):
+  d=self.base();d["worker_results"][0]["evidence_refs"]=["test:other"]
+  with self.assertRaises(ValueError):evaluate(d)
+ def test_missing_expected_output_rejected(self):
+  d=self.base();d["worker_results"][0]["output_refs"]=["commit:other"]
+  with self.assertRaises(ValueError):evaluate(d)
+ def test_successful_writer_requires_change_and_new_sha(self):
+  d=self.base();d["worker_results"][0]["changed_paths"]=[]
+  with self.assertRaises(ValueError):evaluate(d)
+  d=self.base();d["worker_results"][0]["result_sha"]=d["worker_results"][0]["base_sha"]
+  with self.assertRaises(ValueError):evaluate(d)
+ def test_non_writer_success_must_keep_base_sha(self):
+  d=self.base()
+  a=d["worker_contract"]["assignments"][0]
+  a["role"]="review";a["write_paths"]=[];a["worker_id"]="reviewer";a["task_id"]="review";a["expected_outputs"]=["review:report"];a["expected_evidence"]=["review:green"]
+  d["worker_contract"]["assignments"]=[a]
+  d["worker_results"]=[{"worker_id":"reviewer","task_id":"review","role":"review","base_sha":d["expected_shared_head"],"result_sha":"4"*40,"state":"success","changed_paths":[],"output_refs":["review:report"],"evidence_refs":["review:green"]}]
+  with self.assertRaises(ValueError):evaluate(d)
  def test_non_writer_result_cannot_mutate(self):
   d=self.base()
   a=d["worker_contract"]["assignments"][0]
   a["role"]="review";a["write_paths"]=[];a["worker_id"]="reviewer";a["task_id"]="review"
   d["worker_contract"]["assignments"]= [a]
-  d["worker_results"]=[{"worker_id":"reviewer","task_id":"review","role":"review","base_sha":d["expected_shared_head"],"result_sha":"4"*40,"state":"success","changed_paths":["src/fix.py"],"evidence_refs":["review:green"]}]
+  d["worker_results"]=[{"worker_id":"reviewer","task_id":"review","role":"review","base_sha":d["expected_shared_head"],"result_sha":"4"*40,"state":"success","changed_paths":["src/fix.py"],"output_refs":["review:report"],"evidence_refs":["review:green"]}]
   with self.assertRaises(ValueError):evaluate(d)
 if __name__=="__main__":unittest.main()
