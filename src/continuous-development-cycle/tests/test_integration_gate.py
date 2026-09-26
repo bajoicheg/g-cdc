@@ -1,25 +1,38 @@
 from pathlib import Path
-import copy,json,sys,unittest
+import copy,json,subprocess,sys,tempfile,unittest
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/"scripts"))
-from integration_gate import evaluate
+from integration_gate import evaluate,resolve_git_diff,verify_git_diff_proofs
 
 class T(unittest.TestCase):
  def base(self):return json.loads((ROOT/"templates"/"integration-gate.json").read_text())
+ def drop_proof(self,d,task_id):
+  d["diff_proofs"]=[p for p in d["diff_proofs"] if p["task_id"]!=task_id]
+ def proof(self,d,task_id):
+  return next(p for p in d["diff_proofs"] if p["task_id"]==task_id)
+ def result(self,d,task_id):
+  return next(r for r in d["worker_results"] if r["task_id"]==task_id)
  def test_ready_without_granting_shared_write(self):
   r=evaluate(self.base());self.assertTrue(r["ready"]);self.assertEqual(r["action"],"READY_FOR_INTEGRATOR");self.assertEqual(r["wave"],1)
+  self.assertTrue(r["final_wave"]);self.assertEqual(r["total_waves"],1);self.assertIsNone(r["next_wave"])
   self.assertEqual(r["next_gate"],"cdc_2.10.1_review_branch_finish_then_2.10.0_verification")
   self.assertFalse(r["authorizes_shared_branch_write"]);self.assertFalse(r["authorizes_merge"])
+ def test_nonfinal_wave_routes_to_new_fresh_base_contract(self):
+  d=self.base();d["worker_contract"]["plan"]["tasks"][1]["write_paths"]=["src/model/sub"]
+  d["worker_contract"]["assignments"]=d["worker_contract"]["assignments"][:1]
+  d["worker_results"]=d["worker_results"][:1];d["diff_proofs"]=d["diff_proofs"][:1]
+  r=evaluate(d);self.assertTrue(r["ready"]);self.assertFalse(r["final_wave"]);self.assertEqual(r["next_wave"],2)
+  self.assertEqual(r["next_gate"],"integrate_wave_then_contract_next_wave_on_fresh_head")
  def test_moved_shared_head_requires_reconcile(self):
   d=self.base();d["observed_shared_head"]="5"*40
   self.assertIn("shared_head_moved_reconcile_required",evaluate(d)["blockers"])
  def test_failed_worker_blocks(self):
-  d=self.base();d["worker_results"][0]["state"]="failed"
+  d=self.base();r=self.result(d,"task-model");r["state"]="failed";self.drop_proof(d,"task-model")
   self.assertIn("worker_not_success:task-model",evaluate(d)["blockers"])
  def test_failed_worker_can_report_failure_without_success_outputs(self):
-  d=self.base();r=d["worker_results"][0];r["state"]="failed";r["output_refs"]=[];r["evidence_refs"]=["failure:worker-log"]
+  d=self.base();r=self.result(d,"task-model");r["state"]="failed";r["output_refs"]=[];r["evidence_refs"]=["failure:worker-log"];self.drop_proof(d,"task-model")
   self.assertIn("worker_not_success:task-model",evaluate(d)["blockers"])
  def test_missing_worker_result_blocks(self):
-  d=self.base();d["worker_results"]=d["worker_results"][:1]
+  d=self.base();d["worker_results"]=d["worker_results"][:1];d["diff_proofs"]=d["diff_proofs"][:1]
   self.assertIn("missing_worker_result:task-ui",evaluate(d)["blockers"])
  def test_result_identity_must_match_contract(self):
   d=self.base();d["worker_results"][0]["worker_id"]="other-worker"
@@ -56,18 +69,37 @@ class T(unittest.TestCase):
   with self.assertRaises(ValueError):evaluate(d)
   d=self.base();d["worker_results"][0]["result_sha"]=d["worker_results"][0]["base_sha"]
   with self.assertRaises(ValueError):evaluate(d)
- def test_non_writer_success_must_keep_base_sha(self):
-  d=self.base()
-  a=d["worker_contract"]["assignments"][0]
-  a["role"]="review";a["write_paths"]=[];a["worker_id"]="reviewer";a["task_id"]="review";a["expected_outputs"]=["review:report"];a["expected_evidence"]=["review:green"]
+ def _review_only(self,d,result_sha,changed_paths):
+  plan=d["worker_contract"]["plan"];plan["tasks"]=[{"id":"review","role":"review","dependencies":[],"write_paths":[],"expected_outputs":["review:report"],"expected_evidence":["review:green"],"estimated_seconds":10}]
+  a={"worker_id":"reviewer","task_id":"review","role":"review","branch":"review/check","worktree_id":"wt-review","base_sha":d["expected_shared_head"],"write_paths":[],"expected_outputs":["review:report"],"expected_evidence":["review:green"],"can_write_shared_branch":False}
   d["worker_contract"]["assignments"]=[a]
-  d["worker_results"]=[{"worker_id":"reviewer","task_id":"review","role":"review","base_sha":d["expected_shared_head"],"result_sha":"4"*40,"state":"success","changed_paths":[],"output_refs":["review:report"],"evidence_refs":["review:green"]}]
+  d["worker_results"]=[{"worker_id":"reviewer","task_id":"review","role":"review","base_sha":d["expected_shared_head"],"result_sha":result_sha,"state":"success","changed_paths":changed_paths,"output_refs":["review:report"],"evidence_refs":["review:green"]}]
+  d["diff_proofs"]=[]
+ def test_non_writer_success_must_keep_base_sha(self):
+  d=self.base();self._review_only(d,"4"*40,[])
   with self.assertRaises(ValueError):evaluate(d)
  def test_non_writer_result_cannot_mutate(self):
-  d=self.base()
-  a=d["worker_contract"]["assignments"][0]
-  a["role"]="review";a["write_paths"]=[];a["worker_id"]="reviewer";a["task_id"]="review"
-  d["worker_contract"]["assignments"]= [a]
-  d["worker_results"]=[{"worker_id":"reviewer","task_id":"review","role":"review","base_sha":d["expected_shared_head"],"result_sha":"4"*40,"state":"success","changed_paths":["src/fix.py"],"output_refs":["review:report"],"evidence_refs":["review:green"]}]
+  d=self.base();self._review_only(d,d["expected_shared_head"],["src/fix.py"])
   with self.assertRaises(ValueError):evaluate(d)
+ def test_successful_writer_requires_exact_diff_proof(self):
+  d=self.base();self.drop_proof(d,"task-model")
+  with self.assertRaises(ValueError):evaluate(d)
+  d=self.base();self.proof(d,"task-model")["changed_paths"]=["src/model/other.py"]
+  with self.assertRaises(ValueError):evaluate(d)
+  d=self.base();self.proof(d,"task-model")["result_sha"]="9"*40
+  with self.assertRaises(ValueError):evaluate(d)
+ def test_git_diff_resolver_observes_complete_diff(self):
+  with tempfile.TemporaryDirectory() as td:
+   root=Path(td);subprocess.check_call(["git","init","-q",str(root)]);subprocess.check_call(["git","-C",str(root),"config","user.email","test@example.invalid"]);subprocess.check_call(["git","-C",str(root),"config","user.name","CDC Test"])
+   (root/"src/model").mkdir(parents=True);(root/"src/model/model.py").write_text("one\n")
+   subprocess.check_call(["git","-C",str(root),"add","."]);subprocess.check_call(["git","-C",str(root),"commit","-q","-m","base"])
+   base=subprocess.check_output(["git","-C",str(root),"rev-parse","HEAD"],text=True).strip()
+   (root/"src/model/model.py").write_text("two\n");(root/"src/model/new.py").write_text("new\n")
+   subprocess.check_call(["git","-C",str(root),"add","."]);subprocess.check_call(["git","-C",str(root),"commit","-q","-m","result"])
+   result=subprocess.check_output(["git","-C",str(root),"rev-parse","HEAD"],text=True).strip()
+   d=self.base();d["expected_shared_head"]=base;d["observed_shared_head"]=base;d["worker_contract"]["base_sha"]=base;d["worker_contract"]["plan"]["base_sha"]=base
+   d["worker_contract"]["plan"]["tasks"]=d["worker_contract"]["plan"]["tasks"][:1];d["worker_contract"]["assignments"]=d["worker_contract"]["assignments"][:1];d["worker_contract"]["assignments"][0]["base_sha"]=base
+   r=d["worker_results"][0];d["worker_results"]=[r];r["base_sha"]=base;r["result_sha"]=result;r["changed_paths"]=["src/model/model.py","src/model/new.py"]
+   d["diff_proofs"]=[resolve_git_diff(root,worker_id=r["worker_id"],task_id=r["task_id"],base_sha=base,result_sha=result,evidence_ref="git-diff:test")]
+   self.assertTrue(verify_git_diff_proofs(d,root));self.assertTrue(evaluate(d)["ready"])
 if __name__=="__main__":unittest.main()
