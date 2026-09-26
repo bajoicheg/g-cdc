@@ -62,6 +62,10 @@ from systematic_rca import analyze as analyze_systematic_rca
 from spec_plan_queue import evaluate as evaluate_spec_plan_queue
 from review_pipeline import evaluate as evaluate_review_pipeline
 from branch_finish import evaluate as evaluate_branch_finish
+from parallel_task_planner import plan as plan_parallel_tasks
+from worktree_worker_contract import assess as assess_worker_contract
+from integration_gate import evaluate as evaluate_integration_gate
+from parallel_benchmark import evaluate as evaluate_parallel_benchmark
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -185,6 +189,19 @@ REQUIRED = [
     'templates/systematic-rca.json',
     'tests/test_behavioral_eval.py', 'tests/test_verification_gate.py',
     'tests/test_systematic_rca.py', 'tests/test_v2100_guidance.py',
+    'references/specification-review-and-finishing.md',
+    'scripts/spec_plan_queue.py', 'scripts/review_pipeline.py', 'scripts/branch_finish.py',
+    'templates/spec-plan-queue.json', 'templates/review-pipeline.json', 'templates/branch-finish.json',
+    'tests/test_spec_plan_queue.py', 'tests/test_review_pipeline.py', 'tests/test_branch_finish.py',
+    'tests/test_v2101_guidance.py',
+    'references/worktree-parallelism-and-integration.md',
+    'scripts/parallel_task_planner.py', 'scripts/worktree_worker_contract.py',
+    'scripts/integration_gate.py', 'scripts/parallel_benchmark.py',
+    'templates/parallel-task-plan.json', 'templates/worktree-worker-contract.json',
+    'templates/integration-gate.json', 'templates/parallel-benchmark.json',
+    'tests/test_parallel_task_planner.py', 'tests/test_worktree_worker_contract.py',
+    'tests/test_integration_gate.py', 'tests/test_parallel_benchmark.py',
+    'tests/test_v2102_guidance.py',
 ]
 
 
@@ -407,6 +424,27 @@ def validate():
             any(branch_finish[name] for name in ('authorizes_product_write','authorizes_merge',
                                                  'authorizes_release','authorizes_scope_expansion'))):
         raise ContractError('invalid CDC 2.10.1 branch-finishing template')
+    parallel_plan = plan_parallel_tasks(json.loads((ROOT / 'templates/parallel-task-plan.json').read_text()))
+    if (not parallel_plan['parallel_safe'] or len(parallel_plan['waves']) < 2 or
+            parallel_plan['parallel_estimate_seconds'] >= parallel_plan['sequential_estimate_seconds'] or
+            any(parallel_plan[name] for name in ('authorizes_worker_launch','authorizes_product_write',
+                                                 'authorizes_merge','authorizes_release','authorizes_scope_expansion'))):
+        raise ContractError('invalid CDC 2.10.2 parallel planner template')
+    worker_contract = assess_worker_contract(json.loads((ROOT / 'templates/worktree-worker-contract.json').read_text()))
+    if (not worker_contract['valid'] or
+            any(worker_contract[name] for name in ('authorizes_worker_launch','authorizes_shared_branch_write',
+                                                   'authorizes_merge','authorizes_release','authorizes_scope_expansion'))):
+        raise ContractError('invalid CDC 2.10.2 worker isolation template')
+    integration = evaluate_integration_gate(json.loads((ROOT / 'templates/integration-gate.json').read_text()))
+    if (not integration['ready'] or integration['action'] != 'READY_FOR_INTEGRATOR' or integration['blockers'] or
+            any(integration[name] for name in ('authorizes_shared_branch_write','authorizes_force_push',
+                                               'authorizes_merge','authorizes_release','authorizes_scope_expansion'))):
+        raise ContractError('invalid CDC 2.10.2 integration gate template')
+    benchmark = evaluate_parallel_benchmark(json.loads((ROOT / 'templates/parallel-benchmark.json').read_text()))
+    if (not benchmark['passed'] or benchmark['speedup_ratio'] <= 1 or benchmark['blockers'] or
+            any(benchmark[name] for name in ('authorizes_worker_launch','authorizes_product_write',
+                                             'authorizes_merge','authorizes_release'))):
+        raise ContractError('invalid CDC 2.10.2 parallel benchmark template')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.
