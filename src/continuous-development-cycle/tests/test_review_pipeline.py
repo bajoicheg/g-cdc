@@ -27,6 +27,11 @@ class T(unittest.TestCase):
  def test_resolved_finding_requires_resolution_evidence(self):
   d=self.base();d["code_quality"]["findings"]=[finding("resolved",None)]
   with self.assertRaises(ValueError): evaluate(d)
+ def test_non_material_change_does_not_require_review(self):
+  d=self.base();d["material_change"]=False
+  d["spec_compliance"]={"state":"not_run","reviewer_ref":None,"sequence":None,"evidence_refs":[],"findings":[]}
+  d["code_quality"]={"state":"not_run","reviewer_ref":None,"sequence":None,"evidence_refs":[],"findings":[]}
+  r=evaluate(d);self.assertTrue(r["review_green"]);self.assertEqual(r["action"],"REVIEW_NOT_REQUIRED")
  def test_quality_required_after_spec(self):
   d=self.base();d["code_quality"]={"state":"not_run","reviewer_ref":None,"sequence":None,"evidence_refs":[],"findings":[]}
   self.assertIn("code_quality_review_required",evaluate(d)["blockers"])
