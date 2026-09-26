@@ -89,7 +89,7 @@ def validate(d):
         for n in ("base_sha","result_sha"):_sha(r[n],f"worker {n}")
         if r["base_sha"]!=a["base_sha"]:raise ValueError("result base does not match assignment")
         _refs(r["output_refs"],"worker outputs",allow_empty=r["state"]!="success")
-        _refs(r["evidence_refs"],"worker evidence")
+        _refs(r["evidence_refs"],"worker evidence",allow_empty=r["state"]!="success")
         if r["state"]=="success" and not set(a["expected_outputs"])<=set(r["output_refs"]):raise ValueError("worker result missing expected output")
         if r["state"]=="success" and not set(a["expected_evidence"])<=set(r["evidence_refs"]):raise ValueError("worker result missing expected evidence")
         if not isinstance(r["changed_paths"],list):raise ValueError("changed_paths invalid")
