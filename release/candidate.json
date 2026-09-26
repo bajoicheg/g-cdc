@@ -3,23 +3,23 @@
   "version": "2.9.0",
   "developed_under_version": "2.8.2",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "fe59a89572c54abc0baa85eac66d269dd9d3bb13",
-  "package_tree": "82260b7faee39f5f660a29536e669a9da39709b1",
+  "source_commit": "77dd7a89c41763a4a3022245ded145984cdaac25",
+  "package_tree": "75702b88df4ac8c7e91a4e5055f8aa734dddeeae",
   "status": "candidate",
   "evidence": {
     "bootstrap": [
-      "requested:pr8:independent-bootstrap"
+      "pending:exact-sha-revalidation-after-product-fix"
     ],
     "package": [
-      "requested:pr8:candidate-package"
+      "pending:exact-sha-revalidation-after-product-fix"
     ],
     "compatibility": [
       "compatibility/matrix.json",
-      "requested:pr8:compatibility"
+      "pending:exact-sha-revalidation-after-product-fix"
     ],
     "fault_injection": [
       "fault-injection/scenarios.json",
-      "requested:pr8:fault-injection"
+      "pending:exact-sha-revalidation-after-product-fix"
     ],
     "consumers": [
       "consumer:g-supervisor",
