@@ -220,6 +220,25 @@ def validate_v28_controls(data):
         "sanitized_export_on_findings": TRUE,
     }, "adapter.publication")
 
+def validate_v281_controls(data):
+    check(data["hardening"], {
+        "watchdog_repair_schema": ("watchdog-repair-state/v1",),
+        "watchdog_self_repair": TRUE,
+        "ref_inventory_schema": ("ref-inventory/v1",),
+        "ref_hygiene_authority": ("plan_only",),
+        "coordination_retention_schema": ("coordination-retention/v1",),
+        "coordination_retention_authority": ("plan_only",),
+        "blocker_proof_schema": ("blocked-state-proof/v1",),
+        "blocker_proof_required": TRUE,
+        "decision_request_schema": ("decision-request/v1",),
+        "decision_authority_must_preexist": TRUE,
+        "evidence_stream_schema": ("evidence-stream/v1",),
+        "canonical_evidence_schema": ("canonical-evidence/v1",),
+        "compact_evidence_required": TRUE,
+        "progress_enforcement_schema": ("progress-enforcement/v1",),
+        "stalled_requires_recovery_action": TRUE,
+    }, "adapter.hardening")
+
 def validate_adapter(data, skill_version=None):
     if isinstance(data, dict) and data.get("schema") in (
             "continuous-development-cycle/v1", "continuous-development-cycle/v2"):
@@ -228,7 +247,7 @@ def validate_adapter(data, skill_version=None):
     schema = dict(SCHEMA)
     if isinstance(data, dict) and "orchestration" in data:
         schema["orchestration"] = dict
-    for name in ("routing", "recovery_recipes", "continuation", "fleet", "convergence", "progress_slo", "audit", "autonomy", "publication"):
+    for name in ("routing", "recovery_recipes", "continuation", "fleet", "convergence", "progress_slo", "audit", "autonomy", "publication", "hardening"):
         if isinstance(data, dict) and name in data:
             schema[name] = dict
     check(data, schema)
@@ -267,6 +286,12 @@ def validate_adapter(data, skill_version=None):
         raise ContractError("CDC 2.8+ policy requires autonomy and publication controls")
     if all(v28_present):
         validate_v28_controls(data)
+    if "hardening" in data and lower < (2, 8, 1):
+        raise ContractError("CDC 2.8.1 hardening controls require skill_min_version >= 2.8.1")
+    if lower >= (2, 8, 1) and "hardening" not in data:
+        raise ContractError("CDC 2.8.1+ policy requires hardening controls")
+    if "hardening" in data:
+        validate_v281_controls(data)
     if "orchestration" in data:
         if lower < (2, 3, 0):
             raise ContractError("orchestration controls require skill_min_version >= 2.3.0")

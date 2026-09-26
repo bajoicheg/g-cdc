@@ -2,7 +2,7 @@ schema: continuous-development-cycle/v3
 
 policy:
   revision: "1"
-  skill_min_version: "2.8.0"
+  skill_min_version: "2.8.1"
   skill_max_version_exclusive: "3.0.0"
   approved_exceptions: []
 
@@ -233,7 +233,7 @@ fleet:
   assessment_max_age_seconds: 900
 
 convergence:
-  target_version: "2.8.0"
+  target_version: "2.8.1"
   target_package_fingerprint_ref: "coordination:fleet-target.json"
   exact_package_fingerprint_required: true
   safe_boundary_required: true
@@ -271,3 +271,22 @@ publication:
   control_plane_externalized: true
   direct_visibility_toggle_requires_guard_green: true
   sanitized_export_on_findings: true
+
+
+# CDC 2.8.1 operational hardening.
+hardening:
+  watchdog_repair_schema: watchdog-repair-state/v1
+  watchdog_self_repair: true
+  ref_inventory_schema: ref-inventory/v1
+  ref_hygiene_authority: plan_only
+  coordination_retention_schema: coordination-retention/v1
+  coordination_retention_authority: plan_only
+  blocker_proof_schema: blocked-state-proof/v1
+  blocker_proof_required: true
+  decision_request_schema: decision-request/v1
+  decision_authority_must_preexist: true
+  evidence_stream_schema: evidence-stream/v1
+  canonical_evidence_schema: canonical-evidence/v1
+  compact_evidence_required: true
+  progress_enforcement_schema: progress-enforcement/v1
+  stalled_requires_recovery_action: true

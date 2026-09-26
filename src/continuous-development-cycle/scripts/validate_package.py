@@ -33,6 +33,13 @@ from execution_channel_supervisor import validate as validate_channel_supervisio
 from concurrent_writer import reconcile as reconcile_writer
 from sensitive_context import validate_policy as validate_sensitive_context_policy
 from publication_guard import assess as assess_publication
+from watchdog_self_repair import plan as plan_watchdog_repair
+from ref_hygiene import assess as assess_ref_hygiene
+from coordination_retention import assess as assess_coordination_retention
+from blocker_proof import assess as assess_blocker_proof
+from decision_authority import classify as classify_decision
+from evidence_compactor import compact as compact_evidence
+from progress_enforcer import enforce as enforce_progress
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -104,6 +111,19 @@ REQUIRED = [
     'tests/test_terminal_state_v2.py', 'tests/test_execution_channel_supervisor.py',
     'tests/test_concurrent_writer.py', 'tests/test_sensitive_context.py',
     'tests/test_publication_guard.py', 'tests/test_v280_guidance.py',
+    'references/operational-hardening.md', 'references/decision-authority.md',
+    'scripts/watchdog_self_repair.py', 'scripts/ref_hygiene.py',
+    'scripts/coordination_retention.py', 'scripts/blocker_proof.py',
+    'scripts/decision_authority.py', 'scripts/evidence_compactor.py',
+    'scripts/progress_enforcer.py',
+    'templates/watchdog-repair-state.json', 'templates/ref-inventory.json',
+    'templates/coordination-retention.json', 'templates/blocked-state-proof.json',
+    'templates/decision-request.json', 'templates/evidence-stream.json',
+    'templates/progress-enforcement.json',
+    'tests/test_watchdog_self_repair.py', 'tests/test_ref_hygiene.py',
+    'tests/test_coordination_retention.py', 'tests/test_blocker_proof.py',
+    'tests/test_decision_authority.py', 'tests/test_evidence_compactor.py',
+    'tests/test_progress_enforcer.py', 'tests/test_v281_guidance.py',
 ]
 
 
@@ -221,6 +241,27 @@ def validate():
     publication = assess_publication(json.loads((ROOT / 'templates/publication-inventory.json').read_text()), sensitive)
     if not publication['pass'] or publication['authorizes_visibility_change']:
         raise ContractError('invalid publication-safety template')
+    watchdog_repair = plan_watchdog_repair(json.loads((ROOT / 'templates/watchdog-repair-state.json').read_text()))
+    if watchdog_repair['action'] != 'HEALTHY' or watchdog_repair['authorizes_scheduler_mutation']:
+        raise ContractError('invalid watchdog self-repair template')
+    ref_plan = assess_ref_hygiene(json.loads((ROOT / 'templates/ref-inventory.json').read_text()))
+    if ref_plan['delete_candidates'] or ref_plan['authorizes_delete']:
+        raise ContractError('invalid ref hygiene template')
+    retention = assess_coordination_retention(json.loads((ROOT / 'templates/coordination-retention.json').read_text()))
+    if retention['delete_candidates'] or retention['archive_candidates'] or retention['authorizes_delete'] or retention['authorizes_archive']:
+        raise ContractError('invalid coordination retention template')
+    blocker = assess_blocker_proof(json.loads((ROOT / 'templates/blocked-state-proof.json').read_text()), '2026-01-01T00:05:00Z')
+    if not blocker['terminal_boundary_valid'] or blocker['state'] != 'BLOCKED':
+        raise ContractError('invalid blocker proof template')
+    decision = classify_decision(json.loads((ROOT / 'templates/decision-request.json').read_text()))
+    if decision['decision'] != 'AUTO_EXECUTE' or decision['creates_authority']:
+        raise ContractError('invalid decision-authority template')
+    compacted = compact_evidence(json.loads((ROOT / 'templates/evidence-stream.json').read_text()))
+    if compacted['source_event_count'] != 1 or compacted['details_retained']:
+        raise ContractError('invalid evidence compaction template')
+    progress_plan = enforce_progress(json.loads((ROOT / 'templates/progress-enforcement.json').read_text()))
+    if progress_plan['action'] != 'NOOP' or not progress_plan['final_response_allowed']:
+        raise ContractError('invalid progress enforcement template')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.
