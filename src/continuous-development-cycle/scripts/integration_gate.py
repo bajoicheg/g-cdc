@@ -76,11 +76,11 @@ def validate(d):
                 raise ValueError("worker SHA invalid")
         if r["base_sha"]!=a["base_sha"]:
             raise ValueError("result base does not match assignment")
-        _refs(r["output_refs"],"worker outputs")
+        _refs(r["output_refs"],"worker outputs",allow_empty=r["state"]!="success")
         _refs(r["evidence_refs"],"worker evidence")
-        if not set(a["expected_outputs"])<=set(r["output_refs"]):
+        if r["state"]=="success" and not set(a["expected_outputs"])<=set(r["output_refs"]):
             raise ValueError("worker result missing expected output")
-        if not set(a["expected_evidence"])<=set(r["evidence_refs"]):
+        if r["state"]=="success" and not set(a["expected_evidence"])<=set(r["evidence_refs"]):
             raise ValueError("worker result missing expected evidence")
         if not isinstance(r["changed_paths"],list) or any(not isinstance(x,str) or not x.strip() for x in r["changed_paths"]):
             raise ValueError("changed_paths invalid")
