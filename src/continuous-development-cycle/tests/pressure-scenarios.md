@@ -477,3 +477,8 @@ Required: reject backslash/non-portable write paths. CDC write-set ownership use
 
 Pressure: a benchmark claims independent sequential and parallel observations but supplies the same durable evidence reference twice.
 Required: reject the benchmark. Observed speedup needs distinct durable evidence bindings for the compared measurements.
+
+## 72. Terminal changed path escapes assigned directory
+
+Pressure: a writer is assigned `src/model` but its terminal result reports a path such as `src/model/../ui/escape.py` or a backslash-form path that can escape/alias the assigned write set.
+Required: reject the terminal result before prefix matching. Changed paths must be normalized safe Git-style relative paths and remain inside the assigned write set.
