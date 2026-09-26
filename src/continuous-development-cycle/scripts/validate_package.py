@@ -65,7 +65,7 @@ from branch_finish import evaluate as evaluate_branch_finish
 from parallel_task_planner import plan as plan_parallel_tasks
 from worktree_worker_contract import assess as assess_worker_contract
 from integration_gate import evaluate as evaluate_integration_gate
-from parallel_benchmark import evaluate as evaluate_parallel_benchmark
+from parallel_benchmark import evaluate_from_files as evaluate_parallel_benchmark_files
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -199,6 +199,8 @@ REQUIRED = [
     'scripts/integration_gate.py', 'scripts/parallel_benchmark.py',
     'templates/parallel-task-plan.json', 'templates/worktree-worker-contract.json',
     'templates/integration-gate.json', 'templates/parallel-benchmark.json',
+    'templates/parallel-benchmark-observation-sequential.json',
+    'templates/parallel-benchmark-observation-parallel.json',
     'tests/test_parallel_task_planner.py', 'tests/test_worktree_worker_contract.py',
     'tests/test_integration_gate.py', 'tests/test_parallel_benchmark.py',
     'tests/test_v2102_guidance.py',
@@ -441,7 +443,7 @@ def validate():
             any(integration[name] for name in ('authorizes_shared_branch_write','authorizes_force_push',
                                                'authorizes_merge','authorizes_release','authorizes_scope_expansion'))):
         raise ContractError('invalid CDC 2.10.2 integration gate template')
-    benchmark = evaluate_parallel_benchmark(json.loads((ROOT / 'templates/parallel-benchmark.json').read_text()))
+    benchmark = evaluate_parallel_benchmark_files(json.loads((ROOT / 'templates/parallel-benchmark.json').read_text()), ROOT)
     if (not benchmark['passed'] or benchmark['speedup_ratio'] <= 1 or benchmark['blockers'] or
             any(benchmark[name] for name in ('authorizes_worker_launch','authorizes_product_write',
                                              'authorizes_merge','authorizes_release'))):
