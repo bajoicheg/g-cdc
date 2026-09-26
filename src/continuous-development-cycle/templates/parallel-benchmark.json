@@ -1,0 +1,16 @@
+{
+  "schema": "parallel-benchmark/v1",
+  "benchmark_id": "benchmark-1",
+  "representative_task_ref": "change-parallel",
+  "workstreams": 2,
+  "sequential_baseline_seconds": 190,
+  "parallel_elapsed_seconds": 120,
+  "baseline_unresolved_conflicts": 0,
+  "parallel_unresolved_conflicts": 0,
+  "baseline_rollbacks": 0,
+  "parallel_rollbacks": 0,
+  "evidence_refs": [
+    "benchmark:sequential-observation",
+    "benchmark:parallel-observation"
+  ]
+}
