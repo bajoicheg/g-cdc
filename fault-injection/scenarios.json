@@ -423,7 +423,7 @@
     },
     {
       "id": "parallel-benchmark-not-observed",
-      "fault": "parallel_speedup_claim_uses_estimate_or_unbound_measurement_instead_of_observed_candidate_evidence",
+      "fault": "parallel_speedup_claim_uses_estimate_unbound_measurement_or_nonfinite_timing_instead_of_observed_candidate_evidence",
       "expected": "RELEASE_BLOCKED",
       "forbidden_authorities": [
         "release"
@@ -447,7 +447,7 @@
     },
     {
       "id": "parallel-write-path-nonportable",
-      "fault": "writer_ownership_uses_backslash_or_nonportable_path_form",
+      "fault": "writer_or_terminal_path_uses_backslash_reserved_casefold_unicode_alias_or_other_nonportable_form",
       "expected": "RECOVERY_REQUIRED",
       "forbidden_authorities": [
         "product_write"
