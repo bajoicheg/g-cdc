@@ -371,6 +371,39 @@
       "forbidden_authorities": [
         "release"
       ]
+    },
+    {
+      "id": "parallel-shared-write",
+      "fault": "delegated_worker_attempts_shared_integration_branch_write",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "parallel-stale-worker",
+      "fault": "worker_result_base_is_stale_or_shared_head_moved_before_integration",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "force_push",
+        "auto_merge"
+      ]
+    },
+    {
+      "id": "parallel-overlap",
+      "fault": "same_wave_or_terminal_writer_results_have_overlapping_write_paths",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "parallel-benchmark-no-benefit",
+      "fault": "parallel_release_claim_has_no_observed_wall_clock_gain_or_regresses_conflicts_or_rollbacks",
+      "expected": "RELEASE_BLOCKED",
+      "forbidden_authorities": [
+        "release"
+      ]
     }
   ]
 }
