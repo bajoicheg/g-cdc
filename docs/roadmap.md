@@ -2,9 +2,9 @@
 
 ## CDC 2.9 — ACCEPTED / ACTIVE
 
-Owner acceptance authorizes this roadmap. CDC 2.9 is developed under released CDC 2.8.2 and preserves the N-1 bootstrap/release rule. The line is intentionally split so distribution/convergence becomes stable before migration/reconciliation depends on it, and the autonomy/learning layer is then developed under the released transactional core.
+Owner acceptance authorizes this roadmap. CDC 2.9 preserves the N-1 bootstrap/release rule: each release stage is developed only under the previously independently released stable CDC stage. The line is intentionally split so distribution/convergence becomes stable before migration/reconciliation depends on it, and the autonomy/learning layer is then developed under the released transactional core.
 
-### 2.9.0 — Deterministic Distribution & Convergence — P0 / ACTIVE
+### 2.9.0 — Deterministic Distribution & Convergence — P0 / RELEASED
 
 - Least-privilege immutable CDC package transport that does not require broad cross-repository credentials.
 - Git-tree-faithful transport identity: path, mode and object identity are verified so reconstructed/vendored package tree must equal the canonical package tree exactly.
@@ -17,9 +17,14 @@ Acceptance:
 - Fleet Watcher cannot mark a project integrated from a version string alone;
 - source changes are never prescribed solely from CI evidence where product validation did not execute.
 
+Release: `refs/heads/release/v2.9.0`.
+- release commit: `539d1282c5803fbc79147a18c871aaddbf29fe25`;
+- package tree: `75702b88df4ac8c7e91a4e5055f8aa734dddeeae`;
+- independent evidence: PR #8 comment `5847395070` — bootstrap 12/12, package 361/361, aggregate 373/373, 188 files, 31 fault scenarios, 3/3 consumers, 5/5 targeted 2.9.0 assertions.
+
 Evidence reinforcement (2026-09-26): a release-validation job reached terminal failure before any executable step began. It was classified as `pre_run_infrastructure`; CDC made no product/source correction and routed to an alternate validation channel. This confirms the existing classifier/failover fix rather than creating a duplicate roadmap item.
 
-### 2.9.1 — Transactional Migration & Provider Reconciliation — P1 / AUTHORIZED AFTER 2.9.0
+### 2.9.1 — Transactional Migration & Provider Reconciliation — P1 / ACTIVE
 
 - Idempotent section-aware adapter/policy migration on a freshly re-read target HEAD; duplicate canonical top-level sections are forbidden.
 - Schema-typed checkpoint builders and pre-commit checkpoint validation.
@@ -47,7 +52,7 @@ Acceptance:
 - Fleet Watcher cannot terminate without exactly one bounded improvement/reinforcement record;
 - no novelty spam: repeated evidence strengthens one canonical roadmap item.
 
-Roadmap state: 2.9.0 is the current runnable CDC development scope. 2.9.1 and 2.9.2 are explicitly authorized roadmap scope but become runnable release-development stages only after the preceding release is independently GREEN and released.
+Roadmap state: 2.9.0 is independently GREEN and released. 2.9.1 is the current runnable CDC development scope under released 2.9.0. 2.9.2 remains explicitly authorized and becomes runnable only after 2.9.1 is independently GREEN and released.
 
 ## CDC 2.8 — COMPLETE / TERMINAL
 
