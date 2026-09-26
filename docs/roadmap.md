@@ -171,3 +171,11 @@ These items are explicit future CDC roadmap candidates. They do not reopen the c
 
 **Expected invariant:** channel/tool-call limits cannot leave a branch partially migrated; oversized migrations automatically chunk and resume from the last detached tree checkpoint.
 
+### Fleet Watcher proposal — canonical convergence vector
+
+**Fleet observation:** a project may report CDC version `2.8.2` while exact package-tree readback, policy digest, checkpoint binding, or live ownership state is not yet proven on the same source ref. Version-only fleet status therefore overstates convergence.
+
+**Proposed fix:** Fleet Watcher should emit one normalized **convergence vector** per project: source ref + exact HEAD, CDC version, exact package tree, consumer-lock identity, semantic policy digest, checkpoint-valid flag, lease/guard state, and adoption state (`not_started | staged | validated | integrated | blocked`). A project is `integrated` only when all required components are mutually consistent on the same ref.
+
+**Expected invariant/benefit:** fleet status cannot show a project as fully converged from a version string alone; rollout state becomes deterministic, comparable across projects, and safe under concurrent writers.
+
