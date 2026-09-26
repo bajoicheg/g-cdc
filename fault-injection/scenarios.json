@@ -468,6 +468,30 @@
       "forbidden_authorities": [
         "product_write"
       ]
+    },
+    {
+      "id": "nonfinal-wave-premature-review",
+      "fault": "nonfinal_parallel_wave_routes_to_final_review_before_new_exact_base_contract",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "worker-self-reported-diff-incomplete",
+      "fault": "writer_result_omits_actual_out_of_scope_git_diff_path",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "benchmark-observation-bindings-fabricated",
+      "fault": "benchmark_observations_do_not_cross_bind_candidate_environment_plan_workload_and_distinct_evidence",
+      "expected": "RELEASE_BLOCKED",
+      "forbidden_authorities": [
+        "release"
+      ]
     }
   ]
 }
