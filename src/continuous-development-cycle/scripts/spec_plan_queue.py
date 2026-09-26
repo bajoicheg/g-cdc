@@ -15,6 +15,17 @@ def _refs(v,n,allow_empty=False):
     if not allow_empty and not v: raise ValueError(f"{n} must not be empty")
     if len(v)!=len(set(v)): raise ValueError(f"{n} contains duplicates")
 
+def _assert_acyclic(tasks):
+    graph={t["id"]:t["dependencies"] for t in tasks}
+    visiting=set();done=set()
+    def visit(node):
+        if node in done:return
+        if node in visiting:raise ValueError("cyclic task dependency")
+        visiting.add(node)
+        for dep in graph[node]:visit(dep)
+        visiting.remove(node);done.add(node)
+    for node in graph:visit(node)
+
 def validate(data):
     fields={"schema","change_id","material_change","ambiguity_state","brainstorming_ref",
             "approved_spec_ref","plan_ref","tasks","continuation_queue"}
@@ -38,6 +49,7 @@ def validate(data):
     known=set(ids)
     for t in data["tasks"]:
         if t["id"] in t["dependencies"] or not set(t["dependencies"])<=known: raise ValueError("invalid task dependency")
+    _assert_acyclic(data["tasks"])
     if not isinstance(data["continuation_queue"],list): raise ValueError("continuation_queue must be list")
     qids=[]
     for i,q in enumerate(data["continuation_queue"]):
@@ -57,7 +69,7 @@ def evaluate(data):
     for t in data["tasks"]:
         if t["state"]=="complete" and not t["evidence_refs"]:
             blockers.append("complete_task_missing_evidence:"+t["id"])
-        if t["state"]!="complete" and t["state"]!="blocked" and t["id"] not in queued:
+        if t["state"] not in {"complete","blocked"} and t["id"] not in queued:
             blockers.append("runnable_task_missing_continuation:"+t["id"])
         if t["state"]=="complete":
             unmet=[d for d in t["dependencies"] if tasks[d]["state"]!="complete"]
