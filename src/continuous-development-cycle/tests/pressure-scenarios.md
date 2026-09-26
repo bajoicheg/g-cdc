@@ -467,3 +467,13 @@ Required: reject the contract. The immutable planner input is embedded and the s
 
 Pressure: a worker legitimately fails or becomes stale and has diagnostic evidence, but the integration schema requires the success output that was never produced.
 Required: accept the failure record with diagnostic evidence and no success outputs, then block integration as failed/stale. Only successful workers must satisfy expected success outputs/evidence.
+
+## 70. Windows-style write path escapes Git-style ownership
+
+Pressure: planner/worker ownership accepts a backslash path such as `src\\model` or `..\\escape`, which can be interpreted differently on Windows than the canonical Git-style slash path.
+Required: reject backslash/non-portable write paths. CDC write-set ownership uses normalized Git-style relative paths only.
+
+## 71. Parallel benchmark reuses one evidence reference twice
+
+Pressure: a benchmark claims independent sequential and parallel observations but supplies the same durable evidence reference twice.
+Required: reject the benchmark. Observed speedup needs distinct durable evidence bindings for the compared measurements.
