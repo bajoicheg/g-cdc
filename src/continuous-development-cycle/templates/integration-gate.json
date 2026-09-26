@@ -131,5 +131,29 @@
   "force_push_requested": false,
   "verification_refs": [
     "verification:worker-results"
+  ],
+  "diff_proofs": [
+    {
+      "worker_id": "worker-model",
+      "task_id": "task-model",
+      "base_sha": "1111111111111111111111111111111111111111",
+      "result_sha": "2222222222222222222222222222222222222222",
+      "resolver": "git_diff_name_only",
+      "changed_paths": [
+        "src/model/model.py"
+      ],
+      "evidence_ref": "git-diff:task-model"
+    },
+    {
+      "worker_id": "worker-ui",
+      "task_id": "task-ui",
+      "base_sha": "1111111111111111111111111111111111111111",
+      "result_sha": "3333333333333333333333333333333333333333",
+      "resolver": "git_diff_name_only",
+      "changed_paths": [
+        "src/ui/view.py"
+      ],
+      "evidence_ref": "git-diff:task-ui"
+    }
   ]
 }
