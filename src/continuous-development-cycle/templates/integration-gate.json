@@ -65,6 +65,9 @@
       ],
       "evidence_refs": [
         "test:model-green"
+      ],
+      "output_refs": [
+        "commit:model"
       ]
     },
     {
@@ -79,6 +82,9 @@
       ],
       "evidence_refs": [
         "test:ui-green"
+      ],
+      "output_refs": [
+        "commit:ui"
       ]
     }
   ],
