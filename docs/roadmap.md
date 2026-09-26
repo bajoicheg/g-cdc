@@ -1,5 +1,100 @@
 # CDC roadmap
 
+## CDC 2.10 — Superpowers Execution Quality — AUTHORIZED / PROPOSED
+
+Owner acceptance authorizes this roadmap. CDC 2.10 integrates the strongest Superpowers engineering disciplines as a **quality layer** under the CDC control plane. Superpowers workflows never grant ownership, external-start, merge, release, scheduler, scope-expansion or user-approval authority; CDC remains authoritative for those controls.
+
+CDC 2.10 preserves staged bootstrap/release discipline:
+- develop 2.10.0 under independently released 2.9.2;
+- develop 2.10.1 only after 2.10.0 is independently GREEN and released;
+- develop 2.10.2 only after 2.10.1 is independently GREEN and released.
+
+The line is intentionally limited to three releases: first prove CDC behavior itself, then enforce specification/review quality, then safely increase parallelism.
+
+### 2.10.0 — Behavioral Skill TDD & Verification Gate — P0 / PROPOSED
+
+Goal: make CDC behavior testable as an executable contract instead of relying only on prose, unit tests and post-hoc RCA.
+
+- Add a behavioral/pressure-scenario eval harness for CDC skills, inspired by Superpowers skill TDD: establish baseline behavior, demonstrate the failure mode, apply the skill/control change, then prove the corrected behavior and retain the scenario as regression coverage.
+- Convert high-value real CDC failures into behavioral evals, starting with:
+  - premature stop after a milestone while runnable work remains;
+  - provider terminal while durable guard still says running;
+  - schema-invalid checkpoint control values;
+  - duplicate command timestamp within one user command;
+  - stale checkpoint ownership contradicting newer live coordination lease;
+  - repeated unchanged recovery strategy after infrastructure/setup failure.
+- Integrate systematic-debugging semantics into RCA: evidence collection → root-cause hypothesis → discriminating test → correction → defense-in-depth → deduplicated roadmap disposition.
+- Add a mandatory verification-before-terminal-state gate. Before any success/COMPLETE claim, independently re-read the exact authoritative state needed for that claim: source HEAD/tree, required tests/evidence, checkpoint binding, lease/guard, artifact identity and clean state where applicable.
+- Verification is evidence-only: it may reject completion but never grant missing authority.
+
+Acceptance:
+- every behavioral scenario has an explicit baseline RED/undesired outcome and corrected GREEN outcome;
+- a skill/control change cannot close its fault scenario without a retained regression eval;
+- COMPLETE cannot be emitted from stale checkpoint or cached provider evidence when a fresher authoritative source exists;
+- a provider-terminal/stale-guard scenario reconciles without TTL-only takeover;
+- typed checkpoint violations and duplicate timestamps are caught before a final response;
+- repeated infrastructure/setup failures cannot trigger an unchanged retry strategy;
+- behavioral evals run deterministically enough to serve as release evidence, with nondeterministic cases explicitly bounded and classified.
+
+Expected benefit: CDC regressions become reproducible before fleet rollout, and “the instruction says so” is replaced by evidence that the agent actually behaves correctly under pressure.
+
+### 2.10.1 — Specification Compliance & Two-Stage Review — P1 / PROPOSED
+
+Goal: distinguish “tests are GREEN” from “we implemented the requested thing correctly and well.”
+
+- Make Superpowers-style specification work first-class for new or scope-changing product work: concise design/spec → implementation plan → executable CDC continuation queue.
+- Preserve selective brainstorming only for genuinely ambiguous product/design choices. Routine implementation, bug fixes and already-authorized continuation must not be forced through unnecessary human clarification.
+- Introduce mandatory two-stage independent review for material changes:
+  1. **spec-compliance review** — does the implementation satisfy the approved request/spec and avoid scope drift?
+  2. **code-quality review** — is the implementation maintainable, safe, testable and appropriately simple?
+- Reviewers are evidence/recommendation roles by default. They do not gain shared-branch write, merge, release or product-decision authority.
+- Map plan tasks to exact evidence and continuation state so “plan complete” cannot be inferred from prose alone.
+- Standardize finishing-development-branch behavior: fresh validation, diff/spec reconciliation, unresolved-review check, exact candidate binding, cleanup and only then CDC terminal/release handling.
+
+Acceptance:
+- material implementation cannot pass quality review before spec-compliance is GREEN;
+- a change that is technically correct but violates the approved spec remains non-terminal;
+- every plan task can be traced to an implementation/evidence state or an explicit blocker;
+- review findings are either fixed, explicitly dispositioned, or retained as blockers before terminal completion;
+- brainstorming never becomes a mandatory approval loop for unambiguous continuation work;
+- branch finishing cannot discard open review findings, stale validation or ownership/guard state.
+
+Expected benefit: fewer “GREEN but wrong” outcomes, especially for UI/UX and cross-cutting behavior where automated tests alone are insufficient.
+
+### 2.10.2 — Worktree-Isolated Parallel Development & Single Integrator — P2 / PROPOSED
+
+Goal: gain real parallel-development speed without reintroducing split-brain writers or shared-branch corruption.
+
+- Add a CDC task decomposition/DAG step that marks work as parallel-safe only when write sets and integration dependencies are sufficiently isolated.
+- Use Superpowers-style Git worktree isolation for parallel implementation workers. Each writer owns one isolated worktree/branch; no worker writes directly to the shared integration/product branch.
+- Preserve one CDC integrator as the only shared-branch writer. The integrator owns conflict reconciliation, final spec review, candidate assembly and branch finishing.
+- Allow read-only/spec-review/quality-review workers to run in parallel with implementation when they do not mutate shared state.
+- Require durable worker/task identity, exact base SHA and expected output/evidence contract before delegation.
+- On worker failure or stale base, discard/rebase/re-run that isolated work rather than force-pushing or partially integrating.
+- Feed completed isolated work back through 2.10.1 spec/quality gates and 2.10.0 verification before integration/terminal state.
+
+Acceptance:
+- no two implementation workers may own the same writable worktree or shared branch;
+- workers cannot merge/release or expand product scope;
+- parallel tasks with overlapping write sets are serialized or explicitly partitioned;
+- a failed/stale worker cannot poison the shared branch;
+- integrator detects base movement before integration and reconciles without force-push;
+- parallel execution demonstrates lower wall-clock completion time on at least one representative multi-workstream task without increasing unresolved conflict/rollback rate;
+- final integrated candidate remains exact-SHA validated and passes the normal CDC terminal/release gates.
+
+Expected benefit: CDC gains safe concurrency — speed from parallel work, while ownership and final integration remain deterministic.
+
+### CDC 2.10 release proposal
+
+Recommended release sequence:
+1. **2.10.0 Behavioral Skill TDD & Verification Gate** — highest priority; directly attacks observed CDC reliability failures.
+2. **2.10.1 Specification Compliance & Two-Stage Review** — next; prevents technically GREEN but requirement-wrong outcomes.
+3. **2.10.2 Worktree-Isolated Parallel Development & Single Integrator** — last; adds speed only after behavior and review quality are independently proven.
+
+Do **not** start with parallelism. The ordering is deliberate: first make CDC behavior measurable, then make implementation correctness reviewable, then scale execution concurrency.
+
+Roadmap state: CDC 2.10 is authorized for development but not yet released. The first runnable scope is 2.10.0 only; 2.10.1 and 2.10.2 remain dependency-gated until the preceding stage is independently GREEN and released.
+
 ## CDC 2.9 — COMPLETE / TERMINAL
 
 Owner acceptance authorizes this roadmap. CDC 2.9 preserves the N-1 bootstrap/release rule: each release stage is developed only under the previously independently released stable CDC stage. The line is intentionally split so distribution/convergence becomes stable before migration/reconciliation depends on it, and the autonomy/learning layer is then developed under the released transactional core.
