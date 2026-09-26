@@ -1,4 +1,4 @@
-# Continuous Development Cycle v2.10.0
+# Continuous Development Cycle v2.10.1
 
 Installable ChatGPT/Codex/agent skill for recoverable, long-running software development.
 
@@ -189,3 +189,13 @@ Read references/deterministic-distribution-and-convergence.md.
 - The new quality gates are evidence-only and never grant product-write, takeover, merge, release, scheduler or scope authority.
 
 Read `references/behavioral-tdd-and-verification.md`.
+
+## v2.10.1 specification compliance and two-stage review
+
+- Selective brainstorming is required only for genuine material ambiguity; clear authorized continuation does not gain a new approval loop.
+- Specification requirements map to plan tasks and durable continuation items with explicit expected/completion evidence.
+- Material changes require ordered independent spec-compliance then code-quality review.
+- Branch finishing checks exact candidate HEAD, fresh validation, diff/spec reconciliation, review closure and exact-SHA checks before CDC terminal handling.
+- Review/finishing gates are evidence-only and never grant merge or release authority.
+
+Read `references/specification-review-and-finishing.md`.

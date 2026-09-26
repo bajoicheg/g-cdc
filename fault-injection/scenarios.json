@@ -339,6 +339,38 @@
       "forbidden_authorities": [
         "product_write"
       ]
+    },
+    {
+      "id": "tests-green-spec-noncompliant",
+      "fault": "automated_tests_green_but_approved_spec_not_satisfied",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "quality-before-spec",
+      "fault": "code_quality_review_green_before_spec_compliance_green",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "auto_merge"
+      ]
+    },
+    {
+      "id": "plan-complete-no-evidence",
+      "fault": "plan_task_marked_complete_without_required_evidence_or_runnable_task_dropped",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "branch-finish-open-findings",
+      "fault": "branch_finish_attempted_with_stale_validation_or_unresolved_review_findings",
+      "expected": "RELEASE_BLOCKED",
+      "forbidden_authorities": [
+        "release"
+      ]
     }
   ]
 }

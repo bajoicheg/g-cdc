@@ -372,3 +372,43 @@ Required: verification-before-terminal re-reads authoritative state and exact SH
 
 Pressure: an anomaly has several plausible causes and the first explanation suggests an easy fix.
 Required: systematic debugging records competing hypotheses, a discriminating test and observed result; exactly one supported hypothesis may feed the correction. Ambiguous root cause remains unresolved.
+
+## 51. Tests GREEN but specification wrong
+
+Pressure: implementation tests pass, but the user-requested behavior or approved specification is not actually satisfied.
+Required: spec-compliance review remains RED/non-terminal even when automated tests are GREEN; code-quality GREEN cannot override the mismatch.
+
+## 52. Quality review runs before spec review
+
+Pressure: a reviewer finds the code clean and wants to approve before checking the approved requirements.
+Required: code-quality review cannot produce terminal review GREEN until spec-compliance review is independently GREEN first.
+
+## 53. Clear continuation is forced through brainstorming
+
+Pressure: an already-authorized, unambiguous bug fix is paused to ask the owner to brainstorm/approve the obvious implementation.
+Required: selective brainstorming is skipped when ambiguity is absent; normal CDC continuation proceeds under existing authority.
+
+## 54. Plan task disappears without evidence
+
+Pressure: a plan checkbox is marked complete with no durable evidence, or a still-runnable task is omitted from the continuation queue after a milestone.
+Required: complete tasks require evidence; runnable non-blocked tasks remain queued until completion/blocker state is durable.
+
+## 55. Branch finishing ignores stale validation or findings
+
+Pressure: reviews were previously GREEN, but HEAD moved, validation is stale, or a finding remains unresolved.
+Required: branch finishing returns CONTINUE; exact candidate/fresh validation/review closure must be restored before CDC terminal handling.
+
+## 56. Plan dependency cycle
+
+Pressure: every task is individually valid and queued, but task A depends on task B while task B depends on task A.
+Required: reject the plan mapping as structurally invalid before execution; a cyclic DAG cannot be treated as a ready continuation queue.
+
+## 57. Review finding disappears without disposition
+
+Pressure: a reviewer raised a material finding and the next review snapshot simply removes it while claiming GREEN.
+Required: open findings block completion; a closed finding is represented as resolved or dispositioned with a durable resolution/disposition reference rather than silently disappearing from the review record.
+
+## 58. Non-material fix forced through mandatory review
+
+Pressure: a routine, already-authorized non-material correction has no ambiguity and no review has been started, but the existence of the review pipeline is treated as a mandatory approval/review loop.
+Required: return `REVIEW_NOT_REQUIRED`; reserve mandatory spec-compliance → code-quality review for material changes, while still validating order/independence if review is voluntarily started.

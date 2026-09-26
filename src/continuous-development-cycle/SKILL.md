@@ -3,7 +3,7 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.10.0
+# Continuous Development Cycle v2.10.1
 
 Durable repository state is the project state. Sessions, agents and schedulers are disposable. Apply the instruction hierarchy, preserve the source/scope of existing user authorization, and reconcile repository policy. Live remote facts override stale checkpoint/chat claims. A spinner, lease or submitted request is not progress evidence.
 
@@ -230,3 +230,15 @@ Before any terminal success claim (`COMPLETE`, `RELEASE_READY` or `INTEGRATED`),
 Verification is evidence-only. GREEN verification can reject or permit the claim path, but it never authorizes product writes, external starts, takeover, merge, release, scheduler mutation or scope expansion. Normal CDC authority and terminal-state gates still apply.
 
 Superpowers is the engineering-quality layer here; CDC remains the authority/ownership/continuity control plane. Do not import redundant approval loops for routine fixes or already-authorized continuation. Read `references/behavioral-tdd-and-verification.md`.
+
+## CDC 2.10.1 Specification Compliance & Two-Stage Review
+
+For material new or scope-changing work, use **selective brainstorming** only when the product/design choice is genuinely ambiguous. Clear fixes and already-authorized continuation must not be forced through redundant clarification or approval loops.
+
+Bind **spec → plan → continuation queue** with `scripts/spec_plan_queue.py`. Each plan task references the specification requirement and expected evidence. A complete task without evidence is invalid; every runnable non-blocked task remains in the continuation queue so a task milestone cannot silently end the authorized scope.
+
+Material implementation passes two ordered independent reviews: first **spec-compliance review**, then **code-quality review**. Use `scripts/review_pipeline.py`. The code-quality review cannot substitute for or precede spec compliance, and completed stages use **independent reviewers**. Any unresolved finding keeps the change non-terminal.
+
+Use **branch finishing** through `scripts/branch_finish.py` before handing a candidate to CDC terminal/release handling. Require fresh validation, exact candidate/HEAD binding, diff/spec reconciliation, both reviews GREEN, no unresolved findings, exact-SHA required checks and clean state.
+
+Review and branch-finishing results are evidence-only: they create no product-write, merge, release or scope-expansion authority. CDC ownership, verification-before-terminal and release controls remain independently mandatory. Read `references/specification-review-and-finishing.md`.

@@ -1,26 +1,26 @@
 {
   "schema": "cdc-release-candidate/v1",
-  "version": "2.10.0",
-  "developed_under_version": "2.9.2",
+  "version": "2.10.1",
+  "developed_under_version": "2.10.0",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "b969c7b6c1c8c9a28f05f0fb8148f710983a78d5",
-  "package_tree": "63f25fb7402bf07d2e037de88194b7359c9e0f93",
+  "source_commit": "a959c8c81483c704e2b360204538efd3829d2d2a",
+  "package_tree": "07bea03a6cc23f658c1cefe41aba40c174474f25",
   "status": "released",
   "evidence": {
     "bootstrap": [
-      "codex:pr11:comment-5849842887:12/12"
+      "codex:pr12:comment-5849987854:12/12"
     ],
     "package": [
-      "codex:pr11:comment-5849842887:397/397",
-      "behavioral:6-red-to-6-green"
+      "codex:pr12:comment-5849987854:418/418",
+      "review-controls:14/14"
     ],
     "compatibility": [
-      "codex:pr11:comment-5849842887:3/3",
+      "codex:pr12:comment-5849987854:3/3",
       "compatibility/matrix.json"
     ],
     "fault_injection": [
-      "fault-injection/scenarios.json:41",
-      "pressure-scenarios.md:50"
+      "fault-injection/scenarios.json:45",
+      "pressure-scenarios.md:58"
     ],
     "consumers": [
       "consumer:g-supervisor:GREEN",

@@ -59,6 +59,9 @@ from fleet_improvement import harvest as harvest_fleet_improvement
 from behavioral_eval import evaluate_suite as evaluate_behavioral_suite
 from verification_gate import evaluate as evaluate_verification_gate
 from systematic_rca import analyze as analyze_systematic_rca
+from spec_plan_queue import evaluate as evaluate_spec_plan_queue
+from review_pipeline import evaluate as evaluate_review_pipeline
+from branch_finish import evaluate as evaluate_branch_finish
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -389,6 +392,21 @@ def validate():
     systematic_disposition = disposition_rca_feedback(systematic['feedback'])
     if systematic_disposition['action'] != 'REINFORCE_EXISTING' or systematic_disposition['authorizes_roadmap_write']:
         raise ContractError('systematic RCA did not preserve bounded feedback authority')
+    spec_plan = evaluate_spec_plan_queue(json.loads((ROOT / 'templates/spec-plan-queue.json').read_text()))
+    if (not spec_plan['ready'] or spec_plan['blockers'] or spec_plan['brainstorming_required'] or
+            any(spec_plan[name] for name in ('authorizes_product_write','authorizes_external_start',
+                                             'authorizes_scope_expansion','authorizes_merge','authorizes_release'))):
+        raise ContractError('invalid CDC 2.10.1 spec-plan template')
+    review = evaluate_review_pipeline(json.loads((ROOT / 'templates/review-pipeline.json').read_text()))
+    if (not review['review_green'] or review['action'] != 'REVIEW_GREEN' or review['blockers'] or
+            any(review[name] for name in ('authorizes_product_write','authorizes_merge',
+                                          'authorizes_release','authorizes_scope_expansion'))):
+        raise ContractError('invalid CDC 2.10.1 review pipeline template')
+    branch_finish = evaluate_branch_finish(json.loads((ROOT / 'templates/branch-finish.json').read_text()))
+    if (not branch_finish['ready'] or branch_finish['action'] != 'READY_FOR_CDC_TERMINAL' or branch_finish['blockers'] or
+            any(branch_finish[name] for name in ('authorizes_product_write','authorizes_merge',
+                                                 'authorizes_release','authorizes_scope_expansion'))):
+        raise ContractError('invalid CDC 2.10.1 branch-finishing template')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.
