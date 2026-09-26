@@ -37,6 +37,66 @@ def resolve_shared_head(worktree, shared_branch):
     _sha(head,"live shared head")
     return head
 
+def _branch_ref(branch):
+    _text(branch,"branch")
+    return branch if branch.startswith("refs/heads/") else "refs/heads/"+branch
+
+def parse_worker_worktrees(values):
+    mapping={}
+    for raw in values or []:
+        if not isinstance(raw,str) or "=" not in raw:raise ValueError("worker worktree mapping must be WORKTREE_ID=PATH")
+        worktree_id,path=raw.split("=",1);_text(worktree_id,"worktree_id");_text(path,"worker worktree path")
+        if worktree_id in mapping:raise ValueError("duplicate worker worktree mapping")
+        mapping[worktree_id]=path
+    return mapping
+
+def _registered_worktrees(shared_worktree):
+    root=Path(shared_worktree)
+    try:
+        out=subprocess.check_output(["git","-C",str(root),"worktree","list","--porcelain"],
+                                    text=True,stderr=subprocess.PIPE,timeout=15)
+    except (OSError,subprocess.SubprocessError) as exc:
+        raise ValueError(f"cannot inspect registered worktrees: {exc}") from exc
+    result=[];current={}
+    for line in out.splitlines()+[""]:
+        if not line:
+            if current:
+                result.append(current);current={}
+            continue
+        key,_,value=line.partition(" ")
+        if key in {"worktree","HEAD","branch"}:current[key]=value
+    return result
+
+def verify_worker_origins(d, shared_worktree, worker_worktrees):
+    validate(d)
+    root=Path(shared_worktree).resolve()
+    registry=_registered_worktrees(root)
+    by_path={str(Path(x["worktree"]).resolve()):x for x in registry if "worktree" in x}
+    assignments={a["task_id"]:a for a in d["worker_contract"]["assignments"]}
+    shared_ref=_branch_ref(d["shared_branch"])
+    for r in d["worker_results"]:
+        if r["role"]!="writer" or r["state"]!="success":continue
+        a=assignments[r["task_id"]];worktree_id=a["worktree_id"]
+        if worktree_id not in worker_worktrees:raise ValueError("missing live worker worktree mapping: "+worktree_id)
+        worker_path=Path(worker_worktrees[worktree_id]).resolve()
+        if worker_path==root:raise ValueError("writer worktree cannot be the shared integration worktree")
+        record=by_path.get(str(worker_path))
+        if record is None:raise ValueError("worker path is not a registered Git worktree")
+        expected_ref=_branch_ref(a["branch"])
+        if expected_ref==shared_ref:raise ValueError("writer branch cannot equal shared branch")
+        if record.get("branch")!=expected_ref:raise ValueError("registered worktree branch does not match assignment")
+        if record.get("HEAD")!=r["result_sha"]:raise ValueError("registered worktree HEAD does not match worker result")
+        try:
+            branch_head=subprocess.check_output(["git","-C",str(root),"rev-parse","--verify",expected_ref],
+                                               text=True,stderr=subprocess.PIPE,timeout=15).strip()
+            actual_head=subprocess.check_output(["git","-C",str(worker_path),"rev-parse","HEAD"],
+                                               text=True,stderr=subprocess.PIPE,timeout=15).strip()
+        except (OSError,subprocess.SubprocessError) as exc:
+            raise ValueError(f"cannot verify worker branch/worktree origin: {exc}") from exc
+        if branch_head!=r["result_sha"] or actual_head!=r["result_sha"]:
+            raise ValueError("worker branch/worktree does not resolve to result SHA")
+    return True
+
 def resolve_git_diff(worktree, *, worker_id, task_id, base_sha, result_sha, evidence_ref):
     root=Path(worktree)
     if not root.is_dir():raise ValueError("git worktree missing")
@@ -178,6 +238,7 @@ def evaluate(d):
 
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument("input");p.add_argument("--git-worktree")
+    p.add_argument("--worker-worktree",action="append",default=[],metavar="WORKTREE_ID=PATH")
     a=p.parse_args(argv)
     try:
         d=json.loads(Path(a.input).read_text())
@@ -186,6 +247,8 @@ def main(argv=None):
             live_head=resolve_shared_head(a.git_worktree,d["shared_branch"])
             if live_head!=d["observed_shared_head"]:
                 raise ValueError("observed_shared_head does not match live shared branch")
+            worker_worktrees=parse_worker_worktrees(a.worker_worktree)
+            verify_worker_origins(d,a.git_worktree,worker_worktrees)
             verify_git_diff_proofs(d,a.git_worktree)
         r=evaluate(d)
     except (OSError,ValueError,json.JSONDecodeError) as e:print(f"FAIL: {e}",file=sys.stderr);return 2
