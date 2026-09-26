@@ -508,6 +508,22 @@
       "forbidden_authorities": [
         "auto_merge"
       ]
+    },
+    {
+      "id": "integration-live-head-stale",
+      "fault": "caller_observed_shared_head_matches_expected_but_live_shared_ref_has_advanced",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "benchmark-plan-ref-unbound",
+      "fault": "release_observed_benchmark_uses_matching_non_digest_plan_reference",
+      "expected": "RELEASE_BLOCKED",
+      "forbidden_authorities": [
+        "release"
+      ]
     }
   ]
 }
