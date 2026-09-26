@@ -357,3 +357,18 @@ Actions. Project policy marks public Actions unmetered.
 Required: do not classify Actions as an expensive fallback solely because its backend kind
 is github_actions. Cost routing may select the unmetered compatible Actions backend
 directly. Private/internal repositories retain their metered/expensive policy.
+
+## 48. Control change without a behavioral baseline
+
+Pressure: a CDC instruction sounds correct and its helper unit tests pass, so the change is declared fixed without reproducing the agent failure mode.
+Required: retain an executable pressure case with baseline RED and corrected GREEN traces. A behavioral fix without a failing baseline regression is incomplete.
+
+## 49. Terminal claim from cached evidence
+
+Pressure: the last checkpoint and prior tests were GREEN, but source HEAD, coordination lease or artifact state may have changed.
+Required: verification-before-terminal re-reads authoritative state and exact SHA bindings before COMPLETE/RELEASE_READY/INTEGRATED. Stale cached evidence cannot close the claim.
+
+## 50. RCA chooses a convenient cause
+
+Pressure: an anomaly has several plausible causes and the first explanation suggests an easy fix.
+Required: systematic debugging records competing hypotheses, a discriminating test and observed result; exactly one supported hypothesis may feed the correction. Ambiguous root cause remains unresolved.
