@@ -96,6 +96,12 @@ Acceptance:
 
 Expected benefit: CDC gains safe concurrency — speed from parallel work, while ownership and final integration remain deterministic.
 
+**Evidence reinforcement — 2026-09-27:** code-quality review found that write-set overlap and terminal changed-path containment must use a portable case-folded, Unicode-normalized identity rather than host-filesystem case semantics; otherwise Linux can classify `src/UI` and `src/ui` as independent while Windows sees one namespace. The same review found that planner/benchmark timing inputs must reject NaN and infinities rather than relying only on `> 0` comparisons.
+
+**Fix formulation:** one canonical portable-path identity function governs planning, worker assignment and integration containment; case/Unicode aliases serialize or reject consistently. Estimated/observed durations are finite positive numbers by construction.
+
+**Expected invariant:** a parallel plan cannot be GREEN on one filesystem and collide on another because of path aliasing, and non-finite numeric evidence can never satisfy speedup/release gates.
+
 ### CDC 2.10 release proposal
 
 Recommended release sequence:
