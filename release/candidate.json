@@ -8,16 +8,18 @@
   "status": "candidate",
   "evidence": {
     "bootstrap": [
-      "pending:independent-bootstrap"
+      "requested:pr8:independent-bootstrap"
     ],
     "package": [
-      "pending:candidate-package"
+      "requested:pr8:candidate-package"
     ],
     "compatibility": [
-      "compatibility/matrix.json"
+      "compatibility/matrix.json",
+      "requested:pr8:compatibility"
     ],
     "fault_injection": [
-      "fault-injection/scenarios.json"
+      "fault-injection/scenarios.json",
+      "requested:pr8:fault-injection"
     ],
     "consumers": [
       "consumer:g-supervisor",
