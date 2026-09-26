@@ -5,26 +5,27 @@
   "canonical_repository": "bajoicheg/g-cdc",
   "source_commit": "a959c8c81483c704e2b360204538efd3829d2d2a",
   "package_tree": "07bea03a6cc23f658c1cefe41aba40c174474f25",
-  "status": "candidate",
+  "status": "released",
   "evidence": {
     "bootstrap": [
-      "base-release:2.10.0@394fb42703bb5edd584fca4f6bee83fc6eae62d4"
+      "codex:pr12:comment-5849987854:12/12"
     ],
     "package": [
-      "codex:pr12:head-a959c8c8:pending-final",
-      "review-controls:spec-plan+two-stage+branch-finish"
+      "codex:pr12:comment-5849987854:418/418",
+      "review-controls:14/14"
     ],
     "compatibility": [
+      "codex:pr12:comment-5849987854:3/3",
       "compatibility/matrix.json"
     ],
     "fault_injection": [
-      "fault-injection/scenarios.json",
-      "pressure-scenarios.md"
+      "fault-injection/scenarios.json:45",
+      "pressure-scenarios.md:58"
     ],
     "consumers": [
-      "consumer:evidence/g-supervisor",
-      "consumer:evidence/g-ad-control",
-      "consumer:evidence/g-pc-health-check"
+      "consumer:g-supervisor:GREEN",
+      "consumer:g-ad-control:GREEN",
+      "consumer:g-pc-health-check:GREEN"
     ]
   }
 }
