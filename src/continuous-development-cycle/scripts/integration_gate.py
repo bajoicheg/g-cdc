@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse,json,re,subprocess,sys
 from pathlib import Path
 from worktree_worker_contract import validate as validate_worker_contract
-from parallel_task_planner import plan as build_parallel_plan
+from parallel_task_planner import plan as build_parallel_plan, validate_write_path, portable_path_key
 
 SCHEMA="integration-gate/v1"
 SHA=re.compile(r"^[0-9a-f]{40}$")
