@@ -82,5 +82,6 @@
       ],
       "can_write_shared_branch": false
     }
-  ]
+  ],
+  "prior_wave_integration": null
 }
