@@ -3,6 +3,6 @@
   "repository": "bajoicheg-private/g-ad-control",
   "source_commit": "a65c36461d56aa80f129b65a0782be02529e1fc7",
   "vendored_cdc_version": "2.7.2",
-  "candidate_version": "2.8.1",
-  "candidate_package_tree": "fda5e955b987fcebbe49c3c27bf3b24114983eab"
+  "candidate_version": "2.8.2",
+  "candidate_package_tree": "bdf18b8dedb2f0cf62728935d92e6260b4a64ef0"
 }
