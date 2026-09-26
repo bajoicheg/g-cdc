@@ -5,26 +5,26 @@
   "canonical_repository": "bajoicheg/g-cdc",
   "source_commit": "77dd7a89c41763a4a3022245ded145984cdaac25",
   "package_tree": "75702b88df4ac8c7e91a4e5055f8aa734dddeeae",
-  "status": "candidate",
+  "status": "released",
   "evidence": {
     "bootstrap": [
-      "pending:exact-sha-revalidation-after-product-fix"
+      "codex:pr8:comment-5847395070:12/12"
     ],
     "package": [
-      "pending:exact-sha-revalidation-after-product-fix"
+      "codex:pr8:comment-5847395070:361/361"
     ],
     "compatibility": [
       "compatibility/matrix.json",
-      "pending:exact-sha-revalidation-after-product-fix"
+      "codex:pr8:comment-5847395070:GREEN"
     ],
     "fault_injection": [
       "fault-injection/scenarios.json",
-      "pending:exact-sha-revalidation-after-product-fix"
+      "codex:pr8:comment-5847395070:31-scenarios"
     ],
     "consumers": [
-      "consumer:g-supervisor",
-      "consumer:g-ad-control",
-      "consumer:g-pc-health-check"
+      "consumer:bajoicheg-private/g-supervisor@f250ace4cf0f5a4086c31099c0017d53770008bd",
+      "consumer:bajoicheg-private/g-ad-control@a65c36461d56aa80f129b65a0782be02529e1fc7",
+      "consumer:bajoicheg/g-pc-health-check@5afac455f6d4d10a0f8e71258c0250ecdbb1fb1a"
     ]
   }
 }
