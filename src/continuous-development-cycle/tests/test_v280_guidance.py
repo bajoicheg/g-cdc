@@ -3,8 +3,8 @@ import json,unittest
 ROOT=Path(__file__).resolve().parents[1]
 class Tests(unittest.TestCase):
  def test_version_is_280(self):
-  self.assertEqual((ROOT/"VERSION").read_text().strip(),"2.8.0")
-  self.assertEqual(json.loads((ROOT/"manifest.json").read_text())["version"],"2.8.0")
+  v=(ROOT/"VERSION").read_text().strip();self.assertGreaterEqual(tuple(map(int,v.split("."))),(2,8,0))
+  self.assertEqual(json.loads((ROOT/"manifest.json").read_text())["version"],v)
  def test_skill_enforces_no_idle_and_failover(self):
   t=(ROOT/"SKILL.md").read_text().lower()
   for term in ("terminal-state v2","no-idle","execution-channel supervisor","concurrent-writer reconciliation"):self.assertIn(term,t)

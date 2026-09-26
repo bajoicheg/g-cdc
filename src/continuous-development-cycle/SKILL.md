@@ -3,7 +3,7 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.8.0
+# Continuous Development Cycle v2.8.1
 
 Durable repository state is the project state. Sessions, agents and schedulers are disposable. Apply the instruction hierarchy, preserve the source/scope of existing user authorization, and reconcile repository policy. Live remote facts override stale checkpoint/chat claims. A spinner, lease or submitted request is not progress evidence.
 
@@ -163,3 +163,16 @@ Use the **execution-channel supervisor** in `scripts/execution_channel_superviso
 Use **concurrent-writer reconciliation** in `scripts/concurrent_writer.py` whenever observed HEAD differs from expected HEAD. A non-overlapping fast-forward may be replayed on the fresh HEAD; overlap, divergence, unknown ancestry or an unresolved external guard requires reconciliation. Force-push remains forbidden.
 
 Before any private-to-public transition, use the policy-driven sensitive-context scanner and publication guard. Public safety covers the current tree, every exposed ref, conversations and artifacts; secret scanning alone is insufficient. Operational CDC state such as leases, ledgers, authorizations, backend registries, operation intents and handoffs belongs outside the publishable product surface. Findings select a sanitized export/new public history rather than a direct visibility toggle. Read `references/autonomous-continuity-and-isolation.md` and `references/publication-safety.md`.
+
+
+## CDC 2.8.1 Operational Hardening
+
+Use **watchdog self-repair** rather than treating a disabled/missing/overdue scheduler, archived chat dependency, or unavailable backend as passive status. `scripts/watchdog_self_repair.py` produces a bounded recovery plan and never grants mutation authority.
+
+Use **ref hygiene** and coordination retention to bound temporary operational state. Protected/live/referenced refs and records are retained; planners never authorize deletion themselves.
+
+A **blocker proof** is required before BLOCKED can end an invocation: dependency ID, fresh observation, evidence, exact next action, recheck trigger and proof that same-invocation useful work is exhausted.
+
+Use **decision authority** to avoid unnecessary owner interruptions. Reversible/compensatable low-or-medium-risk work inside existing scope proceeds only when durable policy already pre-authorizes it. Human boundaries remain for scope expansion, high risk, destructive/irreversible actions, missing secrets and protected gates.
+
+Use **evidence compaction** to preserve result counts, durable refs and deterministic source digest without copying verbose diagnostics into canonical state. Use **progress enforcement** so DEGRADED/STALLED/RECOVERY_REQUIRED produce concrete continuation/recovery actions. Read `references/operational-hardening.md` and `references/decision-authority.md`.

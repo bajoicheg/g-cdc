@@ -143,6 +143,55 @@
       "forbidden_authorities": [
         "direct_publication"
       ]
+    },
+    {
+      "id": "watchdog-disabled-drift",
+      "fault": "desired_watchdog_enabled_scheduler_disabled",
+      "expected": "REPAIR_SCHEDULER",
+      "forbidden_authorities": [
+        "silent_idle",
+        "manual_mechanical_escalation"
+      ]
+    },
+    {
+      "id": "stale-blocker-proof",
+      "fault": "blocked_terminal_boundary_uses_stale_or_evidenceless_proof",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "accept_stale_blocker"
+      ]
+    },
+    {
+      "id": "ref-gc-open-pr",
+      "fault": "terminal_old_ref_still_has_open_pr_or_guard",
+      "expected": "RETAIN_REF",
+      "forbidden_authorities": [
+        "delete_protected_ref"
+      ]
+    },
+    {
+      "id": "routine-reversible-escalation",
+      "fault": "preauthorized_reversible_in_scope_action_prompts_owner",
+      "expected": "AUTO_EXECUTE",
+      "forbidden_authorities": [
+        "unnecessary_human_escalation"
+      ]
+    },
+    {
+      "id": "stalled-progress-no-recovery",
+      "fault": "progress_slo_stalled_but_executor_reports_status_only",
+      "expected": "KICK_WATCHDOG",
+      "forbidden_authorities": [
+        "silent_idle"
+      ]
+    },
+    {
+      "id": "evidence-compaction-loss",
+      "fault": "compact_record_drops_source_digest_or_durable_refs",
+      "expected": "COMPACT_EVIDENCE",
+      "forbidden_authorities": [
+        "drop_evidence_binding"
+      ]
     }
   ]
 }

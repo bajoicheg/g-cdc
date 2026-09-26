@@ -11,4 +11,4 @@ CDC 2.7 introduces an independently bootstrappable release model:
 - compatibility, fault-injection and cross-consumer evidence are mandatory release classes;
 - migration never crosses an active owner or unresolved external guard.
 
-CDC 2.7.3 is released at `refs/heads/release/v2.7.3` (release commit `88ee8a209caf562c02fe2ad53e047d7feee0e007`, package tree `806a66cd973954b3d5348ac36d39631717d9fe7b`). `g-cdc` uses released 2.7.3 to develop CDC 2.8.0 Autonomous Continuity & Isolation.
+CDC 2.8.0 is released at `refs/heads/release/v2.8.0` (release commit `08996f44eee59750ba27b3169eec8735511f30f5`, package tree `ff5d24d685986a65a4239916020c969c9777ad05`). `g-cdc` uses released 2.8.0 to develop CDC 2.8.1 Operational Hardening.

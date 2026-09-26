@@ -1,4 +1,4 @@
-# Continuous Development Cycle v2.8.0
+# Continuous Development Cycle v2.8.1
 
 Installable ChatGPT/Codex/agent skill for recoverable, long-running software development.
 
@@ -133,3 +133,13 @@ Read `references/canonical-source-and-release.md`. Validate consumer pins with
 - Sensitive-context scanning covers organization/domain/topology leaks that secret scanners miss.
 - Publication guard covers tree, refs, conversations, artifacts and control-plane paths.
 - Internal control-plane state is excluded from the publishable product surface; findings require sanitized export.
+
+
+## v2.8.1 Operational Hardening
+
+- Watchdog self-repair restores delivery paths instead of accepting scheduler/chat drift.
+- Ref hygiene and coordination retention bound temporary operational state.
+- Blocker proof rejects stale or evidence-free BLOCKED terminal states.
+- Decision authority removes unnecessary human prompts while preserving real human boundaries.
+- Evidence compaction preserves durable refs and source digest.
+- Progress enforcement turns degraded/stalled states into concrete continuation actions.
