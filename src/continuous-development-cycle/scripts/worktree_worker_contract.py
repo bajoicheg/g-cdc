@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """CDC 2.10.2 durable per-wave isolated worker/worktree assignment contract."""
 from __future__ import annotations
-import argparse,json,re,sys
+import argparse,hashlib,json,re,sys
 from pathlib import Path
 from parallel_task_planner import validate as validate_parallel_plan, plan as build_parallel_plan, validate_write_path, overlaps, canonical_plan_ref
 
-SCHEMA="worktree-worker-contract/v1";SHA=re.compile(r"^[0-9a-f]{40}$");ROLES={"writer","read_only","review"}
+SCHEMA="worktree-worker-contract/v1";SHA=re.compile(r"^[0-9a-f]{40}$");PLAN_REF=re.compile(r"^plan:sha256:[0-9a-f]{64}$");ROLES={"writer","read_only","review"}
 
 def _text(v,n):
     if not isinstance(v,str) or not v.strip():raise ValueError(f"{n} must be nonempty text")
@@ -13,15 +13,20 @@ def _refs(v,n,allow_empty=False):
     if not isinstance(v,list) or any(not isinstance(x,str) or not x.strip() for x in v):raise ValueError(f"{n} invalid")
     if not allow_empty and not v:raise ValueError(f"{n} must not be empty")
     if len(v)!=len(set(v)):raise ValueError(f"{n} contains duplicates")
+def plan_ref_for(plan):
+    payload=json.dumps(plan,sort_keys=True,separators=(",",":"),ensure_ascii=False).encode("utf-8")
+    return "plan:sha256:"+hashlib.sha256(payload).hexdigest()
 def validate(d):
     fields={"schema","change_id","plan_ref","plan","wave","base_sha","prior_wave_integration","integrator_id","shared_branch","assignments"}
     if not isinstance(d,dict) or set(d)!=fields or d.get("schema")!=SCHEMA:
         raise ValueError("worker contract fields/schema mismatch")
-    for n in ("change_id","plan_ref","integrator_id","shared_branch"):_text(d[n],n)
+    for n in ("change_id","integrator_id","shared_branch"):_text(d[n],n)
+    if not isinstance(d["plan_ref"],str) or not PLAN_REF.fullmatch(d["plan_ref"]):raise ValueError("plan_ref must be content-addressed")
     if type(d["wave"]) is not int or d["wave"]<1:raise ValueError("wave invalid")
     if not isinstance(d["base_sha"],str) or not SHA.fullmatch(d["base_sha"]):raise ValueError("base_sha invalid")
 
     plan=validate_parallel_plan(d["plan"])
+    if d["plan_ref"]!=plan_ref_for(plan):raise ValueError("embedded plan does not match durable plan_ref")
     if d["plan_ref"]!=canonical_plan_ref(plan):raise ValueError("plan_ref does not bind embedded plan")
     if plan["change_id"]!=d["change_id"]:raise ValueError("plan change mismatch")
     if plan["integrator_id"]!=d["integrator_id"]:raise ValueError("plan integrator mismatch")
