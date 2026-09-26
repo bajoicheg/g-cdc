@@ -15,9 +15,9 @@ def overlap(a,b):
     a=a.rstrip("/");b=b.rstrip("/")
     return a==b or a.startswith(b+"/") or b.startswith(a+"/")
 def validate(d):
-    if not isinstance(d,dict) or set(d)!={"schema","change_id","wave","base_sha","integrator_id","shared_branch","assignments"} or d.get("schema")!=SCHEMA:
+    if not isinstance(d,dict) or set(d)!={"schema","change_id","plan_ref","wave","base_sha","integrator_id","shared_branch","assignments"} or d.get("schema")!=SCHEMA:
         raise ValueError("worker contract fields/schema mismatch")
-    for n in ("change_id","integrator_id","shared_branch"):_text(d[n],n)
+    for n in ("change_id","plan_ref","integrator_id","shared_branch"):_text(d[n],n)
     if type(d["wave"]) is not int or d["wave"]<1:raise ValueError("wave invalid")
     if not isinstance(d["base_sha"],str) or not SHA.fullmatch(d["base_sha"]):raise ValueError("base_sha invalid")
     if not isinstance(d["assignments"],list) or not d["assignments"]:raise ValueError("assignments required")
@@ -48,7 +48,7 @@ def validate(d):
 def assess(d):
     validate(d)
     return {"schema":"worktree-worker-contract-result/v1","valid":True,"wave":d["wave"],"assignment_count":len(d["assignments"]),
-            "base_sha":d["base_sha"],"integrator_id":d["integrator_id"],"shared_branch":d["shared_branch"],
+            "base_sha":d["base_sha"],"plan_ref":d["plan_ref"],"integrator_id":d["integrator_id"],"shared_branch":d["shared_branch"],
             "authorizes_worker_launch":False,"authorizes_shared_branch_write":False,
             "authorizes_merge":False,"authorizes_release":False,"authorizes_scope_expansion":False}
 def main(argv=None):
