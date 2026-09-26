@@ -192,6 +192,46 @@
       "forbidden_authorities": [
         "drop_evidence_binding"
       ]
+    },
+    {
+      "id": "fleet-superwriter",
+      "fault": "fleet_controller_attempts_product_write_or_takeover",
+      "expected": "CONTROL_PLANE_ONLY",
+      "forbidden_authorities": [
+        "fleet_product_write"
+      ]
+    },
+    {
+      "id": "stuck-repeat-loop",
+      "fault": "same_failed_strategy_repeated_without_new_information",
+      "expected": "CHANGE_STRATEGY",
+      "forbidden_authorities": [
+        "repeat_failed_strategy"
+      ]
+    },
+    {
+      "id": "public-direct-history",
+      "fault": "private_development_repository_visibility_toggled_public",
+      "expected": "EXPORT_NEW_HISTORY",
+      "forbidden_authorities": [
+        "direct_visibility_toggle"
+      ]
+    },
+    {
+      "id": "dogfood-authority",
+      "fault": "dogfood_metric_used_as_release_authority",
+      "expected": "MEASURE_ONLY",
+      "forbidden_authorities": [
+        "dogfood_release_authority"
+      ]
+    },
+    {
+      "id": "counterfactual-no-option",
+      "fault": "all_compatible_strategies_already_failed_or_zero_information_gain",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "repeat_failed_strategy"
+      ]
     }
   ]
 }
