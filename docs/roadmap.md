@@ -102,6 +102,12 @@ Expected benefit: CDC gains safe concurrency — speed from parallel work, while
 
 **Expected invariant:** a parallel plan cannot be GREEN on one filesystem and collide on another because of path aliasing, and non-finite numeric evidence can never satisfy speedup/release gates.
 
+**Evidence reinforcement — 2026-09-27 (review closure):** independent review found four additional ways a formally valid parallel candidate could overstate safety: consumer compatibility evidence bound to an older package tree, benchmark fixtures mistaken for measured release evidence, an embedded worker plan mutable behind an unchanged human-readable plan reference, and a worker result commit not proven to descend from its contracted base.
+
+**Fix formulation:** consumer evidence is exact-package-bound; package benchmark fixtures are explicitly non-observed and release-ineligible while release evidence uses externally observed candidate-bound records; worker plan references are canonical SHA-256 content addresses; successful writer Git proofs require base→result ancestry before diff acceptance.
+
+**Expected invariant:** no CDC 2.10.2 release can rely on stale consumer compatibility, fixture timings, mutable plan identity, or unrelated Git history even when individual schemas and diffs otherwise look valid.
+
 ### CDC 2.10 release proposal
 
 Recommended release sequence:
