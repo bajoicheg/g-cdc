@@ -1,7 +1,7 @@
 from pathlib import Path
 import json,sys,unittest
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/"scripts"))
-from parallel_benchmark import evaluate,evaluate_from_files,load_observations
+from parallel_benchmark import evaluate,evaluate_from_files,load_observations,load_plan_artifact
 
 class T(unittest.TestCase):
  def base(self):return json.loads((ROOT/"templates"/"parallel-benchmark.json").read_text())
@@ -19,7 +19,7 @@ class T(unittest.TestCase):
  def test_release_observed_requires_resolved_plan_artifact(self):
   d,obs=self.release_case();r=evaluate(d,obs)
   self.assertTrue(r["passed"]);self.assertFalse(r["release_evidence_eligible"]);self.assertFalse(r["plan_artifact_verified"])
-  r=evaluate(d,obs,plan_artifact_verified=True)
+  plan=load_plan_artifact(d,ROOT);r=evaluate(d,obs,plan_artifact=plan)
   self.assertTrue(r["passed"]);self.assertTrue(r["release_evidence_eligible"]);self.assertTrue(r["plan_artifact_verified"])
  def test_invalid_evidence_class_rejected(self):
   d=self.base();d["evidence_class"]="pretend"
@@ -51,6 +51,15 @@ class T(unittest.TestCase):
  def test_observation_plan_ref_requires_digest(self):
   d,obs=self.release_case();obs[0]["plan_ref"]="unbound-plan"
   with self.assertRaises(ValueError):evaluate(d,obs)
+ def test_plan_candidate_must_match_benchmark_target(self):
+  d=self.base();d["candidate_sha"]="3"*40
+  with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
+ def test_plan_package_tree_must_match_benchmark_target(self):
+  d=self.base();d["package_tree"]="3"*40
+  with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
+ def test_plan_representative_task_must_match(self):
+  d=self.base();d["representative_task_ref"]="other-task"
+  with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
  def test_observation_candidate_must_match(self):
   d,obs=self.release_case();obs[0]["candidate_sha"]="2"*40
   with self.assertRaises(ValueError):evaluate(d,obs)
