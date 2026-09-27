@@ -64,7 +64,10 @@ from spec_plan_queue import evaluate as evaluate_spec_plan_queue
 from review_pipeline import evaluate as evaluate_review_pipeline
 from branch_finish import evaluate as evaluate_branch_finish
 from parallel_task_planner import plan as plan_parallel_tasks
-from worktree_worker_contract import (assess as assess_worker_contract, validate_prior_integration_record,\n    validate_gate_evidence, validate_assembly_evidence)
+from worktree_worker_contract import (
+    assess as assess_worker_contract, validate_prior_integration_record,
+    validate_gate_evidence, validate_assembly_evidence,
+)
 from integration_gate import evaluate as evaluate_integration_gate
 from parallel_benchmark import evaluate_from_files as evaluate_parallel_benchmark_files, load_observations as load_parallel_benchmark_observations
 
