@@ -1,0 +1,66 @@
+{
+  "schema": "cdc-release-evidence/v1",
+  "version": "2.10.2",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "candidate_source_commit": "82046d663cc2c86f0dd79c5c349f0797171bc66b",
+  "candidate_validation_head": "52565ebbd97d9d6faba71cbe3cc353188c8a479b",
+  "package_tree": "2bee3b8159aaf80de981afba7cf284f21bafa1c3",
+  "release_validation": {
+    "provider": "codex_compute",
+    "evidence_comment": "https://github.com/bajoicheg/g-cdc/pull/14#issuecomment-5853585393",
+    "conclusion": "success",
+    "bootstrap": {
+      "result": "success",
+      "tests": "12/12"
+    },
+    "package": {
+      "result": "success",
+      "tests": "516/516",
+      "validated_files": 260
+    },
+    "aggregate_unittests": "528/528",
+    "focused_2102": "98/98",
+    "source_spec": "GREEN",
+    "code_quality": "GREEN",
+    "fault_scenarios": 70,
+    "pressure_scenarios": 89,
+    "benchmark": {
+      "result": "success",
+      "evidence_comment": "https://github.com/bajoicheg/g-cdc/pull/14#issuecomment-5853537039",
+      "plan_sha256": "sha256:ae4b22da16d6cb243957c422cbce0975287a91b31625c9c8ca14b310085a9f30",
+      "environment_sha256": "sha256:3338b86ac7ebfe2ef8e23c25ce763a7f8e7e94ee162813ad88f5ba71529ec3d7",
+      "sequential_elapsed_seconds": 88.93399239600012,
+      "parallel_elapsed_seconds": 57.90157018700006,
+      "speedup_ratio": 1.5359513068260002,
+      "seconds_saved": 31.03242220900006,
+      "sequential_unresolved_conflicts": 0,
+      "parallel_unresolved_conflicts": 0,
+      "sequential_rollbacks": 0,
+      "parallel_rollbacks": 0,
+      "invocations": "122/122"
+    },
+    "source_lock": {
+      "result": "success",
+      "driver_version": "2.10.1",
+      "driver_commit": "408408c0fa5a0126f649a7328f8f667d27f5ff18",
+      "driver_package_tree": "07bea03a6cc23f658c1cefe41aba40c174474f25"
+    },
+    "consumers": [
+      {
+        "repository": "bajoicheg-private/g-supervisor",
+        "result": "success"
+      },
+      {
+        "repository": "bajoicheg-private/g-ad-control",
+        "result": "success"
+      },
+      {
+        "repository": "bajoicheg/g-pc-health-check",
+        "result": "success"
+      }
+    ],
+    "consumer_evidence_comment": "https://github.com/bajoicheg/g-cdc/pull/14#issuecomment-5853481451",
+    "final_head_clean": true
+  },
+  "release_ref": "refs/heads/release/v2.10.2"
+}

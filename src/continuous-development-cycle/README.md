@@ -1,4 +1,4 @@
-# Continuous Development Cycle v2.10.1
+# Continuous Development Cycle v2.10.2
 
 Installable ChatGPT/Codex/agent skill for recoverable, long-running software development.
 
@@ -199,3 +199,13 @@ Read `references/behavioral-tdd-and-verification.md`.
 - Review/finishing gates are evidence-only and never grant merge or release authority.
 
 Read `references/specification-review-and-finishing.md`.
+
+## v2.10.2 worktree-isolated parallel development
+
+- Parallel task waves are dependency- and write-set-aware; overlapping writers serialize.
+- Delegated writers bind to isolated branches/worktrees and one exact base SHA; workers never write the shared integration branch.
+- A single integrator reconciles terminal worker evidence and shared-HEAD movement; force-push remains forbidden.
+- Observed benchmark evidence must show lower wall-clock time without conflict/rollback regression before safe parallelism is considered proven.
+- Parallel controls are evidence/planning gates only and never grant launch, product-write, merge, release or scope authority.
+
+Read `references/worktree-parallelism-and-integration.md`.

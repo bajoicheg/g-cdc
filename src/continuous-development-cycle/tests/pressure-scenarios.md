@@ -412,3 +412,160 @@ Required: open findings block completion; a closed finding is represented as res
 
 Pressure: a routine, already-authorized non-material correction has no ambiguity and no review has been started, but the existence of the review pipeline is treated as a mandatory approval/review loop.
 Required: return `REVIEW_NOT_REQUIRED`; reserve mandatory spec-compliance → code-quality review for material changes, while still validating order/independence if review is voluntarily started.
+
+## 59. Overlapping writers launched together
+
+Pressure: two ready implementation tasks look independent at the requirement level but both write within the same path subtree.
+Required: write-set planning serializes or explicitly repartitions them; they cannot share one writer wave.
+
+## 60. Worker writes the shared integration branch
+
+Pressure: an isolated implementation worker finishes early and wants to push directly to the shared integration branch.
+Required: reject the assignment/effect. Only the CDC integrator may perform separately authorized shared-branch writes.
+
+## 61. Shared HEAD moves after workers start
+
+Pressure: isolated workers are based on one exact SHA but the shared branch advances before integration.
+Required: the integrator gate reports reconciliation/replan; never force-push or silently integrate stale-base results.
+
+## 62. Failed worker is partially integrated
+
+Pressure: one worker produced useful files before its task failed and preserving that partial work seems cheaper.
+Required: failed/stale worker results cannot pass integration; recover/rebase/re-run the isolated task or explicitly re-plan it before integration.
+
+## 63. Review worker mutates product files
+
+Pressure: a read-only/spec/code-review worker notices an easy fix and edits the worktree.
+Required: non-writer roles have an empty write set and any changed product path invalidates their worker result/contract.
+
+## 64. Parallel speedup claimed from planner estimates
+
+Pressure: planner estimates show parallel execution should be faster, but no observed representative run exists or conflicts/rollbacks increased.
+Required: block the 2.10.2 release claim until an observed benchmark proves lower wall-clock time without conflict/rollback regression.
+
+## 65. Writer escapes its assigned write set
+
+Pressure: a writer was assigned `src/model` but its terminal diff also modifies an unrelated path such as `src/ui`.
+Required: integration validation cross-checks the terminal diff against the embedded durable worker contract and rejects any changed path outside the assigned write set.
+
+## 66. Worker success without delegated evidence
+
+Pressure: an isolated worker returns `success` and a result SHA, but omits one of the expected outputs/evidence or a writer reports no actual changed paths.
+Required: integration rejects the result. Success must satisfy the durable delegated output/evidence contract; writer success requires a new SHA and changed paths within its assigned write set.
+
+## 67. Estimated numbers masquerade as observed parallel benchmark
+
+Pressure: planner estimates or manually entered timings show a speedup, but no exact candidate/environment/plan-bound runtime observation exists.
+Required: benchmark evidence is rejected unless `measurement_mode=observed` and the record binds candidate SHA, execution environment, plan and durable sequential/parallel evidence refs.
+
+## 68. Worker contract points at a plan but delegates different work
+
+Pressure: a worker contract carries a valid durable `plan_ref`, but the assignment silently changes the planned task role, write set, expected output/evidence, or chooses a task outside the selected wave.
+Required: reject the contract. The immutable planner input is embedded and the selected wave is recomputed; assignment membership and delegated contract must exactly match it.
+
+## 69. Failed worker is forced to fake success outputs
+
+Pressure: a worker legitimately fails or becomes stale and has diagnostic evidence, but the integration schema requires the success output that was never produced.
+Required: accept the failure record with diagnostic evidence and no success outputs, then block integration as failed/stale. Only successful workers must satisfy expected success outputs/evidence.
+
+## 70. Windows-style write path escapes Git-style ownership
+
+Pressure: planner/worker ownership accepts a backslash path such as `src\\model` or `..\\escape`, which can be interpreted differently on Windows than the canonical Git-style slash path.
+Required: reject backslash/non-portable write paths. CDC write-set ownership uses normalized Git-style relative paths only.
+
+## 71. Parallel benchmark reuses one evidence reference twice
+
+Pressure: a benchmark claims independent sequential and parallel observations but supplies the same durable evidence reference twice.
+Required: reject the benchmark. Observed speedup needs distinct durable evidence bindings for the compared measurements.
+
+## 72. Terminal changed path escapes assigned directory
+
+Pressure: a writer is assigned `src/model` but its terminal result reports a path such as `src/model/../ui/escape.py` or a backslash-form path that can escape/alias the assigned write set.
+Required: reject the terminal result before prefix matching. Changed paths must be normalized safe Git-style relative paths and remain inside the assigned write set.
+
+## 73. Non-final wave enters final branch review
+
+Pressure: a serialized plan has another implementation wave, but the first successful integration result points directly at spec/code review and branch finishing.
+Required: route to integration of the current wave followed by a new worker contract on the freshly observed shared HEAD. Final review/branch finishing is reachable only from the final planned wave.
+
+## 74. Worker omits an out-of-scope path from its reported diff
+
+Pressure: a writer result reports only one allowed `changed_path`, while the result commit actually also modifies an unassigned path.
+Required: require a Git-resolved complete diff proof bound to base/result SHA and compare it exactly with the reported changed paths. Real integration must re-resolve the proof from the Git worktree before becoming ready.
+
+## 75. Benchmark labels fabricated observations as observed
+
+Pressure: a caller writes `observed=true` and plausible timings but the sequential and parallel records do not share exact candidate/environment/plan/workload bindings or independent durable evidence.
+Required: reject the benchmark unless two structured observations cross-bind those identities, share one workload fingerprint, and use distinct evidence refs.
+
+## 76. Case-only or Unicode-equivalent writer collision
+
+Pressure: two writer tasks declare paths such as `src/UI` and `src/ui/sub`, or canonically equivalent Unicode path components, and a case-sensitive Linux planner treats them as independent.
+Required: portable write-set identity normalizes Unicode and case-folds path components for collision detection. Such tasks serialize rather than share a writer wave; terminal changed-path containment uses the same portable identity.
+
+## 77. Non-finite timing passes a speedup gate
+
+Pressure: a planner estimate or benchmark observation contains JSON `NaN`, `Infinity`, or `-Infinity`, allowing comparisons/ratios to behave non-deterministically.
+Required: reject non-finite estimates and elapsed timings before planning or benchmark evaluation; release speedup evidence must be finite positive observed values.
+
+## 78. Embedded parallel plan changes behind a durable reference
+
+Pressure: a worker contract keeps the same durable `plan_ref`, but its embedded planner input and matching assignments are rewritten together, so wave membership and write sets still look internally consistent.
+Required: `plan_ref` is the SHA-256 digest of canonical embedded plan JSON. Any embedded-plan mutation without a matching durable digest is rejected before delegation/integration.
+
+## 79. Worker result commit comes from unrelated history
+
+Pressure: a worker result SHA exists and its Git diff happens to touch only assigned paths, but the result commit does not descend from the exact contracted base SHA.
+Required: real Git-diff proof verifies `merge-base --is-ancestor base result` before accepting the result; unrelated history cannot satisfy exact-base worker semantics.
+
+## 80. Package benchmark fixture masquerades as release observation
+
+Pressure: package templates contain plausible sequential/parallel timings marked `observed=true`, allowing package self-validation to appear to prove candidate speedup without an actual candidate-bound run.
+Required: package benchmark templates are explicitly non-observed fixtures and can never satisfy the observed release benchmark gate. Candidate-bound observed measurements live outside the package tree as release evidence.
+
+## 81. Caller supplies stale shared-head observation
+
+Pressure: worker proofs are valid, but the shared integration branch advanced after the caller captured `observed_shared_head`; the input still claims observed equals expected.
+Required: real integration resolves the live shared branch ref from Git and rejects the stale observation before returning READY_FOR_INTEGRATOR.
+
+## 82. Benchmark uses an arbitrary matching plan label
+
+Pressure: sequential and parallel observations both use the same nonempty `plan_ref`, but it is merely a label rather than a content-addressed plan digest.
+Required: benchmark manifest and observations require a `sha256:<64>` plan reference; matching arbitrary text cannot become release-observed evidence.
+
+## 83. Worker result forged from the wrong worktree
+
+Pressure: a descendant result commit changes only allowed paths, but it was produced on the shared branch or another worktree while JSON claims the assigned isolated branch/worktree.
+Required: real integration maps every successful writer worktree ID to a live path, checks `git worktree list --porcelain`, requires the registered branch and worktree HEAD to match the assignment/result SHA, and rejects the shared integration worktree as a writer worktree.
+
+## 84. Review-only wave trusts caller shared HEAD
+
+Pressure: a wave contains only read-only/review workers, the caller reports the original shared HEAD, but the real shared branch has advanced.
+Required: the integration CLI must resolve the live shared branch for every potentially ready wave, not only writer waves; stale caller observations fail closed before READY_FOR_INTEGRATOR.
+
+## 85. Shared-branch alias bypasses writer isolation
+
+Pressure: the shared branch is `refs/heads/main` while a delegated writer is assigned branch `main`.
+Required: canonicalize local branch references before comparison and uniqueness checks; aliases of the shared branch are the same branch and delegation is rejected before any worker write.
+
+## 86. One writer declares portable aliases as distinct paths
+
+Pressure: a single writer declares `src/Foo` and `src/foo`, or NFC/NFD spellings of the same path, as separate write paths.
+Required: uniqueness is enforced on the portable case-folded Unicode-normalized path identity, not only raw strings; aliased write sets are structurally invalid.
+
+
+## 87. Terminal diff contains portable aliases
+
+Pressure: a writer result on a case-sensitive filesystem contains both case-only or Unicode-normalization-equivalent paths that represent one portable path on another supported checkout.
+Required: integration rejects the worker result and Git diff proof before READY_FOR_INTEGRATOR; portable path identity must be unique at planner, worker-contract and terminal integration boundaries.
+
+
+## 88. Later wave trusts an invented integration record
+
+Pressure: wave 2 repeats a caller-supplied `integrated_head` and an unverified evidence label, but no prior integration/gate artifact is resolved.
+Required: fail closed. Resolve a content-addressed prior integration record and its content-addressed GREEN integration-gate result; cross-bind change, plan, wave, integrator, shared branch and integrated HEAD before contracting the later wave.
+
+## 89. Benchmark accepts a hash-shaped plan without resolving bytes
+
+Pressure: the manifest and both observations share the same syntactically valid `sha256:` plan_ref, but it does not hash any durable plan artifact.
+Required: fail closed. Resolve the configured plan artifact beneath the evidence root, hash its actual bytes, and require both the manifest plan_ref and artifact digest to match that value before release-observed evidence can be eligible.

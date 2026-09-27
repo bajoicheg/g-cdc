@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check installed package integrity and validate templates with their actual parsers."""
 from pathlib import Path
+import hashlib
 import json
 import re
 import sys
@@ -62,6 +63,13 @@ from systematic_rca import analyze as analyze_systematic_rca
 from spec_plan_queue import evaluate as evaluate_spec_plan_queue
 from review_pipeline import evaluate as evaluate_review_pipeline
 from branch_finish import evaluate as evaluate_branch_finish
+from parallel_task_planner import plan as plan_parallel_tasks
+from worktree_worker_contract import (
+    assess as assess_worker_contract, validate_prior_integration_record,
+    validate_gate_evidence, validate_gate_result, validate_assembly_evidence,
+)
+from integration_gate import evaluate as evaluate_integration_gate
+from parallel_benchmark import evaluate_from_files as evaluate_parallel_benchmark_files, load_observations as load_parallel_benchmark_observations
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -185,6 +193,24 @@ REQUIRED = [
     'templates/systematic-rca.json',
     'tests/test_behavioral_eval.py', 'tests/test_verification_gate.py',
     'tests/test_systematic_rca.py', 'tests/test_v2100_guidance.py',
+    'references/specification-review-and-finishing.md',
+    'scripts/spec_plan_queue.py', 'scripts/review_pipeline.py', 'scripts/branch_finish.py',
+    'templates/spec-plan-queue.json', 'templates/review-pipeline.json', 'templates/branch-finish.json',
+    'tests/test_spec_plan_queue.py', 'tests/test_review_pipeline.py', 'tests/test_branch_finish.py',
+    'tests/test_v2101_guidance.py',
+    'references/worktree-parallelism-and-integration.md',
+    'scripts/parallel_task_planner.py', 'scripts/worktree_worker_contract.py',
+    'scripts/integration_gate.py', 'scripts/parallel_benchmark.py',
+    'templates/parallel-task-plan.json', 'templates/worktree-worker-contract.json',
+    'templates/integration-gate.json', 'templates/parallel-benchmark.json',
+    'templates/wave-integration-record.json', 'templates/wave-integration-gate-evidence.json',
+    'templates/wave-integration-gate-result.json', 'templates/wave-assembly-evidence.json',
+    'templates/parallel-benchmark-plan.json', 'templates/parallel-benchmark-environment.json',
+    'templates/parallel-benchmark-observation-sequential.json',
+    'templates/parallel-benchmark-observation-parallel.json',
+    'tests/test_parallel_task_planner.py', 'tests/test_worktree_worker_contract.py',
+    'tests/test_integration_gate.py', 'tests/test_parallel_benchmark.py',
+    'tests/test_v2102_guidance.py',
 ]
 
 
@@ -407,6 +433,64 @@ def validate():
             any(branch_finish[name] for name in ('authorizes_product_write','authorizes_merge',
                                                  'authorizes_release','authorizes_scope_expansion'))):
         raise ContractError('invalid CDC 2.10.1 branch-finishing template')
+    parallel_plan = plan_parallel_tasks(json.loads((ROOT / 'templates/parallel-task-plan.json').read_text()))
+    if (not parallel_plan['parallel_safe'] or not parallel_plan['waves'] or len(parallel_plan['waves'][0]['task_ids']) < 2 or
+            parallel_plan['parallel_estimate_seconds'] >= parallel_plan['sequential_estimate_seconds'] or
+            any(parallel_plan[name] for name in ('authorizes_worker_launch','authorizes_product_write',
+                                                 'authorizes_merge','authorizes_release','authorizes_scope_expansion'))):
+        raise ContractError('invalid CDC 2.10.2 parallel planner template')
+    worker_contract = assess_worker_contract(json.loads((ROOT / 'templates/worktree-worker-contract.json').read_text()))
+    if (not worker_contract['valid'] or
+            any(worker_contract[name] for name in ('authorizes_worker_launch','authorizes_shared_branch_write',
+                                                   'authorizes_merge','authorizes_release','authorizes_scope_expansion'))):
+        raise ContractError('invalid CDC 2.10.2 worker isolation template')
+    prior_record = json.loads((ROOT / 'templates/wave-integration-record.json').read_text())
+    validate_prior_integration_record(prior_record)
+    gate = json.loads((ROOT / 'templates/wave-integration-gate-evidence.json').read_text())
+    assembly = json.loads((ROOT / 'templates/wave-assembly-evidence.json').read_text())
+    validate_gate_evidence(gate); validate_assembly_evidence(assembly)
+    for ref_name in ('gate_artifact_ref','assembly_artifact_ref'):
+        ref = prior_record[ref_name]
+        payload = (ROOT / ref['path']).read_bytes()
+        observed = 'sha256:' + hashlib.sha256(payload).hexdigest()
+        if observed != ref['sha256']:
+            raise ContractError('invalid CDC 2.10.2 prior-wave artifact digest: ' + ref_name)
+    gate_result_ref = gate['result_artifact_ref']
+    gate_result_payload = (ROOT / gate_result_ref['path']).read_bytes()
+    gate_result_observed = 'sha256:' + hashlib.sha256(gate_result_payload).hexdigest()
+    if gate_result_observed != gate_result_ref['sha256']:
+        raise ContractError('invalid CDC 2.10.2 integration gate result artifact digest')
+    gate_result = json.loads(gate_result_payload)
+    validate_gate_result(gate_result)
+    if (gate_result['change_id'] != prior_record['change_id'] or
+            gate_result['plan_ref'] != prior_record['plan_ref'] or
+            gate_result['wave'] != prior_record['wave'] or
+            gate_result['shared_branch'] != prior_record['shared_branch'] or
+            gate_result['expected_shared_head'] != prior_record['base_sha'] or
+            gate_result['observed_shared_head'] != prior_record['base_sha'] or
+            not gate_result['ready'] or gate_result['action'] != 'READY_FOR_INTEGRATOR' or gate_result['blockers']):
+        raise ContractError('invalid CDC 2.10.2 integration gate result binding')
+    if gate_result['writer_result_shas'] != prior_record['writer_result_shas']:
+        raise ContractError('invalid CDC 2.10.2 gate/result writer binding')
+    if assembly['writer_result_shas'] != prior_record['writer_result_shas']:
+        raise ContractError('invalid CDC 2.10.2 assembly/result writer binding')
+    if assembly['gate_sha256'] != prior_record['gate_artifact_ref']['sha256']:
+        raise ContractError('invalid CDC 2.10.2 prior-wave gate/assembly binding')
+    if prior_record['base_sha'] == prior_record['integrated_head']:
+        raise ContractError('invalid CDC 2.10.2 prior-wave non-advancing integration record')
+    integration = evaluate_integration_gate(json.loads((ROOT / 'templates/integration-gate.json').read_text()))
+    if (not integration['ready'] or integration['action'] != 'READY_FOR_INTEGRATOR' or integration['blockers'] or
+            integration['next_gate'] != 'cdc_2.10.1_review_branch_finish_then_2.10.0_verification' or
+            any(integration[name] for name in ('authorizes_shared_branch_write','authorizes_force_push',
+                                               'authorizes_merge','authorizes_release','authorizes_scope_expansion'))):
+        raise ContractError('invalid CDC 2.10.2 integration gate template')
+    benchmark_template = json.loads((ROOT / 'templates/parallel-benchmark.json').read_text())
+    benchmark = evaluate_parallel_benchmark_files(benchmark_template, ROOT)
+    if (not benchmark['passed'] or benchmark['blockers'] or benchmark['evidence_class'] != 'fixture'
+            or benchmark['release_evidence_eligible']
+            or any(benchmark[name] for name in ('authorizes_worker_launch','authorizes_product_write',
+                                                 'authorizes_merge','authorizes_release'))):
+        raise ContractError('invalid CDC 2.10.2 fixture-only benchmark template')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.

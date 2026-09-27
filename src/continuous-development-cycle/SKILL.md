@@ -3,7 +3,7 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.10.1
+# Continuous Development Cycle v2.10.2
 
 Durable repository state is the project state. Sessions, agents and schedulers are disposable. Apply the instruction hierarchy, preserve the source/scope of existing user authorization, and reconcile repository policy. Live remote facts override stale checkpoint/chat claims. A spinner, lease or submitted request is not progress evidence.
 
@@ -242,3 +242,17 @@ Material implementation passes two ordered independent reviews: first **spec-com
 Use **branch finishing** through `scripts/branch_finish.py` before handing a candidate to CDC terminal/release handling. Require fresh validation, exact candidate/HEAD binding, diff/spec reconciliation, both reviews GREEN, no unresolved findings, exact-SHA required checks and clean state.
 
 Review and branch-finishing results are evidence-only: they create no product-write, merge, release or scope-expansion authority. CDC ownership, verification-before-terminal and release controls remain independently mandatory. Read `references/specification-review-and-finishing.md`.
+
+## CDC 2.10.2 Worktree-Isolated Parallel Development & Single Integrator
+
+Use **worktree-isolated parallel development** only when the actual orchestration runtime and project policy already allow delegated writers. **Ordinary ChatGPT chat remains sequential.** A parallel plan never grants worker-launch authority.
+
+Build a dependency DAG and explicit **write-set** plan with `scripts/parallel_task_planner.py`. Independent ready writers may share a wave only when write paths are non-overlapping; overlapping writers are serialized or explicitly repartitioned. Cyclic task graphs are invalid.
+
+Before delegation, bind each worker through `scripts/worktree_worker_contract.py` to a durable worker/task identity, exact common base SHA, isolated branch and worktree, bounded write set, expected outputs and evidence. For wave 2+, a claimed base is insufficient: resolve a content-addressed prior integration record and its content-addressed GREEN integration-gate artifact before accepting the fresh integrated base. Delegated workers cannot write the shared integration branch, merge, release or expand scope.
+
+Preserve one **single integrator**. After worker completion, use `scripts/integration_gate.py`; stale/failed workers, shared-HEAD movement, writer-result overlap, unresolved conflicts, missing spec/code review or any force-push request require reconciliation/replanning. A GREEN `READY_FOR_INTEGRATOR` result is evidence-only and creates no shared-branch write authority.
+
+Measure real benefit with an **observed parallel benchmark** through `scripts/parallel_benchmark.py`. Planner estimates are not release evidence. The benchmark manifest must resolve the actual plan artifact bytes and require `plan_ref` to equal their SHA-256; matching hash-shaped labels are insufficient. The benchmark is GREEN only when observed parallel wall-clock time beats the sequential baseline without increasing unresolved conflicts or rollbacks.
+
+After integration, the final candidate still passes CDC 2.10.1 branch finishing and CDC 2.10.0 verification-before-terminal controls, plus normal ownership/release gates. Read `references/worktree-parallelism-and-integration.md`.

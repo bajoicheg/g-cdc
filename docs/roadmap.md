@@ -73,7 +73,7 @@ Release: `refs/heads/release/v2.10.1`.
 - independent evidence: PR #12 comment `5849987854` — bootstrap 12/12, package 418/418, aggregate 430/430, 227 validated files/templates, 14/14 targeted review assertions, 45 fault scenarios, 58 numbered pressure scenarios and 3/3 consumers GREEN.
 - GitHub Actions run `36272377691` failed before executable steps and was classified as `pre_run_infrastructure`; no source correction or blind rerun was used as release evidence.
 
-### 2.10.2 — Worktree-Isolated Parallel Development & Single Integrator — P2 / PROPOSED
+### 2.10.2 — Worktree-Isolated Parallel Development & Single Integrator — P2 / RELEASED
 
 Goal: gain real parallel-development speed without reintroducing split-brain writers or shared-branch corruption.
 
@@ -115,6 +115,12 @@ Expected benefit: CDC gains safe concurrency — speed from parallel work, while
 
 **Expected invariant:** a released CDC schema cannot be internally self-inconsistent because a legacy positive producer survived a validator migration.
 
+Finalization RCA — 2026-09-27:
+- Root cause of the prolonged 2.10.2 closeout was a moving-target validation loop: source fixes continued after expensive benchmark/consumer evidence, which correctly made that evidence stale; release manifests were not refreshed atomically; and benchmark observations from different package trees/workload states were informally compared as one trend.
+- Correction: freeze source/spec before expensive evidence; freeze the exact benchmark plan; run final consumer compatibility and observed benchmark once per exact package-tree + plan pair; persist environment, observations, benchmark manifest, consumer evidence and candidate binding atomically; metadata-only evidence commits do not invalidate package evidence; rerun expensive evidence only when package tree or benchmark plan changes.
+- Concurrency correction: one canonical writer/reviewer owner per task; duplicate recovery/review requests are reconciled or cancelled; non-fast-forward ref updates fail closed and force-push remains forbidden.
+- Evidence interpretation: provider/setup failure is not product RED, and benchmark comparisons are meaningful only for matching workload fingerprint/environment class; cross-candidate runs are separate observations rather than a degradation series.
+
 ### CDC 2.10 release proposal
 
 Recommended release sequence:
@@ -124,7 +130,7 @@ Recommended release sequence:
 
 Do **not** start with parallelism. The ordering is deliberate: first make CDC behavior measurable, then make implementation correctness reviewable, then scale execution concurrency.
 
-Roadmap state: CDC 2.10.0 and 2.10.1 are independently GREEN and released. The first runnable scope is now 2.10.2.
+Roadmap state: CDC 2.10.0, 2.10.1 and 2.10.2 are independently GREEN and released. CDC 2.10 is COMPLETE / TERMINAL.
 
 ## CDC 2.9 — COMPLETE / TERMINAL
 

@@ -1,31 +1,34 @@
 {
   "schema": "cdc-release-candidate/v1",
-  "version": "2.10.1",
-  "developed_under_version": "2.10.0",
+  "version": "2.10.2",
+  "developed_under_version": "2.10.1",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "a959c8c81483c704e2b360204538efd3829d2d2a",
-  "package_tree": "07bea03a6cc23f658c1cefe41aba40c174474f25",
-  "status": "released",
+  "source_commit": "82046d663cc2c86f0dd79c5c349f0797171bc66b",
+  "package_tree": "2bee3b8159aaf80de981afba7cf284f21bafa1c3",
+  "status": "candidate",
   "evidence": {
     "bootstrap": [
-      "codex:pr12:comment-5849987854:12/12"
+      "base-release:2.10.1@408408c0fa5a0126f649a7328f8f667d27f5ff18"
     ],
     "package": [
-      "codex:pr12:comment-5849987854:418/418",
-      "review-controls:14/14"
+      "codex:pr14:comment-5853435059:516/516",
+      "codex:pr14:comment-5853435059:98/98-focused",
+      "codex:pr14:comment-5853468278:code-quality-green",
+      "release/benchmark-2.10.2.json",
+      "codex:pr14:comment-5853537039:observed-speedup-1.5359513068260002x"
     ],
     "compatibility": [
-      "codex:pr12:comment-5849987854:3/3",
-      "compatibility/matrix.json"
+      "release/consumer-compatibility-2.10.2.json",
+      "codex:pr14:comment-5853481451:3/3"
     ],
     "fault_injection": [
-      "fault-injection/scenarios.json:45",
-      "pressure-scenarios.md:58"
+      "fault-injection/scenarios.json:70",
+      "pressure-scenarios.md:89"
     ],
     "consumers": [
-      "consumer:g-supervisor:GREEN",
-      "consumer:g-ad-control:GREEN",
-      "consumer:g-pc-health-check:GREEN"
+      "consumer:g-supervisor:authenticated-snapshot-green",
+      "consumer:g-ad-control:authenticated-snapshot-green",
+      "consumer:g-pc-health-check:authenticated-snapshot-green"
     ]
   }
 }

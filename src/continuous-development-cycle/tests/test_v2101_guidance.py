@@ -2,8 +2,9 @@ from pathlib import Path
 import json,unittest
 ROOT=Path(__file__).resolve().parents[1]
 class T(unittest.TestCase):
- def test_version(self):
-  v=(ROOT/"VERSION").read_text().strip();self.assertEqual(v,"2.10.1")
+ def test_version_preserves_2101_or_later_contract(self):
+  v=(ROOT/"VERSION").read_text().strip()
+  self.assertGreaterEqual(tuple(map(int,v.split("."))),(2,10,1))
   self.assertEqual(json.loads((ROOT/"manifest.json").read_text())["version"],v)
  def test_review_guidance(self):
   t=(ROOT/"SKILL.md").read_text().lower()

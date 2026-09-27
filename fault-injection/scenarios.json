@@ -371,6 +371,208 @@
       "forbidden_authorities": [
         "release"
       ]
+    },
+    {
+      "id": "parallel-shared-write",
+      "fault": "delegated_worker_attempts_shared_integration_branch_write",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "parallel-stale-worker",
+      "fault": "worker_result_base_is_stale_or_shared_head_moved_before_integration",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "force_push",
+        "auto_merge"
+      ]
+    },
+    {
+      "id": "parallel-overlap",
+      "fault": "same_wave_or_terminal_writer_results_have_overlapping_write_paths",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "parallel-benchmark-no-benefit",
+      "fault": "parallel_release_claim_has_no_observed_wall_clock_gain_or_regresses_conflicts_or_rollbacks",
+      "expected": "RELEASE_BLOCKED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "parallel-write-set-escape",
+      "fault": "worker_terminal_diff_contains_path_outside_assigned_write_set",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "worker-success-missing-contract-evidence",
+      "fault": "worker_reports_success_without_required_output_or_evidence_contract_or_writer_change",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "parallel-benchmark-not-observed",
+      "fault": "parallel_speedup_claim_uses_estimate_package_fixture_unbound_measurement_or_nonfinite_timing_instead_of_external_observed_candidate_evidence",
+      "expected": "RELEASE_BLOCKED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "worker-contract-plan-spoof",
+      "fault": "worker_contract_plan_ref_is_valid_but_assignment_differs_from_selected_planner_wave",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "failed-worker-success-output-forced",
+      "fault": "failed_or_stale_worker_cannot_be_represented_without_fabricating_expected_success_output",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "parallel-write-path-nonportable",
+      "fault": "writer_or_terminal_path_uses_backslash_reserved_casefold_unicode_alias_or_other_nonportable_form",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "parallel-benchmark-duplicate-evidence",
+      "fault": "benchmark_claims_two_observations_using_duplicate_durable_evidence_ref",
+      "expected": "RELEASE_BLOCKED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "worker-terminal-path-escape",
+      "fault": "worker_terminal_changed_path_uses_traversal_or_nonportable_alias_to_escape_assigned_write_set",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "nonfinal-wave-premature-review",
+      "fault": "nonfinal_parallel_wave_routes_to_final_review_before_new_exact_base_contract",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "worker-self-reported-diff-incomplete",
+      "fault": "writer_result_omits_actual_out_of_scope_git_diff_path",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "benchmark-observation-bindings-fabricated",
+      "fault": "benchmark_observations_do_not_cross_bind_candidate_environment_plan_workload_and_distinct_evidence",
+      "expected": "RELEASE_BLOCKED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "worker-plan-ref-unbound",
+      "fault": "embedded_parallel_plan_mutates_while_durable_plan_ref_remains_unchanged",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "worker-result-unrelated-history",
+      "fault": "worker_result_commit_does_not_descend_from_exact_contracted_base",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "auto_merge"
+      ]
+    },
+    {
+      "id": "integration-live-head-stale",
+      "fault": "caller_observed_shared_head_matches_expected_but_live_shared_ref_has_advanced",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "benchmark-plan-ref-unbound",
+      "fault": "release_observed_benchmark_uses_matching_hash_shaped_plan_ref_without_resolving_the_actual_plan_artifact_bytes",
+      "expected": "RELEASE_BLOCKED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "worker-origin-unproven",
+      "fault": "writer_result_sha_is_valid_but_not_proven_to_come_from_assigned_branch_and_registered_worktree",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "auto_merge"
+      ]
+    },
+    {
+      "id": "review-only-live-head-unverified",
+      "fault": "review_only_wave_can_become_ready_without_resolving_live_shared_branch",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "shared-branch-ref-alias",
+      "fault": "writer_branch_aliases_shared_branch_via_short_vs_full_ref",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "intra-writer-portable-path-alias",
+      "fault": "single_writer_write_set_contains_case_or_unicode_aliases",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "integration-portable-terminal-alias",
+      "fault": "terminal_worker_diff_contains_case_or_unicode_equivalent_path_aliases",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "later-wave-integration-unresolved",
+      "fault": "later_wave_contract_accepts_claimed_integrated_head_without_resolving_prior_integration_and_green_gate_artifacts",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "auto_merge"
+      ]
     }
   ]
 }
