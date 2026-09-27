@@ -4,16 +4,20 @@
   "representative_task_ref": "change-parallel",
   "candidate_sha": "1111111111111111111111111111111111111111",
   "environment_ref": "fixture:benchmark-environment",
-  "plan_ref": "sha256:a05a841272888778dc7300d8c397925b475f70097dedef1ee4ab2a3cf750a9f5",
+  "plan_ref": "sha256:f71f86de620316aa0de35eaa65abe1d3d37f32a4f93574cc224ea11dfb06d82b",
+  "plan_artifact_ref": {
+    "path": "templates/parallel-task-plan.json",
+    "sha256": "sha256:f71f86de620316aa0de35eaa65abe1d3d37f32a4f93574cc224ea11dfb06d82b"
+  },
   "workstreams": 2,
   "observation_refs": [
     {
       "path": "templates/parallel-benchmark-observation-sequential.json",
-      "sha256": "sha256:d5d75eea732e0a51b0a092936ff2e0a3d7c54f56fd0caf616db1368b424f8ad8"
+      "sha256": "sha256:454d600e4bdef503de68f407e6692beb954f59a6364f7702534395ed956389be"
     },
     {
       "path": "templates/parallel-benchmark-observation-parallel.json",
-      "sha256": "sha256:7c2402887af82e2f8af1fa9b4c47a3d911aedde363fa980adb554d082e415200"
+      "sha256": "sha256:f755fbc1ec2b1e54d65a84767e2e040fda8bd5591eadbcbb3afdc0fdcb40bc52"
     }
   ],
   "baseline_unresolved_conflicts": 0,
