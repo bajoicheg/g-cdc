@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
+import os
 import math
 import re
 import subprocess
@@ -41,11 +43,12 @@ TASK_FIELDS = {
 }
 STATE_FIELDS = {
     "schema", "pool_id", "change_id", "parent_invocation_id", "base_sha", "integrator_id",
-    "execution_mode", "tasks", "runtime_consumed_seconds", "cost_consumed_units", *AUTHORITY_FIELDS,
+    "revision", "execution_mode", "tasks", "runtime_consumed_seconds", "cost_consumed_units",
+    *AUTHORITY_FIELDS,
 }
 TASK_STATE_FIELDS = {
-    "id", "status", "attempt_ids", "active_attempt_id", "accepted_result_ref",
-    "integrated", "runtime_seconds", "cost_units",
+    "id", "status", "attempt_ids", "active_attempt_id", "reservation_token",
+    "accepted_result_ref", "integrated", "discarded", "runtime_seconds", "cost_units",
 }
 
 
@@ -186,12 +189,14 @@ def initial_state(plan, *, parallel_capable):
         "parent_invocation_id": plan["parent_invocation_id"],
         "base_sha": plan["base_sha"],
         "integrator_id": plan["integrator_id"],
+        "revision": 0,
         "execution_mode": "parallel" if parallel_capable else "sequential_fallback",
         "tasks": [
             {
                 "id": task["id"], "status": "planned", "attempt_ids": [],
-                "active_attempt_id": None, "accepted_result_ref": None,
-                "integrated": False, "runtime_seconds": 0, "cost_units": 0,
+                "active_attempt_id": None, "reservation_token": None,
+                "accepted_result_ref": None, "integrated": False, "discarded": False,
+                "runtime_seconds": 0, "cost_units": 0,
             }
             for task in plan["tasks"]
         ],
@@ -217,6 +222,8 @@ def validate_state(plan, state):
     for field in ("pool_id", "change_id", "parent_invocation_id", "base_sha", "integrator_id"):
         if state[field] != plan[field]:
             raise ValueError(f"pool state {field} mismatch")
+    if type(state["revision"]) is not int or state["revision"] < 0:
+        raise ValueError("pool state revision must be a nonnegative integer")
     if state["execution_mode"] not in {"parallel", "sequential_fallback"}:
         raise ValueError("invalid execution_mode")
     if not isinstance(state["tasks"], list) or len(state["tasks"]) != len(plan["tasks"]):
@@ -239,20 +246,29 @@ def validate_state(plan, state):
             _text(task["active_attempt_id"], f"{task_id}.active_attempt_id")
             if task["active_attempt_id"] not in task["attempt_ids"]:
                 raise ValueError("active attempt must be in attempt history")
-        if task["status"] in ACTIVE and task["active_attempt_id"] is None:
-            raise ValueError("active task requires active_attempt_id")
-        if task["status"] not in ACTIVE and task["active_attempt_id"] is not None:
-            raise ValueError("non-active task cannot retain active_attempt_id")
+        if task["reservation_token"] is not None:
+            _text(task["reservation_token"], f"{task_id}.reservation_token")
+        if task["status"] in ACTIVE and (task["active_attempt_id"] is None or task["reservation_token"] is None):
+            raise ValueError("active task requires active_attempt_id and reservation_token")
+        if task["status"] not in ACTIVE and (task["active_attempt_id"] is not None or task["reservation_token"] is not None):
+            raise ValueError("non-active task cannot retain active attempt/reservation")
         if task["accepted_result_ref"] is not None:
             _text(task["accepted_result_ref"], f"{task_id}.accepted_result_ref")
-        if type(task["integrated"]) is not bool:
-            raise ValueError("integrated must be boolean")
+        if type(task["integrated"]) is not bool or type(task["discarded"]) is not bool:
+            raise ValueError("integrated/discarded must be boolean")
+        if task["integrated"] and task["discarded"]:
+            raise ValueError("result cannot be both integrated and discarded")
         if task["integrated"] and (task["status"] != "succeeded" or task["accepted_result_ref"] is None):
             raise ValueError("integrated task requires accepted succeeded result")
+        if task["discarded"] and (task["status"] != "succeeded" or task["accepted_result_ref"] is None
+                                  or pmap[task_id]["required"]):
+            raise ValueError("only optional accepted succeeded result may be discarded")
         if task["status"] == "succeeded" and task["accepted_result_ref"] is None:
             raise ValueError("succeeded task requires accepted result")
         if task["status"] != "succeeded" and task["accepted_result_ref"] is not None:
             raise ValueError("only succeeded task may retain accepted result")
+        if task["status"] != "succeeded" and (task["integrated"] or task["discarded"]):
+            raise ValueError("only succeeded task may retain result disposition")
         runtime_sum += _nonnegative_number(task["runtime_seconds"], f"{task_id}.runtime_seconds")
         cost_sum += _nonnegative_number(task["cost_units"], f"{task_id}.cost_units")
         if task["runtime_seconds"] > pmap[task_id]["max_runtime_seconds"]:
@@ -297,6 +313,21 @@ def _active_writer_paths(plan, state):
         if current["status"] in ACTIVE and pmap[task_id]["role"] == "writer":
             paths.extend(pmap[task_id]["write_paths"])
     return paths
+
+
+def canonical_state_ref(state):
+    payload = json.dumps(state, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return "sha256:" + hashlib.sha256(payload).hexdigest()
+
+
+def _expect_revision(state, expected_revision):
+    if type(expected_revision) is not int or expected_revision != state["revision"]:
+        raise ValueError("stale pool state revision")
+
+
+def _advance_revision(state):
+    state["revision"] += 1
+    return state
 
 
 def dispatch(plan, state):
@@ -356,9 +387,11 @@ def dispatch(plan, state):
     }
 
 
-def queue_task(plan, state, task_id, attempt_id):
+def queue_task(plan, state, task_id, attempt_id, *, expected_revision, reservation_token):
     validate_state(plan, state)
+    _expect_revision(state, expected_revision)
     _text(attempt_id, "attempt_id")
+    _text(reservation_token, "reservation_token")
     if task_id not in dispatch(plan, state)["task_ids"]:
         raise ValueError("task is not eligible for the current dispatch batch")
     result = copy.deepcopy(state)
@@ -367,18 +400,21 @@ def queue_task(plan, state, task_id, attempt_id):
         raise ValueError("duplicate attempt_id")
     current["attempt_ids"].append(attempt_id)
     current["active_attempt_id"] = attempt_id
+    current["reservation_token"] = reservation_token
     current["status"] = "queued"
-    return validate_state(plan, result)
+    return validate_state(plan, _advance_revision(result))
 
 
-def mark_running(plan, state, task_id, attempt_id):
+def mark_running(plan, state, task_id, attempt_id, *, expected_revision, reservation_token):
     validate_state(plan, state)
+    _expect_revision(state, expected_revision)
     result = copy.deepcopy(state)
     current = _state_map(result).get(task_id)
-    if current is None or current["status"] != "queued" or current["active_attempt_id"] != attempt_id:
-        raise ValueError("running transition requires matching queued attempt")
+    if (current is None or current["status"] != "queued" or current["active_attempt_id"] != attempt_id
+            or current["reservation_token"] != reservation_token):
+        raise ValueError("running transition requires matching queued reservation")
     current["status"] = "running"
-    return validate_state(plan, result)
+    return validate_state(plan, _advance_revision(result))
 
 
 def _result_paths_within_claim(task, changed_paths):
@@ -390,6 +426,21 @@ def _result_paths_within_claim(task, changed_paths):
         if not any(key == portable_path_key(claim) or key.startswith(portable_path_key(claim) + "/") for claim in task["write_paths"]):
             return False
     return bool(changed_paths)
+
+
+def _git_changed_paths(base_sha, result_commit, git_worktree):
+    try:
+        raw = subprocess.check_output(
+            ["git", "-C", str(git_worktree), "diff", "--name-only", "--no-renames", "-z",
+             base_sha, result_commit],
+            stderr=subprocess.PIPE, timeout=15,
+        )
+        text = raw.decode("utf-8")
+    except (OSError, subprocess.SubprocessError, UnicodeDecodeError) as exc:
+        raise ValueError(f"cannot derive worker changed paths: {exc}") from exc
+    paths = [path for path in text.split("\0") if path]
+    _portable_paths(paths, "git changed paths", required=True)
+    return paths
 
 
 def _verify_writer_result_git(task, base_sha, result_commit, git_worktree):
@@ -421,15 +472,17 @@ def _verify_writer_result_git(task, base_sha, result_commit, git_worktree):
         raise ValueError(f"cannot verify worker result git ancestry: {exc}") from exc
     if live_branch != result_commit:
         raise ValueError("worker result commit is not exact assigned branch head")
-    return True
+    return _git_changed_paths(base_sha, result_commit, git_worktree)
 
 
 def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
                   executor_id, parent_invocation_id, integrator_id, branch, worktree,
-                  result_commit, changed_paths, output_refs, evidence_refs,
-                  runtime_seconds, cost_units, git_worktree=None):
+                  reservation_token, result_commit, changed_paths, output_refs, evidence_refs,
+                  runtime_seconds, cost_units, git_worktree=None, expected_revision):
     validate_state(plan, state)
+    _expect_revision(state, expected_revision)
     _text(result_ref, "result_ref")
+    _text(reservation_token, "reservation_token")
     if base_sha != plan["base_sha"]:
         raise ValueError("worker result base_sha mismatch")
     if parent_invocation_id != plan["parent_invocation_id"]:
@@ -440,8 +493,9 @@ def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
     if task_id not in pmap:
         raise ValueError("unknown result task")
     current = smap[task_id]
-    if current["status"] not in ACTIVE or current["active_attempt_id"] != attempt_id:
-        raise ValueError("result does not match active task attempt")
+    if (current["status"] not in ACTIVE or current["active_attempt_id"] != attempt_id
+            or current["reservation_token"] != reservation_token):
+        raise ValueError("result does not match active task reservation")
     task = pmap[task_id]
     if executor_id != task["executor_id"] or branch != task["branch"] or worktree != task["worktree"]:
         raise ValueError("worker result assignment identity mismatch")
@@ -449,7 +503,11 @@ def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
     if not _result_paths_within_claim(task, changed_paths):
         raise ValueError("worker result changed paths escape declared write set")
     if task["role"] == "writer":
-        _verify_writer_result_git(task, base_sha, result_commit, git_worktree)
+        observed_changed_paths = _verify_writer_result_git(task, base_sha, result_commit, git_worktree)
+        if {portable_path_key(x) for x in observed_changed_paths} != {portable_path_key(x) for x in changed_paths}:
+            raise ValueError("reported changed paths do not match exact Git diff")
+        if not _result_paths_within_claim(task, observed_changed_paths):
+            raise ValueError("Git diff changed paths escape declared write set")
     elif result_commit is not None:
         raise ValueError("non-writer result cannot claim result_commit")
     _refs(output_refs, "output_refs")
@@ -468,21 +526,26 @@ def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
         raise ValueError("worker result exceeds pool cost budget")
     result = copy.deepcopy(state)
     current = _state_map(result)[task_id]
-    current.update(status="succeeded", active_attempt_id=None, accepted_result_ref=result_ref,
-                   integrated=False, runtime_seconds=current["runtime_seconds"] + runtime,
+    current.update(status="succeeded", active_attempt_id=None, reservation_token=None,
+                   accepted_result_ref=result_ref, integrated=False, discarded=False,
+                   runtime_seconds=current["runtime_seconds"] + runtime,
                    cost_units=current["cost_units"] + cost)
     result["runtime_consumed_seconds"] += runtime
     result["cost_consumed_units"] += cost
-    return validate_state(plan, result)
+    return validate_state(plan, _advance_revision(result))
 
 
-def fail_attempt(plan, state, task_id, attempt_id, *, terminal_status, runtime_seconds=0, cost_units=0):
+def fail_attempt(plan, state, task_id, attempt_id, *, terminal_status, reservation_token,
+                 expected_revision, runtime_seconds=0, cost_units=0):
     if terminal_status not in RECOVERABLE:
         raise ValueError("failure transition requires failed/cancelled/stale")
     validate_state(plan, state)
+    _expect_revision(state, expected_revision)
+    _text(reservation_token, "reservation_token")
     current = _state_map(state).get(task_id)
-    if current is None or current["status"] not in ACTIVE or current["active_attempt_id"] != attempt_id:
-        raise ValueError("failure does not match active task attempt")
+    if (current is None or current["status"] not in ACTIVE or current["active_attempt_id"] != attempt_id
+            or current["reservation_token"] != reservation_token):
+        raise ValueError("failure does not match active task reservation")
     runtime = _nonnegative_number(runtime_seconds, "runtime_seconds")
     cost = _nonnegative_number(cost_units, "cost_units")
     task = _task_map(plan)[task_id]
@@ -490,32 +553,48 @@ def fail_attempt(plan, state, task_id, attempt_id, *, terminal_status, runtime_s
         raise ValueError("failed attempt exceeds task budget")
     result = copy.deepcopy(state)
     current = _state_map(result)[task_id]
-    current.update(status=terminal_status, active_attempt_id=None,
+    current.update(status=terminal_status, active_attempt_id=None, reservation_token=None,
                    runtime_seconds=current["runtime_seconds"] + runtime,
                    cost_units=current["cost_units"] + cost)
     result["runtime_consumed_seconds"] += runtime
     result["cost_consumed_units"] += cost
-    return validate_state(plan, result)
+    return validate_state(plan, _advance_revision(result))
 
 
-def retry_task(plan, state, task_id):
+def retry_task(plan, state, task_id, *, expected_revision):
     validate_state(plan, state)
+    _expect_revision(state, expected_revision)
     result = copy.deepcopy(state)
     current = _state_map(result).get(task_id)
     if current is None or current["status"] not in RECOVERABLE:
         raise ValueError("retry requires failed/cancelled/stale task")
     current["status"] = "planned"
-    return validate_state(plan, result)
+    return validate_state(plan, _advance_revision(result))
 
 
-def mark_integrated(plan, state, task_id, result_ref):
+def mark_integrated(plan, state, task_id, result_ref, *, expected_revision):
     validate_state(plan, state)
+    _expect_revision(state, expected_revision)
     result = copy.deepcopy(state)
     current = _state_map(result).get(task_id)
-    if current is None or current["status"] != "succeeded" or current["accepted_result_ref"] != result_ref:
-        raise ValueError("integration requires matching accepted succeeded result")
+    if (current is None or current["status"] != "succeeded" or current["accepted_result_ref"] != result_ref
+            or current["discarded"]):
+        raise ValueError("integration requires matching non-discarded accepted succeeded result")
     current["integrated"] = True
-    return validate_state(plan, result)
+    return validate_state(plan, _advance_revision(result))
+
+
+def discard_optional_result(plan, state, task_id, result_ref, *, expected_revision):
+    validate_state(plan, state)
+    _expect_revision(state, expected_revision)
+    result = copy.deepcopy(state)
+    current = _state_map(result).get(task_id)
+    task = _task_map(plan).get(task_id)
+    if (task is None or task["required"] or current is None or current["status"] != "succeeded"
+            or current["accepted_result_ref"] != result_ref or current["integrated"]):
+        raise ValueError("discard requires matching unintegrated optional succeeded result")
+    current["discarded"] = True
+    return validate_state(plan, _advance_revision(result))
 
 
 def assess(plan, state):
@@ -527,17 +606,21 @@ def assess(plan, state):
         current = smap[task["id"]]
         if current["status"] in ACTIVE:
             blockers.append(f"{task['id']}:active")
+        if current["status"] == "succeeded" and not current["integrated"] and not current["discarded"]:
+            blockers.append(f"{task['id']}:unintegrated_success")
         if task["required"]:
             if current["status"] == "planned":
                 blockers.append(f"{task['id']}:runnable" if task["id"] in runnable else f"{task['id']}:dependency_wait")
             elif current["status"] in RECOVERABLE:
                 blockers.append(f"{task['id']}:recovery_required")
-            elif current["status"] == "succeeded" and not current["integrated"]:
-                blockers.append(f"{task['id']}:unintegrated_success")
         elif current["status"] in ACTIVE:
             blockers.append(f"{task['id']}:optional_active")
     complete = not blockers and all(
-        (not task["required"]) or (smap[task["id"]]["status"] == "succeeded" and smap[task["id"]]["integrated"])
+        (smap[task["id"]]["status"] == "succeeded" and smap[task["id"]]["integrated"])
+        if task["required"] else (
+            smap[task["id"]]["status"] != "succeeded"
+            or smap[task["id"]]["integrated"] or smap[task["id"]]["discarded"]
+        )
         for task in plan["tasks"]
     )
     return {
@@ -548,6 +631,35 @@ def assess(plan, state):
         "runnable_task_ids": runnable,
         "blockers": blockers,
         "next_action": None if complete else ("dispatch_ready_tasks" if runnable else "observe_or_recover_pool"),
+        **{name: False for name in AUTHORITY_FIELDS},
+    }
+
+
+def queue_task_cas(store, expected_store_revision, plan, task_id, attempt_id, *, reservation_token):
+    """Atomically reserve one task through a durable compare-and-swap state store.
+
+    The store contract is read() -> (revision, state) and
+    compare_and_swap(expected_revision, new_state) -> new_revision.
+    Only a successful CAS authorizes launching the queued attempt.
+    """
+    store_revision, state = store.read()
+    if store_revision != expected_store_revision or state is None:
+        raise ValueError("stale expected pool-store revision")
+    validate_state(plan, state)
+    next_state = queue_task(
+        plan, state, task_id, attempt_id,
+        expected_revision=state["revision"], reservation_token=reservation_token,
+    )
+    new_store_revision = store.compare_and_swap(expected_store_revision, next_state)
+    return {
+        "schema": "managed-executor-queue-reservation/v1",
+        "store_revision": new_store_revision,
+        "state_revision": next_state["revision"],
+        "state_ref": canonical_state_ref(next_state),
+        "task_id": task_id,
+        "attempt_id": attempt_id,
+        "reservation_token": reservation_token,
+        "launch_allowed": True,
         **{name: False for name in AUTHORITY_FIELDS},
     }
 
