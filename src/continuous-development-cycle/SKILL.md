@@ -3,7 +3,7 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.11
+# Continuous Development Cycle v2.11.0
 
 Durable repository state is the project state. Sessions, agents and schedulers are disposable. Apply the instruction hierarchy, preserve the source/scope of existing user authorization, and reconcile repository policy. Live remote facts override stale checkpoint/chat claims. A spinner, lease or submitted request is not progress evidence.
 
