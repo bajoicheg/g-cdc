@@ -3,7 +3,7 @@
 from __future__ import annotations
 import argparse,json,re,sys
 from pathlib import Path
-from parallel_task_planner import validate as validate_parallel_plan, plan as build_parallel_plan, validate_write_path, overlaps, canonical_plan_ref
+from parallel_task_planner import validate as validate_parallel_plan, plan as build_parallel_plan, validate_write_path, portable_path_key, overlaps, canonical_plan_ref
 
 SCHEMA="worktree-worker-contract/v1";SHA=re.compile(r"^[0-9a-f]{40}$");PLAN_REF=re.compile(r"^sha256:[0-9a-f]{64}$");ROLES={"writer","read_only","review"}
 
@@ -13,6 +13,13 @@ def _refs(v,n,allow_empty=False):
     if not isinstance(v,list) or any(not isinstance(x,str) or not x.strip() for x in v):raise ValueError(f"{n} invalid")
     if not allow_empty and not v:raise ValueError(f"{n} must not be empty")
     if len(v)!=len(set(v)):raise ValueError(f"{n} contains duplicates")
+def canonical_branch_ref(branch):
+    _text(branch,"branch")
+    if branch.startswith("refs/") and not branch.startswith("refs/heads/"):
+        raise ValueError("branch must name a local heads ref")
+    name=branch.removeprefix("refs/heads/")
+    if not name:raise ValueError("branch must name a local heads ref")
+    return "refs/heads/"+name
 def validate(d):
     fields={"schema","change_id","plan_ref","plan","wave","base_sha","prior_wave_integration","integrator_id","shared_branch","assignments"}
     if not isinstance(d,dict) or set(d)!=fields or d.get("schema")!=SCHEMA:
@@ -26,7 +33,7 @@ def validate(d):
     if d["plan_ref"]!=canonical_plan_ref(plan):raise ValueError("embedded plan does not match durable plan_ref")
     if plan["change_id"]!=d["change_id"]:raise ValueError("plan change mismatch")
     if plan["integrator_id"]!=d["integrator_id"]:raise ValueError("plan integrator mismatch")
-    if plan["shared_branch"]!=d["shared_branch"]:raise ValueError("plan shared branch mismatch")
+    if canonical_branch_ref(plan["shared_branch"])!=canonical_branch_ref(d["shared_branch"]):raise ValueError("plan shared branch mismatch")
     planned=build_parallel_plan(plan)
     if d["wave"]>len(planned["waves"]):raise ValueError("wave not present in plan")
     planned_wave=planned["waves"][d["wave"]-1]
@@ -56,12 +63,14 @@ def validate(d):
         if a["worker_id"]==d["integrator_id"]:raise ValueError("integrator cannot be delegated worker")
         if a["role"] not in ROLES:raise ValueError("assignment role invalid")
         if not isinstance(a["base_sha"],str) or not SHA.fullmatch(a["base_sha"]) or a["base_sha"]!=d["base_sha"]:raise ValueError("assignment base mismatch")
-        if a["branch"]==d["shared_branch"]:raise ValueError("worker branch cannot be shared branch")
+        if canonical_branch_ref(a["branch"])==canonical_branch_ref(d["shared_branch"]):raise ValueError("worker branch cannot be shared branch")
         if type(a["can_write_shared_branch"]) is not bool or a["can_write_shared_branch"]:raise ValueError("worker shared-branch write forbidden")
         _refs(a["expected_outputs"],"expected_outputs");_refs(a["expected_evidence"],"expected_evidence")
         if not isinstance(a["write_paths"],list):raise ValueError("write_paths invalid")
         for p in a["write_paths"]:validate_write_path(p)
         if len(a["write_paths"])!=len(set(a["write_paths"])):raise ValueError("duplicate write path")
+        assignment_path_keys=[portable_path_key(p) for p in a["write_paths"]]
+        if len(assignment_path_keys)!=len(set(assignment_path_keys)):raise ValueError("portable duplicate write path")
         if a["role"]=="writer" and not a["write_paths"]:raise ValueError("writer requires write_paths")
         if a["role"]!="writer" and a["write_paths"]:raise ValueError("non-writer write_paths forbidden")
 
@@ -71,7 +80,8 @@ def validate(d):
         if set(a["expected_outputs"])!=set(pt["expected_outputs"]):raise ValueError("assignment outputs differ from plan")
         if set(a["expected_evidence"])!=set(pt["expected_evidence"]):raise ValueError("assignment evidence differs from plan")
 
-        for key,val in (("worker",a["worker_id"]),("task",a["task_id"]),("branch",a["branch"]),("worktree",a["worktree_id"])):
+        seen_values={"worker":a["worker_id"],"task":a["task_id"],"branch":canonical_branch_ref(a["branch"]),"worktree":a["worktree_id"]}
+        for key,val in seen_values.items():
             if val in seen[key]:raise ValueError("duplicate "+key+" assignment")
             seen[key].add(val)
         if a["role"]=="writer":writers.append(a)
