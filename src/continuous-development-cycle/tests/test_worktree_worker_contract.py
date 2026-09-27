@@ -11,17 +11,18 @@ class T(unittest.TestCase):
  def _write(self,path,data):
   Path(path).write_text(json.dumps(data,indent=2)+"\n")
   return "sha256:"+hashlib.sha256(Path(path).read_bytes()).hexdigest()
- def later_wave_case(self,root,integrated_head=None,plan_base=None):
+ def later_wave_case(self,root,integrated_head=None,plan_base=None,writer_result_shas=None):
   d=self.base()
   if plan_base is not None:
    d["plan"]["base_sha"]=plan_base;d["base_sha"]=plan_base
    for a in d["assignments"]:a["base_sha"]=plan_base
   d["plan"]["tasks"][1]["write_paths"]=["src/model/sub"];self.rebind(d)
   prior_base=d["plan"]["base_sha"];d["wave"]=2;d["base_sha"]=integrated_head or "2"*40
+  writer_result_shas=sorted(writer_result_shas or ["3"*40])
   gate_result={"schema":"integration-gate-result/v1","change_id":d["change_id"],"wave":1,
                "total_waves":2,"final_wave":False,"next_wave":2,"plan_ref":d["plan_ref"],
                "shared_branch":d["shared_branch"],"expected_shared_head":prior_base,"observed_shared_head":prior_base,
-               "action":"READY_FOR_INTEGRATOR","ready":True,"blockers":[],"integrator_id":d["integrator_id"],
+               "writer_result_shas":writer_result_shas,"action":"READY_FOR_INTEGRATOR","ready":True,"blockers":[],"integrator_id":d["integrator_id"],
                "next_gate":"integrate_wave_then_contract_next_wave_on_fresh_head",
                "authorizes_shared_branch_write":False,"authorizes_force_push":False,"authorizes_merge":False,
                "authorizes_release":False,"authorizes_scope_expansion":False}
@@ -33,11 +34,11 @@ class T(unittest.TestCase):
   gate_path=Path(root)/"wave-1-gate.json";gate_digest=self._write(gate_path,gate)
   assembly={"schema":"wave-assembly-evidence/v1","change_id":d["change_id"],"plan_ref":d["plan_ref"],
             "wave":1,"base_sha":prior_base,"integrated_head":d["base_sha"],"shared_branch":d["shared_branch"],
-            "gate_sha256":gate_digest,"assembled":True,"evidence_ref":"assembly:wave-1@"+d["base_sha"]}
+            "gate_sha256":gate_digest,"writer_result_shas":writer_result_shas,"assembled":True,"evidence_ref":"assembly:wave-1@"+d["base_sha"]}
   assembly_path=Path(root)/"wave-1-assembly.json";assembly_digest=self._write(assembly_path,assembly)
   record={"schema":"wave-integration-record/v1","change_id":d["change_id"],"plan_ref":d["plan_ref"],
           "wave":1,"base_sha":prior_base,"integrated_head":d["base_sha"],"shared_branch":d["shared_branch"],
-          "gate_artifact_ref":{"path":"wave-1-gate.json","sha256":gate_digest},
+          "writer_result_shas":writer_result_shas,"gate_artifact_ref":{"path":"wave-1-gate.json","sha256":gate_digest},
           "assembly_artifact_ref":{"path":"wave-1-assembly.json","sha256":assembly_digest},
           "previous_integration":None}
   path=Path(root)/"wave-1-integration.json";digest=self._write(path,record)
@@ -141,6 +142,13 @@ class T(unittest.TestCase):
    record=json.loads(path.read_text());record["assembly_artifact_ref"]["sha256"]=self._write(assembly_path,assembly)
    d["prior_wave_integration"]["artifact_sha256"]=self._write(path,record)
    with self.assertRaises(ValueError):assess(d,evidence_root=td)
+ def test_assembly_writer_results_must_match_gate(self):
+  with tempfile.TemporaryDirectory() as td:
+   d,path,_,assembly_path=self.later_wave_case(td)
+   assembly=json.loads(assembly_path.read_text());assembly["writer_result_shas"]=["4"*40]
+   record=json.loads(path.read_text());record["assembly_artifact_ref"]["sha256"]=self._write(assembly_path,assembly)
+   d["prior_wave_integration"]["artifact_sha256"]=self._write(path,record)
+   with self.assertRaises(ValueError):assess(d,evidence_root=td)
  def test_prior_integration_must_advance_head(self):
   with tempfile.TemporaryDirectory() as td:
    d,path,_,assembly_path=self.later_wave_case(td,integrated_head="1"*40)
@@ -153,12 +161,19 @@ class T(unittest.TestCase):
    subprocess.check_call(["git","-C",str(repo),"config","user.name","CDC Test"])
    (repo/"base.txt").write_text("base\n");subprocess.check_call(["git","-C",str(repo),"add","."]);subprocess.check_call(["git","-C",str(repo),"commit","-q","-m","base"])
    base=subprocess.check_output(["git","-C",str(repo),"rev-parse","HEAD"],text=True).strip()
+   (repo/"worker.txt").write_text("worker\n");subprocess.check_call(["git","-C",str(repo),"add","."]);subprocess.check_call(["git","-C",str(repo),"commit","-q","-m","worker"])
+   worker_result=subprocess.check_output(["git","-C",str(repo),"rev-parse","HEAD"],text=True).strip()
    (repo/"integrated.txt").write_text("integrated\n");subprocess.check_call(["git","-C",str(repo),"add","."]);subprocess.check_call(["git","-C",str(repo),"commit","-q","-m","integrated"])
    integrated=subprocess.check_output(["git","-C",str(repo),"rev-parse","HEAD"],text=True).strip()
    subprocess.check_call(["git","-C",str(repo),"branch","feature/integration",integrated])
    evidence=Path(td)/"evidence";evidence.mkdir()
-   d,_,_,_=self.later_wave_case(evidence,integrated_head=integrated,plan_base=base)
+   d,_,_,_=self.later_wave_case(evidence,integrated_head=integrated,plan_base=base,writer_result_shas=[worker_result])
    self.assertTrue(assess(d,evidence_root=evidence,git_worktree=repo)["valid"])
+   base_tree=subprocess.check_output(["git","-C",str(repo),"rev-parse",base+"^{tree}"],text=True).strip()
+   unrelated=subprocess.check_output(["git","-C",str(repo),"commit-tree",base_tree],input="unrelated\n",text=True).strip()
+   bad_evidence=Path(td)/"bad-evidence";bad_evidence.mkdir()
+   bad,_,_,_=self.later_wave_case(bad_evidence,integrated_head=integrated,plan_base=base,writer_result_shas=[unrelated])
+   with self.assertRaises(ValueError):assess(bad,evidence_root=bad_evidence,git_worktree=repo)
    subprocess.check_call(["git","-C",str(repo),"branch","-f","feature/integration",base])
    with self.assertRaises(ValueError):assess(d,evidence_root=evidence,git_worktree=repo)
 
