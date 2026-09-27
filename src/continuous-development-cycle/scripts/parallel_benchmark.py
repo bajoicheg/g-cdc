@@ -30,13 +30,18 @@ def validate_observation(v):
             or v["elapsed_seconds"]<=0):raise ValueError("elapsed_seconds invalid")
     return v
 def validate(d):
-    fields={"schema","benchmark_id","evidence_class","representative_task_ref","candidate_sha","environment_ref","plan_ref","workstreams","observation_refs",
+    fields={"schema","benchmark_id","evidence_class","representative_task_ref","candidate_sha","environment_ref","plan_ref","plan_artifact_ref","workstreams","observation_refs",
             "baseline_unresolved_conflicts","parallel_unresolved_conflicts","baseline_rollbacks","parallel_rollbacks"}
     if not isinstance(d,dict) or set(d)!=fields or d.get("schema")!=SCHEMA:raise ValueError("benchmark fields/schema mismatch")
     _text(d["benchmark_id"],"benchmark_id");_text(d["representative_task_ref"],"representative_task_ref")
     if d["evidence_class"] not in EVIDENCE_CLASSES:raise ValueError("benchmark evidence_class invalid")
     _text(d["environment_ref"],"environment_ref");_sha(d["candidate_sha"],"candidate_sha")
     if not isinstance(d["plan_ref"],str) or not DIGEST.fullmatch(d["plan_ref"]):raise ValueError("benchmark plan_ref must be sha256 digest")
+    artifact=d["plan_artifact_ref"]
+    if not isinstance(artifact,dict) or set(artifact)!={"path","sha256"}:raise ValueError("plan artifact ref fields mismatch")
+    _safe_rel(artifact["path"])
+    if not isinstance(artifact["sha256"],str) or not DIGEST.fullmatch(artifact["sha256"]):raise ValueError("plan artifact sha256 invalid")
+    if artifact["sha256"]!=d["plan_ref"]:raise ValueError("plan_ref must equal resolved plan artifact digest")
     if type(d["workstreams"]) is not int or d["workstreams"]<2:raise ValueError("workstreams must be >=2")
     refs=d["observation_refs"]
     if not isinstance(refs,list) or len(refs)!=2:raise ValueError("benchmark requires exactly two observation refs")
@@ -49,6 +54,17 @@ def validate(d):
     for n in ("baseline_unresolved_conflicts","parallel_unresolved_conflicts","baseline_rollbacks","parallel_rollbacks"):
         if type(d[n]) is not int or d[n]<0:raise ValueError(n+" invalid")
     return d
+def load_plan_artifact(d,evidence_root):
+    validate(d);root=Path(evidence_root).resolve();ref=d["plan_artifact_ref"]
+    path=(root/ref["path"]).resolve()
+    try:path.relative_to(root)
+    except ValueError as exc:raise ValueError("plan artifact escapes evidence root") from exc
+    try:payload=path.read_bytes()
+    except OSError as exc:raise ValueError(f"cannot read benchmark plan artifact: {exc}") from exc
+    observed="sha256:"+hashlib.sha256(payload).hexdigest()
+    if observed!=ref["sha256"] or observed!=d["plan_ref"]:raise ValueError("benchmark plan artifact digest mismatch")
+    return {"path":ref["path"],"sha256":observed}
+
 def load_observations(d,evidence_root):
     validate(d);root=Path(evidence_root).resolve();observations=[]
     for ref in d["observation_refs"]:
@@ -63,7 +79,7 @@ def load_observations(d,evidence_root):
         except json.JSONDecodeError as exc:raise ValueError("benchmark observation JSON invalid") from exc
         validate_observation(obs);observations.append(obs)
     return observations
-def evaluate(d,observations):
+def evaluate(d,observations,plan_artifact_verified=False):
     validate(d)
     if not isinstance(observations,list) or len(observations)!=2:raise ValueError("resolved observations required")
     obs=[validate_observation(x) for x in observations];by={x["mode"]:x for x in obs}
@@ -89,10 +105,12 @@ def evaluate(d,observations):
             "sequential_elapsed_seconds":seq,"parallel_elapsed_seconds":par,"passed":passed,
             "speedup_ratio":round(seq/par,3),"seconds_saved":seq-par,"blockers":b,
             "resolved_observation_count":2,"evidence_class":d["evidence_class"],
-            "release_evidence_eligible":passed and d["evidence_class"]=="release_observed",
+            "plan_artifact_verified":bool(plan_artifact_verified),
+            "release_evidence_eligible":passed and d["evidence_class"]=="release_observed" and bool(plan_artifact_verified),
             "authorizes_worker_launch":False,"authorizes_product_write":False,"authorizes_merge":False,"authorizes_release":False}
 def evaluate_from_files(d,evidence_root):
-    return evaluate(d,load_observations(d,evidence_root))
+    load_plan_artifact(d,evidence_root)
+    return evaluate(d,load_observations(d,evidence_root),plan_artifact_verified=True)
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument("input");p.add_argument("--evidence-root",required=True);a=p.parse_args(argv)
     try:d=json.loads(Path(a.input).read_text());r=evaluate_from_files(d,a.evidence_root)
