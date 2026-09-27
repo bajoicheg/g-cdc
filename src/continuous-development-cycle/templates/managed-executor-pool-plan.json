@@ -82,5 +82,7 @@
       "branch": null,
       "worktree": null
     }
-  ]
+  ],
+  "coordination_ref": "refs/heads/cdc/pool-example",
+  "coordination_store_id": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
 }
