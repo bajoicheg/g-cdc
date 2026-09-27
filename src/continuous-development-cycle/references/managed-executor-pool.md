@@ -28,6 +28,14 @@ Independent non-overlapping writer tasks may run together. Overlapping portable 
 
 One integrator remains the only shared-branch writer. It independently checks result identity, exact base/ancestry, changed-path containment, required evidence and fresh shared HEAD before accepting an unintegrated worker result.
 
+## Durable pool state and launch CAS
+
+The pool state is shared coordination state, not an in-memory convenience object. Production execution uses `scripts/managed_executor_store.py` (or an equivalent durable compare-and-swap store with the same fail-closed contract) on a dedicated coordination ref that is portable-isolated from product, integration and worker branches.
+
+Dispatch identifies eligible work but **does not authorize a launch**. Before a worker starts, the parent must atomically persist the exact task ID, attempt ID and unique reservation token against the current durable store revision. Only the successful compare-and-swap winner receives `launch_allowed=true`. A stale sibling dispatcher, replayed reservation or failed CAS has no worker-launch authority.
+
+Calling the pure in-memory `queue_task()` transition without subsequently winning durable CAS is test/planning state only and must never start a real executor. This invariant applies equally to foreground chat, watchdog, Work/Codex workers and retries.
+
 ## Durable attempts and results
 
 Each task attempt is durable and observable with explicit identity and lifecycle:
