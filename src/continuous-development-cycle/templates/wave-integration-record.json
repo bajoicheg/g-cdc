@@ -1,0 +1,10 @@
+{
+  "schema": "wave-integration-record/v1",
+  "change_id": "change-parallel",
+  "plan_ref": "sha256:a05a841272888778dc7300d8c397925b475f70097dedef1ee4ab2a3cf750a9f5",
+  "wave": 1,
+  "integrated_head": "2222222222222222222222222222222222222222",
+  "shared_branch": "feature/integration",
+  "gate_evidence_ref": "integration-gate:wave-1-green",
+  "assembly_evidence_ref": "assembly:wave-1@2222222222222222222222222222222222222222"
+}
