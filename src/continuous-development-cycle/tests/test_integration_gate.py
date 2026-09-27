@@ -122,6 +122,18 @@ class T(unittest.TestCase):
    d["diff_proofs"]=[resolve_git_diff(root,worker_id=r["worker_id"],task_id=r["task_id"],base_sha=base,result_sha=result,evidence_ref="git-diff:live-head")]
    p=root/"gate.json";p.write_text(json.dumps(d))
    self.assertEqual(main([str(p),"--git-worktree",str(root)]),2)
+ def test_cli_review_only_wave_rejects_stale_live_shared_head(self):
+  with tempfile.TemporaryDirectory() as td:
+   root=Path(td);subprocess.check_call(["git","init","-q",str(root)]);subprocess.check_call(["git","-C",str(root),"config","user.email","test@example.invalid"]);subprocess.check_call(["git","-C",str(root),"config","user.name","CDC Test"])
+   (root/"base.txt").write_text("base\n");subprocess.check_call(["git","-C",str(root),"add","."]);subprocess.check_call(["git","-C",str(root),"commit","-q","-m","base"]);subprocess.check_call(["git","-C",str(root),"branch","-M","feature/integration"])
+   base=subprocess.check_output(["git","-C",str(root),"rev-parse","HEAD"],text=True).strip()
+   d=self.base();d["shared_branch"]="feature/integration";d["expected_shared_head"]=base;d["observed_shared_head"]=base
+   wc=d["worker_contract"];wc["shared_branch"]="feature/integration";wc["base_sha"]=base;wc["plan"]["shared_branch"]="feature/integration";wc["plan"]["base_sha"]=base
+   self._review_only(d,base,[])
+   (root/"advance.txt").write_text("advanced\n");subprocess.check_call(["git","-C",str(root),"add","."]);subprocess.check_call(["git","-C",str(root),"commit","-q","-m","advance shared"])
+   self.assertNotEqual(subprocess.check_output(["git","-C",str(root),"rev-parse","HEAD"],text=True).strip(),base)
+   p=root/"gate.json";p.write_text(json.dumps(d))
+   self.assertEqual(main([str(p),"--git-worktree",str(root)]),2)
  def test_cli_proves_assigned_registered_worker_worktree(self):
   with tempfile.TemporaryDirectory() as td:
    parent=Path(td);root=parent/"repo";worker=parent/"wt-model"
