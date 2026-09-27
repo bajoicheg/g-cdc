@@ -256,3 +256,18 @@ Preserve one **single integrator**. After worker completion, use `scripts/integr
 Measure real benefit with an **observed parallel benchmark** through `scripts/parallel_benchmark.py`. Planner estimates are not release evidence. The benchmark manifest must resolve the actual plan artifact bytes and require `plan_ref` to equal their SHA-256; matching hash-shaped labels are insufficient. The benchmark is GREEN only when observed parallel wall-clock time beats the sequential baseline without increasing unresolved conflicts or rollbacks.
 
 After integration, the final candidate still passes CDC 2.10.1 branch finishing and CDC 2.10.0 verification-before-terminal controls, plus normal ownership/release gates. Read `references/worktree-parallelism-and-integration.md`.
+
+
+## CDC 2.11.0 Managed Executor Pool
+
+Use a **managed executor pool** for bounded Work-style delegation. The parent invocation remains authoritative for the change; children receive task contracts and evidence obligations, never shared-branch write, merge, release, scope-expansion, scheduler or user-approval authority.
+
+Worker launch is **capability-gated**. When the current runtime cannot launch independent executors, use the **deterministic sequential fallback** over the same task/evidence plan and **must not fabricate subagents** or parallel execution evidence. Already-authorized child tasks need no per-launch user approval when runtime and project policy permit delegation.
+
+Writers remain isolated on exact-base branches/worktrees with portable write claims, and a **single integrator** is the only shared-branch writer. Read-only/review executors carry no write claim.
+
+Every attempt has durable lifecycle and **attempt lineage**. Duplicate active launches are reconciled, retries create new attempt identities, and one worker failure does not cancel unrelated independent tasks. A successful worker result is still an **unintegrated successful result** until accepted by the integrator.
+
+Required runnable/queued/running work, required recoverable failures, or an unintegrated successful result keep the parent non-terminal. **Progress is not terminal**: after a child or milestone completes, continue the CDC loop until the project-level terminal gate accepts a real boundary.
+
+Read `references/managed-executor-pool.md`.
