@@ -249,10 +249,10 @@ Use **worktree-isolated parallel development** only when the actual orchestratio
 
 Build a dependency DAG and explicit **write-set** plan with `scripts/parallel_task_planner.py`. Independent ready writers may share a wave only when write paths are non-overlapping; overlapping writers are serialized or explicitly repartitioned. Cyclic task graphs are invalid.
 
-Before delegation, bind each worker through `scripts/worktree_worker_contract.py` to a durable worker/task identity, exact common base SHA, isolated branch and worktree, bounded write set, expected outputs and evidence. Delegated workers cannot write the shared integration branch, merge, release or expand scope.
+Before delegation, bind each worker through `scripts/worktree_worker_contract.py` to a durable worker/task identity, exact common base SHA, isolated branch and worktree, bounded write set, expected outputs and evidence. For wave 2+, a claimed base is insufficient: resolve a content-addressed prior integration record and its content-addressed GREEN integration-gate artifact before accepting the fresh integrated base. Delegated workers cannot write the shared integration branch, merge, release or expand scope.
 
 Preserve one **single integrator**. After worker completion, use `scripts/integration_gate.py`; stale/failed workers, shared-HEAD movement, writer-result overlap, unresolved conflicts, missing spec/code review or any force-push request require reconciliation/replanning. A GREEN `READY_FOR_INTEGRATOR` result is evidence-only and creates no shared-branch write authority.
 
-Measure real benefit with an **observed parallel benchmark** through `scripts/parallel_benchmark.py`. Planner estimates are not release evidence. The benchmark is GREEN only when observed parallel wall-clock time beats the sequential baseline without increasing unresolved conflicts or rollbacks.
+Measure real benefit with an **observed parallel benchmark** through `scripts/parallel_benchmark.py`. Planner estimates are not release evidence. The benchmark manifest must resolve the actual plan artifact bytes and require `plan_ref` to equal their SHA-256; matching hash-shaped labels are insufficient. The benchmark is GREEN only when observed parallel wall-clock time beats the sequential baseline without increasing unresolved conflicts or rollbacks.
 
 After integration, the final candidate still passes CDC 2.10.1 branch finishing and CDC 2.10.0 verification-before-terminal controls, plus normal ownership/release gates. Read `references/worktree-parallelism-and-integration.md`.
