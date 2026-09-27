@@ -3,26 +3,26 @@
   "version": "2.10.2",
   "developed_under_version": "2.10.1",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "83f2fffbb59e48503ac413ddf5dfea60ea5995a9",
-  "package_tree": "34bffb76f996a53a07d49ed340afa090a6f22639",
+  "source_commit": "c9908ac61031af07205ca98e9c6b0e7ed831ec1b",
+  "package_tree": "3109152087cbf7b3c7cd023600187ba6bfa86a6b",
   "status": "candidate",
   "evidence": {
     "bootstrap": [
       "base-release:2.10.1@408408c0fa5a0126f649a7328f8f667d27f5ff18"
     ],
     "package": [
-      "codex:pr14:comment-5852010707:497/497",
-      "codex:pr14:comment-5852010707:79/79-focused",
+      "codex:pr14:comment-5853217260:511/511",
+      "codex:pr14:comment-5853217260:93/93-focused",
       "release/benchmark-2.10.2.json",
-      "codex:pr14:comment-5852025766:observed-speedup-1.089783031x"
+      "codex:pr14:comment-5853275683:observed-speedup-1.513569972x"
     ],
     "compatibility": [
       "release/consumer-compatibility-2.10.2.json",
-      "codex:pr14:comment-5852014994:3/3"
+      "codex:pr14:comment-5853271585:3/3"
     ],
     "fault_injection": [
-      "fault-injection/scenarios.json:69",
-      "pressure-scenarios.md:87"
+      "fault-injection/scenarios.json:70",
+      "pressure-scenarios.md:89"
     ],
     "consumers": [
       "consumer:g-supervisor:authenticated-snapshot-green",

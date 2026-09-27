@@ -3,10 +3,12 @@
   "observation_id": "cdc-2.10.2-final-sequential",
   "mode": "sequential",
   "observed": true,
-  "candidate_sha": "83f2fffbb59e48503ac413ddf5dfea60ea5995a9",
+  "candidate_sha": "c9908ac61031af07205ca98e9c6b0e7ed831ec1b",
   "environment_ref": "release/parallel-benchmark-environment-2.10.2.json",
-  "plan_ref": "sha256:fab23cf25d7b56f5d20a30c7f002f39bee70311c62b852f911a5f3d72fd4cdc4",
-  "workload_fingerprint": "sha256:fab23cf25d7b56f5d20a30c7f002f39bee70311c62b852f911a5f3d72fd4cdc4",
-  "elapsed_seconds": 58.526949244,
-  "evidence_ref": "https://github.com/bajoicheg/g-cdc/pull/14#issuecomment-5852025766:sequential"
+  "plan_ref": "sha256:f51cc8847f90d8bb60f364777889ef39312efd591952e6b84e05187d6c1dd614",
+  "workload_fingerprint": "sha256:f51cc8847f90d8bb60f364777889ef39312efd591952e6b84e05187d6c1dd614",
+  "elapsed_seconds": 21.194058589,
+  "unresolved_conflicts": 0,
+  "rollbacks": 0,
+  "evidence_ref": "https://github.com/bajoicheg/g-cdc/pull/14#issuecomment-5853275683:sequential"
 }

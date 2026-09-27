@@ -3,22 +3,23 @@
   "benchmark_id": "cdc-2.10.2-final-observed",
   "evidence_class": "release_observed",
   "representative_task_ref": "cdc-2.10.2-worktree-parallel-release-validation",
-  "candidate_sha": "83f2fffbb59e48503ac413ddf5dfea60ea5995a9",
+  "candidate_sha": "c9908ac61031af07205ca98e9c6b0e7ed831ec1b",
+  "package_tree": "3109152087cbf7b3c7cd023600187ba6bfa86a6b",
   "environment_ref": "release/parallel-benchmark-environment-2.10.2.json",
-  "plan_ref": "sha256:fab23cf25d7b56f5d20a30c7f002f39bee70311c62b852f911a5f3d72fd4cdc4",
+  "plan_ref": "sha256:f51cc8847f90d8bb60f364777889ef39312efd591952e6b84e05187d6c1dd614",
+  "plan_artifact_ref": {
+    "path": "release/parallel-benchmark-plan-2.10.2.json",
+    "sha256": "sha256:f51cc8847f90d8bb60f364777889ef39312efd591952e6b84e05187d6c1dd614"
+  },
   "workstreams": 2,
   "observation_refs": [
     {
       "path": "release/parallel-benchmark-observation-sequential-2.10.2.json",
-      "sha256": "sha256:6e083acb19073e0d840736432aa2833cd30501fac65f4a2a8e02508ddca6e059"
+      "sha256": "sha256:4284a8275a242edda85821fed2053e241eaa1e450bd5d6d45300a8d75a248ce7"
     },
     {
       "path": "release/parallel-benchmark-observation-parallel-2.10.2.json",
-      "sha256": "sha256:89a79fcd33243c5c867d556b34640ec7f63e0aba1b8c2c63bb3d1472e82113da"
+      "sha256": "sha256:fa39d44a333d1a086207e36231fbb6d555b23f19fc1d090be97eb6ae40bc985f"
     }
-  ],
-  "baseline_unresolved_conflicts": 0,
-  "parallel_unresolved_conflicts": 0,
-  "baseline_rollbacks": 0,
-  "parallel_rollbacks": 0
+  ]
 }
