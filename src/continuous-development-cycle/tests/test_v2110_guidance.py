@@ -31,7 +31,7 @@ class T(unittest.TestCase):
  def test_pressure_numbering_is_continuous_through_95(self):
   text=(ROOT/"tests"/"pressure-scenarios.md").read_text()
   numbers=[int(x) for x in re.findall(r"(?m)^## (\d+)\.",text)]
-  self.assertEqual(numbers,list(range(1,97)))
+  self.assertEqual(numbers,list(range(1,101)))
 
  def test_guidance_preserves_authority_boundary(self):
   ref=(ROOT/"references"/"managed-executor-pool.md").read_text().lower()
