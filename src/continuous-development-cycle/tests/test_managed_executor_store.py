@@ -1,3 +1,4 @@
+# R8 corrective pool/store workstream seed; worker removes before final validation.
 import copy,subprocess,sys,tempfile,unittest
 from pathlib import Path
 from unittest import mock
