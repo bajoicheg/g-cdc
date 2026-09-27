@@ -18,9 +18,18 @@ class T(unittest.TestCase):
    for a in d["assignments"]:a["base_sha"]=plan_base
   d["plan"]["tasks"][1]["write_paths"]=["src/model/sub"];self.rebind(d)
   prior_base=d["plan"]["base_sha"];d["wave"]=2;d["base_sha"]=integrated_head or "2"*40
+  gate_result={"schema":"integration-gate-result/v1","change_id":d["change_id"],"wave":1,
+               "total_waves":2,"final_wave":False,"next_wave":2,"plan_ref":d["plan_ref"],
+               "shared_branch":d["shared_branch"],"expected_shared_head":prior_base,"observed_shared_head":prior_base,
+               "action":"READY_FOR_INTEGRATOR","ready":True,"blockers":[],"integrator_id":d["integrator_id"],
+               "next_gate":"integrate_wave_then_contract_next_wave_on_fresh_head",
+               "authorizes_shared_branch_write":False,"authorizes_force_push":False,"authorizes_merge":False,
+               "authorizes_release":False,"authorizes_scope_expansion":False}
+  gate_result_path=Path(root)/"wave-1-gate-result.json";gate_result_digest=self._write(gate_result_path,gate_result)
   gate={"schema":"wave-integration-gate-evidence/v1","change_id":d["change_id"],"plan_ref":d["plan_ref"],
         "wave":1,"base_sha":prior_base,"shared_branch":d["shared_branch"],"ready":True,
-        "evidence_ref":"integration-gate:wave-1-green"}
+        "evidence_ref":"integration-gate:wave-1-green",
+        "result_artifact_ref":{"path":"wave-1-gate-result.json","sha256":gate_result_digest}}
   gate_path=Path(root)/"wave-1-gate.json";gate_digest=self._write(gate_path,gate)
   assembly={"schema":"wave-assembly-evidence/v1","change_id":d["change_id"],"plan_ref":d["plan_ref"],
             "wave":1,"base_sha":prior_base,"integrated_head":d["base_sha"],"shared_branch":d["shared_branch"],
@@ -96,6 +105,29 @@ class T(unittest.TestCase):
   with tempfile.TemporaryDirectory() as td:
    d,path,gate_path,assembly_path=self.later_wave_case(td)
    gate=json.loads(gate_path.read_text());gate["ready"]=False
+   gate_digest=self._write(gate_path,gate)
+   record=json.loads(path.read_text());record["gate_artifact_ref"]["sha256"]=gate_digest
+   assembly=json.loads(assembly_path.read_text());assembly["gate_sha256"]=gate_digest
+   record["assembly_artifact_ref"]["sha256"]=self._write(assembly_path,assembly)
+   d["prior_wave_integration"]["artifact_sha256"]=self._write(path,record)
+   with self.assertRaises(ValueError):assess(d,evidence_root=td)
+ def test_gate_result_artifact_digest_must_match(self):
+  with tempfile.TemporaryDirectory() as td:
+   d,path,gate_path,assembly_path=self.later_wave_case(td)
+   gate=json.loads(gate_path.read_text());gate["result_artifact_ref"]["sha256"]="sha256:"+"0"*64
+   gate_digest=self._write(gate_path,gate)
+   record=json.loads(path.read_text());record["gate_artifact_ref"]["sha256"]=gate_digest
+   assembly=json.loads(assembly_path.read_text());assembly["gate_sha256"]=gate_digest
+   record["assembly_artifact_ref"]["sha256"]=self._write(assembly_path,assembly)
+   d["prior_wave_integration"]["artifact_sha256"]=self._write(path,record)
+   with self.assertRaises(ValueError):assess(d,evidence_root=td)
+ def test_gate_result_must_be_green(self):
+  with tempfile.TemporaryDirectory() as td:
+   d,path,gate_path,assembly_path=self.later_wave_case(td)
+   result_path=Path(td)/"wave-1-gate-result.json"
+   result=json.loads(result_path.read_text());result["ready"]=False;result["action"]="RECONCILE_OR_REPLAN";result["blockers"]=["stale"]
+   result_digest=self._write(result_path,result)
+   gate=json.loads(gate_path.read_text());gate["result_artifact_ref"]["sha256"]=result_digest
    gate_digest=self._write(gate_path,gate)
    record=json.loads(path.read_text());record["gate_artifact_ref"]["sha256"]=gate_digest
    assembly=json.loads(assembly_path.read_text());assembly["gate_sha256"]=gate_digest
