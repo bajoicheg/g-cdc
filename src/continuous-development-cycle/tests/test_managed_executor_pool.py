@@ -248,4 +248,64 @@ class T(unittest.TestCase):
   p=plan();p["tasks"][1]["worktree"]="WORKTREES/A"
   with self.assertRaisesRegex(ValueError,"worktrees must be portable-unique"):m.validate_plan(p)
 
+
+ def _plan_with_optional(self,base=FAKE_BASE):
+  p=plan(base);p["tasks"].append({"id":"opt","role":"review","required":False,"dependencies":[],"executor_id":"opt-review",
+   "branch":None,"worktree":None,"write_paths":[],"expected_outputs":["out:opt"],"expected_evidence":["opt:green"],
+   "backend_preferences":["local"],"max_runtime_seconds":50,"max_cost_units":5});p["max_parallel"]=3
+  return p
+
+ def test_optional_planned_requires_explicit_omission(self):
+  p=self._plan_with_optional();s=m.initial_state(p,parallel_capable=True)
+  r=m.assess(p,s);self.assertIn("opt:optional_runnable",r["blockers"]);self.assertFalse(r["terminal_allowed"])
+  s=m.omit_optional_task(p,s,"opt",expected_revision=s["revision"])
+  self.assertEqual(self._task_state(s,"opt")["status"],"omitted")
+  self.assertNotIn("opt",m.ready_task_ids(p,s))
+  self.assertFalse(any(x.startswith("opt:") for x in m.assess(p,s)["blockers"]))
+
+ def test_optional_recoverable_requires_retry_or_omission(self):
+  p=self._plan_with_optional();s=m.initial_state(p,parallel_capable=True)
+  s=self._queue(p,s,"opt","o1");s=self._run(p,s,"opt","o1")
+  token=self._task_state(s,"opt")["reservation_token"]
+  s=m.fail_attempt(p,s,"opt","o1",terminal_status="failed",reservation_token=token,
+                   expected_revision=s["revision"],runtime_seconds=10,cost_units=1)
+  self.assertIn("opt:optional_disposition_required",m.assess(p,s)["blockers"])
+  s=m.omit_optional_task(p,s,"opt",expected_revision=s["revision"])
+  self.assertEqual(self._task_state(s,"opt")["status"],"omitted")
+
+ def test_optional_omission_rejects_required_active_and_successful_tasks(self):
+  p=self._plan_with_optional();s=m.initial_state(p,parallel_capable=True)
+  with self.assertRaisesRegex(ValueError,"optional task"):
+   m.omit_optional_task(p,s,"a",expected_revision=s["revision"])
+  s=self._queue(p,s,"opt","o1")
+  with self.assertRaisesRegex(ValueError,"planned or recoverable"):
+   m.omit_optional_task(p,s,"opt",expected_revision=s["revision"])
+  s=self._run(p,s,"opt","o1")
+  s=self._accept(p,s,"opt","o1",[],["out:opt"],["opt:green"],result_commit=None)
+  with self.assertRaisesRegex(ValueError,"planned or recoverable"):
+   m.omit_optional_task(p,s,"opt",expected_revision=s["revision"])
+
+ def test_retry_reserves_only_remaining_runtime_and_cost(self):
+  p=plan();p["total_runtime_budget_seconds"]=350;p["total_cost_budget_units"]=35
+  s=m.initial_state(p,parallel_capable=True);s=self._queue(p,s,"a","a1");s=self._run(p,s,"a","a1")
+  token=self._task_state(s,"a")["reservation_token"]
+  s=m.fail_attempt(p,s,"a","a1",terminal_status="failed",reservation_token=token,
+                   expected_revision=s["revision"],runtime_seconds=100,cost_units=10)
+  s=m.retry_task(p,s,"a",expected_revision=s["revision"])
+  r=m.dispatch(p,s)
+  self.assertEqual(r["task_ids"],["a"])
+  self.assertEqual(r["reserved_runtime_seconds"],200)
+  self.assertEqual(r["reserved_cost_units"],20)
+  self.assertEqual(s["runtime_consumed_seconds"],100)
+  self.assertEqual(s["cost_consumed_units"],10)
+
+ def test_successful_retry_enforces_cumulative_task_budget(self):
+  p=plan(self.base);s=m.initial_state(p,parallel_capable=True);s=self._queue(p,s,"a","a1");s=self._run(p,s,"a","a1")
+  token=self._task_state(s,"a")["reservation_token"]
+  s=m.fail_attempt(p,s,"a","a1",terminal_status="failed",reservation_token=token,
+                   expected_revision=s["revision"],runtime_seconds=100,cost_units=10)
+  s=m.retry_task(p,s,"a",expected_revision=s["revision"]);s=self._queue(p,s,"a","a2");s=self._run(p,s,"a","a2")
+  with self.assertRaisesRegex(ValueError,"task budget"):
+   self._accept(p,s,"a","a2",["src/a/result.txt"],["out:a"],["test:a"],runtime=201,cost=21)
+
 if __name__=="__main__":unittest.main()
