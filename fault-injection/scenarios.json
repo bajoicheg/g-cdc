@@ -630,6 +630,38 @@
       "forbidden_authorities": [
         "release"
       ]
+    },
+    {
+      "id": "managed-pool-local-only-publication-proof",
+      "fault": "publication_proof_accepts_local_assigned_branch_without_authoritative_remote_ref",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-bundle-artifact-toctou",
+      "fault": "authenticated_git_bundle_path_is_reopened_after_digest_and_can_be_replaced_before_proof",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-optional-work-implicit-omission",
+      "fault": "terminal_state_silently_omits_optional_planned_or_recoverable_task_without_explicit_disposition",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-retry-budget-overreservation",
+      "fault": "retry_dispatch_reserves_original_task_maximum_instead_of_remaining_task_budget",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
     }
   ]
 }
