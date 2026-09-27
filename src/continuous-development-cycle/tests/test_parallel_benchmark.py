@@ -16,9 +16,11 @@ class T(unittest.TestCase):
   self.assertFalse(r["release_evidence_eligible"])
   self.assertTrue(all(x["observed"] is False for x in self.fixture_obs(d)))
   self.assertFalse(r["authorizes_worker_launch"]);self.assertFalse(r["authorizes_release"])
- def test_release_observed_can_be_eligible(self):
+ def test_release_observed_requires_resolved_plan_artifact(self):
   d,obs=self.release_case();r=evaluate(d,obs)
-  self.assertTrue(r["passed"]);self.assertTrue(r["release_evidence_eligible"])
+  self.assertTrue(r["passed"]);self.assertFalse(r["release_evidence_eligible"]);self.assertFalse(r["plan_artifact_verified"])
+  r=evaluate(d,obs,plan_artifact_verified=True)
+  self.assertTrue(r["passed"]);self.assertTrue(r["release_evidence_eligible"]);self.assertTrue(r["plan_artifact_verified"])
  def test_invalid_evidence_class_rejected(self):
   d=self.base();d["evidence_class"]="pretend"
   with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
@@ -41,6 +43,10 @@ class T(unittest.TestCase):
   with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
  def test_benchmark_plan_ref_requires_digest(self):
   d=self.base();d["plan_ref"]="unbound-plan"
+  with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
+ def test_plan_artifact_bytes_must_match_plan_ref(self):
+  d=self.base();fake="sha256:"+"2"*64;d["plan_ref"]=fake;d["plan_artifact_ref"]["sha256"]=fake
+  for x in d["observation_refs"]: pass
   with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
  def test_observation_plan_ref_requires_digest(self):
   d,obs=self.release_case();obs[0]["plan_ref"]="unbound-plan"
