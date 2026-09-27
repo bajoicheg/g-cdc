@@ -18,6 +18,7 @@ from parallel_task_planner import validate_write_path, portable_path_key, overla
 PLAN_SCHEMA = "managed-executor-pool-plan/v1"
 STATE_SCHEMA = "managed-executor-pool-state/v1"
 SHA = re.compile(r"^[0-9a-f]{40}$")
+DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
 ROLES = {"writer", "read_only", "review"}
 TASK_STATUSES = {"planned", "queued", "running", "succeeded", "failed", "cancelled", "stale", "omitted"}
 ACTIVE = {"queued", "running"}
@@ -34,6 +35,7 @@ AUTHORITY_FIELDS = (
 
 PLAN_FIELDS = {
     "schema", "pool_id", "change_id", "parent_invocation_id", "base_sha", "integrator_id",
+    "coordination_ref", "coordination_store_id",
     "max_parallel", "total_runtime_budget_seconds", "total_cost_budget_units", "tasks",
 }
 TASK_FIELDS = {
@@ -43,6 +45,7 @@ TASK_FIELDS = {
 }
 STATE_FIELDS = {
     "schema", "pool_id", "change_id", "parent_invocation_id", "base_sha", "integrator_id",
+    "coordination_ref", "coordination_store_id",
     "revision", "execution_mode", "tasks", "runtime_consumed_seconds", "cost_consumed_units",
     *AUTHORITY_FIELDS,
 }
@@ -93,6 +96,22 @@ def _portable_paths(value, name, required):
     return value
 
 
+def _canonical_coordination_ref(value):
+    if not isinstance(value, str) or not value.startswith("refs/heads/"):
+        raise ValueError("coordination_ref must be an exact refs/heads/ ref")
+    suffix = value.removeprefix("refs/heads/")
+    validate_write_path(suffix)
+    if value != "refs/heads/" + suffix:
+        raise ValueError("coordination_ref must be canonical")
+    return value
+
+
+def _store_id(value):
+    if not isinstance(value, str) or not DIGEST.fullmatch(value):
+        raise ValueError("coordination_store_id must be sha256:<hex>")
+    return value
+
+
 def _acyclic(tasks):
     graph = {task["id"]: task["dependencies"] for task in tasks}
     visiting, done = set(), set()
@@ -117,6 +136,8 @@ def validate_plan(plan):
         raise ValueError("managed executor pool plan fields/schema mismatch")
     for name in ("pool_id", "change_id", "parent_invocation_id", "integrator_id"):
         _text(plan[name], name)
+    _canonical_coordination_ref(plan["coordination_ref"])
+    _store_id(plan["coordination_store_id"])
     if not isinstance(plan["base_sha"], str) or not SHA.fullmatch(plan["base_sha"]):
         raise ValueError("base_sha must be a full lowercase SHA")
     if type(plan["max_parallel"]) is not int or plan["max_parallel"] < 1:
@@ -173,6 +194,19 @@ def validate_plan(plan):
         if task["id"] in task["dependencies"] or not set(task["dependencies"]) <= known:
             raise ValueError("invalid managed executor dependency")
     _acyclic(plan["tasks"])
+    task_map = {task["id"]: task for task in plan["tasks"]}
+    def visit_required_dependencies(task_id, seen=None):
+        seen = set() if seen is None else seen
+        for dep in task_map[task_id]["dependencies"]:
+            if dep in seen:
+                continue
+            seen.add(dep)
+            if not task_map[dep]["required"]:
+                raise ValueError("required task cannot depend on optional task")
+            visit_required_dependencies(dep, seen)
+    for task in plan["tasks"]:
+        if task["required"]:
+            visit_required_dependencies(task["id"])
     if plan["max_parallel"] > len(plan["tasks"]):
         raise ValueError("max_parallel exceeds task count")
     return plan
@@ -189,6 +223,8 @@ def initial_state(plan, *, parallel_capable):
         "parent_invocation_id": plan["parent_invocation_id"],
         "base_sha": plan["base_sha"],
         "integrator_id": plan["integrator_id"],
+        "coordination_ref": plan["coordination_ref"],
+        "coordination_store_id": plan["coordination_store_id"],
         "revision": 0,
         "execution_mode": "parallel" if parallel_capable else "sequential_fallback",
         "tasks": [
@@ -219,7 +255,8 @@ def validate_state(plan, state):
     validate_plan(plan)
     if not isinstance(state, dict) or set(state) != STATE_FIELDS or state.get("schema") != STATE_SCHEMA:
         raise ValueError("managed executor pool state fields/schema mismatch")
-    for field in ("pool_id", "change_id", "parent_invocation_id", "base_sha", "integrator_id"):
+    for field in ("pool_id", "change_id", "parent_invocation_id", "base_sha", "integrator_id",
+                  "coordination_ref", "coordination_store_id"):
         if state[field] != plan[field]:
             raise ValueError(f"pool state {field} mismatch")
     if type(state["revision"]) is not int or state["revision"] < 0:
@@ -457,6 +494,49 @@ def _git_changed_paths(base_sha, result_commit, git_worktree):
     return paths
 
 
+def _git_touched_paths(base_sha, result_commit, git_worktree):
+    try:
+        rows = subprocess.check_output(
+            ["git", "-C", str(git_worktree), "rev-list", "--reverse", "--parents",
+             f"{base_sha}..{result_commit}"],
+            text=True, stderr=subprocess.PIPE, timeout=15,
+        ).splitlines()
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise ValueError(f"cannot inspect worker commit history: {exc}") from exc
+    if not rows:
+        raise ValueError("writer result must introduce at least one commit")
+    expected_parent = base_sha
+    touched = []
+    seen = set()
+    for row in rows:
+        parts = row.split()
+        if len(parts) != 2:
+            raise ValueError("worker result history must be linear and non-merge")
+        commit, parent = parts
+        if parent != expected_parent:
+            raise ValueError("worker result history must be exact linear descendants of base")
+        try:
+            raw = subprocess.check_output(
+                ["git", "-C", str(git_worktree), "diff-tree", "--no-commit-id",
+                 "--name-only", "--no-renames", "-r", "-z", parent, commit],
+                stderr=subprocess.PIPE, timeout=15,
+            )
+            paths = [p for p in raw.decode("utf-8").split("\0") if p]
+        except (OSError, subprocess.SubprocessError, UnicodeDecodeError) as exc:
+            raise ValueError(f"cannot inspect worker commit paths: {exc}") from exc
+        _portable_paths(paths, "worker commit touched paths", required=True)
+        for path in paths:
+            key = portable_path_key(path)
+            if key not in seen:
+                seen.add(key)
+                touched.append(path)
+        expected_parent = commit
+    if expected_parent != result_commit:
+        raise ValueError("worker result history did not end at result_commit")
+    _portable_paths(touched, "worker touched paths", required=True)
+    return touched
+
+
 def _verify_writer_result_git(task, base_sha, result_commit, git_worktree):
     if not isinstance(result_commit, str) or not SHA.fullmatch(result_commit):
         raise ValueError("writer result_commit must be a full lowercase SHA")
@@ -486,7 +566,11 @@ def _verify_writer_result_git(task, base_sha, result_commit, git_worktree):
         raise ValueError(f"cannot verify worker result git ancestry: {exc}") from exc
     if live_branch != result_commit:
         raise ValueError("worker result commit is not exact assigned branch head")
-    return _git_changed_paths(base_sha, result_commit, git_worktree)
+    final_paths = _git_changed_paths(base_sha, result_commit, git_worktree)
+    touched_paths = _git_touched_paths(base_sha, result_commit, git_worktree)
+    if {portable_path_key(x) for x in final_paths} != {portable_path_key(x) for x in touched_paths}:
+        raise ValueError("worker history touched paths differ from final changed-path manifest")
+    return final_paths, touched_paths
 
 
 def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
@@ -517,11 +601,16 @@ def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
     if not _result_paths_within_claim(task, changed_paths):
         raise ValueError("worker result changed paths escape declared write set")
     if task["role"] == "writer":
-        observed_changed_paths = _verify_writer_result_git(task, base_sha, result_commit, git_worktree)
+        observed_changed_paths, touched_paths = _verify_writer_result_git(
+            task, base_sha, result_commit, git_worktree)
         if {portable_path_key(x) for x in observed_changed_paths} != {portable_path_key(x) for x in changed_paths}:
             raise ValueError("reported changed paths do not match exact Git diff")
+        if {portable_path_key(x) for x in touched_paths} != {portable_path_key(x) for x in changed_paths}:
+            raise ValueError("reported changed paths do not match full worker history")
         if not _result_paths_within_claim(task, observed_changed_paths):
             raise ValueError("Git diff changed paths escape declared write set")
+        if not _result_paths_within_claim(task, touched_paths):
+            raise ValueError("worker history touched paths escape declared write set")
     elif result_commit is not None:
         raise ValueError("non-writer result cannot claim result_commit")
     _refs(output_refs, "output_refs")
@@ -691,6 +780,39 @@ def queue_task_cas(store, expected_store_revision, plan, task_id, attempt_id, *,
     new_store_revision = store.compare_and_swap(expected_store_revision, next_state)
     return {
         "schema": "managed-executor-queue-reservation/v1",
+        "store_revision": new_store_revision,
+        "state_revision": next_state["revision"],
+        "state_ref": canonical_state_ref(next_state),
+        "task_id": task_id,
+        "attempt_id": attempt_id,
+        "reservation_token": reservation_token,
+        "launch_allowed": False,
+        **{name: False for name in AUTHORITY_FIELDS},
+    }
+
+
+def claim_launch_cas(store, expected_store_revision, plan, task_id, attempt_id, *,
+                     reservation_token):
+    """Consume a queued reservation with one durable queued->running CAS.
+
+    Only this successful transition grants physical worker-launch authority.
+    """
+    store_revision, state = store.read()
+    if store_revision != expected_store_revision or state is None:
+        raise ValueError("stale expected pool-store revision")
+    validate_state(plan, state)
+    current = _state_map(state).get(task_id)
+    if (current is None or current["status"] != "queued"
+            or current["active_attempt_id"] != attempt_id
+            or current["reservation_token"] != reservation_token):
+        raise ValueError("launch claim does not match live queued reservation")
+    next_state = mark_running(
+        plan, state, task_id, attempt_id,
+        expected_revision=state["revision"], reservation_token=reservation_token,
+    )
+    new_store_revision = store.compare_and_swap(expected_store_revision, next_state)
+    return {
+        "schema": "managed-executor-launch-claim/v1",
         "store_revision": new_store_revision,
         "state_revision": next_state["revision"],
         "state_ref": canonical_state_ref(next_state),
