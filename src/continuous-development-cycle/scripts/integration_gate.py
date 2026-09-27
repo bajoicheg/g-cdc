@@ -71,8 +71,8 @@ def _registered_worktrees(shared_worktree):
         if key in {"worktree","HEAD","branch"}:current[key]=value
     return result
 
-def verify_worker_origins(d, shared_worktree, worker_worktrees):
-    validate(d)
+def verify_worker_origins(d, shared_worktree, worker_worktrees, evidence_root=None):
+    validate(d,evidence_root=evidence_root)
     root=Path(shared_worktree).resolve()
     registry=_registered_worktrees(root)
     by_path={str(Path(x["worktree"]).resolve()):x for x in registry if "worktree" in x}
@@ -138,7 +138,7 @@ def _validate_proof(p):
     _assert_portable_unique(p["changed_paths"],"diff proof")
     return p
 
-def validate(d):
+def validate(d,evidence_root=None):
     fields={"schema","change_id","integrator_id","shared_branch","expected_shared_head",
             "observed_shared_head","worker_contract","worker_results","diff_proofs",
             "unresolved_conflicts","force_push_requested","verification_refs"}
@@ -148,7 +148,7 @@ def validate(d):
     if type(d["force_push_requested"]) is not bool:raise ValueError("force_push_requested must be boolean")
     _refs(d["verification_refs"],"verification_refs");_refs(d["unresolved_conflicts"],"unresolved_conflicts",allow_empty=True)
 
-    contract=validate_worker_contract(d["worker_contract"])
+    contract=validate_worker_contract(d["worker_contract"],evidence_root=evidence_root)
     if contract["change_id"]!=d["change_id"]:raise ValueError("worker contract change mismatch")
     if contract["integrator_id"]!=d["integrator_id"]:raise ValueError("worker contract integrator mismatch")
     if contract["shared_branch"]!=d["shared_branch"]:raise ValueError("worker contract shared branch mismatch")
@@ -203,8 +203,8 @@ def validate(d):
         if p["changed_paths"]!=r["changed_paths"]:raise ValueError("reported changed_paths differ from resolved diff proof")
     return d
 
-def verify_git_diff_proofs(d, worktree):
-    validate(d)
+def verify_git_diff_proofs(d, worktree, evidence_root=None):
+    validate(d,evidence_root=evidence_root)
     by_task={p["task_id"]:p for p in d["diff_proofs"]}
     for r in d["worker_results"]:
         if r["role"]!="writer" or r["state"]!="success":continue
@@ -213,8 +213,8 @@ def verify_git_diff_proofs(d, worktree):
         if observed!=by_task[r["task_id"]]:raise ValueError("stored diff proof does not match actual Git diff")
     return True
 
-def evaluate(d):
-    validate(d)
+def evaluate(d,evidence_root=None):
+    validate(d,evidence_root=evidence_root)
     contract=d["worker_contract"];base=d["expected_shared_head"];b=[]
     if d["observed_shared_head"]!=base:b.append("shared_head_moved_reconcile_required")
     if d["force_push_requested"]:b.append("force_push_forbidden")
@@ -245,6 +245,7 @@ def evaluate(d):
 
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument("input");p.add_argument("--git-worktree")
+    p.add_argument("--evidence-root")
     p.add_argument("--worker-worktree",action="append",default=[],metavar="WORKTREE_ID=PATH")
     a=p.parse_args(argv)
     try:
@@ -255,9 +256,9 @@ def main(argv=None):
             raise ValueError("observed_shared_head does not match live shared branch")
         if any(r.get("role")=="writer" and r.get("state")=="success" for r in d.get("worker_results",[])):
             worker_worktrees=parse_worker_worktrees(a.worker_worktree)
-            verify_worker_origins(d,a.git_worktree,worker_worktrees)
-            verify_git_diff_proofs(d,a.git_worktree)
-        r=evaluate(d)
+            verify_worker_origins(d,a.git_worktree,worker_worktrees,evidence_root=a.evidence_root)
+            verify_git_diff_proofs(d,a.git_worktree,evidence_root=a.evidence_root)
+        r=evaluate(d,evidence_root=a.evidence_root)
     except (OSError,ValueError,json.JSONDecodeError) as e:print(f"FAIL: {e}",file=sys.stderr);return 2
     print(json.dumps(r,sort_keys=True));return 0 if r["ready"] else 1
 
