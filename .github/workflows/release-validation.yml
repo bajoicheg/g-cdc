@@ -50,10 +50,7 @@ jobs:
           for consumer in g-supervisor g-ad-control g-pc-health-check; do
             python -B src/continuous-development-cycle/scripts/validate_adapter.py "consumer/evidence/$consumer/development-cycle.yaml"
             python -B src/continuous-development-cycle/scripts/validate_checkpoint_24.py "consumer/evidence/$consumer/work-status.md" --adapter "consumer/evidence/$consumer/development-cycle.yaml"
-            CONSUMER="$consumer" PACKAGE_TREE="$PACKAGE_TREE" CANDIDATE="$CANDIDATE" python -c 'import json,os,pathlib; c=os.environ["CONSUMER"]; d=json.loads((pathlib.Path("consumer/evidence")/c/"source.json").read_text());
-checks=(("candidate_version",os.environ["CANDIDATE"],d.get("candidate_version")),("candidate_package_tree",os.environ["PACKAGE_TREE"],d.get("candidate_package_tree"))); 
-for f,e,a in checks:
-    assert a==e, f"snapshot validation failed consumer={c} field={f} expected={e} actual={a}"
-s=d.get("source_commit",""); assert len(s)==40, f"snapshot validation failed consumer={c} field=source_commit expected_length=40 actual={s}"; print("CONSUMER_GREEN",c,d["repository"],s,d["vendored_cdc_version"])'
+            python -B src/continuous-development-cycle/scripts/validate_snapshot_diagnostics.py "$consumer" "$CANDIDATE" "$PACKAGE_TREE"
+            python -B -c 'import json, pathlib, sys; c=sys.argv[1]; d=json.loads((pathlib.Path("consumer/evidence")/c/"source.json").read_text()); print("CONSUMER_GREEN",c,d["repository"],d["source_commit"],d["vendored_cdc_version"])' "$consumer"
           done
           echo "THREE_CONSUMERS_GREEN package_tree=$PACKAGE_TREE"
