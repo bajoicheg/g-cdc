@@ -85,8 +85,8 @@
     "final_handoff_validation": "GREEN",
     "validation_comment": 5854036351
   },
-  "candidate_source_commit": "8e9f0c7460e702d0fa7de499d495fd98dc44cf70",
-  "package_tree": "ef180c25913f40b0540e69d7f3b090e2d3bff294",
+  "candidate_source_commit": "67868ece437901bfe47e68736a2ad35886fdbf41",
+  "package_tree": "ce935f4373f93873778579000b84ccacb2ff295c",
   "final_review_hardening": {
     "actual_git_diff_binding": true,
     "queue_cas_reservation": true,
@@ -96,7 +96,10 @@
     "optional_work_explicit_disposition": true,
     "retry_remaining_budget": true,
     "durable_git_cas_store": true,
-    "package_gate_requires_store": true
+    "package_gate_requires_store": true,
+    "durable_cas_launch_boundary_guidance": true,
+    "inmemory_queue_launch_forbidden": true,
+    "production_git_cas_store": true
   },
   "late_integration_reconciliation": {
     "source_pr": 28,
