@@ -33,7 +33,9 @@ class T(unittest.TestCase):
  def tearDown(self): self.tmp.cleanup()
 
  def set_remote(self,branch,commit):
-  subprocess.check_call(["git","-C",str(self.remote),"update-ref",f"refs/heads/{branch}",commit])
+  subprocess.run(["git","-C",str(self.remote),"update-ref","-d",f"refs/heads/{branch}"],
+                 stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=False)
+  subprocess.check_call(["git","-C",str(self.repo),"push","-q","origin",f"{commit}:refs/heads/{branch}"])
 
  def proof(self,h,commit=None,changed=None):
   return {
