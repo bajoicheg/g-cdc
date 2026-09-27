@@ -117,6 +117,20 @@ class T(unittest.TestCase):
   s=m.initial_state(p,parallel_capable=True);r=m.dispatch(p,s)
   self.assertEqual(r["task_ids"],["a"]);self.assertEqual(r["reserved_runtime_seconds"],300);self.assertEqual(r["reserved_cost_units"],30)
 
+ def test_retry_dispatch_reserves_only_remaining_task_budget(self):
+  p=plan();p["total_runtime_budget_seconds"]=350;p["total_cost_budget_units"]=35
+  s=m.initial_state(p,parallel_capable=True);s=self._queue(p,s,"a","a1");s=self._run(p,s,"a","a1")
+  token=self._task_state(s,"a")["reservation_token"]
+  s=m.fail_attempt(p,s,"a","a1",terminal_status="failed",reservation_token=token,
+                   expected_revision=s["revision"],runtime_seconds=100,cost_units=10)
+  s=m.retry_task(p,s,"a",expected_revision=s["revision"])
+  r=m.dispatch(p,s)
+  self.assertEqual(r["task_ids"],["a"])
+  self.assertEqual(r["reserved_runtime_seconds"],200)
+  self.assertEqual(r["reserved_cost_units"],20)
+  self.assertEqual(r["assignments"][0]["remaining_runtime_budget_seconds"],200)
+  self.assertEqual(r["assignments"][0]["remaining_cost_budget_units"],20)
+
  def test_queue_requires_current_state_revision_and_reservation(self):
   p=plan();s=m.initial_state(p,parallel_capable=True)
   s2=self._queue(p,s,"a","a1")
@@ -189,6 +203,39 @@ class T(unittest.TestCase):
   s=m.discard_optional_result(p,s,"opt","result:opt:o1",expected_revision=s["revision"])
   self.assertNotIn("opt:unintegrated_success",m.assess(p,s)["blockers"])
   self.assertTrue(self._task_state(s,"opt")["discarded"])
+
+ def test_optional_planned_task_blocks_terminal_until_explicit_omission(self):
+  p=plan(self.base);p["tasks"].append({"id":"opt","role":"review","required":False,"dependencies":[],"executor_id":"opt-review",
+   "branch":None,"worktree":None,"write_paths":[],"expected_outputs":["out:opt"],"expected_evidence":["opt:green"],
+   "backend_preferences":["local"],"max_runtime_seconds":50,"max_cost_units":5});p["max_parallel"]=3
+  s=m.initial_state(p,parallel_capable=True)
+  for task in ("a","b"):
+   s=self._queue(p,s,task,task+"1");s=self._run(p,s,task,task+"1")
+   s=self._accept(p,s,task,task+"1",[f"src/{task}/result.txt"],[f"out:{task}"],[f"test:{task}"])
+   s=self._integrate(p,s,task,f"result:{task}:{task}1")
+  s=self._queue(p,s,"review","r1");s=self._run(p,s,"review","r1")
+  s=self._accept(p,s,"review","r1",[],["out:review"],["review:green"],result_commit=None)
+  s=self._integrate(p,s,"review","result:review:r1")
+  r=m.assess(p,s)
+  self.assertFalse(r["terminal_allowed"]);self.assertIn("opt:optional_runnable",r["blockers"])
+  s=m.omit_optional_task(p,s,"opt",expected_revision=s["revision"],reason_ref="policy:not-needed")
+  r=m.assess(p,s);self.assertTrue(r["terminal_allowed"]);self.assertTrue(r["complete"])
+  self.assertEqual(self._task_state(s,"opt")["status"],"omitted")
+
+ def test_optional_recoverable_task_needs_explicit_omission(self):
+  p=plan();p["tasks"].append({"id":"opt","role":"review","required":False,"dependencies":[],"executor_id":"opt-review",
+   "branch":None,"worktree":None,"write_paths":[],"expected_outputs":["out:opt"],"expected_evidence":["opt:green"],
+   "backend_preferences":["local"],"max_runtime_seconds":50,"max_cost_units":5});p["max_parallel"]=3
+  s=m.initial_state(p,parallel_capable=True);s=self._queue(p,s,"opt","o1")
+  s=self._fail(p,s,"opt","o1","failed")
+  self.assertIn("opt:optional_disposition_required",m.assess(p,s)["blockers"])
+  s=m.omit_optional_task(p,s,"opt",expected_revision=s["revision"],reason_ref="policy:abandon")
+  self.assertEqual(self._task_state(s,"opt")["status"],"omitted")
+
+ def test_required_task_cannot_be_omitted(self):
+  p=plan();s=m.initial_state(p,parallel_capable=True)
+  with self.assertRaisesRegex(ValueError,"optional task"):
+   m.omit_optional_task(p,s,"a",expected_revision=s["revision"],reason_ref="invalid")
 
  def test_failed_worker_does_not_remove_unrelated_ready_task(self):
   p=plan();s=m.initial_state(p,parallel_capable=True);s=self._queue(p,s,"a","a1");s=self._run(p,s,"a","a1")
