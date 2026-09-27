@@ -223,3 +223,8 @@ Read `references/worktree-parallelism-and-integration.md`.
 - Required runnable/running work and every unintegrated successful result keep the parent non-terminal.
 
 Read `references/managed-executor-pool.md`.
+
+
+### Managed-pool final safety boundary
+
+CDC 2.11.0 uses one authoritative coordination ref per pool and a one-shot durable launch CAS. Queue reservation alone cannot start a worker. Writer scope covers every path touched across the introduced history, required tasks cannot depend on omittable optional work, and remote publication is bound to a trusted immutable remote identity rather than a mutable remote name.
