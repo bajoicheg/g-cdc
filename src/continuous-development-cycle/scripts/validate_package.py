@@ -70,6 +70,7 @@ from worktree_worker_contract import (
 )
 from integration_gate import evaluate as evaluate_integration_gate
 from parallel_benchmark import evaluate_from_files as evaluate_parallel_benchmark_files, load_observations as load_parallel_benchmark_observations
+from managed_executor_attempt import validate_attempt as validate_managed_executor_attempt, validate_result as validate_managed_executor_result, acceptance as accept_managed_executor_result
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -211,6 +212,10 @@ REQUIRED = [
     'tests/test_parallel_task_planner.py', 'tests/test_worktree_worker_contract.py',
     'tests/test_integration_gate.py', 'tests/test_parallel_benchmark.py',
     'tests/test_v2102_guidance.py',
+    'references/managed-executor-pool.md',
+    'scripts/managed_executor_attempt.py',
+    'templates/managed-executor-attempt.json', 'templates/managed-executor-result.json',
+    'tests/test_managed_executor_attempt.py', 'tests/test_v2110_guidance.py',
 ]
 
 
@@ -491,6 +496,16 @@ def validate():
             or any(benchmark[name] for name in ('authorizes_worker_launch','authorizes_product_write',
                                                  'authorizes_merge','authorizes_release'))):
         raise ContractError('invalid CDC 2.10.2 fixture-only benchmark template')
+    managed_attempt = json.loads((ROOT / 'templates/managed-executor-attempt.json').read_text())
+    managed_result = json.loads((ROOT / 'templates/managed-executor-result.json').read_text())
+    validate_managed_executor_attempt(managed_attempt)
+    validate_managed_executor_result(managed_result, managed_attempt)
+    managed_acceptance = accept_managed_executor_result(managed_result, managed_attempt)
+    if (not managed_acceptance['accepted'] or managed_acceptance['integrated'] or
+            any(managed_acceptance[name] for name in ('authorizes_shared_branch_write','authorizes_merge',
+                                                       'authorizes_release','authorizes_scope_expansion',
+                                                       'authorizes_scheduler_mutation','authorizes_user_approval'))):
+        raise ContractError('invalid CDC 2.11.0 managed executor attempt/result templates')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.
