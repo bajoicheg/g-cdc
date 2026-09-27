@@ -53,5 +53,7 @@
   "authorizes_scope_expansion": false,
   "authorizes_scheduler_mutation": false,
   "authorizes_user_approval": false,
-  "revision": 0
+  "revision": 0,
+  "coordination_ref": "refs/heads/cdc/pool-example",
+  "coordination_store_id": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
 }
