@@ -662,6 +662,30 @@
       "forbidden_authorities": [
         "product_write"
       ]
+    },
+    {
+      "id": "managed-pool-local-branch-fakes-publication",
+      "fault": "publication_proof_accepts_local_assigned_branch_without_authoritative_remote_ref",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-optional-work-silent-omission",
+      "fault": "optional_planned_or_recoverable_task_is_ignored_at_terminal_without_explicit_omission",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-retry-reserves-original-budget",
+      "fault": "retry_dispatch_reserves_original_task_max_instead_of_remaining_budget_after_prior_attempt_consumption",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
     }
   ]
 }
