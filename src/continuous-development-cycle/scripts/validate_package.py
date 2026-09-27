@@ -215,13 +215,13 @@ REQUIRED = [
     'tests/test_integration_gate.py', 'tests/test_parallel_benchmark.py',
     'tests/test_v2102_guidance.py',
     'references/managed-executor-pool.md',
-    'scripts/managed_executor_attempt.py', 'scripts/managed_executor_pool.py', 'scripts/managed_executor_handoff.py',
+    'scripts/managed_executor_attempt.py', 'scripts/managed_executor_pool.py', 'scripts/managed_executor_handoff.py', 'scripts/managed_executor_store.py',
     'templates/managed-executor-attempt.json', 'templates/managed-executor-result.json',
     'templates/managed-executor-pool-plan.json', 'templates/managed-executor-pool-state.json',
     'templates/managed-executor-handoff.json', 'templates/managed-executor-publication-proof.json',
     'templates/managed-executor-handoff-artifact.patch',
     'tests/test_managed_executor_attempt.py', 'tests/test_managed_executor_pool.py',
-    'tests/test_managed_executor_handoff.py', 'tests/test_v2110_guidance.py',
+    'tests/test_managed_executor_handoff.py', 'tests/test_managed_executor_store.py', 'tests/test_v2110_guidance.py',
 ]
 
 
