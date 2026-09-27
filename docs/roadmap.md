@@ -25,6 +25,12 @@ Required controls:
 - runtime without actual worker-launch capability falls back to the same plan sequentially instead of fabricating subagents;
 - workers never gain shared-branch write, merge, release, scope-expansion, scheduler or user-approval authority.
 
+**Dogfood RCA — portable worker result handoff (2026-09-27):** three isolated Codex worker environments completed useful work and local commits but had no configured Git remote/credentials, so a local commit was not a durable GitHub-visible result. Re-running the work would waste compute and weaken evidence lineage.
+
+**Fix formulation:** managed executor attempts must separate **execution result identity** from **publication transport**. A successful worker can return a content-addressed patch/tree/file-set artifact plus base SHA, changed-path manifest and validation evidence when direct push is unavailable. The parent/integrator authenticates that artifact, reconstructs/publishes it on the assigned isolated branch, revalidates the exact remote result, and preserves the original attempt lineage. Missing worker push capability is a transport fallback, not permission to fabricate completion or rerun blindly.
+
+**Expected invariant:** loss of Git remote credentials in a worker environment cannot discard completed work or force duplicate execution; every accepted worker result becomes durable through either direct exact-branch publication or an authenticated parent-mediated result artifact.
+
 Acceptance:
 - at least two independent worker tasks can execute concurrently when a capable backend exists;
 - worker failure/staleness does not stop unrelated workers and cannot poison the integration branch;
