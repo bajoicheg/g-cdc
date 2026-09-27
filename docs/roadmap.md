@@ -108,6 +108,13 @@ Expected benefit: CDC gains safe concurrency — speed from parallel work, while
 
 **Expected invariant:** no CDC 2.10.2 release can rely on stale consumer compatibility, fixture timings, mutable plan identity, or unrelated Git history even when individual schemas and diffs otherwise look valid.
 
+
+**Evidence reinforcement — 2026-09-27 (schema migration closure):** the prior-wave gate schema was hardened to require a content-addressed gate-result artifact, but one positive test producer still emitted the previous wrapper shape. Validators/templates were correct, negative regressions were GREEN, yet the end-to-end positive path failed.
+
+**Fix formulation:** any CDC contract/schema evolution must migrate the validator, canonical templates and every positive producer/fixture atomically; release validation retains at least one end-to-end positive path that constructs the new schema through the same producer surface consumers use. Schema changes are not complete when only negative rejection tests and canonical static templates are GREEN.
+
+**Expected invariant:** a released CDC schema cannot be internally self-inconsistent because a legacy positive producer survived a validator migration.
+
 ### CDC 2.10 release proposal
 
 Recommended release sequence:
