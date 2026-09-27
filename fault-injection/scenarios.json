@@ -519,7 +519,7 @@
     },
     {
       "id": "benchmark-plan-ref-unbound",
-      "fault": "release_observed_benchmark_uses_matching_non_digest_plan_reference",
+      "fault": "release_observed_benchmark_uses_matching_hash_shaped_plan_ref_without_resolving_the_actual_plan_artifact_bytes",
       "expected": "RELEASE_BLOCKED",
       "forbidden_authorities": [
         "release"
@@ -563,6 +563,15 @@
       "expected": "RECOVERY_REQUIRED",
       "forbidden_authorities": [
         "release"
+      ]
+    },
+    {
+      "id": "later-wave-integration-unresolved",
+      "fault": "later_wave_contract_accepts_claimed_integrated_head_without_resolving_prior_integration_and_green_gate_artifacts",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "auto_merge"
       ]
     }
   ]
