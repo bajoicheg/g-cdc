@@ -8,7 +8,7 @@ class T(unittest.TestCase):
   skill=(ROOT/"SKILL.md").read_text().lower()
   ref=(ROOT/"references"/"managed-executor-pool.md").read_text().lower()
   readme=(ROOT/"README.md").read_text().lower()
-  for term in ("managed executor pool","capability-gated","deterministic sequential fallback","must not fabricate subagents","single integrator","attempt lineage","unintegrated successful result","progress is not terminal"):
+  for term in ("managed executor pool","capability-gated","deterministic sequential fallback","must not fabricate subagents","single integrator","attempt lineage","unintegrated successful result","content-addressed result handoff","progress is not terminal"):
    self.assertIn(term,skill)
   for term in ("parent authority","capability-gated","sequential fallback","isolated branch/worktree","duplicate-launch","unintegrated","terminal-state"):
    self.assertIn(term,ref)
@@ -43,5 +43,6 @@ class T(unittest.TestCase):
   self.assertIn("failure of one worker does not cancel unrelated independent work",ref)
   self.assertIn("same managed pool plan",ref)
   self.assertIn("never fabricate subagents",ref)
+  self.assertIn("requires_reexecution=false",ref)
 
 if __name__=="__main__":unittest.main()
