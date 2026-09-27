@@ -209,3 +209,15 @@ Read `references/specification-review-and-finishing.md`.
 - Parallel controls are evidence/planning gates only and never grant launch, product-write, merge, release or scope authority.
 
 Read `references/worktree-parallelism-and-integration.md`.
+
+
+## v2.11.0 managed executor pool
+
+- Parent-controlled, bounded executor pools provide Work-style delegation without transferring shared-branch, merge, release or scope authority.
+- Worker launch is capability-gated; unsupported runtimes execute the same plan through deterministic sequential fallback and never fabricate subagents.
+- Writers use exact-base isolated branches/worktrees with portable write claims; one integrator owns shared-branch integration.
+- Attempts/results are durable and preserve retry lineage; duplicate active launches fail closed.
+- Independent work survives an unrelated worker failure.
+- Required runnable/running work and every unintegrated successful result keep the parent non-terminal.
+
+Read `references/managed-executor-pool.md`.
