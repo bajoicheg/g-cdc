@@ -21,6 +21,12 @@ def _refs(v,n,allow_empty=False):
     if len(v)!=len(set(v)):raise ValueError(f"{n} contains duplicates")
 def _sha(v,n):
     if not isinstance(v,str) or not SHA.fullmatch(v):raise ValueError(f"{n} invalid")
+def _sha_list(v,n):
+    if not isinstance(v,list):raise ValueError(f"{n} must be a list")
+    for x in v:_sha(x,n+" item")
+    if len(v)!=len(set(v)):raise ValueError(f"{n} contains duplicates")
+    if v!=sorted(v):raise ValueError(f"{n} must be sorted")
+    return v
 def _digest(v,n):
     if not isinstance(v,str) or not DIGEST.fullmatch(v):raise ValueError(f"{n} invalid")
 def canonical_branch_ref(branch):
@@ -64,7 +70,7 @@ def validate_gate_evidence(v):
 
 def validate_gate_result(v):
     fields={"schema","change_id","wave","total_waves","final_wave","next_wave","plan_ref",
-            "shared_branch","expected_shared_head","observed_shared_head",
+            "shared_branch","expected_shared_head","observed_shared_head","writer_result_shas",
             "action","ready","blockers","integrator_id","next_gate",
             "authorizes_shared_branch_write","authorizes_force_push","authorizes_merge",
             "authorizes_release","authorizes_scope_expansion"}
@@ -79,7 +85,7 @@ def validate_gate_result(v):
     else:
         if type(v["next_wave"]) is not int or v["next_wave"]!=v["wave"]+1 or v["next_wave"]>v["total_waves"]:
             raise ValueError("nonfinal gate result next_wave invalid")
-    canonical_branch_ref(v["shared_branch"]);_sha(v["expected_shared_head"],"gate result expected_shared_head");_sha(v["observed_shared_head"],"gate result observed_shared_head")
+    canonical_branch_ref(v["shared_branch"]);_sha(v["expected_shared_head"],"gate result expected_shared_head");_sha(v["observed_shared_head"],"gate result observed_shared_head");_sha_list(v["writer_result_shas"],"gate result writer_result_shas")
     if v["action"] not in {"READY_FOR_INTEGRATOR","RECONCILE_OR_REPLAN"}:raise ValueError("gate result action invalid")
     if type(v["ready"]) is not bool:raise ValueError("gate result ready invalid")
     if not isinstance(v["blockers"],list) or any(not isinstance(x,str) or not x.strip() for x in v["blockers"]):raise ValueError("gate result blockers invalid")
@@ -91,24 +97,24 @@ def validate_gate_result(v):
     return v
 
 def validate_assembly_evidence(v):
-    fields={"schema","change_id","plan_ref","wave","base_sha","integrated_head","shared_branch","gate_sha256","assembled","evidence_ref"}
+    fields={"schema","change_id","plan_ref","wave","base_sha","integrated_head","shared_branch","gate_sha256","writer_result_shas","assembled","evidence_ref"}
     if not isinstance(v,dict) or set(v)!=fields or v.get("schema")!=ASSEMBLY_SCHEMA:raise ValueError("assembly evidence fields/schema mismatch")
     _text(v["change_id"],"assembly change_id");_digest(v["plan_ref"],"assembly plan_ref")
     if type(v["wave"]) is not int or v["wave"]<1:raise ValueError("assembly wave invalid")
     _sha(v["base_sha"],"assembly base_sha");_sha(v["integrated_head"],"assembly integrated_head")
     if v["integrated_head"]==v["base_sha"]:raise ValueError("assembly must advance shared head")
-    canonical_branch_ref(v["shared_branch"]);_digest(v["gate_sha256"],"assembly gate_sha256")
+    canonical_branch_ref(v["shared_branch"]);_digest(v["gate_sha256"],"assembly gate_sha256");_sha_list(v["writer_result_shas"],"assembly writer_result_shas")
     if type(v["assembled"]) is not bool or not v["assembled"]:raise ValueError("assembly evidence must be assembled")
     _text(v["evidence_ref"],"assembly evidence_ref");return v
 
 def validate_prior_integration_record(record):
-    fields={"schema","change_id","plan_ref","wave","base_sha","integrated_head","shared_branch",
+    fields={"schema","change_id","plan_ref","wave","base_sha","integrated_head","shared_branch","writer_result_shas",
             "gate_artifact_ref","assembly_artifact_ref","previous_integration"}
     if not isinstance(record,dict) or set(record)!=fields or record.get("schema")!=INTEGRATION_SCHEMA:
         raise ValueError("prior integration record fields/schema mismatch")
     _text(record["change_id"],"prior record change_id");_digest(record["plan_ref"],"prior record plan_ref")
     if type(record["wave"]) is not int or record["wave"]<1:raise ValueError("prior record wave invalid")
-    _sha(record["base_sha"],"prior record base_sha");_sha(record["integrated_head"],"prior record integrated_head")
+    _sha(record["base_sha"],"prior record base_sha");_sha(record["integrated_head"],"prior record integrated_head");_sha_list(record["writer_result_shas"],"prior record writer_result_shas")
     if record["base_sha"]==record["integrated_head"]:raise ValueError("prior integration must advance shared head")
     canonical_branch_ref(record["shared_branch"])
     _artifact_ref(record["gate_artifact_ref"],"gate_artifact_ref");_artifact_ref(record["assembly_artifact_ref"],"assembly_artifact_ref")
@@ -163,6 +169,8 @@ def _resolve_integration_chain(ref,evidence_root,contract,expected_wave,seen=Non
     if gate_result["next_gate"]!="integrate_wave_then_contract_next_wave_on_fresh_head":
         raise ValueError("resolved prior gate has wrong next-wave route")
     if assembly["integrated_head"]!=record["integrated_head"]:raise ValueError("assembly integrated head mismatch")
+    if gate_result["writer_result_shas"]!=record["writer_result_shas"]:raise ValueError("integration gate writer results do not match record")
+    if assembly["writer_result_shas"]!=record["writer_result_shas"]:raise ValueError("assembly writer results do not match record")
     if assembly["gate_sha256"]!=gate_digest:raise ValueError("assembly does not bind resolved gate artifact")
     return record
 
@@ -183,13 +191,17 @@ def verify_prior_integration_live(d,evidence_root,git_worktree):
     ref=canonical_branch_ref(d["shared_branch"])
     try:
         live=subprocess.check_output(["git","-C",str(root),"rev-parse","--verify",ref],text=True,stderr=subprocess.PIPE,timeout=15).strip()
-        for sha in (record["base_sha"],record["integrated_head"]):
+        for sha in (record["base_sha"],record["integrated_head"],*record["writer_result_shas"]):
             kind=subprocess.check_output(["git","-C",str(root),"cat-file","-t",sha],text=True,stderr=subprocess.PIPE,timeout=15).strip()
             if kind!="commit":raise ValueError("prior integration endpoint is not a commit")
         ancestry=subprocess.run(["git","-C",str(root),"merge-base","--is-ancestor",record["base_sha"],record["integrated_head"]],
                                 stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=15)
+        result_ancestry=[subprocess.run(["git","-C",str(root),"merge-base","--is-ancestor",sha,record["integrated_head"]],
+                                       stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=15)
+                         for sha in record["writer_result_shas"]]
     except (OSError,subprocess.SubprocessError) as exc:raise ValueError(f"cannot verify prior integration live state: {exc}") from exc
     if ancestry.returncode!=0:raise ValueError("prior integrated head does not descend from prior base")
+    if any(x.returncode!=0 for x in result_ancestry):raise ValueError("prior integrated head does not contain every gated writer result")
     if live!=record["integrated_head"] or d["base_sha"]!=live:raise ValueError("later wave base is not current integrated shared head")
     return True
 
