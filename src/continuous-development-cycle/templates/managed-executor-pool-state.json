@@ -15,7 +15,9 @@
       "accepted_result_ref": null,
       "integrated": false,
       "runtime_seconds": 0,
-      "cost_units": 0
+      "cost_units": 0,
+      "reservation_token": null,
+      "discarded": false
     },
     {
       "id": "writer-b",
@@ -25,7 +27,9 @@
       "accepted_result_ref": null,
       "integrated": false,
       "runtime_seconds": 0,
-      "cost_units": 0
+      "cost_units": 0,
+      "reservation_token": null,
+      "discarded": false
     },
     {
       "id": "review",
@@ -35,7 +39,9 @@
       "accepted_result_ref": null,
       "integrated": false,
       "runtime_seconds": 0,
-      "cost_units": 0
+      "cost_units": 0,
+      "reservation_token": null,
+      "discarded": false
     }
   ],
   "runtime_consumed_seconds": 0,
@@ -46,5 +52,6 @@
   "authorizes_release": false,
   "authorizes_scope_expansion": false,
   "authorizes_scheduler_mutation": false,
-  "authorizes_user_approval": false
+  "authorizes_user_approval": false,
+  "revision": 0
 }
