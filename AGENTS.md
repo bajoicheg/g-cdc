@@ -18,4 +18,4 @@ A release requires independent bootstrap GREEN, candidate package GREEN, compati
 
 ## Self-hosting
 
-Self-hosting is converged on released CDC 2.10.2. CDC 2.11 development is authorized and must dogfood released 2.10.2 controls until 2.11.0 is independently released.
+Self-hosting is converged on released CDC 2.10.2. CDC 2.11.0 Managed Executor Pool is the active candidate and must dogfood released 2.10.2 controls until independently released.
