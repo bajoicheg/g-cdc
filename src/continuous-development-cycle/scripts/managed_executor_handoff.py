@@ -33,13 +33,13 @@ AUTHORITY_FIELDS = (
 )
 HANDOFF_FIELDS = {
     "schema", "pool_id", "change_id", "task_id", "attempt_id", "parent_invocation_id",
-    "executor_id", "base_sha", "assigned_branch", "transport", "source_result_commit",
-    "direct_result_commit", "artifact_ref", "changed_paths", "evidence_refs",
+    "executor_id", "base_sha", "assigned_branch", "publication_remote", "transport",
+    "source_result_commit", "direct_result_commit", "artifact_ref", "changed_paths", "evidence_refs",
 }
 PROOF_FIELDS = {
     "schema", "handoff_ref", "pool_id", "task_id", "attempt_id", "base_sha",
-    "assigned_branch", "published_commit", "observed_changed_paths", "evidence_refs",
-    "result_verified", *AUTHORITY_FIELDS,
+    "assigned_branch", "publication_remote", "published_commit", "observed_changed_paths",
+    "evidence_refs", "result_verified", *AUTHORITY_FIELDS,
 }
 
 
@@ -103,6 +103,9 @@ def validate_handoff(handoff):
         _text(handoff[name], name)
     _sha(handoff["base_sha"], "base_sha")
     canonical_branch_ref(handoff["assigned_branch"])
+    _text(handoff["publication_remote"], "publication_remote")
+    if handoff["publication_remote"].startswith("-") or any(ch.isspace() for ch in handoff["publication_remote"]):
+        raise ValueError("publication_remote must be a safe configured remote name")
     if handoff["transport"] not in TRANSPORTS:
         raise ValueError("unsupported handoff transport")
     _sha(handoff["source_result_commit"], "source_result_commit", nullable=True)
@@ -173,6 +176,7 @@ def publication_plan(handoff, evidence_root=None):
         "attempt_id": handoff["attempt_id"],
         "base_sha": handoff["base_sha"],
         "assigned_branch": canonical_branch_ref(handoff["assigned_branch"]),
+        "publication_remote": handoff["publication_remote"],
         "transport": handoff["transport"],
         "action": action,
         "artifact_ref": handoff["artifact_ref"],
@@ -249,22 +253,69 @@ def _verify_unified_diff_artifact(handoff, payload, root, published_commit):
     return expected_tree
 
 
-def _verify_git_bundle_artifact(handoff, artifact_path, root, published_commit):
+def _verify_git_bundle_artifact(handoff, payload, root, published_commit):
+    fd, snapshot_path = tempfile.mkstemp(prefix="cdc-handoff-bundle-", suffix=".bundle")
     try:
-        verify = subprocess.run(
-            ["git", "-C", str(root), "bundle", "verify", str(artifact_path)],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=15,
-        )
-        if verify.returncode != 0:
-            raise ValueError("git_bundle verification failed")
-        heads = subprocess.check_output(
-            ["git", "-C", str(root), "bundle", "list-heads", str(artifact_path)],
-            text=True, stderr=subprocess.PIPE, timeout=15,
-        ).splitlines()
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise ValueError(f"cannot verify git_bundle publication: {exc}") from exc
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        try:
+            verify = subprocess.run(
+                ["git", "-C", str(root), "bundle", "verify", snapshot_path],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=15,
+            )
+            if verify.returncode != 0:
+                raise ValueError("git_bundle verification failed")
+            heads = subprocess.check_output(
+                ["git", "-C", str(root), "bundle", "list-heads", snapshot_path],
+                text=True, stderr=subprocess.PIPE, timeout=15,
+            ).splitlines()
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise ValueError(f"cannot verify git_bundle publication: {exc}") from exc
+    finally:
+        try:
+            os.unlink(snapshot_path)
+        except FileNotFoundError:
+            pass
     if not any(line.split()[0] == published_commit for line in heads if line.split()):
         raise ValueError("git_bundle does not contain published source result commit")
+    return True
+
+
+def _verify_authoritative_remote(root, handoff, proof):
+    remote = handoff["publication_remote"]
+    if proof["publication_remote"] != remote:
+        raise ValueError("publication proof remote mismatch")
+    try:
+        remotes = subprocess.check_output(
+            ["git", "-C", str(root), "remote"], text=True,
+            stderr=subprocess.PIPE, timeout=15,
+        ).splitlines()
+        if remote not in remotes:
+            raise ValueError("publication remote is not configured")
+        fetch_urls = subprocess.check_output(
+            ["git", "-C", str(root), "remote", "get-url", "--all", remote],
+            text=True, stderr=subprocess.PIPE, timeout=15,
+        ).splitlines()
+        push_urls = subprocess.check_output(
+            ["git", "-C", str(root), "remote", "get-url", "--push", "--all", remote],
+            text=True, stderr=subprocess.PIPE, timeout=15,
+        ).splitlines()
+        if len(fetch_urls) != 1 or push_urls != fetch_urls:
+            raise ValueError("publication remote needs one identical fetch/push URL")
+        branch_ref = canonical_branch_ref(handoff["assigned_branch"])
+        rows = subprocess.check_output(
+            ["git", "-C", str(root), "ls-remote", "--refs", remote, branch_ref],
+            text=True, stderr=subprocess.PIPE, timeout=20,
+        ).splitlines()
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise ValueError(f"cannot verify authoritative publication remote: {exc}") from exc
+    if len(rows) != 1:
+        raise ValueError("authoritative publication branch is missing or ambiguous")
+    parts = rows[0].split("\t")
+    if len(parts) != 2 or parts[1] != branch_ref or parts[0] != proof["published_commit"]:
+        raise ValueError("authoritative remote branch does not match published_commit")
     return True
 
 
@@ -280,6 +331,7 @@ def validate_publication_proof(proof, handoff, git_worktree, evidence_root=None)
             raise ValueError(f"publication proof {name} mismatch")
     if canonical_branch_ref(proof["assigned_branch"]) != canonical_branch_ref(handoff["assigned_branch"]):
         raise ValueError("publication proof branch mismatch")
+    _text(proof["publication_remote"], "publication proof publication_remote")
     _sha(proof["published_commit"], "published_commit")
     if handoff["transport"] == "direct_branch" and proof["published_commit"] != handoff["direct_result_commit"]:
         raise ValueError("direct publication commit mismatch")
@@ -311,14 +363,9 @@ def validate_publication_proof(proof, handoff, git_worktree, evidence_root=None)
         )
         if ancestry.returncode != 0:
             raise ValueError("published result does not descend from handoff base")
-        live = subprocess.check_output(
-            ["git", "-C", str(root), "rev-parse", "--verify", branch_ref],
-            text=True, stderr=subprocess.PIPE, timeout=15,
-        ).strip()
     except (OSError, subprocess.SubprocessError) as exc:
         raise ValueError(f"cannot verify published result: {exc}") from exc
-    if live != proof["published_commit"]:
-        raise ValueError("published commit is not exact assigned branch head")
+    _verify_authoritative_remote(root, handoff, proof)
     actual_changed_paths = _git_changed_paths(root, handoff["base_sha"], proof["published_commit"])
     if _portable_set(actual_changed_paths) != _portable_set(handoff["changed_paths"]):
         raise ValueError("actual published Git diff does not match handoff manifest")
@@ -326,12 +373,11 @@ def validate_publication_proof(proof, handoff, git_worktree, evidence_root=None)
         raise ValueError("publication proof changed paths do not match actual Git diff")
     if handoff["transport"] == "content_artifact":
         artifact_root = Path(evidence_root).resolve() if evidence_root is not None else root.resolve()
-        artifact_path = (artifact_root / handoff["artifact_ref"]["path"]).resolve()
         payload = resolve_artifact(handoff, artifact_root)
         if handoff["artifact_ref"]["format"] == "unified_diff":
             _verify_unified_diff_artifact(handoff, payload, root, proof["published_commit"])
         else:
-            _verify_git_bundle_artifact(handoff, artifact_path, root, proof["published_commit"])
+            _verify_git_bundle_artifact(handoff, payload, root, proof["published_commit"])
     return proof
 
 
