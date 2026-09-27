@@ -1,5 +1,5 @@
 from pathlib import Path
-import copy,json,sys,unittest
+import copy,hashlib,json,sys,tempfile,unittest
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/"scripts"))
 from worktree_worker_contract import assess
 from parallel_task_planner import canonical_plan_ref
@@ -8,6 +8,19 @@ class T(unittest.TestCase):
  def base(self):return json.loads((ROOT/"templates"/"worktree-worker-contract.json").read_text())
  def rebind(self,d):
   d["plan_ref"]=canonical_plan_ref(d["plan"]);return d
+ def later_wave_case(self,root,integrated_head=None):
+  d=self.base();d["plan"]["tasks"][1]["write_paths"]=["src/model/sub"];self.rebind(d)
+  d["wave"]=2;d["base_sha"]=integrated_head or "2"*40
+  record={"schema":"wave-integration-record/v1","change_id":d["change_id"],"plan_ref":d["plan_ref"],
+          "wave":1,"integrated_head":d["base_sha"],"shared_branch":d["shared_branch"],
+          "gate_evidence_ref":"integration-gate:wave-1-green","assembly_evidence_ref":"assembly:wave-1@"+d["base_sha"]}
+  path=Path(root)/"wave-1-integration.json";path.write_text(json.dumps(record,indent=2)+"\n")
+  digest="sha256:"+hashlib.sha256(path.read_bytes()).hexdigest()
+  d["prior_wave_integration"]={"wave":1,"integrated_head":d["base_sha"],
+                               "artifact_path":"wave-1-integration.json","artifact_sha256":digest}
+  a=copy.deepcopy(d["assignments"][1]);a["base_sha"]=d["base_sha"];a["write_paths"]=["src/model/sub"]
+  d["assignments"]=[a]
+  return d,path
  def test_template_isolated_and_non_authoritative(self):
   r=assess(self.base());self.assertTrue(r["valid"]);self.assertEqual(r["assignment_count"],2);self.assertEqual(r["wave"],1)
   self.assertFalse(r["authorizes_worker_launch"]);self.assertFalse(r["authorizes_shared_branch_write"])
@@ -53,21 +66,29 @@ class T(unittest.TestCase):
   d=self.base();d["plan"]["tasks"][0]["write_paths"]=["src/UI"];d["plan"]["tasks"][1]["write_paths"]=["src/ui/sub"];self.rebind(d)
   # planner serializes them; forcing both into wave one is therefore invalid.
   with self.assertRaises(ValueError):assess(d)
- def test_later_wave_can_bind_new_exact_base(self):
-  d=self.base()
-  d["plan"]["tasks"][1]["write_paths"]=["src/model/sub"];self.rebind(d)
-  d["wave"]=2;d["base_sha"]="2"*40;d["prior_wave_integration"]={"wave":1,"integrated_head":d["base_sha"],"evidence_ref":"integration:wave-1"}
-  a=copy.deepcopy(d["assignments"][1]);a["base_sha"]=d["base_sha"];a["write_paths"]=["src/model/sub"]
-  d["assignments"]=[a]
-  r=assess(d);self.assertTrue(r["valid"]);self.assertEqual(r["wave"],2);self.assertEqual(r["base_sha"],"2"*40)
- def test_later_wave_requires_matching_prior_integration(self):
-  d=self.base();d["plan"]["tasks"][1]["write_paths"]=["src/model/sub"];self.rebind(d);d["wave"]=2;d["base_sha"]="2"*40
-  a=copy.deepcopy(d["assignments"][1]);a["base_sha"]=d["base_sha"];a["write_paths"]=["src/model/sub"];d["assignments"]=[a]
-  with self.assertRaises(ValueError):assess(d)
-  d["prior_wave_integration"]={"wave":1,"integrated_head":"3"*40,"evidence_ref":"integration:wave-1"}
-  with self.assertRaises(ValueError):assess(d)
-  d["prior_wave_integration"]={"wave":2,"integrated_head":d["base_sha"],"evidence_ref":"integration:wrong-wave"}
-  with self.assertRaises(ValueError):assess(d)
+ def test_later_wave_can_bind_resolved_prior_integration(self):
+  with tempfile.TemporaryDirectory() as td:
+   d,_=self.later_wave_case(td)
+   r=assess(d,evidence_root=td);self.assertTrue(r["valid"]);self.assertEqual(r["wave"],2);self.assertEqual(r["base_sha"],"2"*40)
+ def test_later_wave_requires_resolvable_prior_integration(self):
+  with tempfile.TemporaryDirectory() as td:
+   d,path=self.later_wave_case(td)
+   with self.assertRaises(ValueError):assess(d)
+   d["prior_wave_integration"]["artifact_sha256"]="sha256:"+"0"*64
+   with self.assertRaises(ValueError):assess(d,evidence_root=td)
+   d,_=self.later_wave_case(td)
+   record=json.loads(path.read_text());record["integrated_head"]="3"*40;path.write_text(json.dumps(record,indent=2)+"\n")
+   d["prior_wave_integration"]["artifact_sha256"]="sha256:"+hashlib.sha256(path.read_bytes()).hexdigest()
+   with self.assertRaises(ValueError):assess(d,evidence_root=td)
+ def test_invented_prior_integration_record_rejected(self):
+  with tempfile.TemporaryDirectory() as td:
+   d,path=self.later_wave_case(td)
+   record=json.loads(path.read_text());record["gate_evidence_ref"]="unverified:never-integrated";record["assembly_evidence_ref"]="unverified:invented-head"
+   path.write_text(json.dumps(record,indent=2)+"\n")
+   d["prior_wave_integration"]["artifact_sha256"]="sha256:"+hashlib.sha256(path.read_bytes()).hexdigest()
+   # A durable artifact still needs distinct gate/assembly refs, but those refs are evidence labels only.
+   # The contract cannot independently authenticate external systems; it does require the exact artifact bytes.
+   self.assertTrue(assess(d,evidence_root=td)["valid"])
  def test_windows_reserved_or_drive_relative_path_rejected(self):
   for bad in ("C:temp","src/CON","src/com1.txt","src/name.","src/name "):
    d=self.base();d["plan"]["tasks"][0]["write_paths"]=[bad];d["assignments"][0]["write_paths"]=[bad]
