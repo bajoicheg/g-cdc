@@ -69,3 +69,14 @@ CDC 2.11.0 release evidence must prove at minimum:
 - required runnable/running or unintegrated-success state prevents parent terminal completion;
 - isolated writer results cannot escape their declared portable write sets;
 - all managed-pool outputs keep shared-branch, merge, release, scope, scheduler and user-approval authority false.
+
+
+## Durable publication and retry disposition
+
+A worker result is not durably published merely because the assigned local branch points at its commit. Final publication proof queries the configured authoritative **remote** exact branch ref and requires it to equal the published commit. Remote-tracking cache, local branch state and intended push are not publication evidence.
+
+Content-addressed Git bundles are verified from an immutable private snapshot of the bytes already authenticated by digest. Never reopen the mutable source artifact pathname after authentication.
+
+Optional tasks also require explicit lifecycle disposition. A planned or recoverable optional task blocks pool terminal state until it is either executed or explicitly omitted. An active optional task must drain/cancel, and a successful optional result must integrate or be explicitly discarded.
+
+Retries reserve only **remaining** task runtime/cost budget after prior attempts' consumption. Historical consumption remains charged once; dispatch reserves only unresolved liability.
