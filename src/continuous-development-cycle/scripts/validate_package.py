@@ -71,6 +71,7 @@ from worktree_worker_contract import (
 from integration_gate import evaluate as evaluate_integration_gate
 from parallel_benchmark import evaluate_from_files as evaluate_parallel_benchmark_files, load_observations as load_parallel_benchmark_observations
 from managed_executor_attempt import validate_attempt as validate_managed_executor_attempt, validate_result as validate_managed_executor_result, acceptance as accept_managed_executor_result
+from managed_executor_pool import validate_plan as validate_managed_pool_plan, validate_state as validate_managed_pool_state, dispatch as dispatch_managed_pool, assess as assess_managed_pool
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -213,9 +214,10 @@ REQUIRED = [
     'tests/test_integration_gate.py', 'tests/test_parallel_benchmark.py',
     'tests/test_v2102_guidance.py',
     'references/managed-executor-pool.md',
-    'scripts/managed_executor_attempt.py',
+    'scripts/managed_executor_attempt.py', 'scripts/managed_executor_pool.py',
     'templates/managed-executor-attempt.json', 'templates/managed-executor-result.json',
-    'tests/test_managed_executor_attempt.py', 'tests/test_v2110_guidance.py',
+    'templates/managed-executor-pool-plan.json', 'templates/managed-executor-pool-state.json',
+    'tests/test_managed_executor_attempt.py', 'tests/test_managed_executor_pool.py', 'tests/test_v2110_guidance.py',
 ]
 
 
@@ -506,6 +508,22 @@ def validate():
                                                        'authorizes_release','authorizes_scope_expansion',
                                                        'authorizes_scheduler_mutation','authorizes_user_approval'))):
         raise ContractError('invalid CDC 2.11.0 managed executor attempt/result templates')
+    managed_pool_plan = json.loads((ROOT / 'templates/managed-executor-pool-plan.json').read_text())
+    managed_pool_state = json.loads((ROOT / 'templates/managed-executor-pool-state.json').read_text())
+    validate_managed_pool_plan(managed_pool_plan)
+    validate_managed_pool_state(managed_pool_plan, managed_pool_state)
+    managed_dispatch = dispatch_managed_pool(managed_pool_plan, managed_pool_state)
+    managed_assessment = assess_managed_pool(managed_pool_plan, managed_pool_state)
+    if (managed_dispatch['task_ids'] != ['writer-a','writer-b'] or
+            managed_dispatch['fallback_serialized'] or managed_assessment['complete'] or
+            managed_assessment['terminal_allowed'] or
+            any(managed_dispatch[name] for name in ('authorizes_worker_launch','authorizes_shared_branch_write',
+                                                    'authorizes_merge','authorizes_release','authorizes_scope_expansion',
+                                                    'authorizes_scheduler_mutation','authorizes_user_approval')) or
+            any(managed_assessment[name] for name in ('authorizes_worker_launch','authorizes_shared_branch_write',
+                                                      'authorizes_merge','authorizes_release','authorizes_scope_expansion',
+                                                      'authorizes_scheduler_mutation','authorizes_user_approval'))):
+        raise ContractError('invalid CDC 2.11.0 managed executor pool templates')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.
