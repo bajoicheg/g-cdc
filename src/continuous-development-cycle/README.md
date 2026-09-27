@@ -217,6 +217,7 @@ Read `references/worktree-parallelism-and-integration.md`.
 - Worker launch is capability-gated; unsupported runtimes execute the same plan through deterministic sequential fallback and never fabricate subagents.
 - Writers use exact-base isolated branches/worktrees with portable write claims; one integrator owns shared-branch integration.
 - Attempts/results are durable and preserve retry lineage; duplicate active launches fail closed.
+- Content-addressed result handoff preserves completed worker work when direct push is unavailable; the integrator publishes and revalidates it without blind rerun.
 - Independent work survives an unrelated worker failure.
 - Required runnable/running work and every unintegrated successful result keep the parent non-terminal.
 
