@@ -5,8 +5,8 @@
   "observed": false,
   "candidate_sha": "1111111111111111111111111111111111111111",
   "environment_ref": "fixture:benchmark-environment",
-  "plan_ref": "sha256:f71f86de620316aa0de35eaa65abe1d3d37f32a4f93574cc224ea11dfb06d82b",
-  "workload_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "plan_ref": "sha256:cf0a55486c00e3a663baace3db67a1c470ba0b3fe458d4e26c597d7b3ef21e42",
+  "workload_fingerprint": "sha256:cf0a55486c00e3a663baace3db67a1c470ba0b3fe458d4e26c597d7b3ef21e42",
   "elapsed_seconds": 190,
   "evidence_ref": "fixture:sequential-observation"
 }
