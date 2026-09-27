@@ -8,5 +8,7 @@
   "plan_ref": "sha256:cf0a55486c00e3a663baace3db67a1c470ba0b3fe458d4e26c597d7b3ef21e42",
   "workload_fingerprint": "sha256:cf0a55486c00e3a663baace3db67a1c470ba0b3fe458d4e26c597d7b3ef21e42",
   "elapsed_seconds": 120,
+  "unresolved_conflicts": 0,
+  "rollbacks": 0,
   "evidence_ref": "fixture:parallel-observation"
 }

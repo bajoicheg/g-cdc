@@ -14,16 +14,12 @@
   "observation_refs": [
     {
       "path": "templates/parallel-benchmark-observation-sequential.json",
-      "sha256": "sha256:45e29a388147d08529b193f6db2e51c3d8c11e329e7ea95f6db4b835c4a9026f"
+      "sha256": "sha256:acc99fa7ae0ea2bc92cf85f8622c700e1a2d542a69eaf3eaea30bf2e930337ea"
     },
     {
       "path": "templates/parallel-benchmark-observation-parallel.json",
-      "sha256": "sha256:ac713d1be74e87d7dc8f0ffa83beea0e1e308322eded6dbe757bf86832d997fd"
+      "sha256": "sha256:a0295b23fb330a6c9a7334832f8149d28acaa0cf734e1026c23c059f476123d9"
     }
   ],
-  "baseline_unresolved_conflicts": 0,
-  "parallel_unresolved_conflicts": 0,
-  "baseline_rollbacks": 0,
-  "parallel_rollbacks": 0,
   "evidence_class": "fixture"
 }

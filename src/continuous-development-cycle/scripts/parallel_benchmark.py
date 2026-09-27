@@ -17,7 +17,7 @@ def _safe_rel(path):
     if any(x in {"",".",".."} for x in parts):raise ValueError("unsafe observation path")
     return path
 def validate_observation(v):
-    fields={"schema","observation_id","mode","observed","candidate_sha","environment_ref","plan_ref","workload_fingerprint","elapsed_seconds","evidence_ref"}
+    fields={"schema","observation_id","mode","observed","candidate_sha","environment_ref","plan_ref","workload_fingerprint","elapsed_seconds","unresolved_conflicts","rollbacks","evidence_ref"}
     if not isinstance(v,dict) or set(v)!=fields or v.get("schema")!=OBS_SCHEMA:raise ValueError("benchmark observation fields/schema mismatch")
     _text(v["observation_id"],"observation_id")
     if v["mode"] not in MODES:raise ValueError("observation mode invalid")
@@ -28,10 +28,11 @@ def validate_observation(v):
     if not isinstance(v["workload_fingerprint"],str) or not DIGEST.fullmatch(v["workload_fingerprint"]):raise ValueError("workload_fingerprint invalid")
     if (type(v["elapsed_seconds"]) not in {int,float} or not math.isfinite(v["elapsed_seconds"])
             or v["elapsed_seconds"]<=0):raise ValueError("elapsed_seconds invalid")
+    for n in ("unresolved_conflicts","rollbacks"):
+        if type(v[n]) is not int or v[n]<0:raise ValueError(n+" invalid")
     return v
 def validate(d):
-    fields={"schema","benchmark_id","evidence_class","representative_task_ref","candidate_sha","package_tree","environment_ref","plan_ref","plan_artifact_ref","workstreams","observation_refs",
-            "baseline_unresolved_conflicts","parallel_unresolved_conflicts","baseline_rollbacks","parallel_rollbacks"}
+    fields={"schema","benchmark_id","evidence_class","representative_task_ref","candidate_sha","package_tree","environment_ref","plan_ref","plan_artifact_ref","workstreams","observation_refs"}
     if not isinstance(d,dict) or set(d)!=fields or d.get("schema")!=SCHEMA:raise ValueError("benchmark fields/schema mismatch")
     _text(d["benchmark_id"],"benchmark_id");_text(d["representative_task_ref"],"representative_task_ref")
     if d["evidence_class"] not in EVIDENCE_CLASSES:raise ValueError("benchmark evidence_class invalid")
@@ -51,8 +52,6 @@ def validate(d):
         paths.append(_safe_rel(ref["path"]))
         if not isinstance(ref["sha256"],str) or not DIGEST.fullmatch(ref["sha256"]):raise ValueError("observation ref sha256 invalid")
     if len(paths)!=len(set(paths)):raise ValueError("observation paths must be distinct")
-    for n in ("baseline_unresolved_conflicts","parallel_unresolved_conflicts","baseline_rollbacks","parallel_rollbacks"):
-        if type(d[n]) is not int or d[n]<0:raise ValueError(n+" invalid")
     return d
 def load_plan_artifact(d,evidence_root):
     validate(d);root=Path(evidence_root).resolve();ref=d["plan_artifact_ref"]
@@ -129,8 +128,8 @@ def evaluate(d,observations,plan_artifact=None):
         if x["plan_ref"]!=d["plan_ref"]:raise ValueError("observation plan binding mismatch")
     seq=by["sequential"]["elapsed_seconds"];par=by["parallel"]["elapsed_seconds"];b=[]
     if par>=seq:b.append("no_wall_clock_improvement")
-    if d["parallel_unresolved_conflicts"]>d["baseline_unresolved_conflicts"]:b.append("conflict_rate_regressed")
-    if d["parallel_rollbacks"]>d["baseline_rollbacks"]:b.append("rollback_rate_regressed")
+    if by["parallel"]["unresolved_conflicts"]>by["sequential"]["unresolved_conflicts"]:b.append("conflict_rate_regressed")
+    if by["parallel"]["rollbacks"]>by["sequential"]["rollbacks"]:b.append("rollback_rate_regressed")
     passed=not b
     return {"schema":"parallel-benchmark-result/v1","benchmark_id":d["benchmark_id"],"candidate_sha":d["candidate_sha"],
             "environment_ref":d["environment_ref"],"plan_ref":d["plan_ref"],"workload_fingerprint":by["sequential"]["workload_fingerprint"],

@@ -87,9 +87,15 @@ class T(unittest.TestCase):
   d,obs=self.release_case();obs[1]["elapsed_seconds"]=obs[0]["elapsed_seconds"]
   self.assertIn("no_wall_clock_improvement",evaluate(d,obs)["blockers"])
  def test_conflict_regression_fails(self):
-  d,obs=self.release_case();d["parallel_unresolved_conflicts"]=1
+  d,obs=self.release_case();obs[1]["unresolved_conflicts"]=obs[0]["unresolved_conflicts"]+1
   self.assertIn("conflict_rate_regressed",evaluate(d,obs)["blockers"])
  def test_rollback_regression_fails(self):
-  d,obs=self.release_case();d["parallel_rollbacks"]=1
+  d,obs=self.release_case();obs[1]["rollbacks"]=obs[0]["rollbacks"]+1
   self.assertIn("rollback_rate_regressed",evaluate(d,obs)["blockers"])
+ def test_observation_outcome_counts_must_be_non_negative_integers(self):
+  for field in ("unresolved_conflicts","rollbacks"):
+   for bad in (-1,1.5,True,"1",None):
+    d,obs=self.release_case();obs[1][field]=bad
+    with self.subTest(field=field,value=bad):
+     with self.assertRaises(ValueError):evaluate(d,obs)
 if __name__=="__main__":unittest.main()
