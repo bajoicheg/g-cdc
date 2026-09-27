@@ -32,6 +32,32 @@ def _canonical(state):
     ).encode("utf-8") + b"\n"
 
 
+def _normalized_remote_endpoint(value):
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("pool store remote endpoint invalid")
+    raw = value.strip()
+    if "://" in raw:
+        parsed = urlsplit(raw)
+        if not parsed.scheme or not parsed.hostname:
+            raise ValueError("pool store remote endpoint invalid")
+        host = parsed.hostname.lower()
+        if parsed.port is not None:
+            host += f":{parsed.port}"
+        path = parsed.path.rstrip("/") or "/"
+        return urlunsplit((parsed.scheme.lower(), host, path, "", ""))
+    if ":" in raw and not raw.startswith(("/", "./", "../")):
+        left, right = raw.split(":", 1)
+        host = left.split("@")[-1].lower()
+        if host and right:
+            return f"ssh://{host}/{right.lstrip('/')}".rstrip("/")
+    return "file://" + str(Path(raw).expanduser().resolve())
+
+
+def coordination_store_id_for_endpoint(value):
+    normalized = _normalized_remote_endpoint(value)
+    return "sha256:" + hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
 def _canonical_heads_ref(value, name):
     if not isinstance(value, str) or not value.startswith("refs/heads/"):
         raise ValueError(f"{name} must be an exact refs/heads/ ref")
@@ -80,13 +106,7 @@ class GitManagedExecutorStore:
         if coordination_key in occupied_keys:
             raise ValueError("coordination ref must be portable-isolated from product/shared/worker refs")
         self._git("check-ref-format", self.ref)
-        remotes = self._git("remote").splitlines()
-        if remote not in remotes:
-            raise ValueError("pool store remote is not configured")
-        fetch_urls = self._git("remote", "get-url", "--all", remote).splitlines()
-        push_urls = self._git("remote", "get-url", "--push", "--all", remote).splitlines()
-        if len(fetch_urls) != 1 or push_urls != fetch_urls:
-            raise ValueError("pool store remote requires one identical fetch/push URL")
+        self._assert_remote_identity()
         self.store_id = _remote_store_id(fetch_urls[0])
         if self.store_id != plan["coordination_store_id"]:
             raise ValueError("pool store identity does not match managed-pool plan")
