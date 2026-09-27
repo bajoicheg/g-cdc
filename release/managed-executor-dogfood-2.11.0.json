@@ -85,8 +85,8 @@
     "final_handoff_validation": "GREEN",
     "validation_comment": 5854036351
   },
-  "candidate_source_commit": "2534003e85e4487c0161f72bfe3988d543c1f7e9",
-  "package_tree": "1a620ff7ac52ea6e1ef1b645a8a89b151fc33430",
+  "candidate_source_commit": "40dba2d3778645d622e47f41e704c09dc1d2b8c5",
+  "package_tree": "a01f4f3eed379f8b6338d61d8778be1c50bac60e",
   "final_review_hardening": {
     "actual_git_diff_binding": true,
     "queue_cas_reservation": true,
