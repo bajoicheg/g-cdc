@@ -695,6 +695,49 @@
         "product_write",
         "release"
       ]
+    },
+    {
+      "id": "managed-pool-coordination-ref-split-brain",
+      "fault": "same_pool_plan_can_be_initialized_on_two_caller_selected_coordination_refs_and_both_return_launch_authority",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-launch-grant-replay",
+      "fault": "queued_reservation_launch_grant_can_be_replayed_without_one_shot_durable_queued_to_running_cas",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-history-touch-hidden",
+      "fault": "worker_commit_history_touches_out_of_claim_path_then_restores_it_before_result_commit",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-required-depends-on-optional",
+      "fault": "required_task_depends_directly_or_transitively_on_optional_task_that_can_be_omitted",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-publication-remote-identity-drift",
+      "fault": "publication_proof_trusts_mutable_or_alternate_remote_name_without_immutable_expected_remote_identity",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
     }
   ]
 }
