@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import os
 import re
@@ -39,6 +40,12 @@ def _canonical_heads_ref(value, name):
     return value
 
 
+def _remote_store_id(url):
+    if not isinstance(url, str) or not url:
+        raise ValueError("pool store remote URL unavailable")
+    return "sha256:" + hashlib.sha256(url.encode("utf-8")).hexdigest()
+
+
 class GitManagedExecutorStore:
     """One-file Git-ref CAS store.
 
@@ -57,6 +64,8 @@ class GitManagedExecutorStore:
             raise ValueError("pool store remote name invalid")
         self.remote = remote
         self.ref = _canonical_heads_ref(coordination_ref, "coordination_ref")
+        if self.ref != plan["coordination_ref"]:
+            raise ValueError("coordination ref does not match managed-pool plan")
         protected = {_canonical_heads_ref(ref, "protected_ref") for ref in protected_refs}
         writer_refs = set()
         for task in plan["tasks"]:
@@ -78,6 +87,18 @@ class GitManagedExecutorStore:
         push_urls = self._git("remote", "get-url", "--push", "--all", remote).splitlines()
         if len(fetch_urls) != 1 or push_urls != fetch_urls:
             raise ValueError("pool store remote requires one identical fetch/push URL")
+        self.store_id = _remote_store_id(fetch_urls[0])
+        if self.store_id != plan["coordination_store_id"]:
+            raise ValueError("pool store identity does not match managed-pool plan")
+
+    def _assert_remote_identity(self):
+        fetch_urls = self._git("remote", "get-url", "--all", self.remote).splitlines()
+        push_urls = self._git("remote", "get-url", "--push", "--all", self.remote).splitlines()
+        if len(fetch_urls) != 1 or push_urls != fetch_urls:
+            raise ValueError("pool store remote configuration drift")
+        if _remote_store_id(fetch_urls[0]) != self.plan["coordination_store_id"]:
+            raise ValueError("pool store identity drift")
+        return True
 
     def _git(self, *args, input_text=None):
         env = dict(
@@ -106,6 +127,7 @@ class GitManagedExecutorStore:
         return result.stdout.strip()
 
     def _remote_rows(self):
+        self._assert_remote_identity()
         rows = self._git("ls-remote", "--refs", self.remote, self.ref).splitlines()
         if not rows:
             return []
@@ -147,6 +169,8 @@ class GitManagedExecutorStore:
 
     def compare_and_swap(self, expected_revision, new_state):
         validate_state(self.plan, new_state)
+        if new_state["coordination_ref"] != self.ref or new_state["coordination_store_id"] != self.store_id:
+            raise ValueError("managed-executor state coordination identity mismatch")
         current_revision, current_state = self.read()
         if current_revision != expected_revision:
             raise ValueError("stale expected managed-executor store revision")
