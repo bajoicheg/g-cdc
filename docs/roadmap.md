@@ -33,6 +33,13 @@ Acceptance:
 - cancellation and retry preserve exact attempt lineage rather than silently replacing evidence;
 - a deterministic sequential fallback produces the same required task/evidence set.
 
+**RCA reinforcement — portable worker-result handoff.** During 2.11.0 dogfooding, three Codex workers completed isolated local commits but their execution checkouts had no configured Git remote/credentials, so a local commit could not become a durable GitHub-visible result by `git push`.
+
+**Fix formulation:** executor preflight must classify writeback capability separately from compute capability. Every managed worker completion must provide a durable, content-addressed result transport that the parent/integrator can consume even when the worker cannot push: exact commit/tree when remotely reachable, or an authenticated patch/tree/artifact bundle plus base SHA, write-set and evidence bindings. Missing worker push capability is a handoff mode, not a reason to rerun completed work. Integrator publication remains subject to normal ownership and exact-result validation.
+
+**Expected invariant:** successful worker computation cannot be stranded solely because its execution environment lacks a Git remote; one completed attempt maps to one durable transferable result identity, and recovery publishes/reconstructs that exact result instead of recomputing it.
+
+
 ### 2.11.1 — Cooperative Project Lanes — P1 / AUTHORIZED
 
 Goal: allow the foreground user chat and one or more watchdog/Work/Codex executors to make useful progress on the same repository at the same time without reverting to split-brain shared writers.
