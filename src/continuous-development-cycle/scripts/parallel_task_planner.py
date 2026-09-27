@@ -70,6 +70,8 @@ def validate(d):
         if not isinstance(t["write_paths"],list):raise ValueError("write_paths invalid")
         for p in t["write_paths"]:validate_write_path(p)
         if len(t["write_paths"])!=len(set(t["write_paths"])):raise ValueError("duplicate write path")
+        portable_keys=[portable_path_key(p) for p in t["write_paths"]]
+        if len(portable_keys)!=len(set(portable_keys)):raise ValueError("portable duplicate write path")
         if t["role"]=="writer" and not t["write_paths"]:raise ValueError("writer requires write_paths")
         if t["role"]!="writer" and t["write_paths"]:raise ValueError("non-writer cannot declare write_paths")
         ids.append(t["id"])
