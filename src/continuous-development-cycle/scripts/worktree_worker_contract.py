@@ -123,9 +123,10 @@ def validate_prior_integration_record(record):
     if record["previous_integration"] is not None:_artifact_ref(record["previous_integration"],"previous_integration")
     return record
 
-def _resolve_integration_chain(ref,evidence_root,contract,expected_wave,seen=None):
+def _resolve_integration_chain(ref,evidence_root,contract,expected_wave,seen=None,records=None):
     if evidence_root is None:raise ValueError("later wave requires resolvable prior integration artifacts")
     seen=set() if seen is None else seen
+    records=[] if records is None else records
     _artifact_ref(ref,"prior integration artifact")
     if ref["sha256"] in seen:raise ValueError("prior integration evidence cycle")
     seen.add(ref["sha256"])
@@ -141,7 +142,7 @@ def _resolve_integration_chain(ref,evidence_root,contract,expected_wave,seen=Non
         if record["base_sha"]!=contract["plan"]["base_sha"]:raise ValueError("wave one integration base must match plan base")
     else:
         if record["previous_integration"] is None:raise ValueError("later integration record requires predecessor proof")
-        previous=_resolve_integration_chain(record["previous_integration"],evidence_root,contract,expected_wave-1,seen)
+        previous=_resolve_integration_chain(record["previous_integration"],evidence_root,contract,expected_wave-1,seen,records)
         if record["base_sha"]!=previous["integrated_head"]:raise ValueError("integration chain base mismatch")
     gate,gate_digest=_load_json_artifact(record["gate_artifact_ref"],evidence_root,"integration gate artifact")
     validate_gate_evidence(gate)
@@ -172,36 +173,40 @@ def _resolve_integration_chain(ref,evidence_root,contract,expected_wave,seen=Non
     if gate_result["writer_result_shas"]!=record["writer_result_shas"]:raise ValueError("integration gate writer results do not match record")
     if assembly["writer_result_shas"]!=record["writer_result_shas"]:raise ValueError("assembly writer results do not match record")
     if assembly["gate_sha256"]!=gate_digest:raise ValueError("assembly does not bind resolved gate artifact")
+    records.append(record)
     return record
 
-def _resolve_prior_integration(prior,evidence_root,contract):
+def _resolve_prior_integration(prior,evidence_root,contract,records=None):
     if not isinstance(prior,dict) or set(prior)!={"wave","integrated_head","artifact_path","artifact_sha256"}:
         raise ValueError("later wave requires content-addressed prior integration proof")
     if type(prior["wave"]) is not int or prior["wave"]!=contract["wave"]-1:raise ValueError("prior integration wave mismatch")
     _sha(prior["integrated_head"],"prior integrated_head");_safe_rel(prior["artifact_path"]);_digest(prior["artifact_sha256"],"prior artifact sha256")
-    record=_resolve_integration_chain({"path":prior["artifact_path"],"sha256":prior["artifact_sha256"]},evidence_root,contract,prior["wave"])
+    records=[] if records is None else records
+    record=_resolve_integration_chain({"path":prior["artifact_path"],"sha256":prior["artifact_sha256"]},evidence_root,contract,prior["wave"],records=records)
     if record["integrated_head"]!=prior["integrated_head"]:raise ValueError("prior integration artifact head mismatch")
     return record
 
 def verify_prior_integration_live(d,evidence_root,git_worktree):
     if d["wave"]==1:return True
-    record=_resolve_prior_integration(d["prior_wave_integration"],evidence_root,d)
+    records=[]
+    record=_resolve_prior_integration(d["prior_wave_integration"],evidence_root,d,records=records)
     root=Path(git_worktree)
     if not root.is_dir():raise ValueError("git worktree missing")
     ref=canonical_branch_ref(d["shared_branch"])
     try:
         live=subprocess.check_output(["git","-C",str(root),"rev-parse","--verify",ref],text=True,stderr=subprocess.PIPE,timeout=15).strip()
-        for sha in (record["base_sha"],record["integrated_head"],*record["writer_result_shas"]):
-            kind=subprocess.check_output(["git","-C",str(root),"cat-file","-t",sha],text=True,stderr=subprocess.PIPE,timeout=15).strip()
-            if kind!="commit":raise ValueError("prior integration endpoint is not a commit")
-        ancestry=subprocess.run(["git","-C",str(root),"merge-base","--is-ancestor",record["base_sha"],record["integrated_head"]],
-                                stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=15)
-        result_ancestry=[subprocess.run(["git","-C",str(root),"merge-base","--is-ancestor",sha,record["integrated_head"]],
-                                       stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=15)
-                         for sha in record["writer_result_shas"]]
+        for historical in records:
+            for sha in (historical["base_sha"],historical["integrated_head"],*historical["writer_result_shas"]):
+                kind=subprocess.check_output(["git","-C",str(root),"cat-file","-t",sha],text=True,stderr=subprocess.PIPE,timeout=15).strip()
+                if kind!="commit":raise ValueError("prior integration endpoint is not a commit")
+            ancestry=subprocess.run(["git","-C",str(root),"merge-base","--is-ancestor",historical["base_sha"],historical["integrated_head"]],
+                                    stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=15)
+            if ancestry.returncode!=0:raise ValueError("prior integrated head does not descend from prior base")
+            for sha in historical["writer_result_shas"]:
+                result_ancestry=subprocess.run(["git","-C",str(root),"merge-base","--is-ancestor",sha,historical["integrated_head"]],
+                                               stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=15)
+                if result_ancestry.returncode!=0:raise ValueError("prior integrated head does not contain every gated writer result")
     except (OSError,subprocess.SubprocessError) as exc:raise ValueError(f"cannot verify prior integration live state: {exc}") from exc
-    if ancestry.returncode!=0:raise ValueError("prior integrated head does not descend from prior base")
-    if any(x.returncode!=0 for x in result_ancestry):raise ValueError("prior integrated head does not contain every gated writer result")
     if live!=record["integrated_head"] or d["base_sha"]!=live:raise ValueError("later wave base is not current integrated shared head")
     return True
 
