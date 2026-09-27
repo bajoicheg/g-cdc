@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check installed package integrity and validate templates with their actual parsers."""
 from pathlib import Path
+from datetime import datetime
 import hashlib
 import json
 import re
@@ -404,7 +405,9 @@ def validate():
     continuation = decide_continuation_cycle(json.loads((ROOT / 'templates/continuation-cycle.json').read_text()))
     if continuation['action'] != 'CONTINUE_NOW' or continuation['final_response_allowed'] or continuation['progress_is_terminal']:
         raise ContractError('invalid continuation cycle template')
-    timestamp = render_command_timestamp(json.loads((ROOT / 'templates/command-timestamp-request.json').read_text()))
+    timestamp_request = json.loads((ROOT / 'templates/command-timestamp-request.json').read_text())
+    timestamp_fixture_clock = datetime.fromisoformat(timestamp_request['observed_at'].replace('Z','+00:00'))
+    timestamp = render_command_timestamp(timestamp_request, now=timestamp_fixture_clock)
     if timestamp['action'] != 'EMIT_ONCE' or timestamp['display'] != '[19:31 26.09]' or timestamp['authorizes_anything']:
         raise ContractError('invalid command timestamp template')
     rca = disposition_rca_feedback(json.loads((ROOT / 'templates/rca-feedback.json').read_text()))
