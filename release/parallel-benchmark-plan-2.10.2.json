@@ -1,8 +1,8 @@
 {
   "schema": "cdc-parallel-benchmark-plan/v1",
   "version": "2.10.2",
-  "candidate_source_commit": "ce94c45ba4072d06e8f4f7481e26bba68a03b3c6",
-  "package_tree": "1f94554733cf7e303ef75bf19a030727d1665324",
+  "candidate_source_commit": "c9908ac61031af07205ca98e9c6b0e7ed831ec1b",
+  "package_tree": "3109152087cbf7b3c7cd023600187ba6bfa86a6b",
   "representative_task_ref": "cdc-2.10.2-worktree-parallel-release-validation",
   "workstreams": [
     {
