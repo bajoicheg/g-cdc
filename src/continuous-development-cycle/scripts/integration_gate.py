@@ -242,11 +242,11 @@ def main(argv=None):
     a=p.parse_args(argv)
     try:
         d=json.loads(Path(a.input).read_text())
+        if not a.git_worktree:raise ValueError("--git-worktree is required for live shared-head verification")
+        live_head=resolve_shared_head(a.git_worktree,d["shared_branch"])
+        if live_head!=d["observed_shared_head"]:
+            raise ValueError("observed_shared_head does not match live shared branch")
         if any(r.get("role")=="writer" and r.get("state")=="success" for r in d.get("worker_results",[])):
-            if not a.git_worktree:raise ValueError("--git-worktree is required for integration with successful writers")
-            live_head=resolve_shared_head(a.git_worktree,d["shared_branch"])
-            if live_head!=d["observed_shared_head"]:
-                raise ValueError("observed_shared_head does not match live shared branch")
             worker_worktrees=parse_worker_worktrees(a.worker_worktree)
             verify_worker_origins(d,a.git_worktree,worker_worktrees)
             verify_git_diff_proofs(d,a.git_worktree)
