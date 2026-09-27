@@ -33,12 +33,14 @@ AUTHORITY_FIELDS = (
 )
 HANDOFF_FIELDS = {
     "schema", "pool_id", "change_id", "task_id", "attempt_id", "parent_invocation_id",
-    "executor_id", "base_sha", "assigned_branch", "transport", "source_result_commit",
+    "executor_id", "base_sha", "assigned_branch", "publication_repository",
+    "publication_remote_id", "transport", "source_result_commit",
     "direct_result_commit", "artifact_ref", "changed_paths", "evidence_refs",
 }
 PROOF_FIELDS = {
     "schema", "handoff_ref", "pool_id", "task_id", "attempt_id", "base_sha",
-    "assigned_branch", "published_commit", "observed_changed_paths", "evidence_refs",
+    "assigned_branch", "publication_repository", "publication_remote_id",
+    "published_commit", "observed_changed_paths", "evidence_refs",
     "result_verified", *AUTHORITY_FIELDS,
 }
 
@@ -103,6 +105,8 @@ def validate_handoff(handoff):
         _text(handoff[name], name)
     _sha(handoff["base_sha"], "base_sha")
     canonical_branch_ref(handoff["assigned_branch"])
+    _text(handoff["publication_repository"], "publication_repository")
+    _digest(handoff["publication_remote_id"], "publication_remote_id")
     if handoff["transport"] not in TRANSPORTS:
         raise ValueError("unsupported handoff transport")
     _sha(handoff["source_result_commit"], "source_result_commit", nullable=True)
@@ -173,6 +177,8 @@ def publication_plan(handoff, evidence_root=None):
         "attempt_id": handoff["attempt_id"],
         "base_sha": handoff["base_sha"],
         "assigned_branch": canonical_branch_ref(handoff["assigned_branch"]),
+        "publication_repository": handoff["publication_repository"],
+        "publication_remote_id": handoff["publication_remote_id"],
         "transport": handoff["transport"],
         "action": action,
         "artifact_ref": handoff["artifact_ref"],
@@ -279,7 +285,7 @@ def _verify_git_bundle_artifact(handoff, payload, root, published_commit):
     return True
 
 
-def _verify_remote_branch(root, remote, branch_ref, published_commit):
+def publication_remote_identity(root, remote):
     _text(remote, "publication remote")
     if remote.startswith("-"):
         raise ValueError("publication remote name is invalid")
@@ -291,6 +297,27 @@ def _verify_remote_branch(root, remote, branch_ref, published_commit):
         ).splitlines()
         if remote not in remotes:
             raise ValueError("publication remote is not configured")
+        fetch_urls = subprocess.check_output(
+            ["git", "-C", str(root), "remote", "get-url", "--all", remote],
+            text=True, stderr=subprocess.PIPE, env=environment, timeout=15,
+        ).splitlines()
+        push_urls = subprocess.check_output(
+            ["git", "-C", str(root), "remote", "get-url", "--push", "--all", remote],
+            text=True, stderr=subprocess.PIPE, env=environment, timeout=15,
+        ).splitlines()
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise ValueError("cannot resolve authoritative publication remote") from exc
+    if len(fetch_urls) != 1 or push_urls != fetch_urls:
+        raise ValueError("publication remote requires one identical fetch/push endpoint")
+    return "sha256:" + hashlib.sha256(fetch_urls[0].encode("utf-8")).hexdigest()
+
+
+def _verify_remote_branch(root, remote, branch_ref, published_commit, expected_remote_id):
+    observed_remote_id = publication_remote_identity(root, remote)
+    if observed_remote_id != expected_remote_id:
+        raise ValueError("publication remote identity mismatch")
+    environment = dict(os.environ, GIT_TERMINAL_PROMPT="0")
+    try:
         query = subprocess.run(
             ["git", "-C", str(root), "ls-remote", "--refs", remote, branch_ref],
             text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -311,7 +338,8 @@ def _verify_remote_branch(root, remote, branch_ref, published_commit):
     return True
 
 
-def validate_publication_proof(proof, handoff, git_worktree, evidence_root=None, remote="origin"):
+def validate_publication_proof(proof, handoff, git_worktree, evidence_root=None, remote="origin",
+                               trusted_repository=None, trusted_remote_id=None):
     validate_handoff(handoff)
     if not isinstance(proof, dict) or set(proof) != PROOF_FIELDS or proof.get("schema") != PROOF_SCHEMA:
         raise ValueError("managed executor publication proof fields/schema mismatch")
@@ -323,6 +351,16 @@ def validate_publication_proof(proof, handoff, git_worktree, evidence_root=None,
             raise ValueError(f"publication proof {name} mismatch")
     if canonical_branch_ref(proof["assigned_branch"]) != canonical_branch_ref(handoff["assigned_branch"]):
         raise ValueError("publication proof branch mismatch")
+    _text(proof["publication_repository"], "publication proof repository")
+    _digest(proof["publication_remote_id"], "publication proof remote identity")
+    if trusted_repository is None or trusted_remote_id is None:
+        raise ValueError("trusted publication identity is required")
+    if (handoff["publication_repository"] != trusted_repository
+            or proof["publication_repository"] != trusted_repository):
+        raise ValueError("publication repository identity mismatch")
+    if (handoff["publication_remote_id"] != trusted_remote_id
+            or proof["publication_remote_id"] != trusted_remote_id):
+        raise ValueError("publication remote identity mismatch")
     _sha(proof["published_commit"], "published_commit")
     if handoff["transport"] == "direct_branch" and proof["published_commit"] != handoff["direct_result_commit"]:
         raise ValueError("direct publication commit mismatch")
@@ -356,7 +394,8 @@ def validate_publication_proof(proof, handoff, git_worktree, evidence_root=None,
             raise ValueError("published result does not descend from handoff base")
     except (OSError, subprocess.SubprocessError) as exc:
         raise ValueError(f"cannot verify published result: {exc}") from exc
-    _verify_remote_branch(root, remote, branch_ref, proof["published_commit"])
+    _verify_remote_branch(
+        root, remote, branch_ref, proof["published_commit"], trusted_remote_id)
     actual_changed_paths = _git_changed_paths(root, handoff["base_sha"], proof["published_commit"])
     if _portable_set(actual_changed_paths) != _portable_set(handoff["changed_paths"]):
         raise ValueError("actual published Git diff does not match handoff manifest")
