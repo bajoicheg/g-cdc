@@ -21,5 +21,6 @@
   ],
   "evidence_refs": [
     "tests:worker-green"
-  ]
+  ],
+  "publication_remote": "origin"
 }
