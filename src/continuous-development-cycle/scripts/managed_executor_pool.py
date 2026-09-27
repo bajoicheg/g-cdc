@@ -163,7 +163,7 @@ def _reject_required_optional_dependencies(tasks):
             dependency = by_id[dep]
             if not dependency["required"]:
                 raise ValueError(
-                    f"required task {task['id']} depends on optional task {dep}"
+                    f"required task cannot depend on optional prerequisite: {task['id']} -> {dep}"
                 )
             stack.extend(dependency["dependencies"])
 
@@ -632,9 +632,9 @@ def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
     if task_id not in pmap:
         raise ValueError("unknown result task")
     current = smap[task_id]
-    if (current["status"] not in ACTIVE or current["active_attempt_id"] != attempt_id
+    if (current["status"] != "running" or current["active_attempt_id"] != attempt_id
             or current["reservation_token"] != reservation_token):
-        raise ValueError("result does not match active task reservation")
+        raise ValueError("result requires exact durable running reservation")
     task = pmap[task_id]
     if executor_id != task["executor_id"] or branch != task["branch"] or worktree != task["worktree"]:
         raise ValueError("worker result assignment identity mismatch")
