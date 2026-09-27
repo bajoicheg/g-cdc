@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# corrective-workstream: final-review handoff trust closure
 """CDC 2.11.0 portable managed-executor result handoff and publication proof."""
 from __future__ import annotations
 
