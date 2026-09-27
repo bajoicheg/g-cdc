@@ -15,7 +15,8 @@ class T(unittest.TestCase):
  def result(self,d,task_id):
   return next(r for r in d["worker_results"] if r["task_id"]==task_id)
  def test_ready_without_granting_shared_write(self):
-  r=evaluate(self.base());self.assertTrue(r["ready"]);self.assertEqual(r["action"],"READY_FOR_INTEGRATOR");self.assertEqual(r["wave"],1)\n  self.assertEqual(r["writer_result_shas"],["2"*40,"3"*40])
+  r=evaluate(self.base());self.assertTrue(r["ready"]);self.assertEqual(r["action"],"READY_FOR_INTEGRATOR");self.assertEqual(r["wave"],1)
+  self.assertEqual(r["writer_result_shas"],["2"*40,"3"*40])
   self.assertTrue(r["final_wave"]);self.assertEqual(r["total_waves"],1);self.assertIsNone(r["next_wave"])
   self.assertEqual(r["next_gate"],"cdc_2.10.1_review_branch_finish_then_2.10.0_verification")
   self.assertFalse(r["authorizes_shared_branch_write"]);self.assertFalse(r["authorizes_merge"])
@@ -23,7 +24,8 @@ class T(unittest.TestCase):
   d=self.base();d["worker_contract"]["plan"]["tasks"][1]["write_paths"]=["src/model/sub"];self.rebind_plan(d)
   d["worker_contract"]["assignments"]=d["worker_contract"]["assignments"][:1]
   d["worker_results"]=d["worker_results"][:1];d["diff_proofs"]=d["diff_proofs"][:1]
-  r=evaluate(d);self.assertTrue(r["ready"]);self.assertFalse(r["final_wave"]);self.assertEqual(r["next_wave"],2)\n  self.assertEqual(r["writer_result_shas"],["2"*40])
+  r=evaluate(d);self.assertTrue(r["ready"]);self.assertFalse(r["final_wave"]);self.assertEqual(r["next_wave"],2)
+  self.assertEqual(r["writer_result_shas"],["2"*40])
   self.assertEqual(r["next_gate"],"integrate_wave_then_contract_next_wave_on_fresh_head")
  def test_moved_shared_head_requires_reconcile(self):
   d=self.base();d["observed_shared_head"]="5"*40
