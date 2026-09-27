@@ -72,6 +72,7 @@ from integration_gate import evaluate as evaluate_integration_gate
 from parallel_benchmark import evaluate_from_files as evaluate_parallel_benchmark_files, load_observations as load_parallel_benchmark_observations
 from managed_executor_attempt import validate_attempt as validate_managed_executor_attempt, validate_result as validate_managed_executor_result, acceptance as accept_managed_executor_result
 from managed_executor_pool import validate_plan as validate_managed_pool_plan, validate_state as validate_managed_pool_state, dispatch as dispatch_managed_pool, assess as assess_managed_pool
+from managed_executor_handoff import validate_handoff as validate_managed_handoff, publication_plan as plan_managed_handoff_publication
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -214,10 +215,13 @@ REQUIRED = [
     'tests/test_integration_gate.py', 'tests/test_parallel_benchmark.py',
     'tests/test_v2102_guidance.py',
     'references/managed-executor-pool.md',
-    'scripts/managed_executor_attempt.py', 'scripts/managed_executor_pool.py',
+    'scripts/managed_executor_attempt.py', 'scripts/managed_executor_pool.py', 'scripts/managed_executor_handoff.py',
     'templates/managed-executor-attempt.json', 'templates/managed-executor-result.json',
     'templates/managed-executor-pool-plan.json', 'templates/managed-executor-pool-state.json',
-    'tests/test_managed_executor_attempt.py', 'tests/test_managed_executor_pool.py', 'tests/test_v2110_guidance.py',
+    'templates/managed-executor-handoff.json', 'templates/managed-executor-publication-proof.json',
+    'templates/managed-executor-handoff-artifact.patch',
+    'tests/test_managed_executor_attempt.py', 'tests/test_managed_executor_pool.py',
+    'tests/test_managed_executor_handoff.py', 'tests/test_v2110_guidance.py',
 ]
 
 
@@ -524,6 +528,15 @@ def validate():
                                                       'authorizes_merge','authorizes_release','authorizes_scope_expansion',
                                                       'authorizes_scheduler_mutation','authorizes_user_approval'))):
         raise ContractError('invalid CDC 2.11.0 managed executor pool templates')
+    managed_handoff = json.loads((ROOT / 'templates/managed-executor-handoff.json').read_text())
+    validate_managed_handoff(managed_handoff)
+    handoff_plan = plan_managed_handoff_publication(managed_handoff, ROOT)
+    if (handoff_plan['action'] != 'IMPORT_CONTENT_ARTIFACT_TO_ASSIGNED_BRANCH' or
+            handoff_plan['requires_reexecution'] or
+            any(handoff_plan[name] for name in ('authorizes_product_write','authorizes_shared_branch_write',
+                                                'authorizes_force_push','authorizes_merge','authorizes_release',
+                                                'authorizes_scope_expansion','authorizes_scheduler_mutation'))):
+        raise ContractError('invalid CDC 2.11.0 managed executor handoff template')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.
