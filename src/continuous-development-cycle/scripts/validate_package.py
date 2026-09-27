@@ -205,7 +205,7 @@ REQUIRED = [
     'templates/integration-gate.json', 'templates/parallel-benchmark.json',
     'templates/wave-integration-record.json', 'templates/wave-integration-gate-evidence.json',
     'templates/wave-integration-gate-result.json', 'templates/wave-assembly-evidence.json',
-    'templates/parallel-benchmark-plan.json',
+    'templates/parallel-benchmark-plan.json', 'templates/parallel-benchmark-environment.json',
     'templates/parallel-benchmark-observation-sequential.json',
     'templates/parallel-benchmark-observation-parallel.json',
     'tests/test_parallel_task_planner.py', 'tests/test_worktree_worker_contract.py',

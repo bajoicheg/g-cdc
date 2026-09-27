@@ -3,7 +3,7 @@
 from __future__ import annotations
 import argparse,hashlib,json,math,re,sys
 from pathlib import Path
-SCHEMA="parallel-benchmark/v1";OBS_SCHEMA="parallel-benchmark-observation/v1";PLAN_SCHEMA="cdc-parallel-benchmark-plan/v1"
+SCHEMA="parallel-benchmark/v1";OBS_SCHEMA="parallel-benchmark-observation/v1";PLAN_SCHEMA="cdc-parallel-benchmark-plan/v1";ENV_SCHEMA="cdc-parallel-benchmark-environment/v1"
 SHA=re.compile(r"^[0-9a-f]{40}$");DIGEST=re.compile(r"^sha256:[0-9a-f]{64}$");MODES={"sequential","parallel"};EVIDENCE_CLASSES={"fixture","release_observed"}
 
 def _text(v,n):
@@ -32,11 +32,16 @@ def validate_observation(v):
         if type(v[n]) is not int or v[n]<0:raise ValueError(n+" invalid")
     return v
 def validate(d):
-    fields={"schema","benchmark_id","evidence_class","representative_task_ref","candidate_sha","package_tree","environment_ref","plan_ref","plan_artifact_ref","workstreams","observation_refs"}
+    fields={"schema","benchmark_id","evidence_class","representative_task_ref","candidate_sha","package_tree","environment_ref","environment_artifact_ref","plan_ref","plan_artifact_ref","workstreams","observation_refs"}
     if not isinstance(d,dict) or set(d)!=fields or d.get("schema")!=SCHEMA:raise ValueError("benchmark fields/schema mismatch")
     _text(d["benchmark_id"],"benchmark_id");_text(d["representative_task_ref"],"representative_task_ref")
     if d["evidence_class"] not in EVIDENCE_CLASSES:raise ValueError("benchmark evidence_class invalid")
     _text(d["environment_ref"],"environment_ref");_sha(d["candidate_sha"],"candidate_sha");_sha(d["package_tree"],"package_tree")
+    env_artifact=d["environment_artifact_ref"]
+    if not isinstance(env_artifact,dict) or set(env_artifact)!={"path","sha256"}:raise ValueError("environment artifact ref fields mismatch")
+    _safe_rel(env_artifact["path"])
+    if env_artifact["path"]!=d["environment_ref"]:raise ValueError("environment_ref must equal environment artifact path")
+    if not isinstance(env_artifact["sha256"],str) or not DIGEST.fullmatch(env_artifact["sha256"]):raise ValueError("environment artifact sha256 invalid")
     if not isinstance(d["plan_ref"],str) or not DIGEST.fullmatch(d["plan_ref"]):raise ValueError("benchmark plan_ref must be sha256 digest")
     artifact=d["plan_artifact_ref"]
     if not isinstance(artifact,dict) or set(artifact)!={"path","sha256"}:raise ValueError("plan artifact ref fields mismatch")
@@ -91,6 +96,33 @@ def load_plan_artifact(d,evidence_root):
     return {"path":ref["path"],"sha256":observed,"candidate_source_commit":plan["candidate_source_commit"],
             "package_tree":plan["package_tree"],"representative_task_ref":plan["representative_task_ref"]}
 
+def load_environment_artifact(d,evidence_root):
+    validate(d);root=Path(evidence_root).resolve();ref=d["environment_artifact_ref"]
+    path=(root/ref["path"]).resolve()
+    try:path.relative_to(root)
+    except ValueError as exc:raise ValueError("environment artifact escapes evidence root") from exc
+    try:payload=path.read_bytes()
+    except OSError as exc:raise ValueError(f"cannot read benchmark environment artifact: {exc}") from exc
+    observed="sha256:"+hashlib.sha256(payload).hexdigest()
+    if observed!=ref["sha256"]:raise ValueError("benchmark environment artifact digest mismatch")
+    try:env=json.loads(payload)
+    except json.JSONDecodeError as exc:raise ValueError("benchmark environment artifact JSON invalid") from exc
+    fields={"schema","version","candidate_source_commit","package_tree","provider","working_directory","python_executable",
+            "python_version","implementation","platform","architecture","reported_processing_units","timer","evidence_comment"}
+    if not isinstance(env,dict) or set(env)!=fields or env.get("schema")!=ENV_SCHEMA:
+        raise ValueError("benchmark environment artifact fields/schema mismatch")
+    if env["version"]!="2.10.2":raise ValueError("benchmark environment version mismatch")
+    _sha(env["candidate_source_commit"],"benchmark environment candidate_source_commit")
+    _sha(env["package_tree"],"benchmark environment package_tree")
+    if env["candidate_source_commit"]!=d["candidate_sha"]:raise ValueError("benchmark environment candidate binding mismatch")
+    if env["package_tree"]!=d["package_tree"]:raise ValueError("benchmark environment package-tree binding mismatch")
+    for name in ("provider","working_directory","python_executable","python_version","implementation","platform","architecture","evidence_comment"):
+        _text(env[name],"benchmark environment "+name)
+    if type(env["reported_processing_units"]) is not int or env["reported_processing_units"]<1:
+        raise ValueError("benchmark environment reported_processing_units invalid")
+    if env["timer"]!="time.perf_counter()":raise ValueError("benchmark environment timer invalid")
+    return {"path":ref["path"],"sha256":observed,"candidate_source_commit":env["candidate_source_commit"],"package_tree":env["package_tree"]}
+
 def load_observations(d,evidence_root):
     validate(d);root=Path(evidence_root).resolve();observations=[]
     for ref in d["observation_refs"]:
@@ -105,13 +137,18 @@ def load_observations(d,evidence_root):
         except json.JSONDecodeError as exc:raise ValueError("benchmark observation JSON invalid") from exc
         validate_observation(obs);observations.append(obs)
     return observations
-def evaluate(d,observations,plan_artifact=None):
+def evaluate(d,observations,plan_artifact=None,environment_artifact=None):
     validate(d)
     if plan_artifact is not None:
         expected={"path","sha256","candidate_source_commit","package_tree","representative_task_ref"}
         if not isinstance(plan_artifact,dict) or set(plan_artifact)!=expected:raise ValueError("resolved plan artifact proof invalid")
         if plan_artifact["sha256"]!=d["plan_ref"] or plan_artifact["candidate_source_commit"]!=d["candidate_sha"] or plan_artifact["package_tree"]!=d["package_tree"] or plan_artifact["representative_task_ref"]!=d["representative_task_ref"]:
             raise ValueError("resolved plan artifact proof binding mismatch")
+    if environment_artifact is not None:
+        expected={"path","sha256","candidate_source_commit","package_tree"}
+        if not isinstance(environment_artifact,dict) or set(environment_artifact)!=expected:raise ValueError("resolved environment artifact proof invalid")
+        if environment_artifact["path"]!=d["environment_ref"] or environment_artifact["candidate_source_commit"]!=d["candidate_sha"] or environment_artifact["package_tree"]!=d["package_tree"]:
+            raise ValueError("resolved environment artifact proof binding mismatch")
     if not isinstance(observations,list) or len(observations)!=2:raise ValueError("resolved observations required")
     obs=[validate_observation(x) for x in observations];by={x["mode"]:x for x in obs}
     if d["evidence_class"]=="release_observed" and any(x["observed"] is not True for x in obs):
@@ -136,12 +173,13 @@ def evaluate(d,observations,plan_artifact=None):
             "sequential_elapsed_seconds":seq,"parallel_elapsed_seconds":par,"passed":passed,
             "speedup_ratio":round(seq/par,3),"seconds_saved":seq-par,"blockers":b,
             "resolved_observation_count":2,"evidence_class":d["evidence_class"],
-            "plan_artifact_verified":plan_artifact is not None,
-            "release_evidence_eligible":passed and d["evidence_class"]=="release_observed" and plan_artifact is not None,
+            "plan_artifact_verified":plan_artifact is not None,"environment_artifact_verified":environment_artifact is not None,
+            "release_evidence_eligible":passed and d["evidence_class"]=="release_observed" and plan_artifact is not None and environment_artifact is not None,
             "authorizes_worker_launch":False,"authorizes_product_write":False,"authorizes_merge":False,"authorizes_release":False}
 def evaluate_from_files(d,evidence_root):
     plan=load_plan_artifact(d,evidence_root)
-    return evaluate(d,load_observations(d,evidence_root),plan_artifact=plan)
+    environment=load_environment_artifact(d,evidence_root)
+    return evaluate(d,load_observations(d,evidence_root),plan_artifact=plan,environment_artifact=environment)
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument("input");p.add_argument("--evidence-root",required=True);a=p.parse_args(argv)
     try:d=json.loads(Path(a.input).read_text());r=evaluate_from_files(d,a.evidence_root)

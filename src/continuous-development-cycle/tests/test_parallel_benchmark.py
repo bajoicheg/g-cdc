@@ -1,7 +1,7 @@
 from pathlib import Path
-import json,sys,unittest
+import hashlib,json,sys,tempfile,unittest
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/"scripts"))
-from parallel_benchmark import evaluate,evaluate_from_files,load_observations,load_plan_artifact
+from parallel_benchmark import evaluate,evaluate_from_files,load_observations,load_plan_artifact,load_environment_artifact
 
 class T(unittest.TestCase):
  def base(self):return json.loads((ROOT/"templates"/"parallel-benchmark.json").read_text())
@@ -18,9 +18,11 @@ class T(unittest.TestCase):
   self.assertFalse(r["authorizes_worker_launch"]);self.assertFalse(r["authorizes_release"])
  def test_release_observed_requires_resolved_plan_artifact(self):
   d,obs=self.release_case();r=evaluate(d,obs)
-  self.assertTrue(r["passed"]);self.assertFalse(r["release_evidence_eligible"]);self.assertFalse(r["plan_artifact_verified"])
+  self.assertTrue(r["passed"]);self.assertFalse(r["release_evidence_eligible"]);self.assertFalse(r["plan_artifact_verified"]);self.assertFalse(r["environment_artifact_verified"])
   plan=load_plan_artifact(d,ROOT);r=evaluate(d,obs,plan_artifact=plan)
-  self.assertTrue(r["passed"]);self.assertTrue(r["release_evidence_eligible"]);self.assertTrue(r["plan_artifact_verified"])
+  self.assertTrue(r["passed"]);self.assertFalse(r["release_evidence_eligible"]);self.assertTrue(r["plan_artifact_verified"]);self.assertFalse(r["environment_artifact_verified"])
+  environment=load_environment_artifact(d,ROOT);r=evaluate(d,obs,plan_artifact=plan,environment_artifact=environment)
+  self.assertTrue(r["passed"]);self.assertTrue(r["release_evidence_eligible"]);self.assertTrue(r["environment_artifact_verified"])
  def test_invalid_evidence_class_rejected(self):
   d=self.base();d["evidence_class"]="pretend"
   with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
@@ -48,6 +50,39 @@ class T(unittest.TestCase):
   d=self.base();fake="sha256:"+"2"*64;d["plan_ref"]=fake;d["plan_artifact_ref"]["sha256"]=fake
   for x in d["observation_refs"]: pass
   with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
+ def test_environment_artifact_digest_mismatch_rejected(self):
+  d=self.base();d["environment_artifact_ref"]["sha256"]="sha256:"+"0"*64
+  with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
+ def test_missing_or_unsafe_environment_artifact_rejected(self):
+  d=self.base();d["environment_ref"]="templates/missing-environment.json";d["environment_artifact_ref"]["path"]=d["environment_ref"]
+  for x in d["observation_refs"]:x["environment_ref"]=d["environment_ref"]
+  with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
+  d=self.base();d["environment_ref"]="../escape.json";d["environment_artifact_ref"]["path"]=d["environment_ref"]
+  for x in d["observation_refs"]:x["environment_ref"]=d["environment_ref"]
+  with self.assertRaises(ValueError):evaluate_from_files(d,ROOT)
+ def test_environment_candidate_must_match_benchmark_target(self):
+  d=self.base()
+  with tempfile.TemporaryDirectory() as td:
+   root=Path(td);path=root/d["environment_ref"];path.parent.mkdir(parents=True)
+   env=json.loads((ROOT/d["environment_ref"]).read_text());env["candidate_source_commit"]="3"*40
+   payload=json.dumps(env,indent=2)+"\n";path.write_text(payload);d["environment_artifact_ref"]["sha256"]="sha256:"+hashlib.sha256(payload.encode()).hexdigest()
+   with self.assertRaises(ValueError):load_environment_artifact(d,root)
+ def test_environment_package_tree_must_match_benchmark_target(self):
+  d=self.base()
+  with tempfile.TemporaryDirectory() as td:
+   root=Path(td);path=root/d["environment_ref"];path.parent.mkdir(parents=True)
+   env=json.loads((ROOT/d["environment_ref"]).read_text());env["package_tree"]="3"*40
+   payload=json.dumps(env,indent=2)+"\n";path.write_text(payload);d["environment_artifact_ref"]["sha256"]="sha256:"+hashlib.sha256(payload.encode()).hexdigest()
+   with self.assertRaises(ValueError):load_environment_artifact(d,root)
+ def test_environment_runtime_fields_are_fail_closed(self):
+  for field,bad in (("reported_processing_units",0),("timer","time.time()")):
+   d=self.base()
+   with tempfile.TemporaryDirectory() as td:
+    root=Path(td);path=root/d["environment_ref"];path.parent.mkdir(parents=True)
+    env=json.loads((ROOT/d["environment_ref"]).read_text());env[field]=bad
+    payload=json.dumps(env,indent=2)+"\n";path.write_text(payload);d["environment_artifact_ref"]["sha256"]="sha256:"+hashlib.sha256(payload.encode()).hexdigest()
+    with self.subTest(field=field):
+     with self.assertRaises(ValueError):load_environment_artifact(d,root)
  def test_observation_plan_ref_requires_digest(self):
   d,obs=self.release_case();obs[0]["plan_ref"]="unbound-plan"
   with self.assertRaises(ValueError):evaluate(d,obs)
