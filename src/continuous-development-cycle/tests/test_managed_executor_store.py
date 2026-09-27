@@ -5,7 +5,7 @@ from unittest import mock
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"scripts"))
 import managed_executor_pool as pool
-from managed_executor_store import GitManagedExecutorStore
+from managed_executor_store import GitManagedExecutorStore, coordination_store_id_for_endpoint
 
 BASE="a"*40
 
@@ -32,7 +32,7 @@ class T(unittest.TestCase):
   subprocess.check_call(["git","-C",str(self.repo),"config","user.name","CDC Test"])
   subprocess.check_call(["git","-C",str(self.repo),"remote","add","origin",str(self.remote)])
   self.ref="refs/heads/cdc/pool-state"
-  self.store_id="sha256:"+hashlib.sha256(str(self.remote).encode("utf-8")).hexdigest()
+  self.store_id=coordination_store_id_for_endpoint(str(self.remote), repo_root=self.repo)
   self.plan=plan(self.ref,self.store_id)
   self.store=GitManagedExecutorStore(
    self.repo,"origin",self.ref,self.plan,
@@ -121,5 +121,27 @@ class T(unittest.TestCase):
   with self.assertRaises(ValueError):
    self.store.compare_and_swap(rev,self.state)
 
+
+ def test_relative_remote_identity_resolves_from_repository_root(self):
+  root_a=self.root/"a";root_b=self.root/"b";root_a.mkdir();root_b.mkdir()
+  repo_a=root_a/"work";repo_b=root_b/"work";repo_a.mkdir();repo_b.mkdir()
+  remote_a=root_a/"remote.git";remote_b=root_b/"remote.git"
+  subprocess.check_call(["git","init","--bare","-q",str(remote_a)])
+  subprocess.check_call(["git","init","--bare","-q",str(remote_b)])
+  for repo in (repo_a,repo_b):
+   subprocess.check_call(["git","-C",str(repo),"init","-q"])
+   subprocess.check_call(["git","-C",str(repo),"remote","add","origin","../remote.git"])
+  id_a=coordination_store_id_for_endpoint("../remote.git",repo_root=repo_a)
+  id_b=coordination_store_id_for_endpoint("../remote.git",repo_root=repo_b)
+  self.assertNotEqual(id_a,id_b)
+  p=plan(self.ref,id_a)
+  GitManagedExecutorStore(repo_a,"origin",self.ref,p)
+  with self.assertRaisesRegex(ValueError,"identity does not match|identity drift"):
+   GitManagedExecutorStore(repo_b,"origin",self.ref,p)
+
+ def test_ssh_username_is_part_of_store_identity(self):
+  a=coordination_store_id_for_endpoint("alice@example.com:repo.git")
+  b=coordination_store_id_for_endpoint("bob@example.com:repo.git")
+  self.assertNotEqual(a,b)
 
 if __name__=="__main__":unittest.main()
