@@ -315,8 +315,8 @@ def dispatch(plan, state):
 def queue_task(plan, state, task_id, attempt_id):
     validate_state(plan, state)
     _text(attempt_id, "attempt_id")
-    if task_id not in ready_task_ids(plan, state):
-        raise ValueError("task is not ready for dispatch")
+    if task_id not in dispatch(plan, state)["task_ids"]:
+        raise ValueError("task is not eligible for the current dispatch batch")
     result = copy.deepcopy(state)
     current = _state_map(result)[task_id]
     if attempt_id in current["attempt_ids"]:
