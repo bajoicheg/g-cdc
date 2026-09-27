@@ -148,6 +148,13 @@ def resolve_artifact(handoff, evidence_root):
     observed = "sha256:" + hashlib.sha256(payload).hexdigest()
     if observed != handoff["artifact_ref"]["sha256"]:
         raise ValueError("result artifact digest mismatch")
+    if handoff["artifact_ref"]["format"] == "unified_diff":
+        parsed = subprocess.run(
+            ["git", "apply", "--numstat", "--recount", "-"],
+            input=payload, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15,
+        )
+        if parsed.returncode != 0:
+            raise ValueError("result artifact is not a syntactically valid unified_diff")
     return payload
 
 
