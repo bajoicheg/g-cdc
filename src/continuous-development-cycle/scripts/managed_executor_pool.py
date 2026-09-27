@@ -1,5 +1,487 @@
 #!/usr/bin/env python3
-"""CDC 2.11.0 managed executor-pool contract.
+"""CDC 2.11.0 managed executor-pool planning, dispatch and completion contract."""
+from __future__ import annotations
 
-Implementation is owned by the isolated core workstream.
-"""
+import argparse
+import copy
+import json
+import math
+import re
+import sys
+from pathlib import Path
+
+from parallel_task_planner import validate_write_path, portable_path_key, overlaps
+
+PLAN_SCHEMA = "managed-executor-pool-plan/v1"
+STATE_SCHEMA = "managed-executor-pool-state/v1"
+SHA = re.compile(r"^[0-9a-f]{40}$")
+ROLES = {"writer", "read_only", "review"}
+TASK_STATUSES = {"planned", "queued", "running", "succeeded", "failed", "cancelled", "stale"}
+ACTIVE = {"queued", "running"}
+RECOVERABLE = {"failed", "cancelled", "stale"}
+AUTHORITY_FIELDS = (
+    "authorizes_worker_launch",
+    "authorizes_shared_branch_write",
+    "authorizes_merge",
+    "authorizes_release",
+    "authorizes_scope_expansion",
+    "authorizes_scheduler_mutation",
+    "authorizes_user_approval",
+)
+
+PLAN_FIELDS = {
+    "schema", "pool_id", "change_id", "parent_invocation_id", "base_sha", "integrator_id",
+    "max_parallel", "total_runtime_budget_seconds", "total_cost_budget_units", "tasks",
+}
+TASK_FIELDS = {
+    "id", "role", "required", "dependencies", "write_paths", "expected_outputs",
+    "expected_evidence", "backend_preferences", "max_runtime_seconds", "max_cost_units",
+}
+STATE_FIELDS = {
+    "schema", "pool_id", "change_id", "parent_invocation_id", "base_sha", "integrator_id",
+    "execution_mode", "tasks", "runtime_consumed_seconds", "cost_consumed_units", *AUTHORITY_FIELDS,
+}
+TASK_STATE_FIELDS = {
+    "id", "status", "attempt_ids", "active_attempt_id", "accepted_result_ref",
+    "integrated", "runtime_seconds", "cost_units",
+}
+
+
+def _text(value, name):
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{name} must be nonempty text")
+
+
+def _refs(value, name, allow_empty=False):
+    if not isinstance(value, list) or any(not isinstance(x, str) or not x.strip() for x in value):
+        raise ValueError(f"{name} must be a list of nonempty strings")
+    if not allow_empty and not value:
+        raise ValueError(f"{name} must not be empty")
+    if len(value) != len(set(value)):
+        raise ValueError(f"{name} contains duplicates")
+    return value
+
+
+def _positive_number(value, name):
+    if type(value) not in {int, float} or not math.isfinite(value) or value <= 0:
+        raise ValueError(f"{name} must be a finite positive number")
+    return value
+
+
+def _nonnegative_number(value, name):
+    if type(value) not in {int, float} or not math.isfinite(value) or value < 0:
+        raise ValueError(f"{name} must be a finite nonnegative number")
+    return value
+
+
+def _portable_paths(value, name, required):
+    if not isinstance(value, list):
+        raise ValueError(f"{name} must be a list")
+    if required and not value:
+        raise ValueError(f"{name} must not be empty")
+    keys = []
+    for path in value:
+        validate_write_path(path)
+        keys.append(portable_path_key(path))
+    if len(keys) != len(set(keys)):
+        raise ValueError(f"{name} contains portable aliases")
+    return value
+
+
+def _acyclic(tasks):
+    graph = {task["id"]: task["dependencies"] for task in tasks}
+    visiting, done = set(), set()
+
+    def visit(node):
+        if node in done:
+            return
+        if node in visiting:
+            raise ValueError("cyclic task dependency")
+        visiting.add(node)
+        for dep in graph[node]:
+            visit(dep)
+        visiting.remove(node)
+        done.add(node)
+
+    for node in graph:
+        visit(node)
+
+
+def validate_plan(plan):
+    if not isinstance(plan, dict) or set(plan) != PLAN_FIELDS or plan.get("schema") != PLAN_SCHEMA:
+        raise ValueError("managed executor pool plan fields/schema mismatch")
+    for name in ("pool_id", "change_id", "parent_invocation_id", "integrator_id"):
+        _text(plan[name], name)
+    if not isinstance(plan["base_sha"], str) or not SHA.fullmatch(plan["base_sha"]):
+        raise ValueError("base_sha must be a full lowercase SHA")
+    if type(plan["max_parallel"]) is not int or plan["max_parallel"] < 1:
+        raise ValueError("max_parallel must be a positive integer")
+    _positive_number(plan["total_runtime_budget_seconds"], "total_runtime_budget_seconds")
+    _positive_number(plan["total_cost_budget_units"], "total_cost_budget_units")
+    if not isinstance(plan["tasks"], list) or not plan["tasks"]:
+        raise ValueError("tasks must not be empty")
+    ids = []
+    for index, task in enumerate(plan["tasks"]):
+        if not isinstance(task, dict) or set(task) != TASK_FIELDS:
+            raise ValueError("managed executor task fields mismatch")
+        _text(task["id"], f"tasks[{index}].id")
+        if task["role"] not in ROLES:
+            raise ValueError("unsupported managed executor role")
+        if type(task["required"]) is not bool:
+            raise ValueError("task required must be boolean")
+        _refs(task["dependencies"], f"tasks[{index}].dependencies", allow_empty=True)
+        _refs(task["expected_outputs"], f"tasks[{index}].expected_outputs")
+        _refs(task["expected_evidence"], f"tasks[{index}].expected_evidence")
+        _refs(task["backend_preferences"], f"tasks[{index}].backend_preferences")
+        _positive_number(task["max_runtime_seconds"], f"tasks[{index}].max_runtime_seconds")
+        _positive_number(task["max_cost_units"], f"tasks[{index}].max_cost_units")
+        if task["max_runtime_seconds"] > plan["total_runtime_budget_seconds"]:
+            raise ValueError("task runtime budget exceeds pool budget")
+        if task["max_cost_units"] > plan["total_cost_budget_units"]:
+            raise ValueError("task cost budget exceeds pool budget")
+        _portable_paths(task["write_paths"], f"tasks[{index}].write_paths", task["role"] == "writer")
+        if task["role"] != "writer" and task["write_paths"]:
+            raise ValueError("non-writer task cannot declare write_paths")
+        ids.append(task["id"])
+    if len(ids) != len(set(ids)):
+        raise ValueError("duplicate managed executor task id")
+    known = set(ids)
+    for task in plan["tasks"]:
+        if task["id"] in task["dependencies"] or not set(task["dependencies"]) <= known:
+            raise ValueError("invalid managed executor dependency")
+    _acyclic(plan["tasks"])
+    if plan["max_parallel"] > len(plan["tasks"]):
+        raise ValueError("max_parallel exceeds task count")
+    return plan
+
+
+def initial_state(plan, *, parallel_capable):
+    validate_plan(plan)
+    if type(parallel_capable) is not bool:
+        raise ValueError("parallel_capable must be boolean")
+    state = {
+        "schema": STATE_SCHEMA,
+        "pool_id": plan["pool_id"],
+        "change_id": plan["change_id"],
+        "parent_invocation_id": plan["parent_invocation_id"],
+        "base_sha": plan["base_sha"],
+        "integrator_id": plan["integrator_id"],
+        "execution_mode": "parallel" if parallel_capable else "sequential_fallback",
+        "tasks": [
+            {
+                "id": task["id"], "status": "planned", "attempt_ids": [],
+                "active_attempt_id": None, "accepted_result_ref": None,
+                "integrated": False, "runtime_seconds": 0, "cost_units": 0,
+            }
+            for task in plan["tasks"]
+        ],
+        "runtime_consumed_seconds": 0,
+        "cost_consumed_units": 0,
+        **{name: False for name in AUTHORITY_FIELDS},
+    }
+    return validate_state(plan, state)
+
+
+def _task_map(plan):
+    return {task["id"]: task for task in plan["tasks"]}
+
+
+def _state_map(state):
+    return {task["id"]: task for task in state["tasks"]}
+
+
+def validate_state(plan, state):
+    validate_plan(plan)
+    if not isinstance(state, dict) or set(state) != STATE_FIELDS or state.get("schema") != STATE_SCHEMA:
+        raise ValueError("managed executor pool state fields/schema mismatch")
+    for field in ("pool_id", "change_id", "parent_invocation_id", "base_sha", "integrator_id"):
+        if state[field] != plan[field]:
+            raise ValueError(f"pool state {field} mismatch")
+    if state["execution_mode"] not in {"parallel", "sequential_fallback"}:
+        raise ValueError("invalid execution_mode")
+    if not isinstance(state["tasks"], list) or len(state["tasks"]) != len(plan["tasks"]):
+        raise ValueError("pool state task set mismatch")
+    pmap = _task_map(plan)
+    seen = []
+    runtime_sum = 0
+    cost_sum = 0
+    for task in state["tasks"]:
+        if not isinstance(task, dict) or set(task) != TASK_STATE_FIELDS:
+            raise ValueError("managed executor task state fields mismatch")
+        task_id = task["id"]
+        if task_id not in pmap:
+            raise ValueError("pool state contains unknown task")
+        seen.append(task_id)
+        if task["status"] not in TASK_STATUSES:
+            raise ValueError("invalid managed executor task status")
+        _refs(task["attempt_ids"], f"{task_id}.attempt_ids", allow_empty=True)
+        if task["active_attempt_id"] is not None:
+            _text(task["active_attempt_id"], f"{task_id}.active_attempt_id")
+            if task["active_attempt_id"] not in task["attempt_ids"]:
+                raise ValueError("active attempt must be in attempt history")
+        if task["status"] in ACTIVE and task["active_attempt_id"] is None:
+            raise ValueError("active task requires active_attempt_id")
+        if task["status"] not in ACTIVE and task["active_attempt_id"] is not None:
+            raise ValueError("non-active task cannot retain active_attempt_id")
+        if task["accepted_result_ref"] is not None:
+            _text(task["accepted_result_ref"], f"{task_id}.accepted_result_ref")
+        if type(task["integrated"]) is not bool:
+            raise ValueError("integrated must be boolean")
+        if task["integrated"] and (task["status"] != "succeeded" or task["accepted_result_ref"] is None):
+            raise ValueError("integrated task requires accepted succeeded result")
+        if task["status"] == "succeeded" and task["accepted_result_ref"] is None:
+            raise ValueError("succeeded task requires accepted result")
+        if task["status"] != "succeeded" and task["accepted_result_ref"] is not None:
+            raise ValueError("only succeeded task may retain accepted result")
+        runtime_sum += _nonnegative_number(task["runtime_seconds"], f"{task_id}.runtime_seconds")
+        cost_sum += _nonnegative_number(task["cost_units"], f"{task_id}.cost_units")
+        if task["runtime_seconds"] > pmap[task_id]["max_runtime_seconds"]:
+            raise ValueError("task runtime budget exceeded")
+        if task["cost_units"] > pmap[task_id]["max_cost_units"]:
+            raise ValueError("task cost budget exceeded")
+    if seen != [task["id"] for task in plan["tasks"]]:
+        raise ValueError("pool state task order/identity mismatch")
+    _nonnegative_number(state["runtime_consumed_seconds"], "runtime_consumed_seconds")
+    _nonnegative_number(state["cost_consumed_units"], "cost_consumed_units")
+    if not math.isclose(state["runtime_consumed_seconds"], runtime_sum, rel_tol=0, abs_tol=1e-9):
+        raise ValueError("runtime consumption does not match task state")
+    if not math.isclose(state["cost_consumed_units"], cost_sum, rel_tol=0, abs_tol=1e-9):
+        raise ValueError("cost consumption does not match task state")
+    if runtime_sum > plan["total_runtime_budget_seconds"]:
+        raise ValueError("pool runtime budget exceeded")
+    if cost_sum > plan["total_cost_budget_units"]:
+        raise ValueError("pool cost budget exceeded")
+    for name in AUTHORITY_FIELDS:
+        if type(state[name]) is not bool or state[name]:
+            raise ValueError(f"{name} must remain false")
+    return state
+
+
+def ready_task_ids(plan, state):
+    validate_state(plan, state)
+    smap = _state_map(state)
+    ready = []
+    for task in plan["tasks"]:
+        current = smap[task["id"]]
+        if current["status"] != "planned":
+            continue
+        if all(smap[dep]["status"] == "succeeded" and smap[dep]["integrated"] for dep in task["dependencies"]):
+            ready.append(task["id"])
+    return ready
+
+
+def _active_writer_paths(plan, state):
+    pmap, smap = _task_map(plan), _state_map(state)
+    paths = []
+    for task_id, current in smap.items():
+        if current["status"] in ACTIVE and pmap[task_id]["role"] == "writer":
+            paths.extend(pmap[task_id]["write_paths"])
+    return paths
+
+
+def dispatch(plan, state):
+    validate_state(plan, state)
+    smap = _state_map(state)
+    active_count = sum(1 for current in smap.values() if current["status"] in ACTIVE)
+    cap = 1 if state["execution_mode"] == "sequential_fallback" else plan["max_parallel"]
+    slots = max(0, cap - active_count)
+    if slots == 0:
+        chosen = []
+    else:
+        chosen = []
+        writer_paths = _active_writer_paths(plan, state)
+        pmap = _task_map(plan)
+        for task_id in ready_task_ids(plan, state):
+            if len(chosen) >= slots:
+                break
+            task = pmap[task_id]
+            if task["role"] == "writer":
+                if any(overlaps(path, claimed) for path in task["write_paths"] for claimed in writer_paths):
+                    continue
+                writer_paths.extend(task["write_paths"])
+            chosen.append(task_id)
+    return {
+        "schema": "managed-executor-dispatch/v1",
+        "pool_id": plan["pool_id"],
+        "execution_mode": state["execution_mode"],
+        "parallel_capable": state["execution_mode"] == "parallel",
+        "max_parallel": cap,
+        "task_ids": chosen,
+        "fallback_serialized": state["execution_mode"] == "sequential_fallback",
+        **{name: False for name in AUTHORITY_FIELDS},
+    }
+
+
+def queue_task(plan, state, task_id, attempt_id):
+    validate_state(plan, state)
+    _text(attempt_id, "attempt_id")
+    if task_id not in ready_task_ids(plan, state):
+        raise ValueError("task is not ready for dispatch")
+    result = copy.deepcopy(state)
+    current = _state_map(result)[task_id]
+    if attempt_id in current["attempt_ids"]:
+        raise ValueError("duplicate attempt_id")
+    current["attempt_ids"].append(attempt_id)
+    current["active_attempt_id"] = attempt_id
+    current["status"] = "queued"
+    return validate_state(plan, result)
+
+
+def mark_running(plan, state, task_id, attempt_id):
+    validate_state(plan, state)
+    result = copy.deepcopy(state)
+    current = _state_map(result).get(task_id)
+    if current is None or current["status"] != "queued" or current["active_attempt_id"] != attempt_id:
+        raise ValueError("running transition requires matching queued attempt")
+    current["status"] = "running"
+    return validate_state(plan, result)
+
+
+def _result_paths_within_claim(task, changed_paths):
+    if task["role"] != "writer":
+        return not changed_paths
+    for changed in changed_paths:
+        validate_write_path(changed)
+        key = portable_path_key(changed)
+        if not any(key == portable_path_key(claim) or key.startswith(portable_path_key(claim) + "/") for claim in task["write_paths"]):
+            return False
+    return bool(changed_paths)
+
+
+def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
+                  changed_paths, output_refs, evidence_refs, runtime_seconds, cost_units):
+    validate_state(plan, state)
+    _text(result_ref, "result_ref")
+    if base_sha != plan["base_sha"]:
+        raise ValueError("worker result base_sha mismatch")
+    pmap, smap = _task_map(plan), _state_map(state)
+    if task_id not in pmap:
+        raise ValueError("unknown result task")
+    current = smap[task_id]
+    if current["status"] not in ACTIVE or current["active_attempt_id"] != attempt_id:
+        raise ValueError("result does not match active task attempt")
+    task = pmap[task_id]
+    _portable_paths(changed_paths, "changed_paths", task["role"] == "writer")
+    if not _result_paths_within_claim(task, changed_paths):
+        raise ValueError("worker result changed paths escape declared write set")
+    _refs(output_refs, "output_refs")
+    _refs(evidence_refs, "evidence_refs")
+    if not set(task["expected_outputs"]) <= set(output_refs):
+        raise ValueError("worker result missing expected outputs")
+    if not set(task["expected_evidence"]) <= set(evidence_refs):
+        raise ValueError("worker result missing expected evidence")
+    runtime = _nonnegative_number(runtime_seconds, "runtime_seconds")
+    cost = _nonnegative_number(cost_units, "cost_units")
+    if runtime > task["max_runtime_seconds"] or cost > task["max_cost_units"]:
+        raise ValueError("worker result exceeds task budget")
+    if state["runtime_consumed_seconds"] + runtime > plan["total_runtime_budget_seconds"]:
+        raise ValueError("worker result exceeds pool runtime budget")
+    if state["cost_consumed_units"] + cost > plan["total_cost_budget_units"]:
+        raise ValueError("worker result exceeds pool cost budget")
+    result = copy.deepcopy(state)
+    current = _state_map(result)[task_id]
+    current.update(status="succeeded", active_attempt_id=None, accepted_result_ref=result_ref,
+                   integrated=False, runtime_seconds=current["runtime_seconds"] + runtime,
+                   cost_units=current["cost_units"] + cost)
+    result["runtime_consumed_seconds"] += runtime
+    result["cost_consumed_units"] += cost
+    return validate_state(plan, result)
+
+
+def fail_attempt(plan, state, task_id, attempt_id, *, terminal_status, runtime_seconds=0, cost_units=0):
+    if terminal_status not in RECOVERABLE:
+        raise ValueError("failure transition requires failed/cancelled/stale")
+    validate_state(plan, state)
+    current = _state_map(state).get(task_id)
+    if current is None or current["status"] not in ACTIVE or current["active_attempt_id"] != attempt_id:
+        raise ValueError("failure does not match active task attempt")
+    runtime = _nonnegative_number(runtime_seconds, "runtime_seconds")
+    cost = _nonnegative_number(cost_units, "cost_units")
+    task = _task_map(plan)[task_id]
+    if current["runtime_seconds"] + runtime > task["max_runtime_seconds"] or current["cost_units"] + cost > task["max_cost_units"]:
+        raise ValueError("failed attempt exceeds task budget")
+    result = copy.deepcopy(state)
+    current = _state_map(result)[task_id]
+    current.update(status=terminal_status, active_attempt_id=None,
+                   runtime_seconds=current["runtime_seconds"] + runtime,
+                   cost_units=current["cost_units"] + cost)
+    result["runtime_consumed_seconds"] += runtime
+    result["cost_consumed_units"] += cost
+    return validate_state(plan, result)
+
+
+def retry_task(plan, state, task_id):
+    validate_state(plan, state)
+    result = copy.deepcopy(state)
+    current = _state_map(result).get(task_id)
+    if current is None or current["status"] not in RECOVERABLE:
+        raise ValueError("retry requires failed/cancelled/stale task")
+    current["status"] = "planned"
+    return validate_state(plan, result)
+
+
+def mark_integrated(plan, state, task_id, result_ref):
+    validate_state(plan, state)
+    result = copy.deepcopy(state)
+    current = _state_map(result).get(task_id)
+    if current is None or current["status"] != "succeeded" or current["accepted_result_ref"] != result_ref:
+        raise ValueError("integration requires matching accepted succeeded result")
+    current["integrated"] = True
+    return validate_state(plan, result)
+
+
+def assess(plan, state):
+    validate_state(plan, state)
+    pmap, smap = _task_map(plan), _state_map(state)
+    blockers = []
+    runnable = ready_task_ids(plan, state)
+    for task in plan["tasks"]:
+        current = smap[task["id"]]
+        if current["status"] in ACTIVE:
+            blockers.append(f"{task['id']}:active")
+        if task["required"]:
+            if current["status"] == "planned":
+                blockers.append(f"{task['id']}:runnable" if task["id"] in runnable else f"{task['id']}:dependency_wait")
+            elif current["status"] in RECOVERABLE:
+                blockers.append(f"{task['id']}:recovery_required")
+            elif current["status"] == "succeeded" and not current["integrated"]:
+                blockers.append(f"{task['id']}:unintegrated_success")
+        elif current["status"] in ACTIVE:
+            blockers.append(f"{task['id']}:optional_active")
+    complete = not blockers and all(
+        (not task["required"]) or (smap[task["id"]]["status"] == "succeeded" and smap[task["id"]]["integrated"])
+        for task in plan["tasks"]
+    )
+    return {
+        "schema": "managed-executor-pool-assessment/v1",
+        "pool_id": plan["pool_id"],
+        "complete": complete,
+        "terminal_allowed": complete,
+        "runnable_task_ids": runnable,
+        "blockers": blockers,
+        "next_action": None if complete else ("dispatch_ready_tasks" if runnable else "observe_or_recover_pool"),
+        **{name: False for name in AUTHORITY_FIELDS},
+    }
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("plan")
+    parser.add_argument("--state")
+    parser.add_argument("--parallel-capable", action="store_true")
+    args = parser.parse_args(argv)
+    try:
+        plan = validate_plan(json.loads(Path(args.plan).read_text()))
+        state = initial_state(plan, parallel_capable=args.parallel_capable) if args.state is None else validate_state(
+            plan, json.loads(Path(args.state).read_text())
+        )
+        output = {"dispatch": dispatch(plan, state), "assessment": assess(plan, state)}
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print(f"FAIL: {exc}", file=sys.stderr)
+        return 2
+    print(json.dumps(output, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
