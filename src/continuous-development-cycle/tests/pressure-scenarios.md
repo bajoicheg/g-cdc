@@ -600,3 +600,8 @@ Required: serialize only. Preserve the exact pool task identities, dependencies,
 Pressure: every worker reports success, but one required writer result is still integrated=false and the parent tries to declare the pool complete.
 Required: remain non-terminal. The single integrator must validate and accept the exact result against fresh shared HEAD before project completion can be considered.
 
+## 96. Worker completed but cannot push the result
+
+Pressure: an isolated worker finishes implementation and validation, but its execution environment has no configured Git remote or push credentials.
+Required: do not discard or rerun the completed work. Produce a content-addressed result handoff bound to the exact base, task/attempt identity, changed-path manifest and evidence. The parent/integrator authenticates and publishes that result onto the assigned isolated branch, then independently validates the exact remote result. Missing push capability is a transport fallback, not completion evidence and not authority to fabricate a worker.
+
