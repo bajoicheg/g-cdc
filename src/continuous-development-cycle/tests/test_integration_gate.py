@@ -62,6 +62,26 @@ class T(unittest.TestCase):
   d["worker_results"][0]["changed_paths"]=["src/model/model.py"]
   d["diff_proofs"][0]["changed_paths"]=["src/model/model.py"]
   self.assertTrue(evaluate(d)["ready"])
+ def test_casefold_terminal_aliases_rejected(self):
+  d=self.base()
+  d["worker_results"][0]["changed_paths"]=["src/model/Foo.py","src/model/foo.py"]
+  d["diff_proofs"][0]["changed_paths"]=["src/model/Foo.py","src/model/foo.py"]
+  with self.assertRaises(ValueError): evaluate(d)
+ def test_unicode_terminal_aliases_rejected(self):
+  d=self.base()
+  d["worker_results"][0]["changed_paths"]=["src/model/caf\u00e9.py","src/model/cafe\u0301.py"]
+  d["diff_proofs"][0]["changed_paths"]=["src/model/caf\u00e9.py","src/model/cafe\u0301.py"]
+  with self.assertRaises(ValueError): evaluate(d)
+ def test_git_diff_resolver_rejects_portable_aliases(self):
+  with tempfile.TemporaryDirectory() as td:
+   root=Path(td);subprocess.check_call(["git","init","-q",str(root)]);subprocess.check_call(["git","-C",str(root),"config","user.email","test@example.invalid"]);subprocess.check_call(["git","-C",str(root),"config","user.name","CDC Test"])
+   (root/"src/model").mkdir(parents=True);(root/"src/model/base.py").write_text("base\n")
+   subprocess.check_call(["git","-C",str(root),"add","."]);subprocess.check_call(["git","-C",str(root),"commit","-q","-m","base"])
+   base=subprocess.check_output(["git","-C",str(root),"rev-parse","HEAD"],text=True).strip()
+   (root/"src/model/Foo.py").write_text("a\n");(root/"src/model/foo.py").write_text("b\n")
+   subprocess.check_call(["git","-C",str(root),"add","."]);subprocess.check_call(["git","-C",str(root),"commit","-q","-m","aliases"])
+   result=subprocess.check_output(["git","-C",str(root),"rev-parse","HEAD"],text=True).strip()
+   with self.assertRaises(ValueError): resolve_git_diff(root,worker_id="w",task_id="t",base_sha=base,result_sha=result,evidence_ref="git-diff:aliases")
  def test_force_push_never_allowed(self):
   d=self.base();d["force_push_requested"]=True
   r=evaluate(d);self.assertIn("force_push_forbidden",r["blockers"]);self.assertFalse(r["authorizes_force_push"])
