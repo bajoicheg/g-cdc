@@ -686,6 +686,15 @@
       "forbidden_authorities": [
         "release"
       ]
+    },
+    {
+      "id": "managed-pool-inmemory-queue-bypasses-durable-cas",
+      "fault": "executor_launch_occurs_after_in_memory_queue_transition_without_successful_durable_store_compare_and_swap",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
     }
   ]
 }
