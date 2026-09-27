@@ -1,1 +1,29 @@
-{"commands":["python -m unittest tests/test_parallel_task_planner.py tests/test_worktree_worker_contract.py","python -m unittest tests/test_integration_gate.py tests/test_parallel_benchmark.py"],"repeat_count":10}
+{
+  "schema": "cdc-parallel-benchmark-plan/v1",
+  "version": "2.10.2",
+  "candidate_source_commit": "e3d79e2a2f6b859adc42e369f344a0d372ac24df",
+  "package_tree": "81e5636c5a46db18070beaaf862b6f2c3366632d",
+  "representative_task_ref": "cdc-2.10.2-worktree-parallel-release-validation",
+  "workstreams": [
+    {
+      "id": "planner-worker-contract",
+      "command": "python -B -m unittest -q tests.test_parallel_task_planner tests.test_worktree_worker_contract"
+    },
+    {
+      "id": "integration-benchmark",
+      "command": "python -B -m unittest -q tests.test_integration_gate tests.test_parallel_benchmark"
+    }
+  ],
+  "warmup_repetitions_per_workstream": 1,
+  "measurement_batches": 3,
+  "repetitions_per_batch_per_workstream": 10,
+  "sequential_mode": "within each measured repetition, run workstream 1 to completion then workstream 2 to completion",
+  "parallel_mode": "within each measured repetition, launch the two workstreams concurrently and wait for both to complete",
+  "timer": "time.perf_counter()",
+  "acceptance": {
+    "parallel_elapsed_less_than_sequential": true,
+    "parallel_unresolved_conflicts_lte_baseline": true,
+    "parallel_rollbacks_lte_baseline": true,
+    "all_invocations_must_pass": true
+  }
+}
