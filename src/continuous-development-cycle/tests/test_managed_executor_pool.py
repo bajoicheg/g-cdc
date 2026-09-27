@@ -15,6 +15,8 @@ def plan(base=FAKE_BASE):
  return {
   "schema":"managed-executor-pool-plan/v1","pool_id":"p","change_id":"c",
   "parent_invocation_id":"parent","base_sha":base,"integrator_id":"integrator",
+  "coordination_ref":"refs/heads/cdc/pool-p",
+  "coordination_store_id":"sha256:"+"1"*64,
   "max_parallel":2,"total_runtime_budget_seconds":1000,"total_cost_budget_units":100,
   "tasks":[
    {"id":"a","role":"writer","required":True,"dependencies":[],"executor_id":"exec-a",
@@ -127,7 +129,7 @@ class T(unittest.TestCase):
  def test_atomic_cas_rejects_two_queue_admissions_from_same_store_revision(self):
   p=plan();store=FakeCasStore(m.initial_state(p,parallel_capable=True))
   first=m.queue_task_cas(store,"store-0",p,"a","a1",reservation_token="ra")
-  self.assertTrue(first["launch_allowed"])
+  self.assertFalse(first["launch_allowed"])
   with self.assertRaisesRegex(ValueError,"stale expected pool-store revision"):
    m.queue_task_cas(store,"store-0",p,"a","a2",reservation_token="rb")
   _,live=store.read();self.assertEqual(self._task_state(live,"a")["attempt_ids"],["a1"])
@@ -307,5 +309,61 @@ class T(unittest.TestCase):
   s=m.retry_task(p,s,"a",expected_revision=s["revision"]);s=self._queue(p,s,"a","a2");s=self._run(p,s,"a","a2")
   with self.assertRaisesRegex(ValueError,"task budget"):
    self._accept(p,s,"a","a2",["src/a/result.txt"],["out:a"],["test:a"],runtime=201,cost=21)
+
+ def test_durable_launch_claim_is_one_shot(self):
+  p=plan();store=FakeCasStore(m.initial_state(p,parallel_capable=True))
+  queued=m.queue_task_cas(store,"store-0",p,"a","a1",reservation_token="ra")
+  self.assertFalse(queued["launch_allowed"])
+  started=m.claim_launch_cas(store,queued["store_revision"],p,"a","a1",reservation_token="ra")
+  self.assertTrue(started["launch_allowed"])
+  with self.assertRaises(ValueError):
+   m.claim_launch_cas(store,queued["store_revision"],p,"a","a1",reservation_token="ra")
+
+ def test_required_task_cannot_depend_on_optional_direct_or_transitive(self):
+  p=plan()
+  p["tasks"].append({"id":"opt","role":"review","required":False,"dependencies":[],
+   "executor_id":"opt","branch":None,"worktree":None,"write_paths":[],
+   "expected_outputs":["out:opt"],"expected_evidence":["ev:opt"],
+   "backend_preferences":["local"],"max_runtime_seconds":10,"max_cost_units":1})
+  p["max_parallel"]=3
+  p["tasks"][0]["dependencies"]=["opt"]
+  with self.assertRaisesRegex(ValueError,"required task cannot depend on optional"):
+   m.validate_plan(p)
+  p=plan()
+  p["tasks"].append({"id":"mid","role":"review","required":True,"dependencies":["opt"],
+   "executor_id":"mid","branch":None,"worktree":None,"write_paths":[],
+   "expected_outputs":["out:mid"],"expected_evidence":["ev:mid"],
+   "backend_preferences":["local"],"max_runtime_seconds":10,"max_cost_units":1})
+  p["tasks"].append({"id":"opt","role":"review","required":False,"dependencies":[],
+   "executor_id":"opt","branch":None,"worktree":None,"write_paths":[],
+   "expected_outputs":["out:opt"],"expected_evidence":["ev:opt"],
+   "backend_preferences":["local"],"max_runtime_seconds":10,"max_cost_units":1})
+  p["max_parallel"]=5
+  p["tasks"][0]["dependencies"]=["mid"]
+  with self.assertRaisesRegex(ValueError,"required task cannot depend on optional"):
+   m.validate_plan(p)
+
+ def test_worker_history_touch_then_restore_is_rejected(self):
+  self.git("switch","-q","worker-a")
+  (self.repo/"ESCAPED").write_text("temporary")
+  self.git("add","ESCAPED");self.git("commit","-q","-m","touch escaped")
+  (self.repo/"ESCAPED").unlink()
+  self.git("add","-A");self.git("commit","-q","-m","restore escaped")
+  (self.repo/"src"/"a"/"result.txt").write_text("final")
+  self.git("add","src/a/result.txt");self.git("commit","-q","-m","final")
+  result=self.git("rev-parse","HEAD")
+  p=plan(self.base);s=m.initial_state(p,parallel_capable=True)
+  s=self._queue(p,s,"a","a1");s=self._run(p,s,"a","a1")
+  with self.assertRaisesRegex(ValueError,"history touched paths"):
+   self._accept(p,s,"a","a1",["src/a/result.txt"],["out:a"],["test:a"],result_commit=result)
+
+ def test_coordination_identity_is_required_and_bound_to_state(self):
+  p=plan();s=m.initial_state(p,parallel_capable=True)
+  self.assertEqual(s["coordination_ref"],p["coordination_ref"])
+  self.assertEqual(s["coordination_store_id"],p["coordination_store_id"])
+  q=copy.deepcopy(p);q["coordination_store_id"]="sha256:"+"2"*64
+  with self.assertRaisesRegex(ValueError,"coordination_store_id"):
+   m.validate_state(q,s)
+
 
 if __name__=="__main__":unittest.main()
