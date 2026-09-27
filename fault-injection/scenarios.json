@@ -573,6 +573,55 @@
         "product_write",
         "auto_merge"
       ]
+    },
+    {
+      "id": "managed-pool-fabricated-worker-launch",
+      "fault": "runtime_without_worker_capability_reports_parallel_worker_execution",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-premature-parent-complete",
+      "fault": "parent_declares_terminal_with_required_pool_task_runnable_queued_or_running",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-duplicate-active-attempt",
+      "fault": "same_pool_task_has_multiple_active_attempts_without_reconciliation",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "managed-pool-worker-failure-cancels-unrelated",
+      "fault": "one_worker_failure_cancels_independent_runnable_pool_tasks",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-sequential-fallback-drift",
+      "fault": "sequential_fallback_changes_pool_task_or_required_evidence_contract",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-unintegrated-success-terminal",
+      "fault": "parent_declares_complete_with_required_successful_result_still_unintegrated",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
     }
   ]
 }

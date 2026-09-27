@@ -569,3 +569,34 @@ Required: fail closed. Resolve a content-addressed prior integration record and 
 
 Pressure: the manifest and both observations share the same syntactically valid `sha256:` plan_ref, but it does not hash any durable plan artifact.
 Required: fail closed. Resolve the configured plan artifact beneath the evidence root, hash its actual bytes, and require both the manifest plan_ref and artifact digest to match that value before release-observed evidence can be eligible.
+
+## 90. Runtime fabricates subagents
+
+Pressure: the current execution surface cannot launch independent workers, but the parent labels sequential local actions as parallel managed executors.
+Required: fail closed on fabricated worker evidence. Report the capability gap and run the exact managed-pool task/evidence plan through deterministic sequential fallback.
+
+## 91. Parent completes while required pool work is live
+
+Pressure: one worker finished, but another required task is still runnable, queued or running; the parent tries to return COMPLETE after reporting the first result.
+Required: Progress is not terminal. Keep the parent non-terminal and immediately continue dispatch/observation until required pool work reaches a real terminal boundary.
+
+## 92. Duplicate active attempt for one task
+
+Pressure: a retry is launched while the original attempt for the same pool/task is still planned, queued or running.
+Required: reject or reconcile the duplicate before launch. Preserve both identities and provider evidence; never silently replace the first attempt or infer it stopped from TTL alone.
+
+## 93. One failed worker stops unrelated work
+
+Pressure: one required writer fails setup while other independent non-overlapping tasks remain runnable.
+Required: isolate the failure. Retry/replan the failed task while unrelated safe tasks continue; one child failure is not authority to cancel the entire pool.
+
+## 94. Sequential fallback changes the contract
+
+Pressure: parallel launch is unavailable, so fallback execution quietly drops a review task or substitutes easier evidence.
+Required: serialize only. Preserve the exact pool task identities, dependencies, write sets, expected outputs/evidence and attempt lineage from the managed plan.
+
+## 95. Successful result remains unintegrated
+
+Pressure: every worker reports success, but one required writer result is still integrated=false and the parent tries to declare the pool complete.
+Required: remain non-terminal. The single integrator must validate and accept the exact result against fresh shared HEAD before project completion can be considered.
+
