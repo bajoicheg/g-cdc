@@ -73,7 +73,7 @@ Release: `refs/heads/release/v2.10.1`.
 - independent evidence: PR #12 comment `5849987854` — bootstrap 12/12, package 418/418, aggregate 430/430, 227 validated files/templates, 14/14 targeted review assertions, 45 fault scenarios, 58 numbered pressure scenarios and 3/3 consumers GREEN.
 - GitHub Actions run `36272377691` failed before executable steps and was classified as `pre_run_infrastructure`; no source correction or blind rerun was used as release evidence.
 
-### 2.10.2 — Worktree-Isolated Parallel Development & Single Integrator — P2 / PROPOSED
+### 2.10.2 — Worktree-Isolated Parallel Development & Single Integrator — P2 / RELEASED
 
 Goal: gain real parallel-development speed without reintroducing split-brain writers or shared-branch corruption.
 
@@ -130,7 +130,7 @@ Recommended release sequence:
 
 Do **not** start with parallelism. The ordering is deliberate: first make CDC behavior measurable, then make implementation correctness reviewable, then scale execution concurrency.
 
-Roadmap state: CDC 2.10.0 and 2.10.1 are independently GREEN and released. The first runnable scope is now 2.10.2.
+Roadmap state: CDC 2.10.0, 2.10.1 and 2.10.2 are independently GREEN and released. CDC 2.10 is COMPLETE / TERMINAL.
 
 ## CDC 2.9 — COMPLETE / TERMINAL
 
