@@ -58,6 +58,11 @@ Acceptance:
 
 ### 2.11.1 — Cooperative Project Lanes — P1 / AUTHORIZED
 
+**Late-integration RCA — 2026-09-27:** while 2.11.0 R5 source `eb394254…` was under immutable validation, an independently GREEN handoff result from PR #28 (based on an earlier integration generation) completed and was accepted file-by-file onto the integration branch. The result itself was valid, but it legally superseded the freeze and forced R6. This proves base SHA + write-set isolation are insufficient for simultaneous foreground/watchdog execution unless the integrator also has an explicit freeze generation.
+
+**Fix formulation:** cooperative lanes must distinguish *working generation* from *frozen candidate generation*. Freeze acquisition atomically closes the current integration generation to new results. Already accepted results are drained before freeze; late results are recorded and deferred to the next generation. Fleet/watchdog/foreground executors may keep working, but none may mutate the frozen candidate.
+
+
 Goal: allow the foreground user chat and one or more watchdog/Work/Codex executors to make useful progress on the same repository at the same time without reverting to split-brain shared writers.
 
 Required controls:
@@ -68,6 +73,8 @@ Required controls:
 - existing valid claims are never stolen merely because foreground work has higher urgency; handoff/preemption requires a safe checkpoint plus explicit quiescence of the relinquished lane;
 - every lane heartbeat requires new observable activity; TTL/staleness alone never proves the executor stopped;
 - shared HEAD movement is reconciled before integration; no executor force-pushes around another;
+- **source-freeze generation barrier:** before immutable candidate validation, the integrator must drain every accepted-but-unintegrated result or explicitly defer it to the next source generation; a result whose base/generation predates the freeze may never mutate the frozen source;
+- every lane/result carries an integration-generation token in addition to base SHA; late results from a prior generation are rebased/revalidated or queued for the next generation, never silently applied after freeze;
 - terminal evaluation is project-scope aware: one idle lane cannot make the project terminal while runnable work exists in another lane/queue.
 
 Acceptance:
