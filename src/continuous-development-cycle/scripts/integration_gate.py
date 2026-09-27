@@ -18,6 +18,10 @@ def _refs(v,n,allow_empty=False):
     if len(v)!=len(set(v)):raise ValueError(f"{n} contains duplicates")
 def _path(path):
     return validate_write_path(path)
+def _assert_portable_unique(paths,label):
+    keys=[portable_path_key(p) for p in paths]
+    if len(keys)!=len(set(keys)):
+        raise ValueError(label+" contains portable path aliases")
 def _within(path,allowed):
     path=portable_path_key(path);allowed=portable_path_key(allowed)
     return path==allowed or path.startswith(allowed+"/")
@@ -118,6 +122,7 @@ def resolve_git_diff(worktree, *, worker_id, task_id, base_sha, result_sha, evid
     paths=[x for x in out.splitlines() if x.strip()]
     for p in paths:_path(p)
     if len(paths)!=len(set(paths)):raise ValueError("resolved diff contains duplicate path")
+    _assert_portable_unique(paths,"resolved diff")
     return {"worker_id":worker_id,"task_id":task_id,"base_sha":base_sha,"result_sha":result_sha,
             "resolver":"git_diff_name_only","changed_paths":paths,"evidence_ref":evidence_ref}
 
@@ -130,6 +135,7 @@ def _validate_proof(p):
     if not isinstance(p["changed_paths"],list):raise ValueError("diff proof changed_paths invalid")
     for path in p["changed_paths"]:_path(path)
     if len(p["changed_paths"])!=len(set(p["changed_paths"])):raise ValueError("duplicate diff proof path")
+    _assert_portable_unique(p["changed_paths"],"diff proof")
     return p
 
 def validate(d):
@@ -171,6 +177,7 @@ def validate(d):
         if not isinstance(r["changed_paths"],list):raise ValueError("changed_paths invalid")
         for changed in r["changed_paths"]:_path(changed)
         if len(r["changed_paths"])!=len(set(r["changed_paths"])):raise ValueError("duplicate changed path")
+        _assert_portable_unique(r["changed_paths"],"worker changed_paths")
         if r["role"]!="writer":
             if r["changed_paths"]:raise ValueError("non-writer changed paths forbidden")
             if r["state"]=="success" and r["result_sha"]!=r["base_sha"]:raise ValueError("non-writer result SHA must remain at base")
