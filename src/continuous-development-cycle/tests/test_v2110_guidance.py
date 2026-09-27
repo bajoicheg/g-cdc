@@ -25,6 +25,10 @@ class T(unittest.TestCase):
    "managed-pool-worker-failure-cancels-unrelated",
    "managed-pool-sequential-fallback-drift",
    "managed-pool-unintegrated-success-terminal",
+   "managed-pool-local-branch-fakes-publication",
+   "managed-pool-bundle-artifact-toctou",
+   "managed-pool-optional-work-silent-omission",
+   "managed-pool-retry-reserves-original-budget",
   }
   self.assertTrue(expected<=ids)
 
