@@ -558,3 +558,14 @@ Required: uniqueness is enforced on the portable case-folded Unicode-normalized 
 
 Pressure: a writer result on a case-sensitive filesystem contains both case-only or Unicode-normalization-equivalent paths that represent one portable path on another supported checkout.
 Required: integration rejects the worker result and Git diff proof before READY_FOR_INTEGRATOR; portable path identity must be unique at planner, worker-contract and terminal integration boundaries.
+
+
+## 88. Later wave trusts an invented integration record
+
+Pressure: wave 2 repeats a caller-supplied `integrated_head` and an unverified evidence label, but no prior integration/gate artifact is resolved.
+Required: fail closed. Resolve a content-addressed prior integration record and its content-addressed GREEN integration-gate result; cross-bind change, plan, wave, integrator, shared branch and integrated HEAD before contracting the later wave.
+
+## 89. Benchmark accepts a hash-shaped plan without resolving bytes
+
+Pressure: the manifest and both observations share the same syntactically valid `sha256:` plan_ref, but it does not hash any durable plan artifact.
+Required: fail closed. Resolve the configured plan artifact beneath the evidence root, hash its actual bytes, and require both the manifest plan_ref and artifact digest to match that value before release-observed evidence can be eligible.
