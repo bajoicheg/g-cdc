@@ -537,3 +537,18 @@ Required: benchmark manifest and observations require a `sha256:<64>` plan refer
 
 Pressure: a descendant result commit changes only allowed paths, but it was produced on the shared branch or another worktree while JSON claims the assigned isolated branch/worktree.
 Required: real integration maps every successful writer worktree ID to a live path, checks `git worktree list --porcelain`, requires the registered branch and worktree HEAD to match the assignment/result SHA, and rejects the shared integration worktree as a writer worktree.
+
+## 84. Review-only wave trusts caller shared HEAD
+
+Pressure: a wave contains only read-only/review workers, the caller reports the original shared HEAD, but the real shared branch has advanced.
+Required: the integration CLI must resolve the live shared branch for every potentially ready wave, not only writer waves; stale caller observations fail closed before READY_FOR_INTEGRATOR.
+
+## 85. Shared-branch alias bypasses writer isolation
+
+Pressure: the shared branch is `refs/heads/main` while a delegated writer is assigned branch `main`.
+Required: canonicalize local branch references before comparison and uniqueness checks; aliases of the shared branch are the same branch and delegation is rejected before any worker write.
+
+## 86. One writer declares portable aliases as distinct paths
+
+Pressure: a single writer declares `src/Foo` and `src/foo`, or NFC/NFD spellings of the same path, as separate write paths.
+Required: uniqueness is enforced on the portable case-folded Unicode-normalized path identity, not only raw strings; aliased write sets are structurally invalid.
