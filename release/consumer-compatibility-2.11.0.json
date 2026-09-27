@@ -1,8 +1,8 @@
 {
   "schema": "cdc-consumer-compatibility-release-evidence/v1",
   "version": "2.11.0",
-  "candidate_source_commit": "8e9f0c7460e702d0fa7de499d495fd98dc44cf70",
-  "package_tree": "ef180c25913f40b0540e69d7f3b090e2d3bff294",
+  "candidate_source_commit": "67868ece437901bfe47e68736a2ad35886fdbf41",
+  "package_tree": "ce935f4373f93873778579000b84ccacb2ff295c",
   "provider": "composite:codex_compute+authenticated_github_connector",
   "compatibility_evidence_comment": "https://github.com/bajoicheg/g-cdc/pull/33#issuecomment-5854308491",
   "compatibility_result": "3/3 GREEN",
