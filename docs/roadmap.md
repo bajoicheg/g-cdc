@@ -1,6 +1,6 @@
 # CDC roadmap
 
-## CDC 2.10 — Superpowers Execution Quality — AUTHORIZED / PROPOSED
+## CDC 2.10 — Superpowers Execution Quality — COMPLETE / TERMINAL
 
 Owner acceptance authorizes this roadmap. CDC 2.10 integrates the strongest Superpowers engineering disciplines as a **quality layer** under the CDC control plane. Superpowers workflows never grant ownership, external-start, merge, release, scheduler, scope-expansion or user-approval authority; CDC remains authoritative for those controls.
 
@@ -95,6 +95,14 @@ Acceptance:
 - final integrated candidate remains exact-SHA validated and passes the normal CDC terminal/release gates.
 
 Expected benefit: CDC gains safe concurrency — speed from parallel work, while ownership and final integration remain deterministic.
+
+Release: `refs/heads/release/v2.10.2`.
+- candidate validation HEAD: `52565ebbd97d9d6faba71cbe3cc353188c8a479b`;
+- package tree: `2bee3b8159aaf80de981afba7cf284f21bafa1c3`;
+- independent release evidence: `release/evidence-2.10.2.json`, PR #14 comment `5853585393` — bootstrap 12/12, package 516/516, aggregate 528/528, 260 validated files/templates, focused 98/98, Stage-2 review GREEN, 70 fault scenarios, 89 pressure scenarios and 3/3 consumers GREEN;
+- durable observed benchmark: PR #14 comment `5853537039` — exactly one harness execution, 122/122 invocations, 88.93399239600012 s sequential vs 57.90157018700006 s parallel, speedup 1.5359513068260002×, conflicts 0→0 and rollbacks 0→0;
+- benchmark plan, environment and observations are content-addressed and exact-source/tree-bound.
+
 
 **Evidence reinforcement — 2026-09-27:** code-quality review found that write-set overlap and terminal changed-path containment must use a portable case-folded, Unicode-normalized identity rather than host-filesystem case semantics; otherwise Linux can classify `src/UI` and `src/ui` as independent while Windows sees one namespace. The same review found that planner/benchmark timing inputs must reject NaN and infinities rather than relying only on `> 0` comparisons.
 

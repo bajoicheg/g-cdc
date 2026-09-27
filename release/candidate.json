@@ -5,30 +5,30 @@
   "canonical_repository": "bajoicheg/g-cdc",
   "source_commit": "82046d663cc2c86f0dd79c5c349f0797171bc66b",
   "package_tree": "2bee3b8159aaf80de981afba7cf284f21bafa1c3",
-  "status": "candidate",
+  "status": "released",
   "evidence": {
     "bootstrap": [
-      "base-release:2.10.1@408408c0fa5a0126f649a7328f8f667d27f5ff18"
+      "codex:pr14:comment-5853585393:12/12"
     ],
     "package": [
-      "codex:pr14:comment-5853435059:516/516",
+      "codex:pr14:comment-5853585393:516/516",
       "codex:pr14:comment-5853435059:98/98-focused",
-      "codex:pr14:comment-5853468278:code-quality-green",
+      "codex:pr14:comment-5853590053:code-quality-green",
       "release/benchmark-2.10.2.json",
       "codex:pr14:comment-5853537039:observed-speedup-1.5359513068260002x"
     ],
     "compatibility": [
-      "release/consumer-compatibility-2.10.2.json",
-      "codex:pr14:comment-5853481451:3/3"
+      "codex:pr14:comment-5853481451:3/3",
+      "release/consumer-compatibility-2.10.2.json"
     ],
     "fault_injection": [
       "fault-injection/scenarios.json:70",
       "pressure-scenarios.md:89"
     ],
     "consumers": [
-      "consumer:g-supervisor:authenticated-snapshot-green",
-      "consumer:g-ad-control:authenticated-snapshot-green",
-      "consumer:g-pc-health-check:authenticated-snapshot-green"
+      "consumer:g-supervisor:GREEN",
+      "consumer:g-ad-control:GREEN",
+      "consumer:g-pc-health-check:GREEN"
     ]
   }
 }
