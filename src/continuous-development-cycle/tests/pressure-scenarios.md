@@ -552,3 +552,9 @@ Required: canonicalize local branch references before comparison and uniqueness 
 
 Pressure: a single writer declares `src/Foo` and `src/foo`, or NFC/NFD spellings of the same path, as separate write paths.
 Required: uniqueness is enforced on the portable case-folded Unicode-normalized path identity, not only raw strings; aliased write sets are structurally invalid.
+
+
+## 87. Terminal diff contains portable aliases
+
+Pressure: a writer result on a case-sensitive filesystem contains both case-only or Unicode-normalization-equivalent paths that represent one portable path on another supported checkout.
+Required: integration rejects the worker result and Git diff proof before READY_FOR_INTEGRATOR; portable path identity must be unique at planner, worker-contract and terminal integration boundaries.
