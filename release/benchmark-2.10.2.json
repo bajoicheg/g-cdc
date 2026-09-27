@@ -3,23 +3,27 @@
   "benchmark_id": "cdc-2.10.2-final-observed",
   "evidence_class": "release_observed",
   "representative_task_ref": "cdc-2.10.2-worktree-parallel-release-validation",
-  "candidate_sha": "c9908ac61031af07205ca98e9c6b0e7ed831ec1b",
-  "package_tree": "3109152087cbf7b3c7cd023600187ba6bfa86a6b",
+  "candidate_sha": "82046d663cc2c86f0dd79c5c349f0797171bc66b",
+  "package_tree": "2bee3b8159aaf80de981afba7cf284f21bafa1c3",
   "environment_ref": "release/parallel-benchmark-environment-2.10.2.json",
-  "plan_ref": "sha256:f51cc8847f90d8bb60f364777889ef39312efd591952e6b84e05187d6c1dd614",
+  "environment_artifact_ref": {
+    "path": "release/parallel-benchmark-environment-2.10.2.json",
+    "sha256": "sha256:3338b86ac7ebfe2ef8e23c25ce763a7f8e7e94ee162813ad88f5ba71529ec3d7"
+  },
+  "plan_ref": "sha256:ae4b22da16d6cb243957c422cbce0975287a91b31625c9c8ca14b310085a9f30",
   "plan_artifact_ref": {
     "path": "release/parallel-benchmark-plan-2.10.2.json",
-    "sha256": "sha256:f51cc8847f90d8bb60f364777889ef39312efd591952e6b84e05187d6c1dd614"
+    "sha256": "sha256:ae4b22da16d6cb243957c422cbce0975287a91b31625c9c8ca14b310085a9f30"
   },
   "workstreams": 2,
   "observation_refs": [
     {
       "path": "release/parallel-benchmark-observation-sequential-2.10.2.json",
-      "sha256": "sha256:4284a8275a242edda85821fed2053e241eaa1e450bd5d6d45300a8d75a248ce7"
+      "sha256": "sha256:39f91b3881261ccf33d26349c972e0a8ef41adaf4f219a105175c06258f4f742"
     },
     {
       "path": "release/parallel-benchmark-observation-parallel-2.10.2.json",
-      "sha256": "sha256:fa39d44a333d1a086207e36231fbb6d555b23f19fc1d090be97eb6ae40bc985f"
+      "sha256": "sha256:74ef288787352fd836ade5daaf882a5283be17601b62407ad93296b21fac4a55"
     }
   ]
 }

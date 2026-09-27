@@ -3,22 +3,23 @@
   "version": "2.10.2",
   "developed_under_version": "2.10.1",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "c9908ac61031af07205ca98e9c6b0e7ed831ec1b",
-  "package_tree": "3109152087cbf7b3c7cd023600187ba6bfa86a6b",
+  "source_commit": "82046d663cc2c86f0dd79c5c349f0797171bc66b",
+  "package_tree": "2bee3b8159aaf80de981afba7cf284f21bafa1c3",
   "status": "candidate",
   "evidence": {
     "bootstrap": [
       "base-release:2.10.1@408408c0fa5a0126f649a7328f8f667d27f5ff18"
     ],
     "package": [
-      "codex:pr14:comment-5853217260:511/511",
-      "codex:pr14:comment-5853217260:93/93-focused",
+      "codex:pr14:comment-5853435059:516/516",
+      "codex:pr14:comment-5853435059:98/98-focused",
+      "codex:pr14:comment-5853468278:code-quality-green",
       "release/benchmark-2.10.2.json",
-      "codex:pr14:comment-5853275683:observed-speedup-1.513569972x"
+      "codex:pr14:comment-5853537039:observed-speedup-1.5359513068260002x"
     ],
     "compatibility": [
       "release/consumer-compatibility-2.10.2.json",
-      "codex:pr14:comment-5853271585:3/3"
+      "codex:pr14:comment-5853481451:3/3"
     ],
     "fault_injection": [
       "fault-injection/scenarios.json:70",
