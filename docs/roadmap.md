@@ -57,6 +57,10 @@ Acceptance:
 
 
 ### 2.11.1 — Cooperative Project Lanes — P1 / AUTHORIZED
+**Managed-pool final trust RCA — 2026-09-27:** R8 adversarial review proved four additional distributed-systems boundaries that ordinary unit GREEN did not establish: (1) CAS can split-brain if one pool is allowed to choose two coordination refs; (2) a durable queue reservation can still be replayed twice unless the physical start itself consumes a one-shot durable queued→running claim; (3) final-tree diffing can hide an out-of-scope file touched and restored in intermediate commits; (4) a mutable remote name is not an immutable publication identity. It also found that optional prerequisites can deadlock required downstream work.
+
+**Fix formulation:** bind one authoritative coordination identity into plan/state; only a successful durable launch CAS may start a worker; validate the whole introduced commit history or a sanitized single result; bind publication to a trusted immutable remote fingerprint with one identical fetch/push endpoint; reject required→optional dependency closure. These controls are prerequisites for 2.11.1 foreground-chat/watchdog coexistence, because more simultaneous executors multiply every one of these races.
+
 
 **Late-integration RCA — 2026-09-27:** while 2.11.0 R5 source `eb394254…` was under immutable validation, an independently GREEN handoff result from PR #28 (based on an earlier integration generation) completed and was accepted file-by-file onto the integration branch. The result itself was valid, but it legally superseded the freeze and forced R6. This proves base SHA + write-set isolation are insufficient for simultaneous foreground/watchdog execution unless the integrator also has an explicit freeze generation.
 
