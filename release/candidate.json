@@ -3,33 +3,31 @@
   "version": "2.10.2",
   "developed_under_version": "2.10.1",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "e27bf6346a4eb307bb9921cf0ab471639530cbe9",
-  "package_tree": "ffd6a6b7f42c675cd9b6f84b54ed3eae9ad6dbbb",
+  "source_commit": "83f2fffbb59e48503ac413ddf5dfea60ea5995a9",
+  "package_tree": "34bffb76f996a53a07d49ed340afa090a6f22639",
   "status": "candidate",
   "evidence": {
     "bootstrap": [
       "base-release:2.10.1@408408c0fa5a0126f649a7328f8f667d27f5ff18"
     ],
     "package": [
-      "codex:pr14:comment-5851605944:491/491",
-      "codex:pr14:comment-5851605944:73/73-targeted"
+      "codex:pr14:comment-5852010707:497/497",
+      "codex:pr14:comment-5852010707:79/79-focused",
+      "release/benchmark-2.10.2.json",
+      "codex:pr14:comment-5852025766:observed-speedup-1.089783031x"
     ],
     "compatibility": [
       "release/consumer-compatibility-2.10.2.json",
-      "codex:pr14:comment-5851631223:3/3"
+      "codex:pr14:comment-5852014994:3/3"
     ],
     "fault_injection": [
-      "fault-injection/scenarios.json:65",
-      "pressure-scenarios.md:83"
+      "fault-injection/scenarios.json:69",
+      "pressure-scenarios.md:87"
     ],
     "consumers": [
       "consumer:g-supervisor:authenticated-snapshot-green",
       "consumer:g-ad-control:authenticated-snapshot-green",
       "consumer:g-pc-health-check:authenticated-snapshot-green"
-    ],
-    "performance": [
-      "release/benchmark-2.10.2.json",
-      "codex:pr14:comment-5851604418:observed-speedup-1.219863908x"
     ]
   }
 }

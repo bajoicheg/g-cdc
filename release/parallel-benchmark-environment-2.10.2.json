@@ -1,8 +1,8 @@
 {
   "schema": "cdc-parallel-benchmark-environment/v1",
   "version": "2.10.2",
-  "candidate_source_commit": "12736a902d3fa01c3b1c79eb41a4176084f8390a",
-  "package_tree": "8b556fac7b5cc27c0af51156c5f5014bbf22aca7",
+  "candidate_source_commit": "83f2fffbb59e48503ac413ddf5dfea60ea5995a9",
+  "package_tree": "34bffb76f996a53a07d49ed340afa090a6f22639",
   "provider": "codex_compute",
   "working_directory": "/workspace/g-cdc/src/continuous-development-cycle",
   "python_executable": "/root/.pyenv/versions/3.12.13/bin/python",
@@ -12,5 +12,5 @@
   "architecture": "x86_64",
   "reported_processing_units": 3,
   "timer": "time.perf_counter()",
-  "evidence_comment": "https://github.com/bajoicheg/g-cdc/pull/14#issuecomment-5851724081"
+  "evidence_comment": "https://github.com/bajoicheg/g-cdc/pull/14#issuecomment-5852025766"
 }

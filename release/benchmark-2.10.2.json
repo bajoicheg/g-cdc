@@ -3,18 +3,18 @@
   "benchmark_id": "cdc-2.10.2-final-observed",
   "evidence_class": "release_observed",
   "representative_task_ref": "cdc-2.10.2-worktree-parallel-release-validation",
-  "candidate_sha": "12736a902d3fa01c3b1c79eb41a4176084f8390a",
+  "candidate_sha": "83f2fffbb59e48503ac413ddf5dfea60ea5995a9",
   "environment_ref": "release/parallel-benchmark-environment-2.10.2.json",
   "plan_ref": "sha256:fab23cf25d7b56f5d20a30c7f002f39bee70311c62b852f911a5f3d72fd4cdc4",
   "workstreams": 2,
   "observation_refs": [
     {
       "path": "release/parallel-benchmark-observation-sequential-2.10.2.json",
-      "sha256": "sha256:d39c0eac1982b55177e4d8d6fc74afb0aec4f2293609f184d517741f2948fb8a"
+      "sha256": "sha256:6e083acb19073e0d840736432aa2833cd30501fac65f4a2a8e02508ddca6e059"
     },
     {
       "path": "release/parallel-benchmark-observation-parallel-2.10.2.json",
-      "sha256": "sha256:704fb93b764f69e5c191acbd11691e4fccd709e48dd16114de301337ba28909f"
+      "sha256": "sha256:89a79fcd33243c5c867d556b34640ec7f63e0aba1b8c2c63bb3d1472e82113da"
     }
   ],
   "baseline_unresolved_conflicts": 0,
