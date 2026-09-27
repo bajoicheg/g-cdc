@@ -18,6 +18,7 @@ from parallel_task_planner import validate_write_path, portable_path_key, overla
 PLAN_SCHEMA = "managed-executor-pool-plan/v1"
 STATE_SCHEMA = "managed-executor-pool-state/v1"
 SHA = re.compile(r"^[0-9a-f]{40}$")
+STORE_ID = re.compile(r"^sha256:[0-9a-f]{64}$")
 DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
 ROLES = {"writer", "read_only", "review"}
 TASK_STATUSES = {"planned", "queued", "running", "succeeded", "failed", "cancelled", "stale", "omitted"}
@@ -82,6 +83,22 @@ def _nonnegative_number(value, name):
     return value
 
 
+def _coordination_ref(value, name="coordination_ref"):
+    if not isinstance(value, str) or not value.startswith("refs/heads/"):
+        raise ValueError(f"{name} must be an exact refs/heads/ ref")
+    suffix = value.removeprefix("refs/heads/")
+    if not suffix or value != "refs/heads/" + suffix:
+        raise ValueError(f"{name} must be canonical")
+    validate_write_path(suffix)
+    return value
+
+
+def _coordination_store_id(value):
+    if not isinstance(value, str) or not STORE_ID.fullmatch(value):
+        raise ValueError("coordination_store_id must be sha256:<hex>")
+    return value
+
+
 def _portable_paths(value, name, required):
     if not isinstance(value, list):
         raise ValueError(f"{name} must be a list")
@@ -129,6 +146,26 @@ def _acyclic(tasks):
 
     for node in graph:
         visit(node)
+
+
+def _reject_required_optional_dependencies(tasks):
+    by_id = {task["id"]: task for task in tasks}
+    for task in tasks:
+        if not task["required"]:
+            continue
+        stack = list(task["dependencies"])
+        seen = set()
+        while stack:
+            dep = stack.pop()
+            if dep in seen:
+                continue
+            seen.add(dep)
+            dependency = by_id[dep]
+            if not dependency["required"]:
+                raise ValueError(
+                    f"required task {task['id']} depends on optional task {dep}"
+                )
+            stack.extend(dependency["dependencies"])
 
 
 def validate_plan(plan):
@@ -189,6 +226,9 @@ def validate_plan(plan):
         raise ValueError("writer branches must be portable-unique")
     if len(writer_worktrees) != len(set(writer_worktrees)):
         raise ValueError("writer worktrees must be portable-unique")
+    coordination_key = portable_path_key(plan["coordination_ref"].removeprefix("refs/heads/"))
+    if coordination_key in set(writer_branches):
+        raise ValueError("coordination_ref must be portable-isolated from writer branches")
     known = set(ids)
     for task in plan["tasks"]:
         if task["id"] in task["dependencies"] or not set(task["dependencies"]) <= known:
@@ -496,44 +536,48 @@ def _git_changed_paths(base_sha, result_commit, git_worktree):
 
 def _git_touched_paths(base_sha, result_commit, git_worktree):
     try:
-        rows = subprocess.check_output(
-            ["git", "-C", str(git_worktree), "rev-list", "--reverse", "--parents",
+        commits = subprocess.check_output(
+            ["git", "-C", str(git_worktree), "rev-list", "--reverse", "--topo-order",
              f"{base_sha}..{result_commit}"],
             text=True, stderr=subprocess.PIPE, timeout=15,
         ).splitlines()
     except (OSError, subprocess.SubprocessError) as exc:
         raise ValueError(f"cannot inspect worker commit history: {exc}") from exc
-    if not rows:
-        raise ValueError("writer result must introduce at least one commit")
-    expected_parent = base_sha
+    if not commits or commits[-1] != result_commit:
+        raise ValueError("worker result history is empty or incomplete")
+    previous = base_sha
     touched = []
-    seen = set()
-    for row in rows:
-        parts = row.split()
-        if len(parts) != 2:
-            raise ValueError("worker result history must be linear and non-merge")
-        commit, parent = parts
-        if parent != expected_parent:
-            raise ValueError("worker result history must be exact linear descendants of base")
+    seen_keys = set()
+    for commit in commits:
+        try:
+            parent_row = subprocess.check_output(
+                ["git", "-C", str(git_worktree), "rev-list", "--parents", "-n", "1", commit],
+                text=True, stderr=subprocess.PIPE, timeout=15,
+            ).strip().split()
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise ValueError(f"cannot inspect worker commit parents: {exc}") from exc
+        if len(parent_row) != 2 or parent_row[0] != commit or parent_row[1] != previous:
+            raise ValueError("worker result history must be one exact linear chain from base")
         try:
             raw = subprocess.check_output(
                 ["git", "-C", str(git_worktree), "diff-tree", "--no-commit-id",
-                 "--name-only", "--no-renames", "-r", "-z", parent, commit],
+                 "--name-only", "--no-renames", "-r", "-z", previous, commit],
                 stderr=subprocess.PIPE, timeout=15,
             )
             paths = [p for p in raw.decode("utf-8").split("\0") if p]
         except (OSError, subprocess.SubprocessError, UnicodeDecodeError) as exc:
-            raise ValueError(f"cannot inspect worker commit paths: {exc}") from exc
-        _portable_paths(paths, "worker commit touched paths", required=True)
+            raise ValueError(f"cannot derive touched worker paths: {exc}") from exc
         for path in paths:
+            validate_write_path(path)
             key = portable_path_key(path)
-            if key not in seen:
-                seen.add(key)
+            if key not in seen_keys:
+                seen_keys.add(key)
                 touched.append(path)
-        expected_parent = commit
-    if expected_parent != result_commit:
-        raise ValueError("worker result history did not end at result_commit")
-    _portable_paths(touched, "worker touched paths", required=True)
+        previous = commit
+    if previous != result_commit:
+        raise ValueError("worker result history does not end at result_commit")
+    if not touched:
+        raise ValueError("writer result history must touch at least one path")
     return touched
 
 
@@ -568,10 +612,7 @@ def _verify_writer_result_git(task, base_sha, result_commit, git_worktree):
         raise ValueError("worker result commit is not exact assigned branch head")
     final_paths = _git_changed_paths(base_sha, result_commit, git_worktree)
     touched_paths = _git_touched_paths(base_sha, result_commit, git_worktree)
-    if {portable_path_key(x) for x in final_paths} != {portable_path_key(x) for x in touched_paths}:
-        raise ValueError("worker history touched paths differ from final changed-path manifest")
     return final_paths, touched_paths
-
 
 def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
                   executor_id, parent_invocation_id, integrator_id, branch, worktree,
@@ -767,7 +808,8 @@ def queue_task_cas(store, expected_store_revision, plan, task_id, attempt_id, *,
 
     The store contract is read() -> (revision, state) and
     compare_and_swap(expected_revision, new_state) -> new_revision.
-    Only a successful CAS authorizes launching the queued attempt.
+    A successful queue CAS reserves the attempt but does NOT authorize launch.
+    Launch authority is granted only by launch_task_cas() after a second durable CAS.
     """
     store_revision, state = store.read()
     if store_revision != expected_store_revision or state is None:
@@ -805,6 +847,35 @@ def claim_launch_cas(store, expected_store_revision, plan, task_id, attempt_id, 
     if (current is None or current["status"] != "queued"
             or current["active_attempt_id"] != attempt_id
             or current["reservation_token"] != reservation_token):
+        raise ValueError("launch claim does not match live queued reservation")
+    next_state = mark_running(
+        plan, state, task_id, attempt_id,
+        expected_revision=state["revision"], reservation_token=reservation_token,
+    )
+    new_store_revision = store.compare_and_swap(expected_store_revision, next_state)
+    return {
+        "schema": "managed-executor-launch-claim/v1",
+        "store_revision": new_store_revision,
+        "state_revision": next_state["revision"],
+        "state_ref": canonical_state_ref(next_state),
+        "task_id": task_id,
+        "attempt_id": attempt_id,
+        "reservation_token": reservation_token,
+        "launch_allowed": False,
+        **{name: False for name in AUTHORITY_FIELDS},
+    }
+
+
+def launch_task_cas(store, expected_store_revision, plan, task_id, attempt_id, *, reservation_token):
+    """Consume one queued reservation through durable CAS and grant one-shot launch authority."""
+    store_revision, state = store.read()
+    if store_revision != expected_store_revision or state is None:
+        raise ValueError("stale expected pool-store revision")
+    validate_state(plan, state)
+    task_state = _state_map(state).get(task_id)
+    if (task_state is None or task_state["status"] != "queued"
+            or task_state["active_attempt_id"] != attempt_id
+            or task_state["reservation_token"] != reservation_token):
         raise ValueError("launch claim does not match live queued reservation")
     next_state = mark_running(
         plan, state, task_id, attempt_id,
