@@ -1,0 +1,9 @@
+{
+  "schema": "parallel-benchmark/v1",
+  "benchmark_id": "cdc-2.11.2-stabilization",
+  "evidence_class": "release_stabilization",
+  "representative_task_ref": "cdc-2.11.2-release-validation",
+  "candidate_version": "2.11.2",
+  "package_tree": "829ae9d6783ab1922b0cd49d0c3c344da5d68b3c",
+  "migration_source": "release/benchmark-2.10.2.json"
+}
