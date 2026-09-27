@@ -85,6 +85,15 @@
     "final_handoff_validation": "GREEN",
     "validation_comment": 5854036351
   },
-  "candidate_source_commit": "c5938e968aaa0eee4a47d8580ff53208f5e01d1a",
-  "package_tree": "504e378589fa912f35cdf464859b769a35168ddf"
+  "candidate_source_commit": "8b7948b7b16c43e12d3814dbdf4bc6d49f44ca99",
+  "package_tree": "e161b8af953f96548caf39c50eff88dd028f45b6",
+  "final_review_hardening": {
+    "actual_git_diff_binding": true,
+    "queue_cas_reservation": true,
+    "unified_diff_tree_binding": true,
+    "authoritative_remote_ref_required": true,
+    "bundle_authenticated_snapshot": true,
+    "optional_work_explicit_disposition": true,
+    "retry_remaining_budget": true
+  }
 }
