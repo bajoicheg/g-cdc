@@ -9,6 +9,10 @@
   "shared_branch": "feature/integration",
   "expected_shared_head": "1111111111111111111111111111111111111111",
   "observed_shared_head": "1111111111111111111111111111111111111111",
+  "writer_result_shas": [
+    "2222222222222222222222222222222222222222",
+    "3333333333333333333333333333333333333333"
+  ],
   "action": "READY_FOR_INTEGRATOR",
   "ready": true,
   "blockers": [],
