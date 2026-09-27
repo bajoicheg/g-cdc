@@ -85,8 +85,8 @@
     "final_handoff_validation": "GREEN",
     "validation_comment": 5854036351
   },
-  "candidate_source_commit": "eb39425482a03e6c7a832963485a392eb1c083ff",
-  "package_tree": "cb7a8ed1f103fc5c66c880761d0f937f5dc9bbbc",
+  "candidate_source_commit": "c79a912945168f35a52e984d5fb12f90dc38c8a4",
+  "package_tree": "3640b3aad8b7b3fafc177e6516235eab95dc22f3",
   "final_review_hardening": {
     "actual_git_diff_binding": true,
     "queue_cas_reservation": true,
@@ -95,5 +95,18 @@
     "bundle_authenticated_snapshot": true,
     "optional_work_explicit_disposition": true,
     "retry_remaining_budget": true
+  },
+  "late_integration_reconciliation": {
+    "source_pr": 28,
+    "source_result_commit": "191cc979f9f5537b23014887be6284dee364fd8b",
+    "result_validation_comment": 5854265992,
+    "per_file_integration_commits": [
+      "6322f1adfd479f0a1a4191d360a074028c0fcc8a",
+      "e9b076a91501bb8cca845f0f03578f8c081cf525",
+      "4acaa19ac6c8e0bb0acb030b8ef7c990db8ff3a7",
+      "c79a912945168f35a52e984d5fb12f90dc38c8a4"
+    ],
+    "duplicate_integration": false,
+    "previous_freeze_superseded": true
   }
 }
