@@ -37,6 +37,10 @@ Required controls:
 
 **Defense-in-depth:** these cases remain focused regressions and are mandatory targets for final source-freeze review. A passing general test suite cannot override an independent RED finding on these trust boundaries.
 
+**Second-review RCA — durable publication/lifecycle (2026-09-27):** the next independent pass found that durable state must be proven at the external boundary, not inferred from local correctness: publication proof must read the authoritative remote ref; authenticated bundle bytes must be snapshotted before verification to prevent pathname TOCTOU; optional planned/recoverable work needs explicit omission before terminal; and retry reservations must charge only the remaining task liability. The managed pool also requires a concrete durable Git CAS store, not only an abstract test protocol.
+
+**Fix formulation:** remote exact-ref readback gates publication; bundle verification consumes an immutable private copy of the already-hashed payload; optional omission is a durable state transition distinct from success/result discard; dispatch computes remaining runtime/cost after historical consumption; and the pool state CAS is backed by a dedicated coordination ref where sibling commits race through normal non-force Git push.
+
 Acceptance:
 - at least two independent worker tasks can execute concurrently when a capable backend exists;
 - worker failure/staleness does not stop unrelated workers and cannot poison the integration branch;
