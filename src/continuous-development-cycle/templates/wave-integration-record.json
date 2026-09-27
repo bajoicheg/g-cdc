@@ -8,11 +8,11 @@
   "shared_branch": "feature/integration",
   "gate_artifact_ref": {
     "path": "templates/wave-integration-gate-evidence.json",
-    "sha256": "sha256:a8577df8752b00852dffd75ef648a73f240439efe536900972e78c63f531449e"
+    "sha256": "sha256:29f71aa1cfe6f7a8be75ae10109e31a1006801d1b2d18fbf9475d5bbd37631ed"
   },
   "assembly_artifact_ref": {
     "path": "templates/wave-assembly-evidence.json",
-    "sha256": "sha256:cc2c5e2e9912e38d6e9f0b61d1493cb74107e52195aa7b7b50deee403c894fa3"
+    "sha256": "sha256:c0aa68efed531fa34eea41aa12fada76821769a3aa425469f99c066611de005f"
   },
   "previous_integration": null
 }
