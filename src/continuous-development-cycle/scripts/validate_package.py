@@ -64,7 +64,7 @@ from spec_plan_queue import evaluate as evaluate_spec_plan_queue
 from review_pipeline import evaluate as evaluate_review_pipeline
 from branch_finish import evaluate as evaluate_branch_finish
 from parallel_task_planner import plan as plan_parallel_tasks
-from worktree_worker_contract import assess as assess_worker_contract, validate_prior_integration_record
+from worktree_worker_contract import (assess as assess_worker_contract, validate_prior_integration_record,\n    validate_gate_evidence, validate_assembly_evidence)
 from integration_gate import evaluate as evaluate_integration_gate
 from parallel_benchmark import evaluate_from_files as evaluate_parallel_benchmark_files, load_observations as load_parallel_benchmark_observations
 
@@ -200,7 +200,7 @@ REQUIRED = [
     'scripts/integration_gate.py', 'scripts/parallel_benchmark.py',
     'templates/parallel-task-plan.json', 'templates/worktree-worker-contract.json',
     'templates/integration-gate.json', 'templates/parallel-benchmark.json',
-    'templates/wave-integration-record.json', 'templates/wave-integration-gate-result.json',
+    'templates/wave-integration-record.json', 'templates/wave-integration-gate-evidence.json',\n    'templates/wave-assembly-evidence.json',
     'templates/parallel-benchmark-observation-sequential.json',
     'templates/parallel-benchmark-observation-parallel.json',
     'tests/test_parallel_task_planner.py', 'tests/test_worktree_worker_contract.py',
@@ -441,10 +441,19 @@ def validate():
         raise ContractError('invalid CDC 2.10.2 worker isolation template')
     prior_record = json.loads((ROOT / 'templates/wave-integration-record.json').read_text())
     validate_prior_integration_record(prior_record)
-    gate_ref = prior_record['gate_result_ref']
-    gate_payload = (ROOT / gate_ref['path']).read_bytes()
-    if 'sha256:' + hashlib.sha256(gate_payload).hexdigest() != gate_ref['sha256']:
-        raise ContractError('invalid CDC 2.10.2 prior-wave gate artifact digest')
+    gate = json.loads((ROOT / 'templates/wave-integration-gate-evidence.json').read_text())
+    assembly = json.loads((ROOT / 'templates/wave-assembly-evidence.json').read_text())
+    validate_gate_evidence(gate); validate_assembly_evidence(assembly)
+    for ref_name in ('gate_artifact_ref','assembly_artifact_ref'):
+        ref = prior_record[ref_name]
+        payload = (ROOT / ref['path']).read_bytes()
+        observed = 'sha256:' + hashlib.sha256(payload).hexdigest()
+        if observed != ref['sha256']:
+            raise ContractError('invalid CDC 2.10.2 prior-wave artifact digest: ' + ref_name)
+    if assembly['gate_sha256'] != prior_record['gate_artifact_ref']['sha256']:
+        raise ContractError('invalid CDC 2.10.2 prior-wave gate/assembly binding')
+    if prior_record['base_sha'] == prior_record['integrated_head']:
+        raise ContractError('invalid CDC 2.10.2 prior-wave non-advancing integration record')
     integration = evaluate_integration_gate(json.loads((ROOT / 'templates/integration-gate.json').read_text()))
     if (not integration['ready'] or integration['action'] != 'READY_FOR_INTEGRATOR' or integration['blockers'] or
             integration['next_gate'] != 'cdc_2.10.1_review_branch_finish_then_2.10.0_verification' or
