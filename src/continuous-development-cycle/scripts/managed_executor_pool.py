@@ -151,6 +151,20 @@ def validate_plan(plan):
         ids.append(task["id"])
     if len(ids) != len(set(ids)):
         raise ValueError("duplicate managed executor task id")
+    writer_branches = []
+    writer_worktrees = []
+    for task in plan["tasks"]:
+        if task["role"] != "writer":
+            continue
+        branch_name = task["branch"].removeprefix("refs/heads/")
+        validate_write_path(branch_name)
+        validate_write_path(task["worktree"])
+        writer_branches.append(portable_path_key(branch_name))
+        writer_worktrees.append(portable_path_key(task["worktree"]))
+    if len(writer_branches) != len(set(writer_branches)):
+        raise ValueError("writer branches must be portable-unique")
+    if len(writer_worktrees) != len(set(writer_worktrees)):
+        raise ValueError("writer worktrees must be portable-unique")
     known = set(ids)
     for task in plan["tasks"]:
         if task["id"] in task["dependencies"] or not set(task["dependencies"]) <= known:
