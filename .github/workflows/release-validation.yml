@@ -41,6 +41,11 @@ jobs:
       - name: Full bootstrap binding
         run: python -B bootstrap/validate_release.py --mode full
 
+      - name: Debug package tree
+        run: |
+          echo "COMMIT=$(git rev-parse HEAD)"
+          echo "PACKAGE_TREE=$(git rev-parse HEAD:src/continuous-development-cycle)"
+      
       - name: Validate three live consumer snapshots
         shell: bash
         run: |
