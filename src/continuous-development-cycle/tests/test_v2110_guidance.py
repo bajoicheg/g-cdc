@@ -8,7 +8,7 @@ class T(unittest.TestCase):
   skill=(ROOT/"SKILL.md").read_text().lower()
   ref=(ROOT/"references"/"managed-executor-pool.md").read_text().lower()
   readme=(ROOT/"README.md").read_text().lower()
-  for term in ("managed executor pool","capability-gated","deterministic sequential fallback","must not fabricate subagents","single integrator","attempt lineage","unintegrated successful result","content-addressed result handoff","progress is not terminal"):
+  for term in ("managed executor pool","capability-gated","deterministic sequential fallback","must not fabricate subagents","single integrator","attempt lineage","unintegrated successful result","content-addressed result handoff","progress is not terminal","durable-cas gated","never launch from an in-memory `queue_task()` result alone"):
    self.assertIn(term,skill)
   for term in ("parent authority","capability-gated","sequential fallback","isolated branch/worktree","duplicate-launch","unintegrated","terminal-state"):
    self.assertIn(term,ref)
@@ -29,13 +29,14 @@ class T(unittest.TestCase):
    "managed-pool-bundle-artifact-toctou",
    "managed-pool-optional-work-silent-omission",
    "managed-pool-retry-reserves-original-budget",
+   "managed-pool-inmemory-queue-bypasses-durable-cas",
   }
   self.assertTrue(expected<=ids)
 
- def test_pressure_numbering_is_continuous_through_95(self):
+ def test_pressure_numbering_is_continuous_through_101(self):
   text=(ROOT/"tests"/"pressure-scenarios.md").read_text()
   numbers=[int(x) for x in re.findall(r"(?m)^## (\d+)\.",text)]
-  self.assertEqual(numbers,list(range(1,101)))
+  self.assertEqual(numbers,list(range(1,102)))
 
  def test_guidance_preserves_authority_boundary(self):
   ref=(ROOT/"references"/"managed-executor-pool.md").read_text().lower()
