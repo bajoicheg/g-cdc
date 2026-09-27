@@ -229,7 +229,8 @@ def _verify_unified_diff_artifact(handoff, payload, root, published_commit):
             text=True, stderr=subprocess.PIPE, timeout=15,
         ).strip()
         raw_paths = subprocess.check_output(
-            ["git", "-C", str(root), "diff", "--cached", "--name-only", "--no-renames", "-z"],
+            ["git", "-C", str(root), "diff", "--cached", "--name-only", "--no-renames", "-z",
+             handoff["base_sha"]],
             env=env, stderr=subprocess.PIPE, timeout=15,
         )
         artifact_paths = [p for p in raw_paths.decode("utf-8").split("\0") if p]
