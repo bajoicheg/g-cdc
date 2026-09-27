@@ -647,7 +647,7 @@ def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
         if {portable_path_key(x) for x in observed_changed_paths} != {portable_path_key(x) for x in changed_paths}:
             raise ValueError("reported changed paths do not match exact Git diff")
         if {portable_path_key(x) for x in touched_paths} != {portable_path_key(x) for x in changed_paths}:
-            raise ValueError("reported changed paths do not match full worker history")
+            raise ValueError("reported changed paths do not match history touched paths")
         if not _result_paths_within_claim(task, observed_changed_paths):
             raise ValueError("Git diff changed paths escape declared write set")
         if not _result_paths_within_claim(task, touched_paths):
