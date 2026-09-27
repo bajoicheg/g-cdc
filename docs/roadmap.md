@@ -96,6 +96,25 @@ Acceptance:
 
 Expected benefit: CDC gains safe concurrency — speed from parallel work, while ownership and final integration remain deterministic.
 
+**Evidence reinforcement — 2026-09-27:** code-quality review found that write-set overlap and terminal changed-path containment must use a portable case-folded, Unicode-normalized identity rather than host-filesystem case semantics; otherwise Linux can classify `src/UI` and `src/ui` as independent while Windows sees one namespace. The same review found that planner/benchmark timing inputs must reject NaN and infinities rather than relying only on `> 0` comparisons.
+
+**Fix formulation:** one canonical portable-path identity function governs planning, worker assignment and integration containment; case/Unicode aliases serialize or reject consistently. Estimated/observed durations are finite positive numbers by construction.
+
+**Expected invariant:** a parallel plan cannot be GREEN on one filesystem and collide on another because of path aliasing, and non-finite numeric evidence can never satisfy speedup/release gates.
+
+**Evidence reinforcement — 2026-09-27 (review closure):** independent review found four additional ways a formally valid parallel candidate could overstate safety: consumer compatibility evidence bound to an older package tree, benchmark fixtures mistaken for measured release evidence, an embedded worker plan mutable behind an unchanged human-readable plan reference, and a worker result commit not proven to descend from its contracted base.
+
+**Fix formulation:** consumer evidence is exact-package-bound; package benchmark fixtures are explicitly non-observed and release-ineligible while release evidence uses externally observed candidate-bound records; worker plan references are canonical SHA-256 content addresses; successful writer Git proofs require base→result ancestry before diff acceptance.
+
+**Expected invariant:** no CDC 2.10.2 release can rely on stale consumer compatibility, fixture timings, mutable plan identity, or unrelated Git history even when individual schemas and diffs otherwise look valid.
+
+
+**Evidence reinforcement — 2026-09-27 (schema migration closure):** the prior-wave gate schema was hardened to require a content-addressed gate-result artifact, but one positive test producer still emitted the previous wrapper shape. Validators/templates were correct, negative regressions were GREEN, yet the end-to-end positive path failed.
+
+**Fix formulation:** any CDC contract/schema evolution must migrate the validator, canonical templates and every positive producer/fixture atomically; release validation retains at least one end-to-end positive path that constructs the new schema through the same producer surface consumers use. Schema changes are not complete when only negative rejection tests and canonical static templates are GREEN.
+
+**Expected invariant:** a released CDC schema cannot be internally self-inconsistent because a legacy positive producer survived a validator migration.
+
 Finalization RCA — 2026-09-27:
 - Root cause of the prolonged 2.10.2 closeout was a moving-target validation loop: source fixes continued after expensive benchmark/consumer evidence, which correctly made that evidence stale; release manifests were not refreshed atomically; and benchmark observations from different package trees/workload states were informally compared as one trend.
 - Correction: freeze source/spec before expensive evidence; freeze the exact benchmark plan; run final consumer compatibility and observed benchmark once per exact package-tree + plan pair; persist environment, observations, benchmark manifest, consumer evidence and candidate binding atomically; metadata-only evidence commits do not invalidate package evidence; rerun expensive evidence only when package tree or benchmark plan changes.
