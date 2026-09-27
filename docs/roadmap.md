@@ -1,5 +1,85 @@
 # CDC roadmap
 
+## CDC 2.11 — Managed Multi-Executor & Watchdog Resilience — AUTHORIZED / ACTIVE
+
+Owner authorization on 2026-09-27 starts a new CDC line under independently released CDC 2.10.2. The line extends 2.10.2 safe parallelism from isolated implementation workers to a managed multi-executor control plane and makes watchdog continuity a release-grade invariant.
+
+CDC 2.11 preserves staged bootstrap/release discipline:
+- develop 2.11.0 under independently released 2.10.2;
+- develop 2.11.1 only after 2.11.0 is independently GREEN and released;
+- develop 2.11.2 only after 2.11.1 is independently GREEN and released.
+
+All three stages are explicitly authorized by the owner. They may be developed continuously without another approval boundary, but each release still requires its normal independent evidence.
+
+### 2.11.0 — Managed Executor Pool — P0 / AUTHORIZED
+
+Goal: provide a CDC-native analogue of Work-style subagents: one parent invocation can decompose work, launch or bind multiple bounded executors when the runtime supports it, observe them as first-class tasks, and integrate their results without granting workers shared-branch or release authority.
+
+Required controls:
+- durable executor-pool plan with parent invocation, exact source HEAD, task DAG, worker role, declared read/write set, expected artifacts/evidence, execution backend, budget and cancellation state;
+- bounded parallel slots and per-task cost/runtime budgets; no unbounded worker fan-out;
+- every writer receives an isolated branch/worktree contract and exact base SHA; read-only/review workers receive no write claim;
+- parent/integrator owns task assignment, result acceptance, retries/replan and final integration;
+- worker heartbeat/status/result are explicit durable states (`planned | queued | running | succeeded | failed | cancelled | stale`);
+- a worker result is accepted only when identity, base ancestry, write-set containment and required evidence are exact;
+- runtime without actual worker-launch capability falls back to the same plan sequentially instead of fabricating subagents;
+- workers never gain shared-branch write, merge, release, scope-expansion, scheduler or user-approval authority.
+
+Acceptance:
+- at least two independent worker tasks can execute concurrently when a capable backend exists;
+- worker failure/staleness does not stop unrelated workers and cannot poison the integration branch;
+- parent cannot report terminal while any required worker is runnable/running or an unintegrated successful result remains;
+- duplicate launch of the same task/attempt is rejected or reconciled;
+- cancellation and retry preserve exact attempt lineage rather than silently replacing evidence;
+- a deterministic sequential fallback produces the same required task/evidence set.
+
+### 2.11.1 — Cooperative Project Lanes — P1 / AUTHORIZED
+
+Goal: allow the foreground user chat and one or more watchdog/Work/Codex executors to make useful progress on the same repository at the same time without reverting to split-brain shared writers.
+
+Required controls:
+- replace project-wide mutual exclusion for ordinary work with durable **execution lanes**: each active executor declares identity, surface, exact observed HEAD, role and portable read/write claims;
+- non-overlapping writer lanes may coexist; read-only/review lanes may coexist with writers;
+- overlapping portable write claims serialize; a reserved shared-branch/integration lane remains exclusive;
+- user chat and watchdog remain independently alive: starting foreground work does not disable/pause the watchdog, and a watchdog encountering an occupied lane chooses another runnable non-conflicting task or observer/review work;
+- existing valid claims are never stolen merely because foreground work has higher urgency; handoff/preemption requires a safe checkpoint plus explicit quiescence of the relinquished lane;
+- every lane heartbeat requires new observable activity; TTL/staleness alone never proves the executor stopped;
+- shared HEAD movement is reconciled before integration; no executor force-pushes around another;
+- terminal evaluation is project-scope aware: one idle lane cannot make the project terminal while runnable work exists in another lane/queue.
+
+Acceptance:
+- foreground chat + watchdog can both be `running` on one project with disjoint write claims and no ownership contradiction;
+- overlapping claims deterministically block/serialize before either writer mutates the same portable path;
+- one executor can finish/release its lane without releasing or invalidating other active lanes;
+- watchdog stays scheduled while foreground execution is active;
+- integrator remains the only shared-branch writer and validates all accepted lane results against fresh HEAD.
+
+### 2.11.2 — Persistent Watchdogs & Fleet Wake Enforcement — P2 / AUTHORIZED
+
+Goal: make an unexpectedly idle or disabled watchdog a critical recoverable control-plane fault whenever the project is not truly terminal.
+
+Required controls:
+- watchdog desired state is **enabled until verified project terminal state**. `disabled + nonterminal` is critical drift, not a normal pause;
+- a watchdog invocation that ends after a primitive/milestone while runnable work remains is a liveness failure and must persist/requeue continuation state;
+- runtime/time-budget exhaustion ends only the current wake; it must leave a durable continuation for the next wake and must not disable the recurring watchdog;
+- scheduler enabled state, actual invocation state, meaningful progress, execution lanes, external guards and project terminal evidence remain separate signals;
+- `watchdog_health` gains explicit critical liveness classification for disabled/overdue/prematurely-completed watchdogs with runnable project work;
+- `watchdog_self_repair` may re-enable and/or request a run only under a durable owner-authorized liveness policy and only after duplicate-run/active-owner/external-submission safety checks;
+- Fleet Watcher evaluates **all** registered projects each run and repairs/kicks every wrongfully resting watchdog that is eligible, rather than merely recommending one action;
+- Fleet Watcher never wakes a watchdog proven terminal and never bypasses product write ownership, external-operation idempotency, merge/release or budget gates;
+- a true terminal project may leave its project watchdog disabled; terminal proof must be fresh and exact, not inferred from quietness, TTL or a completed invocation.
+
+Acceptance:
+- disabled watchdog + runnable project => `CRITICAL`/recovery and an authorized enable/run action when scheduler control is available;
+- completed watchdog invocation + runnable work => immediate continuation/requeue, not healthy idle;
+- Fleet Watcher can return and execute a bounded batch of eligible watchdog wake repairs in one pass;
+- active watchdog/executor is not duplicated;
+- external `submitting|queued|running|unknown` state prevents duplicate external work while still allowing safe observation/reconciliation;
+- no watchdog may self-disable merely because one wake, task, PR, validation step or status report completed;
+- scheduler disable is acceptable without incident only after verified project `COMPLETE` (or a fresh explicit owner stop that intentionally supersedes this liveness policy).
+
+Expected benefit: CDC moves from “safe parallel tasks” to a resilient multi-executor development system: useful work continues concurrently, foreground and watchdog execution cooperate instead of excluding each other, and fleet supervision actively restores projects that are idle for the wrong reason.
+
 ## CDC 2.10 — Superpowers Execution Quality — COMPLETE / TERMINAL
 
 Owner acceptance authorizes this roadmap. CDC 2.10 integrates the strongest Superpowers engineering disciplines as a **quality layer** under the CDC control plane. Superpowers workflows never grant ownership, external-start, merge, release, scheduler, scope-expansion or user-approval authority; CDC remains authoritative for those controls.
