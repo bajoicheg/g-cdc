@@ -80,3 +80,12 @@ Content-addressed Git bundles are verified from an immutable private snapshot of
 Optional tasks also require explicit lifecycle disposition. A planned or recoverable optional task blocks pool terminal state until it is either executed or explicitly omitted. An active optional task must drain/cancel, and a successful optional result must integrate or be explicitly discarded.
 
 Retries reserve only **remaining** task runtime/cost budget after prior attempts' consumption. Historical consumption remains charged once; dispatch reserves only unresolved liability.
+
+
+### Remote publication and retry-budget hardening
+
+A result is not durably published merely because a matching local `refs/heads/*` exists. Publication proof must bind an exact configured authoritative remote and verify the remote branch ref equals the accepted commit. For content artifacts, authenticated bytes are immutable verification input: bundle verification uses a private snapshot of the bytes already covered by the digest, never a mutable pathname reopened later.
+
+Optional work also requires explicit disposition. A planned or recoverable optional task blocks pool terminal state until it is either executed or explicitly marked omitted; a successful optional result blocks terminal state until integration or explicit discard.
+
+Retry reservation uses remaining per-task budget, not the original maximum. Prior attempt consumption stays in the aggregate ledger while the next retry reserves only `max - consumed` for runtime and cost.
