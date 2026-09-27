@@ -7,6 +7,7 @@ import copy
 import json
 import math
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -34,8 +35,9 @@ PLAN_FIELDS = {
     "max_parallel", "total_runtime_budget_seconds", "total_cost_budget_units", "tasks",
 }
 TASK_FIELDS = {
-    "id", "role", "required", "dependencies", "write_paths", "expected_outputs",
-    "expected_evidence", "backend_preferences", "max_runtime_seconds", "max_cost_units",
+    "id", "role", "required", "dependencies", "executor_id", "branch", "worktree",
+    "write_paths", "expected_outputs", "expected_evidence", "backend_preferences",
+    "max_runtime_seconds", "max_cost_units",
 }
 STATE_FIELDS = {
     "schema", "pool_id", "change_id", "parent_invocation_id", "base_sha", "integrator_id",
@@ -130,6 +132,7 @@ def validate_plan(plan):
         if type(task["required"]) is not bool:
             raise ValueError("task required must be boolean")
         _refs(task["dependencies"], f"tasks[{index}].dependencies", allow_empty=True)
+        _text(task["executor_id"], f"tasks[{index}].executor_id")
         _refs(task["expected_outputs"], f"tasks[{index}].expected_outputs")
         _refs(task["expected_evidence"], f"tasks[{index}].expected_evidence")
         _refs(task["backend_preferences"], f"tasks[{index}].backend_preferences")
@@ -140,8 +143,11 @@ def validate_plan(plan):
         if task["max_cost_units"] > plan["total_cost_budget_units"]:
             raise ValueError("task cost budget exceeds pool budget")
         _portable_paths(task["write_paths"], f"tasks[{index}].write_paths", task["role"] == "writer")
-        if task["role"] != "writer" and task["write_paths"]:
-            raise ValueError("non-writer task cannot declare write_paths")
+        if task["role"] == "writer":
+            _text(task["branch"], f"tasks[{index}].branch")
+            _text(task["worktree"], f"tasks[{index}].worktree")
+        elif task["branch"] is not None or task["worktree"] is not None or task["write_paths"]:
+            raise ValueError("non-writer task cannot declare writer isolation or write_paths")
         ids.append(task["id"])
     if len(ids) != len(set(ids)):
         raise ValueError("duplicate managed executor task id")
@@ -282,31 +288,55 @@ def _active_writer_paths(plan, state):
 def dispatch(plan, state):
     validate_state(plan, state)
     smap = _state_map(state)
-    active_count = sum(1 for current in smap.values() if current["status"] in ACTIVE)
+    pmap = _task_map(plan)
+    active_ids = [task_id for task_id, current in smap.items() if current["status"] in ACTIVE]
+    active_count = len(active_ids)
     cap = 1 if state["execution_mode"] == "sequential_fallback" else plan["max_parallel"]
     slots = max(0, cap - active_count)
-    if slots == 0:
-        chosen = []
-    else:
-        chosen = []
-        writer_paths = _active_writer_paths(plan, state)
-        pmap = _task_map(plan)
-        for task_id in ready_task_ids(plan, state):
-            if len(chosen) >= slots:
-                break
-            task = pmap[task_id]
-            if task["role"] == "writer":
-                if any(overlaps(path, claimed) for path in task["write_paths"] for claimed in writer_paths):
-                    continue
-                writer_paths.extend(task["write_paths"])
-            chosen.append(task_id)
+    reserved_runtime = sum(pmap[task_id]["max_runtime_seconds"] for task_id in active_ids)
+    reserved_cost = sum(pmap[task_id]["max_cost_units"] for task_id in active_ids)
+    runtime_left = plan["total_runtime_budget_seconds"] - state["runtime_consumed_seconds"] - reserved_runtime
+    cost_left = plan["total_cost_budget_units"] - state["cost_consumed_units"] - reserved_cost
+    chosen = []
+    writer_paths = _active_writer_paths(plan, state)
+    for task_id in ready_task_ids(plan, state):
+        if len(chosen) >= slots:
+            break
+        task = pmap[task_id]
+        if task["max_runtime_seconds"] > runtime_left or task["max_cost_units"] > cost_left:
+            continue
+        if task["role"] == "writer":
+            if any(overlaps(path, claimed) for path in task["write_paths"] for claimed in writer_paths):
+                continue
+            writer_paths.extend(task["write_paths"])
+        chosen.append(task_id)
+        runtime_left -= task["max_runtime_seconds"]
+        cost_left -= task["max_cost_units"]
+    assignments = [
+        {
+            "task_id": task_id,
+            "executor_id": pmap[task_id]["executor_id"],
+            "role": pmap[task_id]["role"],
+            "base_sha": plan["base_sha"],
+            "branch": pmap[task_id]["branch"],
+            "worktree": pmap[task_id]["worktree"],
+            "write_paths": list(pmap[task_id]["write_paths"]),
+            "backend_preferences": list(pmap[task_id]["backend_preferences"]),
+        }
+        for task_id in chosen
+    ]
     return {
         "schema": "managed-executor-dispatch/v1",
         "pool_id": plan["pool_id"],
+        "parent_invocation_id": plan["parent_invocation_id"],
+        "integrator_id": plan["integrator_id"],
         "execution_mode": state["execution_mode"],
         "parallel_capable": state["execution_mode"] == "parallel",
         "max_parallel": cap,
         "task_ids": chosen,
+        "assignments": assignments,
+        "reserved_runtime_seconds": sum(pmap[task_id]["max_runtime_seconds"] for task_id in chosen),
+        "reserved_cost_units": sum(pmap[task_id]["max_cost_units"] for task_id in chosen),
         "fallback_serialized": state["execution_mode"] == "sequential_fallback",
         **{name: False for name in AUTHORITY_FIELDS},
     }
@@ -348,12 +378,50 @@ def _result_paths_within_claim(task, changed_paths):
     return bool(changed_paths)
 
 
+def _verify_writer_result_git(task, base_sha, result_commit, git_worktree):
+    if not isinstance(result_commit, str) or not SHA.fullmatch(result_commit):
+        raise ValueError("writer result_commit must be a full lowercase SHA")
+    if not isinstance(git_worktree, (str, Path)) or not Path(git_worktree).is_dir():
+        raise ValueError("writer result requires a live git_worktree")
+    branch = task["branch"]
+    branch_ref = branch if branch.startswith("refs/heads/") else "refs/heads/" + branch.removeprefix("refs/heads/")
+    try:
+        for sha in (base_sha, result_commit):
+            kind = subprocess.check_output(
+                ["git", "-C", str(git_worktree), "cat-file", "-t", sha],
+                text=True, stderr=subprocess.PIPE, timeout=15,
+            ).strip()
+            if kind != "commit":
+                raise ValueError("worker result ancestry endpoint is not a commit")
+        ancestry = subprocess.run(
+            ["git", "-C", str(git_worktree), "merge-base", "--is-ancestor", base_sha, result_commit],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=15,
+        )
+        if ancestry.returncode != 0:
+            raise ValueError("worker result commit does not descend from contracted base")
+        live_branch = subprocess.check_output(
+            ["git", "-C", str(git_worktree), "rev-parse", "--verify", branch_ref],
+            text=True, stderr=subprocess.PIPE, timeout=15,
+        ).strip()
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise ValueError(f"cannot verify worker result git ancestry: {exc}") from exc
+    if live_branch != result_commit:
+        raise ValueError("worker result commit is not exact assigned branch head")
+    return True
+
+
 def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
-                  changed_paths, output_refs, evidence_refs, runtime_seconds, cost_units):
+                  executor_id, parent_invocation_id, integrator_id, branch, worktree,
+                  result_commit, changed_paths, output_refs, evidence_refs,
+                  runtime_seconds, cost_units, git_worktree=None):
     validate_state(plan, state)
     _text(result_ref, "result_ref")
     if base_sha != plan["base_sha"]:
         raise ValueError("worker result base_sha mismatch")
+    if parent_invocation_id != plan["parent_invocation_id"]:
+        raise ValueError("worker result parent invocation mismatch")
+    if integrator_id != plan["integrator_id"]:
+        raise ValueError("worker result integrator mismatch")
     pmap, smap = _task_map(plan), _state_map(state)
     if task_id not in pmap:
         raise ValueError("unknown result task")
@@ -361,9 +429,15 @@ def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
     if current["status"] not in ACTIVE or current["active_attempt_id"] != attempt_id:
         raise ValueError("result does not match active task attempt")
     task = pmap[task_id]
+    if executor_id != task["executor_id"] or branch != task["branch"] or worktree != task["worktree"]:
+        raise ValueError("worker result assignment identity mismatch")
     _portable_paths(changed_paths, "changed_paths", task["role"] == "writer")
     if not _result_paths_within_claim(task, changed_paths):
         raise ValueError("worker result changed paths escape declared write set")
+    if task["role"] == "writer":
+        _verify_writer_result_git(task, base_sha, result_commit, git_worktree)
+    elif result_commit is not None:
+        raise ValueError("non-writer result cannot claim result_commit")
     _refs(output_refs, "output_refs")
     _refs(evidence_refs, "evidence_refs")
     if not set(task["expected_outputs"]) <= set(output_refs):
