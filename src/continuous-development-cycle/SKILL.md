@@ -266,7 +266,7 @@ Worker launch is **capability-gated**. When the current runtime cannot launch in
 
 Writers remain isolated on exact-base branches/worktrees with portable write claims, and a **single integrator** is the only shared-branch writer. Read-only/review executors carry no write claim.
 
-Every attempt has durable lifecycle and **attempt lineage**. Duplicate active launches are reconciled, retries create new attempt identities, and one worker failure does not cancel unrelated independent tasks. A successful worker result is still an **unintegrated successful result** until accepted by the integrator.
+Every attempt has durable lifecycle and **attempt lineage**. Duplicate active launches are reconciled, retries create new attempt identities, and one worker failure does not cancel unrelated independent tasks. A successful worker result is still an **unintegrated successful result** until accepted by the integrator. If a worker cannot push, return a **content-addressed result handoff** for parent-mediated publication; missing push capability must not discard or rerun completed work.
 
 Required runnable/queued/running work, required recoverable failures, or an unintegrated successful result keep the parent non-terminal. **Progress is not terminal**: after a child or milestone completes, continue the CDC loop until the project-level terminal gate accepts a real boundary.
 
