@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# corrective-workstream: final-review pool lifecycle closure
 """CDC 2.11.0 managed executor-pool planning, dispatch and completion contract."""
 from __future__ import annotations
 
