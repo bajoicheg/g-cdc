@@ -8,6 +8,7 @@ import json
 import os
 import re
 import subprocess
+from urllib.parse import urlsplit, urlunsplit
 from pathlib import Path
 
 from managed_executor_pool import validate_plan, validate_state
@@ -50,7 +51,7 @@ def _normalized_remote_endpoint(value):
         host = left.split("@")[-1].lower()
         if host and right:
             return f"ssh://{host}/{right.lstrip('/')}".rstrip("/")
-    return "file://" + str(Path(raw).expanduser().resolve())
+    return str(Path(raw).expanduser().resolve())
 
 
 def coordination_store_id_for_endpoint(value):
@@ -67,9 +68,7 @@ def _canonical_heads_ref(value, name):
 
 
 def _remote_store_id(url):
-    if not isinstance(url, str) or not url:
-        raise ValueError("pool store remote URL unavailable")
-    return "sha256:" + hashlib.sha256(url.encode("utf-8")).hexdigest()
+    return coordination_store_id_for_endpoint(url)
 
 
 class GitManagedExecutorStore:
@@ -107,14 +106,12 @@ class GitManagedExecutorStore:
             raise ValueError("coordination ref must be portable-isolated from product/shared/worker refs")
         self._git("check-ref-format", self.ref)
         self._assert_remote_identity()
-        self.store_id = _remote_store_id(fetch_urls[0])
-        if self.store_id != plan["coordination_store_id"]:
-            raise ValueError("pool store identity does not match managed-pool plan")
+        self.store_id = plan["coordination_store_id"]
 
     def _assert_remote_identity(self):
         fetch_urls = self._git("remote", "get-url", "--all", self.remote).splitlines()
         push_urls = self._git("remote", "get-url", "--push", "--all", self.remote).splitlines()
-        if len(fetch_urls) != 1 or push_urls != fetch_urls:
+        if len(fetch_urls) != 1 or len(push_urls) != 1 or push_urls != fetch_urls:
             raise ValueError("pool store remote configuration drift")
         if _remote_store_id(fetch_urls[0]) != self.plan["coordination_store_id"]:
             raise ValueError("pool store identity drift")
