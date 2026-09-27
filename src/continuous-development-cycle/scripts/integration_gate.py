@@ -238,6 +238,8 @@ def evaluate(d,evidence_root=None):
     ready=not b
     return {"schema":"integration-gate-result/v1","change_id":d["change_id"],"wave":contract["wave"],"total_waves":total_waves,
             "final_wave":final_wave,"next_wave":next_wave,"plan_ref":contract["plan_ref"],
+            "shared_branch":d["shared_branch"],"expected_shared_head":d["expected_shared_head"],
+            "observed_shared_head":d["observed_shared_head"],
             "action":"READY_FOR_INTEGRATOR" if ready else "RECONCILE_OR_REPLAN","ready":ready,"blockers":b,
             "integrator_id":d["integrator_id"],"next_gate":next_gate,
             "authorizes_shared_branch_write":False,"authorizes_force_push":False,"authorizes_merge":False,
