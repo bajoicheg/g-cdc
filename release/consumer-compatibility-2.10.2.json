@@ -1,0 +1,40 @@
+{
+  "schema": "cdc-consumer-compatibility-release-evidence/v1",
+  "version": "2.10.2",
+  "candidate_source_commit": "e27bf6346a4eb307bb9921cf0ab471639530cbe9",
+  "package_tree": "ffd6a6b7f42c675cd9b6f84b54ed3eae9ad6dbbb",
+  "provider": "codex_compute",
+  "evidence_comment": "https://github.com/bajoicheg/g-cdc/pull/14#issuecomment-5851631223",
+  "result": "3/3 GREEN",
+  "consumers": [
+    {
+      "repository": "bajoicheg-private/g-supervisor",
+      "source_commit": "f250ace4cf0f5a4086c31099c0017d53770008bd",
+      "adapter_blob": "6e97525c450bd4e318c9fb720ad6d9f3b17f6ec6",
+      "checkpoint_blob": "0b5e14795ca2c2afeae1c87f26814cef8bff2067",
+      "snapshot_blob_identity_verified": true,
+      "candidate_adapter_validation": "success",
+      "candidate_checkpoint_validation": "success"
+    },
+    {
+      "repository": "bajoicheg-private/g-ad-control",
+      "source_commit": "a65c36461d56aa80f129b65a0782be02529e1fc7",
+      "adapter_blob": "8ef78702d5e5eb7d44224b9bde18975ce4adc09d",
+      "checkpoint_blob": "893e226a20dd879635d80353f3c3c980717aadb8",
+      "snapshot_blob_identity_verified": true,
+      "candidate_adapter_validation": "success",
+      "candidate_checkpoint_validation": "success"
+    },
+    {
+      "repository": "bajoicheg/g-pc-health-check",
+      "source_commit": "5afac455f6d4d10a0f8e71258c0250ecdbb1fb1a",
+      "adapter_blob": "2a5017ea1cf08b1cdbc77f3fcab752b0958e1bc1",
+      "checkpoint_blob": "b697d02e1c132b1add7c04271eef29bf29b39755",
+      "snapshot_blob_identity_verified": true,
+      "candidate_adapter_validation": "success",
+      "candidate_checkpoint_validation": "success"
+    }
+  ],
+  "establishes_adoption_authority": false,
+  "authorizes_release": false
+}
