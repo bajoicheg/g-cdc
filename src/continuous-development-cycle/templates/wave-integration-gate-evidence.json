@@ -1,0 +1,10 @@
+{
+  "schema": "wave-integration-gate-evidence/v1",
+  "change_id": "change-parallel",
+  "plan_ref": "sha256:a05a841272888778dc7300d8c397925b475f70097dedef1ee4ab2a3cf750a9f5",
+  "wave": 1,
+  "base_sha": "1111111111111111111111111111111111111111",
+  "shared_branch": "feature/integration",
+  "ready": true,
+  "evidence_ref": "integration-gate:wave-1-green"
+}

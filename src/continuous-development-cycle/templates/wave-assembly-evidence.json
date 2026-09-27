@@ -1,0 +1,12 @@
+{
+  "schema": "wave-assembly-evidence/v1",
+  "change_id": "change-parallel",
+  "plan_ref": "sha256:a05a841272888778dc7300d8c397925b475f70097dedef1ee4ab2a3cf750a9f5",
+  "wave": 1,
+  "base_sha": "1111111111111111111111111111111111111111",
+  "integrated_head": "2222222222222222222222222222222222222222",
+  "shared_branch": "feature/integration",
+  "gate_sha256": "sha256:a8577df8752b00852dffd75ef648a73f240439efe536900972e78c63f531449e",
+  "assembled": true,
+  "evidence_ref": "assembly:wave-1@2222222222222222222222222222222222222222"
+}

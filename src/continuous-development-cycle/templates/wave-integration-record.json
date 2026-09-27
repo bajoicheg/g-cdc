@@ -3,16 +3,16 @@
   "change_id": "change-parallel",
   "plan_ref": "sha256:a05a841272888778dc7300d8c397925b475f70097dedef1ee4ab2a3cf750a9f5",
   "wave": 1,
-  "prior_shared_head": "1111111111111111111111111111111111111111",
+  "base_sha": "1111111111111111111111111111111111111111",
   "integrated_head": "2222222222222222222222222222222222222222",
   "shared_branch": "feature/integration",
-  "integrator_id": "integrator-1",
-  "gate_result_ref": {
-    "path": "templates/wave-integration-gate-result.json",
-    "sha256": "sha256:e41bdc0fb9e8ebecc700bdc0d392bcf1b1f03838c965a20e862be467585804fc"
+  "gate_artifact_ref": {
+    "path": "templates/wave-integration-gate-evidence.json",
+    "sha256": "sha256:a8577df8752b00852dffd75ef648a73f240439efe536900972e78c63f531449e"
   },
-  "assembly_evidence_refs": [
-    "git:shared-head@2222222222222222222222222222222222222222",
-    "verification:wave-1-green"
-  ]
+  "assembly_artifact_ref": {
+    "path": "templates/wave-assembly-evidence.json",
+    "sha256": "sha256:cc2c5e2e9912e38d6e9f0b61d1493cb74107e52195aa7b7b50deee403c894fa3"
+  },
+  "previous_integration": null
 }
