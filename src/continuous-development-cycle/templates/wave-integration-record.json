@@ -3,8 +3,16 @@
   "change_id": "change-parallel",
   "plan_ref": "sha256:a05a841272888778dc7300d8c397925b475f70097dedef1ee4ab2a3cf750a9f5",
   "wave": 1,
+  "prior_shared_head": "1111111111111111111111111111111111111111",
   "integrated_head": "2222222222222222222222222222222222222222",
   "shared_branch": "feature/integration",
-  "gate_evidence_ref": "integration-gate:wave-1-green",
-  "assembly_evidence_ref": "assembly:wave-1@2222222222222222222222222222222222222222"
+  "integrator_id": "integrator-1",
+  "gate_result_ref": {
+    "path": "templates/wave-integration-gate-result.json",
+    "sha256": "sha256:e41bdc0fb9e8ebecc700bdc0d392bcf1b1f03838c965a20e862be467585804fc"
+  },
+  "assembly_evidence_refs": [
+    "git:shared-head@2222222222222222222222222222222222222222",
+    "verification:wave-1-green"
+  ]
 }
