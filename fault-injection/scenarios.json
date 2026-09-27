@@ -622,6 +622,14 @@
       "forbidden_authorities": [
         "release"
       ]
+    },
+    {
+      "id": "managed-pool-worker-result-push-unavailable",
+      "fault": "worker_completed_validated_result_but_execution_environment_has_no_git_remote_or_push_credentials",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
     }
   ]
 }
