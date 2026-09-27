@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# corrective-workstream: final-review pool lifecycle closure
 """CDC 2.11.0 managed executor-pool planning, dispatch and completion contract."""
 from __future__ import annotations
 
@@ -20,7 +19,7 @@ PLAN_SCHEMA = "managed-executor-pool-plan/v1"
 STATE_SCHEMA = "managed-executor-pool-state/v1"
 SHA = re.compile(r"^[0-9a-f]{40}$")
 ROLES = {"writer", "read_only", "review"}
-TASK_STATUSES = {"planned", "queued", "running", "succeeded", "failed", "cancelled", "stale"}
+TASK_STATUSES = {"planned", "queued", "running", "succeeded", "failed", "cancelled", "stale", "omitted"}
 ACTIVE = {"queued", "running"}
 RECOVERABLE = {"failed", "cancelled", "stale"}
 AUTHORITY_FIELDS = (
@@ -242,6 +241,8 @@ def validate_state(plan, state):
         seen.append(task_id)
         if task["status"] not in TASK_STATUSES:
             raise ValueError("invalid managed executor task status")
+        if task["status"] == "omitted" and pmap[task_id]["required"]:
+            raise ValueError("required task cannot be omitted")
         _refs(task["attempt_ids"], f"{task_id}.attempt_ids", allow_empty=True)
         if task["active_attempt_id"] is not None:
             _text(task["active_attempt_id"], f"{task_id}.active_attempt_id")
@@ -331,6 +332,14 @@ def _advance_revision(state):
     return state
 
 
+def _remaining_task_budget(task, current):
+    remaining_runtime = task["max_runtime_seconds"] - current["runtime_seconds"]
+    remaining_cost = task["max_cost_units"] - current["cost_units"]
+    if remaining_runtime < 0 or remaining_cost < 0:
+        raise ValueError("task remaining budget cannot be negative")
+    return remaining_runtime, remaining_cost
+
+
 def dispatch(plan, state):
     validate_state(plan, state)
     smap = _state_map(state)
@@ -339,25 +348,29 @@ def dispatch(plan, state):
     active_count = len(active_ids)
     cap = 1 if state["execution_mode"] == "sequential_fallback" else plan["max_parallel"]
     slots = max(0, cap - active_count)
-    reserved_runtime = sum(pmap[task_id]["max_runtime_seconds"] for task_id in active_ids)
-    reserved_cost = sum(pmap[task_id]["max_cost_units"] for task_id in active_ids)
+    active_remaining = [_remaining_task_budget(pmap[task_id], smap[task_id]) for task_id in active_ids]
+    reserved_runtime = sum(item[0] for item in active_remaining)
+    reserved_cost = sum(item[1] for item in active_remaining)
     runtime_left = plan["total_runtime_budget_seconds"] - state["runtime_consumed_seconds"] - reserved_runtime
     cost_left = plan["total_cost_budget_units"] - state["cost_consumed_units"] - reserved_cost
     chosen = []
+    chosen_remaining = {}
     writer_paths = _active_writer_paths(plan, state)
     for task_id in ready_task_ids(plan, state):
         if len(chosen) >= slots:
             break
         task = pmap[task_id]
-        if task["max_runtime_seconds"] > runtime_left or task["max_cost_units"] > cost_left:
+        remaining_runtime, remaining_cost = _remaining_task_budget(task, smap[task_id])
+        if remaining_runtime > runtime_left or remaining_cost > cost_left:
             continue
         if task["role"] == "writer":
             if any(overlaps(path, claimed) for path in task["write_paths"] for claimed in writer_paths):
                 continue
             writer_paths.extend(task["write_paths"])
         chosen.append(task_id)
-        runtime_left -= task["max_runtime_seconds"]
-        cost_left -= task["max_cost_units"]
+        chosen_remaining[task_id] = (remaining_runtime, remaining_cost)
+        runtime_left -= remaining_runtime
+        cost_left -= remaining_cost
     assignments = [
         {
             "task_id": task_id,
@@ -381,8 +394,8 @@ def dispatch(plan, state):
         "max_parallel": cap,
         "task_ids": chosen,
         "assignments": assignments,
-        "reserved_runtime_seconds": sum(pmap[task_id]["max_runtime_seconds"] for task_id in chosen),
-        "reserved_cost_units": sum(pmap[task_id]["max_cost_units"] for task_id in chosen),
+        "reserved_runtime_seconds": sum(chosen_remaining[task_id][0] for task_id in chosen),
+        "reserved_cost_units": sum(chosen_remaining[task_id][1] for task_id in chosen),
         "fallback_serialized": state["execution_mode"] == "sequential_fallback",
         **{name: False for name in AUTHORITY_FIELDS},
     }
@@ -519,7 +532,8 @@ def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
         raise ValueError("worker result missing expected evidence")
     runtime = _nonnegative_number(runtime_seconds, "runtime_seconds")
     cost = _nonnegative_number(cost_units, "cost_units")
-    if runtime > task["max_runtime_seconds"] or cost > task["max_cost_units"]:
+    if (current["runtime_seconds"] + runtime > task["max_runtime_seconds"]
+            or current["cost_units"] + cost > task["max_cost_units"]):
         raise ValueError("worker result exceeds task budget")
     if state["runtime_consumed_seconds"] + runtime > plan["total_runtime_budget_seconds"]:
         raise ValueError("worker result exceeds pool runtime budget")
@@ -585,6 +599,23 @@ def mark_integrated(plan, state, task_id, result_ref, *, expected_revision):
     return validate_state(plan, _advance_revision(result))
 
 
+def omit_optional_task(plan, state, task_id, *, expected_revision):
+    validate_state(plan, state)
+    _expect_revision(state, expected_revision)
+    result = copy.deepcopy(state)
+    current = _state_map(result).get(task_id)
+    task = _task_map(plan).get(task_id)
+    if task is None or task["required"] or current is None:
+        raise ValueError("omit requires an optional task")
+    if current["status"] not in {"planned", *RECOVERABLE}:
+        raise ValueError("optional omission requires planned or recoverable task")
+    if (current["active_attempt_id"] is not None or current["reservation_token"] is not None
+            or current["accepted_result_ref"] is not None or current["integrated"] or current["discarded"]):
+        raise ValueError("optional omission requires no active or accepted result")
+    current["status"] = "omitted"
+    return validate_state(plan, _advance_revision(result))
+
+
 def discard_optional_result(plan, state, task_id, result_ref, *, expected_revision):
     validate_state(plan, state)
     _expect_revision(state, expected_revision)
@@ -614,13 +645,19 @@ def assess(plan, state):
                 blockers.append(f"{task['id']}:runnable" if task["id"] in runnable else f"{task['id']}:dependency_wait")
             elif current["status"] in RECOVERABLE:
                 blockers.append(f"{task['id']}:recovery_required")
-        elif current["status"] in ACTIVE:
-            blockers.append(f"{task['id']}:optional_active")
+        else:
+            if current["status"] == "planned":
+                blockers.append(f"{task['id']}:optional_runnable" if task["id"] in runnable else f"{task['id']}:optional_dependency_wait")
+            elif current["status"] in RECOVERABLE:
+                blockers.append(f"{task['id']}:optional_disposition_required")
+            elif current["status"] in ACTIVE:
+                blockers.append(f"{task['id']}:optional_active")
     complete = not blockers and all(
         (smap[task["id"]]["status"] == "succeeded" and smap[task["id"]]["integrated"])
         if task["required"] else (
-            smap[task["id"]]["status"] != "succeeded"
-            or smap[task["id"]]["integrated"] or smap[task["id"]]["discarded"]
+            smap[task["id"]]["status"] == "omitted"
+            or (smap[task["id"]]["status"] == "succeeded"
+                and (smap[task["id"]]["integrated"] or smap[task["id"]]["discarded"]))
         )
         for task in plan["tasks"]
     )
