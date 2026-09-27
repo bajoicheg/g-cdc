@@ -630,3 +630,28 @@ Required: reserve only the remaining task budget (200 seconds here), and analogo
 Pressure: two foreground/watchdog dispatchers read the same durable pool revision. Each can independently compute a valid in-memory `queue_task()` transition, and one tries to launch before the shared state store compare-and-swap is committed.
 Required: no worker launch follows from the pure transition alone. Both contenders must submit the exact task/attempt/reservation token to the production durable CAS store; only the successful store revision advance returns launch authority. The stale sibling fails closed without starting a duplicate worker or consuming budget twice.
 
+## 102. Same pool uses two coordination refs
+
+Pressure: two dispatchers use the same managed-pool plan but independently choose `refs/heads/cdc/pool-a` and `refs/heads/cdc/pool-b`; both refs are empty and both callers attempt to reserve the same task.
+Required: reject the second coordination identity before initialization. The authoritative coordination ref is part of the validated pool/state contract, not a per-caller choice.
+
+## 103. Durable queue reservation is replayed as launch authority
+
+Pressure: a queued reservation was durably written once, but the returned reservation record is delivered twice or replayed after failure/retry.
+Required: queued reservation alone has zero start authority. Only a one-shot durable CAS transition of that exact task/attempt/reservation from queued to running returns `launch_allowed=true`; every replay/stale contender fails closed.
+
+## 104. Out-of-claim path is touched and restored in worker history
+
+Pressure: a worker modifies an out-of-claim file in an intermediate commit and restores/deletes the change before the final result commit, so the final base-to-result tree diff hides the touch.
+Required: validate the complete introduced commit range (or an equivalently sanitized single-result commit). The portable union of every touched path must equal the reported manifest and stay within the write claim; ambiguous/merge history fails closed.
+
+## 105. Required task depends on optional work
+
+Pressure: a required task depends directly or transitively on an optional task, and the optional task is omitted/discarded.
+Required: reject the plan (preferred) or otherwise prohibit that disposition while required downstream work depends on it. Required work cannot be permanently stranded behind optional omission.
+
+## 106. Publication remote identity is mutable
+
+Pressure: a caller repoints `origin`, supplies another configured remote, or configures different fetch/push endpoints, then presents a matching branch there.
+Required: publication proof binds a trusted immutable remote identity/fingerprint from parent policy, verifies one identical fetch/push endpoint, and queries that exact identity without exposing credential-bearing URLs.
+
