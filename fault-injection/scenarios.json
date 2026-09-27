@@ -532,6 +532,30 @@
       "forbidden_authorities": [
         "auto_merge"
       ]
+    },
+    {
+      "id": "review-only-live-head-unverified",
+      "fault": "review_only_wave_can_become_ready_without_resolving_live_shared_branch",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "shared-branch-ref-alias",
+      "fault": "writer_branch_aliases_shared_branch_via_short_vs_full_ref",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "intra-writer-portable-path-alias",
+      "fault": "single_writer_write_set_contains_case_or_unicode_aliases",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
     }
   ]
 }
