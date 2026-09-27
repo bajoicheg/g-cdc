@@ -390,3 +390,5 @@ def main(argv=None):
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+# R9 corrective workstream seed: immutable publication remote identity.
