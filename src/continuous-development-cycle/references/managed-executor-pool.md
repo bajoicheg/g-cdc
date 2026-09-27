@@ -97,3 +97,5 @@ A result is not durably published merely because a matching local `refs/heads/*`
 Optional work also requires explicit disposition. A planned or recoverable optional task blocks pool terminal state until it is either executed or explicitly marked omitted; a successful optional result blocks terminal state until integration or explicit discard.
 
 Retry reservation uses remaining per-task budget, not the original maximum. Prior attempt consumption stays in the aggregate ledger while the next retry reserves only `max - consumed` for runtime and cost.
+
+<!-- R9 corrective guidance workstream seed; remove before completion. -->
