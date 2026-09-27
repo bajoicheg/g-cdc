@@ -10,6 +10,7 @@ import subprocess
 from pathlib import Path
 
 from managed_executor_pool import validate_plan, validate_state
+from parallel_task_planner import portable_path_key
 
 REVISION = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 STATE_FILE = "pool-state.json"
@@ -62,8 +63,13 @@ class GitManagedExecutorStore:
             if task["role"] == "writer":
                 branch = task["branch"]
                 writer_refs.add(branch if branch.startswith("refs/heads/") else "refs/heads/" + branch)
-        if self.ref in protected or self.ref in writer_refs:
-            raise ValueError("coordination ref must be isolated from product/shared/worker refs")
+        coordination_key = portable_path_key(self.ref.removeprefix("refs/heads/"))
+        occupied_keys = {
+            portable_path_key(ref.removeprefix("refs/heads/"))
+            for ref in protected | writer_refs
+        }
+        if coordination_key in occupied_keys:
+            raise ValueError("coordination ref must be portable-isolated from product/shared/worker refs")
         self._git("check-ref-format", self.ref)
         remotes = self._git("remote").splitlines()
         if remote not in remotes:
