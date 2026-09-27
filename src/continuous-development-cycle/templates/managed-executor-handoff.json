@@ -21,5 +21,7 @@
   ],
   "evidence_refs": [
     "tests:worker-green"
-  ]
+  ],
+  "publication_repository": "example/repository",
+  "publication_remote_id": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
 }
