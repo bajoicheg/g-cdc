@@ -1,4 +1,9 @@
+import sys
 import unittest
+from pathlib import Path
+
+EXECUTION_DIR = Path(__file__).resolve().parents[1] / "execution"
+sys.path.insert(0, str(EXECUTION_DIR))
 
 from execution_guard import guard_command
 
