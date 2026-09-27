@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# corrective-workstream: final-review handoff trust closure
 """CDC 2.11.0 portable managed-executor result handoff and publication proof."""
 from __future__ import annotations
 
@@ -250,26 +249,69 @@ def _verify_unified_diff_artifact(handoff, payload, root, published_commit):
     return expected_tree
 
 
-def _verify_git_bundle_artifact(handoff, artifact_path, root, published_commit):
+def _verify_git_bundle_artifact(handoff, payload, root, published_commit):
+    fd, snapshot_path = tempfile.mkstemp(prefix="cdc-handoff-bundle-", suffix=".bundle")
     try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.chmod(snapshot_path, 0o600)
         verify = subprocess.run(
-            ["git", "-C", str(root), "bundle", "verify", str(artifact_path)],
+            ["git", "-C", str(root), "bundle", "verify", snapshot_path],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=15,
         )
         if verify.returncode != 0:
             raise ValueError("git_bundle verification failed")
         heads = subprocess.check_output(
-            ["git", "-C", str(root), "bundle", "list-heads", str(artifact_path)],
+            ["git", "-C", str(root), "bundle", "list-heads", snapshot_path],
             text=True, stderr=subprocess.PIPE, timeout=15,
         ).splitlines()
     except (OSError, subprocess.SubprocessError) as exc:
         raise ValueError(f"cannot verify git_bundle publication: {exc}") from exc
+    finally:
+        try:
+            os.unlink(snapshot_path)
+        except FileNotFoundError:
+            pass
     if not any(line.split()[0] == published_commit for line in heads if line.split()):
         raise ValueError("git_bundle does not contain published source result commit")
     return True
 
 
-def validate_publication_proof(proof, handoff, git_worktree, evidence_root=None):
+def _verify_remote_branch(root, remote, branch_ref, published_commit):
+    _text(remote, "publication remote")
+    if remote.startswith("-"):
+        raise ValueError("publication remote name is invalid")
+    environment = dict(os.environ, GIT_TERMINAL_PROMPT="0")
+    try:
+        remotes = subprocess.check_output(
+            ["git", "-C", str(root), "remote"], text=True,
+            stderr=subprocess.PIPE, env=environment, timeout=15,
+        ).splitlines()
+        if remote not in remotes:
+            raise ValueError("publication remote is not configured")
+        query = subprocess.run(
+            ["git", "-C", str(root), "ls-remote", "--refs", remote, branch_ref],
+            text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            env=environment, timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise ValueError("cannot query authoritative publication remote") from exc
+    if query.returncode != 0:
+        raise ValueError("cannot query authoritative publication remote")
+    rows = [line for line in query.stdout.splitlines() if line.strip()]
+    if len(rows) != 1:
+        raise ValueError("authoritative remote branch must resolve exactly once")
+    fields = rows[0].split("\t")
+    if len(fields) != 2 or fields[1] != branch_ref or not SHA.fullmatch(fields[0]):
+        raise ValueError("authoritative remote branch response is invalid")
+    if fields[0] != published_commit:
+        raise ValueError("published commit is not exact authoritative remote branch head")
+    return True
+
+
+def validate_publication_proof(proof, handoff, git_worktree, evidence_root=None, remote="origin"):
     validate_handoff(handoff)
     if not isinstance(proof, dict) or set(proof) != PROOF_FIELDS or proof.get("schema") != PROOF_SCHEMA:
         raise ValueError("managed executor publication proof fields/schema mismatch")
@@ -312,14 +354,9 @@ def validate_publication_proof(proof, handoff, git_worktree, evidence_root=None)
         )
         if ancestry.returncode != 0:
             raise ValueError("published result does not descend from handoff base")
-        live = subprocess.check_output(
-            ["git", "-C", str(root), "rev-parse", "--verify", branch_ref],
-            text=True, stderr=subprocess.PIPE, timeout=15,
-        ).strip()
     except (OSError, subprocess.SubprocessError) as exc:
         raise ValueError(f"cannot verify published result: {exc}") from exc
-    if live != proof["published_commit"]:
-        raise ValueError("published commit is not exact assigned branch head")
+    _verify_remote_branch(root, remote, branch_ref, proof["published_commit"])
     actual_changed_paths = _git_changed_paths(root, handoff["base_sha"], proof["published_commit"])
     if _portable_set(actual_changed_paths) != _portable_set(handoff["changed_paths"]):
         raise ValueError("actual published Git diff does not match handoff manifest")
@@ -332,7 +369,7 @@ def validate_publication_proof(proof, handoff, git_worktree, evidence_root=None)
         if handoff["artifact_ref"]["format"] == "unified_diff":
             _verify_unified_diff_artifact(handoff, payload, root, proof["published_commit"])
         else:
-            _verify_git_bundle_artifact(handoff, artifact_path, root, proof["published_commit"])
+            _verify_git_bundle_artifact(handoff, payload, root, proof["published_commit"])
     return proof
 
 
