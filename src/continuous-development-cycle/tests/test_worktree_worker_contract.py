@@ -20,6 +20,10 @@ class T(unittest.TestCase):
  def test_worker_branch_cannot_equal_shared(self):
   d=self.base();d["assignments"][0]["branch"]=d["shared_branch"]
   with self.assertRaises(ValueError):assess(d)
+ def test_worker_branch_alias_cannot_equal_shared(self):
+  d=self.base();d["shared_branch"]="refs/heads/feature/integration";d["plan"]["shared_branch"]="refs/heads/feature/integration"
+  d["assignments"][0]["branch"]="feature/integration";self.rebind(d)
+  with self.assertRaises(ValueError):assess(d)
  def test_stale_assignment_base_rejected(self):
   d=self.base();d["assignments"][0]["base_sha"]="2"*40
   with self.assertRaises(ValueError):assess(d)
