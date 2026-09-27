@@ -226,6 +226,7 @@ def evaluate(d,evidence_root=None):
         if r["state"]!="success":b.append("worker_not_success:"+a["task_id"])
         if r["base_sha"]!=base:b.append("worker_base_stale:"+a["task_id"])
     writers=[r for r in d["worker_results"] if r["role"]=="writer"]
+    writer_result_shas=sorted(r["result_sha"] for r in writers if r["state"]=="success")
     for i,a in enumerate(writers):
         for x in writers[i+1:]:
             for p in a["changed_paths"]:
@@ -239,7 +240,7 @@ def evaluate(d,evidence_root=None):
     return {"schema":"integration-gate-result/v1","change_id":d["change_id"],"wave":contract["wave"],"total_waves":total_waves,
             "final_wave":final_wave,"next_wave":next_wave,"plan_ref":contract["plan_ref"],
             "shared_branch":d["shared_branch"],"expected_shared_head":d["expected_shared_head"],
-            "observed_shared_head":d["observed_shared_head"],
+            "observed_shared_head":d["observed_shared_head"],"writer_result_shas":writer_result_shas,
             "action":"READY_FOR_INTEGRATOR" if ready else "RECONCILE_OR_REPLAN","ready":ready,"blockers":b,
             "integrator_id":d["integrator_id"],"next_gate":next_gate,
             "authorizes_shared_branch_write":False,"authorizes_force_push":False,"authorizes_merge":False,
