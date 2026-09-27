@@ -861,39 +861,17 @@ def claim_launch_cas(store, expected_store_revision, plan, task_id, attempt_id, 
         "task_id": task_id,
         "attempt_id": attempt_id,
         "reservation_token": reservation_token,
-        "launch_allowed": False,
+        "launch_allowed": True,
         **{name: False for name in AUTHORITY_FIELDS},
     }
 
 
 def launch_task_cas(store, expected_store_revision, plan, task_id, attempt_id, *, reservation_token):
-    """Consume one queued reservation through durable CAS and grant one-shot launch authority."""
-    store_revision, state = store.read()
-    if store_revision != expected_store_revision or state is None:
-        raise ValueError("stale expected pool-store revision")
-    validate_state(plan, state)
-    task_state = _state_map(state).get(task_id)
-    if (task_state is None or task_state["status"] != "queued"
-            or task_state["active_attempt_id"] != attempt_id
-            or task_state["reservation_token"] != reservation_token):
-        raise ValueError("launch claim does not match live queued reservation")
-    next_state = mark_running(
-        plan, state, task_id, attempt_id,
-        expected_revision=state["revision"], reservation_token=reservation_token,
+    """Compatibility alias for the one-shot durable launch claim."""
+    return claim_launch_cas(
+        store, expected_store_revision, plan, task_id, attempt_id,
+        reservation_token=reservation_token,
     )
-    new_store_revision = store.compare_and_swap(expected_store_revision, next_state)
-    return {
-        "schema": "managed-executor-launch-claim/v1",
-        "store_revision": new_store_revision,
-        "state_revision": next_state["revision"],
-        "state_ref": canonical_state_ref(next_state),
-        "task_id": task_id,
-        "attempt_id": attempt_id,
-        "reservation_token": reservation_token,
-        "launch_allowed": True,
-        **{name: False for name in AUTHORITY_FIELDS},
-    }
-
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
