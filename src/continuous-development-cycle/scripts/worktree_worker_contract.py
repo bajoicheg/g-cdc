@@ -8,6 +8,7 @@ from parallel_task_planner import validate as validate_parallel_plan, plan as bu
 SCHEMA="worktree-worker-contract/v1"
 INTEGRATION_SCHEMA="wave-integration-record/v1"
 GATE_SCHEMA="wave-integration-gate-evidence/v1"
+GATE_RESULT_SCHEMA="integration-gate-result/v1"
 ASSEMBLY_SCHEMA="wave-assembly-evidence/v1"
 SHA=re.compile(r"^[0-9a-f]{40}$");DIGEST=re.compile(r"^sha256:[0-9a-f]{64}$")
 ROLES={"writer","read_only","review"}
@@ -52,13 +53,42 @@ def _load_json_artifact(ref,evidence_root,label):
     return data,observed
 
 def validate_gate_evidence(v):
-    fields={"schema","change_id","plan_ref","wave","base_sha","shared_branch","ready","evidence_ref"}
+    fields={"schema","change_id","plan_ref","wave","base_sha","shared_branch","ready","evidence_ref","result_artifact_ref"}
     if not isinstance(v,dict) or set(v)!=fields or v.get("schema")!=GATE_SCHEMA:raise ValueError("gate evidence fields/schema mismatch")
     _text(v["change_id"],"gate change_id");_digest(v["plan_ref"],"gate plan_ref")
     if type(v["wave"]) is not int or v["wave"]<1:raise ValueError("gate wave invalid")
     _sha(v["base_sha"],"gate base_sha");canonical_branch_ref(v["shared_branch"])
     if type(v["ready"]) is not bool or not v["ready"]:raise ValueError("gate evidence must be ready")
-    _text(v["evidence_ref"],"gate evidence_ref");return v
+    _text(v["evidence_ref"],"gate evidence_ref");_artifact_ref(v["result_artifact_ref"],"gate result_artifact_ref")
+    return v
+
+def validate_gate_result(v):
+    fields={"schema","change_id","wave","total_waves","final_wave","next_wave","plan_ref",
+            "shared_branch","expected_shared_head","observed_shared_head",
+            "action","ready","blockers","integrator_id","next_gate",
+            "authorizes_shared_branch_write","authorizes_force_push","authorizes_merge",
+            "authorizes_release","authorizes_scope_expansion"}
+    if not isinstance(v,dict) or set(v)!=fields or v.get("schema")!=GATE_RESULT_SCHEMA:
+        raise ValueError("integration gate result fields/schema mismatch")
+    _text(v["change_id"],"gate result change_id");_digest(v["plan_ref"],"gate result plan_ref")
+    if type(v["wave"]) is not int or v["wave"]<1:raise ValueError("gate result wave invalid")
+    if type(v["total_waves"]) is not int or v["total_waves"]<v["wave"]:raise ValueError("gate result total_waves invalid")
+    if type(v["final_wave"]) is not bool:raise ValueError("gate result final_wave invalid")
+    if v["final_wave"]:
+        if v["next_wave"] is not None:raise ValueError("final gate result cannot have next_wave")
+    else:
+        if type(v["next_wave"]) is not int or v["next_wave"]!=v["wave"]+1 or v["next_wave"]>v["total_waves"]:
+            raise ValueError("nonfinal gate result next_wave invalid")
+    canonical_branch_ref(v["shared_branch"]);_sha(v["expected_shared_head"],"gate result expected_shared_head");_sha(v["observed_shared_head"],"gate result observed_shared_head")
+    if v["action"] not in {"READY_FOR_INTEGRATOR","RECONCILE_OR_REPLAN"}:raise ValueError("gate result action invalid")
+    if type(v["ready"]) is not bool:raise ValueError("gate result ready invalid")
+    if not isinstance(v["blockers"],list) or any(not isinstance(x,str) or not x.strip() for x in v["blockers"]):raise ValueError("gate result blockers invalid")
+    _text(v["integrator_id"],"gate result integrator_id");_text(v["next_gate"],"gate result next_gate")
+    if v["ready"]!=(v["action"]=="READY_FOR_INTEGRATOR" and not v["blockers"]):
+        raise ValueError("gate result ready/action/blockers inconsistent")
+    for name in ("authorizes_shared_branch_write","authorizes_force_push","authorizes_merge","authorizes_release","authorizes_scope_expansion"):
+        if type(v[name]) is not bool or v[name]:raise ValueError("gate result authority must be false: "+name)
+    return v
 
 def validate_assembly_evidence(v):
     fields={"schema","change_id","plan_ref","wave","base_sha","integrated_head","shared_branch","gate_sha256","assembled","evidence_ref"}
@@ -109,6 +139,8 @@ def _resolve_integration_chain(ref,evidence_root,contract,expected_wave,seen=Non
         if record["base_sha"]!=previous["integrated_head"]:raise ValueError("integration chain base mismatch")
     gate,gate_digest=_load_json_artifact(record["gate_artifact_ref"],evidence_root,"integration gate artifact")
     validate_gate_evidence(gate)
+    gate_result,_=_load_json_artifact(gate["result_artifact_ref"],evidence_root,"integration gate result artifact")
+    validate_gate_result(gate_result)
     assembly,assembly_digest=_load_json_artifact(record["assembly_artifact_ref"],evidence_root,"assembly artifact")
     validate_assembly_evidence(assembly)
     for artifact,label in ((gate,"gate"),(assembly,"assembly")):
@@ -117,6 +149,19 @@ def _resolve_integration_chain(ref,evidence_root,contract,expected_wave,seen=Non
         if artifact["base_sha"]!=record["base_sha"]:raise ValueError(label+" evidence base mismatch")
         if canonical_branch_ref(artifact["shared_branch"])!=canonical_branch_ref(record["shared_branch"]):
             raise ValueError(label+" evidence shared branch mismatch")
+    if gate_result["change_id"]!=record["change_id"] or gate_result["plan_ref"]!=record["plan_ref"] or gate_result["wave"]!=record["wave"]:
+        raise ValueError("integration gate result identity mismatch")
+    if canonical_branch_ref(gate_result["shared_branch"])!=canonical_branch_ref(record["shared_branch"]):
+        raise ValueError("integration gate result shared branch mismatch")
+    if gate_result["expected_shared_head"]!=record["base_sha"] or gate_result["observed_shared_head"]!=record["base_sha"]:
+        raise ValueError("integration gate result base mismatch")
+    if gate_result["integrator_id"]!=contract["integrator_id"]:raise ValueError("integration gate result integrator mismatch")
+    if (not gate_result["ready"] or gate_result["action"]!="READY_FOR_INTEGRATOR" or gate_result["blockers"]):
+        raise ValueError("resolved integration gate result is not GREEN")
+    if gate_result["final_wave"] or gate_result["next_wave"]!=record["wave"]+1:
+        raise ValueError("resolved prior gate does not route to the next wave")
+    if gate_result["next_gate"]!="integrate_wave_then_contract_next_wave_on_fresh_head":
+        raise ValueError("resolved prior gate has wrong next-wave route")
     if assembly["integrated_head"]!=record["integrated_head"]:raise ValueError("assembly integrated head mismatch")
     if assembly["gate_sha256"]!=gate_digest:raise ValueError("assembly does not bind resolved gate artifact")
     return record
