@@ -21,6 +21,5 @@
   "authorizes_merge": false,
   "authorizes_release": false,
   "authorizes_scope_expansion": false,
-  "authorizes_scheduler_mutation": false,
-  "publication_remote": "origin"
+  "authorizes_scheduler_mutation": false
 }
