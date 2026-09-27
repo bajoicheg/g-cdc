@@ -273,3 +273,14 @@ Every attempt has durable lifecycle and **attempt lineage**. Duplicate active la
 Required runnable/queued/running work, required recoverable failures, or an unintegrated successful result keep the parent non-terminal. Optional planned/recoverable work also requires explicit execution or omission, and retries reserve only their remaining per-task runtime/cost budget. **Progress is not terminal**: after a child or milestone completes, continue the CDC loop until the project-level terminal gate accepts a real boundary.
 
 Read `references/managed-executor-pool.md`.
+
+
+### Final managed-pool trust boundaries
+
+A managed pool has exactly one **authoritative coordination ref** bound into the validated plan and durable state. Callers do not choose a different ref for the same pool. Queue reservation is not worker-start authority: only a successful **one-shot durable queued→running CAS** for the exact task/attempt/reservation token may return launch authority, and replay/stale contenders fail closed.
+
+Writer acceptance covers the **entire introduced commit history**, not only the final tree delta. A touched-and-restored out-of-claim path is still an escape. Ambiguous/merge history must be rejected or normalized into an independently validated sanitized result before acceptance.
+
+A required task may not depend directly or transitively on optional work that can be omitted/discarded. Optional disposition must never strand required work.
+
+Publication proof uses a trusted immutable **remote identity/fingerprint** supplied by parent/integrator policy. The configured remote must have one identical fetch/push endpoint, and proof must verify the exact remote branch without logging credential-bearing URLs. A mutable remote name alone is not authority.
