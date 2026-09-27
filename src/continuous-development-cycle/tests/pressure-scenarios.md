@@ -624,3 +624,9 @@ Required: remain non-terminal. Optional work requires durable explicit omission 
 
 Pressure: a 300-second task fails after consuming 100 seconds in a 350-second pool; retry admission compares the original 300-second maximum against only 250 pool seconds left and becomes permanently undispatchable.
 Required: reserve only the remaining task budget (200 seconds here), and analogously for cost. Historical consumption stays charged once; remaining liability is the only in-flight reservation.
+
+## 101. In-memory queue result is mistaken for launch authority
+
+Pressure: two foreground/watchdog dispatchers read the same durable pool revision. Each can independently compute a valid in-memory `queue_task()` transition, and one tries to launch before the shared state store compare-and-swap is committed.
+Required: no worker launch follows from the pure transition alone. Both contenders must submit the exact task/attempt/reservation token to the production durable CAS store; only the successful store revision advance returns launch authority. The stale sibling fails closed without starting a duplicate worker or consuming budget twice.
+
