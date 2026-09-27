@@ -28,22 +28,55 @@ def _safe_rel(path):
     if any(x in {"",".",".."} for x in parts):raise ValueError("unsafe integration artifact path")
     return path
 
+def _content_ref(v,n):
+    if not isinstance(v,dict) or set(v)!={"path","sha256"}:raise ValueError(f"{n} fields mismatch")
+    _safe_rel(v["path"])
+    if not isinstance(v["sha256"],str) or not PLAN_REF.fullmatch(v["sha256"]):raise ValueError(f"{n}.sha256 invalid")
+    return v
+
+def _load_content_addressed_json(root,ref,label):
+    _content_ref(ref,label)
+    target=(root/ref["path"]).resolve()
+    try:target.relative_to(root)
+    except ValueError as exc:raise ValueError(f"{label} escapes evidence root") from exc
+    try:payload=target.read_bytes()
+    except OSError as exc:raise ValueError(f"cannot read {label}: {exc}") from exc
+    observed="sha256:"+hashlib.sha256(payload).hexdigest()
+    if observed!=ref["sha256"]:raise ValueError(f"{label} digest mismatch")
+    try:return json.loads(payload)
+    except json.JSONDecodeError as exc:raise ValueError(f"{label} JSON invalid") from exc
+
 def validate_prior_integration_record(record):
-    fields={"schema","change_id","plan_ref","wave","integrated_head","shared_branch","gate_evidence_ref","assembly_evidence_ref"}
+    fields={"schema","change_id","plan_ref","wave","prior_shared_head","integrated_head","shared_branch",
+            "integrator_id","gate_result_ref","assembly_evidence_refs"}
     if not isinstance(record,dict) or set(record)!=fields or record.get("schema")!=INTEGRATION_SCHEMA:
         raise ValueError("prior integration record fields/schema mismatch")
-    _text(record["change_id"],"prior record change_id")
+    for n in ("change_id","integrator_id"):_text(record[n],f"prior record {n}")
     if not isinstance(record["plan_ref"],str) or not PLAN_REF.fullmatch(record["plan_ref"]):
         raise ValueError("prior record plan_ref invalid")
     if type(record["wave"]) is not int or record["wave"]<1:raise ValueError("prior record wave invalid")
-    if not isinstance(record["integrated_head"],str) or not SHA.fullmatch(record["integrated_head"]):
-        raise ValueError("prior record integrated_head invalid")
+    for n in ("prior_shared_head","integrated_head"):
+        if not isinstance(record[n],str) or not SHA.fullmatch(record[n]):raise ValueError(f"prior record {n} invalid")
     canonical_branch_ref(record["shared_branch"])
-    _text(record["gate_evidence_ref"],"prior record gate_evidence_ref")
-    _text(record["assembly_evidence_ref"],"prior record assembly_evidence_ref")
-    if record["gate_evidence_ref"]==record["assembly_evidence_ref"]:
-        raise ValueError("prior integration gate and assembly evidence must be distinct")
+    _content_ref(record["gate_result_ref"],"prior gate_result_ref")
+    _refs(record["assembly_evidence_refs"],"prior assembly_evidence_refs")
     return record
+
+def _validate_gate_result(gate,record,contract):
+    fields={"schema","change_id","wave","total_waves","final_wave","next_wave","plan_ref","action","ready","blockers",
+            "integrator_id","next_gate","authorizes_shared_branch_write","authorizes_force_push",
+            "authorizes_merge","authorizes_release","authorizes_scope_expansion"}
+    if not isinstance(gate,dict) or set(gate)!=fields or gate.get("schema")!="integration-gate-result/v1":
+        raise ValueError("prior gate result fields/schema mismatch")
+    if gate["change_id"]!=contract["change_id"] or gate["change_id"]!=record["change_id"]:raise ValueError("prior gate change mismatch")
+    if gate["plan_ref"]!=contract["plan_ref"] or gate["plan_ref"]!=record["plan_ref"]:raise ValueError("prior gate plan mismatch")
+    if gate["wave"]!=record["wave"] or type(gate["wave"]) is not int:raise ValueError("prior gate wave mismatch")
+    if gate["integrator_id"]!=contract["integrator_id"] or gate["integrator_id"]!=record["integrator_id"]:raise ValueError("prior gate integrator mismatch")
+    if gate["action"]!="READY_FOR_INTEGRATOR" or gate["ready"] is not True or gate["blockers"]!=[]:
+        raise ValueError("prior gate was not GREEN/ready")
+    for name in ("authorizes_shared_branch_write","authorizes_force_push","authorizes_merge","authorizes_release","authorizes_scope_expansion"):
+        if gate[name] is not False:raise ValueError("prior gate created authority")
+    return gate
 
 def _resolve_prior_integration(prior,evidence_root,contract):
     if evidence_root is None:raise ValueError("later wave requires resolvable prior integration artifact")
@@ -51,26 +84,21 @@ def _resolve_prior_integration(prior,evidence_root,contract):
         raise ValueError("later wave requires content-addressed prior integration proof")
     if type(prior["wave"]) is not int or prior["wave"]!=contract["wave"]-1:raise ValueError("prior integration wave mismatch")
     if not isinstance(prior["integrated_head"],str) or not SHA.fullmatch(prior["integrated_head"]):raise ValueError("prior integrated_head invalid")
-    path=_safe_rel(prior["artifact_path"])
-    if not isinstance(prior["artifact_sha256"],str) or not PLAN_REF.fullmatch(prior["artifact_sha256"]):
-        raise ValueError("prior integration artifact digest invalid")
-    root=Path(evidence_root).resolve();target=(root/path).resolve()
-    try:target.relative_to(root)
-    except ValueError as exc:raise ValueError("prior integration artifact escapes evidence root") from exc
-    try:payload=target.read_bytes()
-    except OSError as exc:raise ValueError(f"cannot read prior integration artifact: {exc}") from exc
-    observed="sha256:"+hashlib.sha256(payload).hexdigest()
-    if observed!=prior["artifact_sha256"]:raise ValueError("prior integration artifact digest mismatch")
-    try:record=json.loads(payload)
-    except json.JSONDecodeError as exc:raise ValueError("prior integration artifact JSON invalid") from exc
+    root=Path(evidence_root).resolve()
+    ref={"path":_safe_rel(prior["artifact_path"]),"sha256":prior["artifact_sha256"]}
+    record=_load_content_addressed_json(root,ref,"prior integration artifact")
     validate_prior_integration_record(record)
     if record["change_id"]!=contract["change_id"]:raise ValueError("prior integration change mismatch")
     if record["plan_ref"]!=contract["plan_ref"]:raise ValueError("prior integration plan mismatch")
     if record["wave"]!=prior["wave"]:raise ValueError("prior integration artifact wave mismatch")
     if record["integrated_head"]!=prior["integrated_head"]:raise ValueError("prior integration artifact head mismatch")
+    if record["integrator_id"]!=contract["integrator_id"]:raise ValueError("prior integration integrator mismatch")
     if canonical_branch_ref(record["shared_branch"])!=canonical_branch_ref(contract["shared_branch"]):
         raise ValueError("prior integration shared branch mismatch")
+    gate=_load_content_addressed_json(root,record["gate_result_ref"],"prior integration gate result")
+    _validate_gate_result(gate,record,contract)
     return record
+
 def validate(d,evidence_root=None):
     fields={"schema","change_id","plan_ref","plan","wave","base_sha","prior_wave_integration","integrator_id","shared_branch","assignments"}
     if not isinstance(d,dict) or set(d)!=fields or d.get("schema")!=SCHEMA:
