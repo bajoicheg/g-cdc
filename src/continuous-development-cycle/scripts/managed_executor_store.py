@@ -105,7 +105,12 @@ class GitManagedExecutorStore:
         if coordination_key in occupied_keys:
             raise ValueError("coordination ref must be portable-isolated from product/shared/worker refs")
         self._git("check-ref-format", self.ref)
-        self._assert_remote_identity()
+        try:
+            self._assert_remote_identity()
+        except ValueError as exc:
+            if "identity drift" in str(exc):
+                raise ValueError("pool store identity does not match managed-pool plan") from None
+            raise
         self.store_id = plan["coordination_store_id"]
 
     def _assert_remote_identity(self):
