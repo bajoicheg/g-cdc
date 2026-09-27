@@ -50,35 +50,10 @@ jobs:
           for consumer in g-supervisor g-ad-control g-pc-health-check; do
             python -B src/continuous-development-cycle/scripts/validate_adapter.py "consumer/evidence/$consumer/development-cycle.yaml"
             python -B src/continuous-development-cycle/scripts/validate_checkpoint_24.py "consumer/evidence/$consumer/work-status.md" --adapter "consumer/evidence/$consumer/development-cycle.yaml"
-            CONSUMER="$consumer" PACKAGE_TREE="$PACKAGE_TREE" CANDIDATE="$CANDIDATE" python - <<'PY'
-import json
-import os
-import pathlib
-
-consumer = os.environ["CONSUMER"]
-expected_version = os.environ["CANDIDATE"]
-expected_tree = os.environ["PACKAGE_TREE"]
-source = pathlib.Path("consumer/evidence") / consumer / "source.json"
-data = json.loads(source.read_text())
-
-checks = [
-    ("candidate_version", expected_version, data.get("candidate_version")),
-    ("candidate_package_tree", expected_tree, data.get("candidate_package_tree")),
-]
-
-for field, expected, actual in checks:
-    if actual != expected:
-        raise AssertionError(
-            f"snapshot validation failed consumer={consumer} field={field} expected={expected} actual={actual}"
-        )
-
-source_commit = data.get("source_commit", "")
-if len(source_commit) != 40:
-    raise AssertionError(
-        f"snapshot validation failed consumer={consumer} field=source_commit expected_length=40 actual={source_commit}"
-    )
-
-print("CONSUMER_GREEN", consumer, data["repository"], source_commit, data["vendored_cdc_version"])
-PY
+            CONSUMER="$consumer" PACKAGE_TREE="$PACKAGE_TREE" CANDIDATE="$CANDIDATE" python -c 'import json,os,pathlib; c=os.environ["CONSUMER"]; d=json.loads((pathlib.Path("consumer/evidence")/c/"source.json").read_text());
+checks=(("candidate_version",os.environ["CANDIDATE"],d.get("candidate_version")),("candidate_package_tree",os.environ["PACKAGE_TREE"],d.get("candidate_package_tree"))); 
+for f,e,a in checks:
+    assert a==e, f"snapshot validation failed consumer={c} field={f} expected={e} actual={a}"
+s=d.get("source_commit",""); assert len(s)==40, f"snapshot validation failed consumer={c} field=source_commit expected_length=40 actual={s}"; print("CONSUMER_GREEN",c,d["repository"],s,d["vendored_cdc_version"])'
           done
           echo "THREE_CONSUMERS_GREEN package_tree=$PACKAGE_TREE"
