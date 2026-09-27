@@ -52,6 +52,17 @@
         "fault-injection/scenarios.json",
         "tests/pressure-scenarios.md"
       ]
+    },
+    {
+      "task_id": "worker-d-handoff",
+      "pr": 21,
+      "purpose": "portable_result_handoff",
+      "remote_head": "226fa1e048ed3d2409469d520c13f4a8e3dbed9d",
+      "final_validation_comment": 5854036351,
+      "focused_tests": "10/10",
+      "explicit_probes": "9/9",
+      "result": "GREEN",
+      "integration_commit": "522b6f18731d7da3a31d42428378d14e155129a1"
     }
   ],
   "concurrency_observation": {
@@ -70,6 +81,10 @@
   "result_transport_rca": {
     "worker_push_capability_observed": false,
     "recomputation_required": false,
-    "integrator_reconstructed_and_published_exact_semantic_results": true
-  }
+    "integrator_reconstructed_and_published_exact_semantic_results": true,
+    "final_handoff_validation": "GREEN",
+    "validation_comment": 5854036351
+  },
+  "candidate_source_commit": "c5938e968aaa0eee4a47d8580ff53208f5e01d1a",
+  "package_tree": "504e378589fa912f35cdf464859b769a35168ddf"
 }
