@@ -19,7 +19,7 @@ PLAN_SCHEMA = "managed-executor-pool-plan/v1"
 STATE_SCHEMA = "managed-executor-pool-state/v1"
 SHA = re.compile(r"^[0-9a-f]{40}$")
 ROLES = {"writer", "read_only", "review"}
-TASK_STATUSES = {"planned", "queued", "running", "succeeded", "failed", "cancelled", "stale"}
+TASK_STATUSES = {"planned", "queued", "running", "succeeded", "failed", "cancelled", "stale", "omitted"}
 ACTIVE = {"queued", "running"}
 RECOVERABLE = {"failed", "cancelled", "stale"}
 AUTHORITY_FIELDS = (
@@ -269,6 +269,8 @@ def validate_state(plan, state):
             raise ValueError("only succeeded task may retain accepted result")
         if task["status"] != "succeeded" and (task["integrated"] or task["discarded"]):
             raise ValueError("only succeeded task may retain result disposition")
+        if task["status"] == "omitted" and pmap[task_id]["required"]:
+            raise ValueError("required task cannot be omitted")
         runtime_sum += _nonnegative_number(task["runtime_seconds"], f"{task_id}.runtime_seconds")
         cost_sum += _nonnegative_number(task["cost_units"], f"{task_id}.cost_units")
         if task["runtime_seconds"] > pmap[task_id]["max_runtime_seconds"]:
@@ -338,25 +340,39 @@ def dispatch(plan, state):
     active_count = len(active_ids)
     cap = 1 if state["execution_mode"] == "sequential_fallback" else plan["max_parallel"]
     slots = max(0, cap - active_count)
-    reserved_runtime = sum(pmap[task_id]["max_runtime_seconds"] for task_id in active_ids)
-    reserved_cost = sum(pmap[task_id]["max_cost_units"] for task_id in active_ids)
+    def remaining_budget(task_id):
+        task = pmap[task_id]
+        current = smap[task_id]
+        return (
+            max(0, task["max_runtime_seconds"] - current["runtime_seconds"]),
+            max(0, task["max_cost_units"] - current["cost_units"]),
+        )
+
+    active_remaining = {task_id: remaining_budget(task_id) for task_id in active_ids}
+    reserved_runtime = sum(v[0] for v in active_remaining.values())
+    reserved_cost = sum(v[1] for v in active_remaining.values())
     runtime_left = plan["total_runtime_budget_seconds"] - state["runtime_consumed_seconds"] - reserved_runtime
     cost_left = plan["total_cost_budget_units"] - state["cost_consumed_units"] - reserved_cost
     chosen = []
+    chosen_remaining = {}
     writer_paths = _active_writer_paths(plan, state)
     for task_id in ready_task_ids(plan, state):
         if len(chosen) >= slots:
             break
         task = pmap[task_id]
-        if task["max_runtime_seconds"] > runtime_left or task["max_cost_units"] > cost_left:
+        task_runtime_left, task_cost_left = remaining_budget(task_id)
+        if task_runtime_left <= 0 or task_cost_left <= 0:
+            continue
+        if task_runtime_left > runtime_left or task_cost_left > cost_left:
             continue
         if task["role"] == "writer":
             if any(overlaps(path, claimed) for path in task["write_paths"] for claimed in writer_paths):
                 continue
             writer_paths.extend(task["write_paths"])
         chosen.append(task_id)
-        runtime_left -= task["max_runtime_seconds"]
-        cost_left -= task["max_cost_units"]
+        chosen_remaining[task_id] = (task_runtime_left, task_cost_left)
+        runtime_left -= task_runtime_left
+        cost_left -= task_cost_left
     assignments = [
         {
             "task_id": task_id,
@@ -367,6 +383,8 @@ def dispatch(plan, state):
             "worktree": pmap[task_id]["worktree"],
             "write_paths": list(pmap[task_id]["write_paths"]),
             "backend_preferences": list(pmap[task_id]["backend_preferences"]),
+            "remaining_runtime_budget_seconds": chosen_remaining[task_id][0],
+            "remaining_cost_budget_units": chosen_remaining[task_id][1],
         }
         for task_id in chosen
     ]
@@ -380,8 +398,8 @@ def dispatch(plan, state):
         "max_parallel": cap,
         "task_ids": chosen,
         "assignments": assignments,
-        "reserved_runtime_seconds": sum(pmap[task_id]["max_runtime_seconds"] for task_id in chosen),
-        "reserved_cost_units": sum(pmap[task_id]["max_cost_units"] for task_id in chosen),
+        "reserved_runtime_seconds": sum(chosen_remaining[task_id][0] for task_id in chosen),
+        "reserved_cost_units": sum(chosen_remaining[task_id][1] for task_id in chosen),
         "fallback_serialized": state["execution_mode"] == "sequential_fallback",
         **{name: False for name in AUTHORITY_FIELDS},
     }
@@ -597,6 +615,25 @@ def discard_optional_result(plan, state, task_id, result_ref, *, expected_revisi
     return validate_state(plan, _advance_revision(result))
 
 
+def omit_optional_task(plan, state, task_id, *, expected_revision, reason_ref):
+    """Explicitly disposition optional work that will not be executed."""
+    validate_state(plan, state)
+    _expect_revision(state, expected_revision)
+    _text(reason_ref, "reason_ref")
+    result = copy.deepcopy(state)
+    current = _state_map(result).get(task_id)
+    task = _task_map(plan).get(task_id)
+    if task is None or task["required"] or current is None:
+        raise ValueError("omit requires an optional task")
+    if current["status"] in ACTIVE or current["status"] == "succeeded" or current["status"] == "omitted":
+        raise ValueError("optional active/succeeded/omitted task cannot be omitted here")
+    if current["accepted_result_ref"] is not None or current["integrated"] or current["discarded"]:
+        raise ValueError("optional task with result disposition cannot be omitted")
+    current["status"] = "omitted"
+    current["attempt_ids"].append("omission:" + reason_ref)
+    return validate_state(plan, _advance_revision(result))
+
+
 def assess(plan, state):
     validate_state(plan, state)
     pmap, smap = _task_map(plan), _state_map(state)
@@ -613,13 +650,19 @@ def assess(plan, state):
                 blockers.append(f"{task['id']}:runnable" if task["id"] in runnable else f"{task['id']}:dependency_wait")
             elif current["status"] in RECOVERABLE:
                 blockers.append(f"{task['id']}:recovery_required")
-        elif current["status"] in ACTIVE:
-            blockers.append(f"{task['id']}:optional_active")
+        else:
+            if current["status"] in ACTIVE:
+                blockers.append(f"{task['id']}:optional_active")
+            elif current["status"] == "planned":
+                blockers.append(f"{task['id']}:optional_runnable" if task["id"] in runnable else f"{task['id']}:optional_dependency_wait")
+            elif current["status"] in RECOVERABLE:
+                blockers.append(f"{task['id']}:optional_disposition_required")
     complete = not blockers and all(
         (smap[task["id"]]["status"] == "succeeded" and smap[task["id"]]["integrated"])
         if task["required"] else (
-            smap[task["id"]]["status"] != "succeeded"
-            or smap[task["id"]]["integrated"] or smap[task["id"]]["discarded"]
+            smap[task["id"]]["status"] == "omitted"
+            or (smap[task["id"]]["status"] == "succeeded"
+                and (smap[task["id"]]["integrated"] or smap[task["id"]]["discarded"]))
         )
         for task in plan["tasks"]
     )
