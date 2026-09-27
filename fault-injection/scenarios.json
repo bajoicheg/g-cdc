@@ -556,6 +556,14 @@
       "forbidden_authorities": [
         "product_write"
       ]
+    },
+    {
+      "id": "integration-portable-terminal-alias",
+      "fault": "terminal_worker_diff_contains_case_or_unicode_equivalent_path_aliases",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
     }
   ]
 }
