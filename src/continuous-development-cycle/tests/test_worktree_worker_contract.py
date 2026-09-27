@@ -1,5 +1,5 @@
 from pathlib import Path
-import copy,hashlib,json,sys,tempfile,unittest
+import copy,hashlib,json,subprocess,sys,tempfile,unittest
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/"scripts"))
 from worktree_worker_contract import assess
 from parallel_task_planner import canonical_plan_ref
@@ -8,29 +8,35 @@ class T(unittest.TestCase):
  def base(self):return json.loads((ROOT/"templates"/"worktree-worker-contract.json").read_text())
  def rebind(self,d):
   d["plan_ref"]=canonical_plan_ref(d["plan"]);return d
- def later_wave_case(self,root,integrated_head=None):
-  d=self.base();d["plan"]["tasks"][1]["write_paths"]=["src/model/sub"];self.rebind(d)
-  d["wave"]=2;d["base_sha"]=integrated_head or "2"*40
-  gate={"schema":"integration-gate-result/v1","change_id":d["change_id"],"wave":1,"total_waves":2,
-        "final_wave":False,"next_wave":2,"plan_ref":d["plan_ref"],"action":"READY_FOR_INTEGRATOR",
-        "ready":True,"blockers":[],"integrator_id":d["integrator_id"],
-        "next_gate":"integrate_wave_then_contract_next_wave_on_fresh_head",
-        "authorizes_shared_branch_write":False,"authorizes_force_push":False,"authorizes_merge":False,
-        "authorizes_release":False,"authorizes_scope_expansion":False}
-  gate_path=Path(root)/"wave-1-gate.json";gate_path.write_text(json.dumps(gate,indent=2)+"\n")
-  gate_digest="sha256:"+hashlib.sha256(gate_path.read_bytes()).hexdigest()
+ def _write(self,path,data):
+  Path(path).write_text(json.dumps(data,indent=2)+"\n")
+  return "sha256:"+hashlib.sha256(Path(path).read_bytes()).hexdigest()
+ def later_wave_case(self,root,integrated_head=None,plan_base=None):
+  d=self.base()
+  if plan_base is not None:
+   d["plan"]["base_sha"]=plan_base;d["base_sha"]=plan_base
+   for a in d["assignments"]:a["base_sha"]=plan_base
+  d["plan"]["tasks"][1]["write_paths"]=["src/model/sub"];self.rebind(d)
+  prior_base=d["plan"]["base_sha"];d["wave"]=2;d["base_sha"]=integrated_head or "2"*40
+  gate={"schema":"wave-integration-gate-evidence/v1","change_id":d["change_id"],"plan_ref":d["plan_ref"],
+        "wave":1,"base_sha":prior_base,"shared_branch":d["shared_branch"],"ready":True,
+        "evidence_ref":"integration-gate:wave-1-green"}
+  gate_path=Path(root)/"wave-1-gate.json";gate_digest=self._write(gate_path,gate)
+  assembly={"schema":"wave-assembly-evidence/v1","change_id":d["change_id"],"plan_ref":d["plan_ref"],
+            "wave":1,"base_sha":prior_base,"integrated_head":d["base_sha"],"shared_branch":d["shared_branch"],
+            "gate_sha256":gate_digest,"assembled":True,"evidence_ref":"assembly:wave-1@"+d["base_sha"]}
+  assembly_path=Path(root)/"wave-1-assembly.json";assembly_digest=self._write(assembly_path,assembly)
   record={"schema":"wave-integration-record/v1","change_id":d["change_id"],"plan_ref":d["plan_ref"],
-          "wave":1,"prior_shared_head":d["plan"]["base_sha"],"integrated_head":d["base_sha"],
-          "shared_branch":d["shared_branch"],"integrator_id":d["integrator_id"],
-          "gate_result_ref":{"path":"wave-1-gate.json","sha256":gate_digest},
-          "assembly_evidence_refs":["git:shared-head@"+d["base_sha"],"verification:wave-1-green"]}
-  path=Path(root)/"wave-1-integration.json";path.write_text(json.dumps(record,indent=2)+"\n")
-  digest="sha256:"+hashlib.sha256(path.read_bytes()).hexdigest()
+          "wave":1,"base_sha":prior_base,"integrated_head":d["base_sha"],"shared_branch":d["shared_branch"],
+          "gate_artifact_ref":{"path":"wave-1-gate.json","sha256":gate_digest},
+          "assembly_artifact_ref":{"path":"wave-1-assembly.json","sha256":assembly_digest},
+          "previous_integration":None}
+  path=Path(root)/"wave-1-integration.json";digest=self._write(path,record)
   d["prior_wave_integration"]={"wave":1,"integrated_head":d["base_sha"],
                                "artifact_path":"wave-1-integration.json","artifact_sha256":digest}
-  a=copy.deepcopy(d["assignments"][1]);a["base_sha"]=d["base_sha"];a["write_paths"]=["src/model/sub"]
-  d["assignments"]=[a]
-  return d,path,gate_path
+  a=copy.deepcopy(d["assignments"][1]);a["base_sha"]=d["base_sha"];a["write_paths"]=["src/model/sub"];d["assignments"]=[a]
+  return d,path,gate_path,assembly_path
+
  def test_template_isolated_and_non_authoritative(self):
   r=assess(self.base());self.assertTrue(r["valid"]);self.assertEqual(r["assignment_count"],2);self.assertEqual(r["wave"],1)
   self.assertFalse(r["authorizes_worker_launch"]);self.assertFalse(r["authorizes_shared_branch_write"])
@@ -74,47 +80,63 @@ class T(unittest.TestCase):
   self.rebind(d);self.assertTrue(assess(d)["valid"])
  def test_case_only_writer_overlap_rejected(self):
   d=self.base();d["plan"]["tasks"][0]["write_paths"]=["src/UI"];d["plan"]["tasks"][1]["write_paths"]=["src/ui/sub"];self.rebind(d)
-  # planner serializes them; forcing both into wave one is therefore invalid.
   with self.assertRaises(ValueError):assess(d)
- def test_later_wave_can_bind_resolved_prior_integration(self):
+
+ def test_later_wave_binds_authenticated_gate_and_assembly(self):
   with tempfile.TemporaryDirectory() as td:
-   d,_,_=self.later_wave_case(td)
-   r=assess(d,evidence_root=td);self.assertTrue(r["valid"]);self.assertEqual(r["wave"],2);self.assertEqual(r["base_sha"],"2"*40)
+   d,_,_,_=self.later_wave_case(td)
+   r=assess(d,evidence_root=td);self.assertTrue(r["valid"]);self.assertEqual(r["base_sha"],"2"*40)
  def test_later_wave_requires_resolvable_prior_integration(self):
   with tempfile.TemporaryDirectory() as td:
-   d,path,_=self.later_wave_case(td)
+   d,path,_,_=self.later_wave_case(td)
    with self.assertRaises(ValueError):assess(d)
    d["prior_wave_integration"]["artifact_sha256"]="sha256:"+"0"*64
    with self.assertRaises(ValueError):assess(d,evidence_root=td)
-   d,path,_=self.later_wave_case(td)
-   record=json.loads(path.read_text());record["integrated_head"]="3"*40;path.write_text(json.dumps(record,indent=2)+"\n")
-   d["prior_wave_integration"]["artifact_sha256"]="sha256:"+hashlib.sha256(path.read_bytes()).hexdigest()
-   with self.assertRaises(ValueError):assess(d,evidence_root=td)
- def test_prior_gate_artifact_must_be_green_and_resolved(self):
+ def test_prior_gate_must_be_green_and_content_addressed(self):
   with tempfile.TemporaryDirectory() as td:
-   d,path,gate_path=self.later_wave_case(td)
-   gate=json.loads(gate_path.read_text());gate["action"]="RECONCILE_OR_REPLAN";gate["ready"]=False;gate["blockers"]=["worker_not_success:task-model"]
-   gate_path.write_text(json.dumps(gate,indent=2)+"\n")
-   record=json.loads(path.read_text())
-   record["gate_result_ref"]["sha256"]="sha256:"+hashlib.sha256(gate_path.read_bytes()).hexdigest()
-   path.write_text(json.dumps(record,indent=2)+"\n")
-   d["prior_wave_integration"]["artifact_sha256"]="sha256:"+hashlib.sha256(path.read_bytes()).hexdigest()
+   d,path,gate_path,assembly_path=self.later_wave_case(td)
+   gate=json.loads(gate_path.read_text());gate["ready"]=False
+   gate_digest=self._write(gate_path,gate)
+   record=json.loads(path.read_text());record["gate_artifact_ref"]["sha256"]=gate_digest
+   assembly=json.loads(assembly_path.read_text());assembly["gate_sha256"]=gate_digest
+   record["assembly_artifact_ref"]["sha256"]=self._write(assembly_path,assembly)
+   d["prior_wave_integration"]["artifact_sha256"]=self._write(path,record)
    with self.assertRaises(ValueError):assess(d,evidence_root=td)
- def test_prior_gate_artifact_digest_must_match(self):
+ def test_assembly_must_bind_resolved_gate(self):
   with tempfile.TemporaryDirectory() as td:
-   d,path,_=self.later_wave_case(td)
-   record=json.loads(path.read_text());record["gate_result_ref"]["sha256"]="sha256:"+"f"*64
-   path.write_text(json.dumps(record,indent=2)+"\n")
-   d["prior_wave_integration"]["artifact_sha256"]="sha256:"+hashlib.sha256(path.read_bytes()).hexdigest()
+   d,path,_,assembly_path=self.later_wave_case(td)
+   assembly=json.loads(assembly_path.read_text());assembly["gate_sha256"]="sha256:"+"f"*64
+   record=json.loads(path.read_text());record["assembly_artifact_ref"]["sha256"]=self._write(assembly_path,assembly)
+   d["prior_wave_integration"]["artifact_sha256"]=self._write(path,record)
    with self.assertRaises(ValueError):assess(d,evidence_root=td)
+ def test_prior_integration_must_advance_head(self):
+  with tempfile.TemporaryDirectory() as td:
+   d,path,_,assembly_path=self.later_wave_case(td,integrated_head="1"*40)
+   with self.assertRaises(ValueError):assess(d,evidence_root=td)
+ def test_live_prior_integration_must_match_shared_branch_and_ancestry(self):
+  with tempfile.TemporaryDirectory() as td:
+   repo=Path(td)/"repo";repo.mkdir()
+   subprocess.check_call(["git","init","-q",str(repo)])
+   subprocess.check_call(["git","-C",str(repo),"config","user.email","test@example.invalid"])
+   subprocess.check_call(["git","-C",str(repo),"config","user.name","CDC Test"])
+   (repo/"base.txt").write_text("base\n");subprocess.check_call(["git","-C",str(repo),"add","."]);subprocess.check_call(["git","-C",str(repo),"commit","-q","-m","base"])
+   base=subprocess.check_output(["git","-C",str(repo),"rev-parse","HEAD"],text=True).strip()
+   (repo/"integrated.txt").write_text("integrated\n");subprocess.check_call(["git","-C",str(repo),"add","."]);subprocess.check_call(["git","-C",str(repo),"commit","-q","-m","integrated"])
+   integrated=subprocess.check_output(["git","-C",str(repo),"rev-parse","HEAD"],text=True).strip()
+   subprocess.check_call(["git","-C",str(repo),"branch","feature/integration",integrated])
+   evidence=Path(td)/"evidence";evidence.mkdir()
+   d,_,_,_=self.later_wave_case(evidence,integrated_head=integrated,plan_base=base)
+   self.assertTrue(assess(d,evidence_root=evidence,git_worktree=repo)["valid"])
+   subprocess.check_call(["git","-C",str(repo),"branch","-f","feature/integration",base])
+   with self.assertRaises(ValueError):assess(d,evidence_root=evidence,git_worktree=repo)
+
  def test_windows_reserved_or_drive_relative_path_rejected(self):
   for bad in ("C:temp","src/CON","src/com1.txt","src/name.","src/name "):
    d=self.base();d["plan"]["tasks"][0]["write_paths"]=[bad];d["assignments"][0]["write_paths"]=[bad]
    with self.subTest(path=bad):
     with self.assertRaises(ValueError):assess(d)
  def test_embedded_plan_must_match_plan_digest(self):
-  d=self.base();d["plan"]["tasks"][0]["expected_outputs"]=["commit:tampered"]
-  d["assignments"][0]["expected_outputs"]=["commit:tampered"]
+  d=self.base();d["plan"]["tasks"][0]["expected_outputs"]=["commit:tampered"];d["assignments"][0]["expected_outputs"]=["commit:tampered"]
   with self.assertRaises(ValueError):assess(d)
  def test_assignment_set_must_equal_planned_wave(self):
   d=self.base();d["assignments"]=d["assignments"][:1]
