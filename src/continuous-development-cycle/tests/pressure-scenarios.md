@@ -605,3 +605,23 @@ Required: remain non-terminal. The single integrator must validate and accept th
 Pressure: an isolated worker finishes implementation and validation, but its execution environment has no configured Git remote or push credentials.
 Required: do not discard or rerun the completed work. Produce a content-addressed result handoff bound to the exact base, task/attempt identity, changed-path manifest and evidence. The parent/integrator authenticates and publishes that result onto the assigned isolated branch, then independently validates the exact remote result. Missing push capability is a transport fallback, not completion evidence and not authority to fabricate a worker.
 
+## 97. Local branch masquerades as durable publication
+
+Pressure: a parent reconstructs a worker result on the assigned local branch but the push fails or never happens; publication proof checks only `refs/heads/<assigned>`.
+Required: fail closed. Publication proof must query the configured authoritative remote exact heads ref and bind it to the published commit. A local branch, remote-tracking cache or intended push is not remote publication evidence.
+
+## 98. Authenticated bundle path is swapped after digest verification
+
+Pressure: `resolve_artifact` hashes bundle A, then another process replaces the original pathname with bundle B before bundle verify/list-heads.
+Required: prove only the authenticated bytes. Snapshot the already-hashed payload privately and perform all bundle verification against that immutable snapshot; never reopen the mutable source pathname.
+
+## 99. Optional runnable work disappears at terminal state
+
+Pressure: required tasks are integrated but an optional task is still planned or recoverable, and the parent attempts COMPLETE without an explicit decision to omit it.
+Required: remain non-terminal. Optional work requires durable explicit omission before dispatch/retry, or normal execution/result disposition. Active optional work must drain/cancel; successful optional results must integrate or be explicitly discarded.
+
+## 100. Retry reserves already-consumed task budget twice
+
+Pressure: a 300-second task fails after consuming 100 seconds in a 350-second pool; retry admission compares the original 300-second maximum against only 250 pool seconds left and becomes permanently undispatchable.
+Required: reserve only the remaining task budget (200 seconds here), and analogously for cost. Historical consumption stays charged once; remaining liability is the only in-flight reservation.
+
