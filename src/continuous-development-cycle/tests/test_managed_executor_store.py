@@ -1,4 +1,4 @@
-import copy,subprocess,sys,tempfile,unittest
+import copy,hashlib,subprocess,sys,tempfile,unittest
 from pathlib import Path
 from unittest import mock
 
@@ -9,10 +9,11 @@ from managed_executor_store import GitManagedExecutorStore
 
 BASE="a"*40
 
-def plan():
+def plan(coordination_ref,coordination_store_id):
  return {
   "schema":"managed-executor-pool-plan/v1","pool_id":"p","change_id":"c",
   "parent_invocation_id":"parent","base_sha":BASE,"integrator_id":"integrator",
+  "coordination_ref":coordination_ref,"coordination_store_id":coordination_store_id,
   "max_parallel":1,"total_runtime_budget_seconds":300,"total_cost_budget_units":30,
   "tasks":[
    {"id":"a","role":"writer","required":True,"dependencies":[],"executor_id":"exec-a",
@@ -30,8 +31,9 @@ class T(unittest.TestCase):
   subprocess.check_call(["git","-C",str(self.repo),"config","user.email","cdc@example.invalid"])
   subprocess.check_call(["git","-C",str(self.repo),"config","user.name","CDC Test"])
   subprocess.check_call(["git","-C",str(self.repo),"remote","add","origin",str(self.remote)])
-  self.plan=plan()
   self.ref="refs/heads/cdc/pool-state"
+  self.store_id="sha256:"+hashlib.sha256(str(self.remote).encode("utf-8")).hexdigest()
+  self.plan=plan(self.ref,self.store_id)
   self.store=GitManagedExecutorStore(
    self.repo,"origin",self.ref,self.plan,
    protected_refs=["refs/heads/main","refs/heads/integration"])
@@ -54,13 +56,19 @@ class T(unittest.TestCase):
  def test_real_store_allows_exactly_one_stale_competing_queue_reservation(self):
   rev=self.store.compare_and_swap(None,self.state)
   first=pool.queue_task_cas(self.store,rev,self.plan,"a","a1",reservation_token="reserve:a1")
-  self.assertTrue(first["launch_allowed"])
+  self.assertFalse(first["launch_allowed"])
   with self.assertRaisesRegex(ValueError,"stale expected pool-store revision"):
    pool.queue_task_cas(self.store,rev,self.plan,"a","a2",reservation_token="reserve:a2")
+  started=pool.claim_launch_cas(self.store,first["store_revision"],self.plan,"a","a1",
+                                reservation_token="reserve:a1")
+  self.assertTrue(started["launch_allowed"])
+  with self.assertRaises(ValueError):
+   pool.claim_launch_cas(self.store,first["store_revision"],self.plan,"a","a1",
+                         reservation_token="reserve:a1")
   live_rev,live=self.store.read()
-  self.assertEqual(live_rev,first["store_revision"])
+  self.assertEqual(live_rev,started["store_revision"])
   task=live["tasks"][0]
-  self.assertEqual(task["attempt_ids"],["a1"]);self.assertEqual(task["reservation_token"],"reserve:a1")
+  self.assertEqual(task["attempt_ids"],["a1"]);self.assertEqual(task["status"],"running")
 
  def test_stale_cas_and_remote_ref_movement_fail_closed(self):
   rev=self.store.compare_and_swap(None,self.state)
@@ -94,5 +102,22 @@ class T(unittest.TestCase):
   subprocess.check_call(["git","-C",str(self.repo),"remote","set-url","--add","--push","origin",str(other)])
   with self.assertRaisesRegex(ValueError,"identical fetch/push"):
    GitManagedExecutorStore(self.repo,"origin","refs/heads/cdc/other",self.plan)
+
+ def test_plan_binds_one_coordination_ref_and_store_identity(self):
+  with self.assertRaisesRegex(ValueError,"coordination ref does not match"):
+   GitManagedExecutorStore(self.repo,"origin","refs/heads/cdc/other",self.plan)
+  wrong=copy.deepcopy(self.plan);wrong["coordination_store_id"]="sha256:"+"0"*64
+  with self.assertRaisesRegex(ValueError,"identity does not match"):
+   GitManagedExecutorStore(self.repo,"origin",self.ref,wrong)
+
+ def test_remote_repointing_is_detected_before_read_or_cas(self):
+  rev=self.store.compare_and_swap(None,self.state)
+  other=self.root/"other2.git";subprocess.check_call(["git","init","--bare","-q",str(other)])
+  subprocess.check_call(["git","-C",str(self.repo),"remote","set-url","origin",str(other)])
+  with self.assertRaisesRegex(ValueError,"identity drift"):
+   self.store.read()
+  with self.assertRaises(ValueError):
+   self.store.compare_and_swap(rev,self.state)
+
 
 if __name__=="__main__":unittest.main()
