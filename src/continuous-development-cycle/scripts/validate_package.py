@@ -66,7 +66,7 @@ from branch_finish import evaluate as evaluate_branch_finish
 from parallel_task_planner import plan as plan_parallel_tasks
 from worktree_worker_contract import (
     assess as assess_worker_contract, validate_prior_integration_record,
-    validate_gate_evidence, validate_assembly_evidence,
+    validate_gate_evidence, validate_gate_result, validate_assembly_evidence,
 )
 from integration_gate import evaluate as evaluate_integration_gate
 from parallel_benchmark import evaluate_from_files as evaluate_parallel_benchmark_files, load_observations as load_parallel_benchmark_observations
@@ -204,7 +204,8 @@ REQUIRED = [
     'templates/parallel-task-plan.json', 'templates/worktree-worker-contract.json',
     'templates/integration-gate.json', 'templates/parallel-benchmark.json',
     'templates/wave-integration-record.json', 'templates/wave-integration-gate-evidence.json',
-    'templates/wave-assembly-evidence.json',
+    'templates/wave-integration-gate-result.json', 'templates/wave-assembly-evidence.json',
+    'templates/parallel-benchmark-plan.json',
     'templates/parallel-benchmark-observation-sequential.json',
     'templates/parallel-benchmark-observation-parallel.json',
     'tests/test_parallel_task_planner.py', 'tests/test_worktree_worker_contract.py',
@@ -454,6 +455,25 @@ def validate():
         observed = 'sha256:' + hashlib.sha256(payload).hexdigest()
         if observed != ref['sha256']:
             raise ContractError('invalid CDC 2.10.2 prior-wave artifact digest: ' + ref_name)
+    gate_result_ref = gate['result_artifact_ref']
+    gate_result_payload = (ROOT / gate_result_ref['path']).read_bytes()
+    gate_result_observed = 'sha256:' + hashlib.sha256(gate_result_payload).hexdigest()
+    if gate_result_observed != gate_result_ref['sha256']:
+        raise ContractError('invalid CDC 2.10.2 integration gate result artifact digest')
+    gate_result = json.loads(gate_result_payload)
+    validate_gate_result(gate_result)
+    if (gate_result['change_id'] != prior_record['change_id'] or
+            gate_result['plan_ref'] != prior_record['plan_ref'] or
+            gate_result['wave'] != prior_record['wave'] or
+            gate_result['shared_branch'] != prior_record['shared_branch'] or
+            gate_result['expected_shared_head'] != prior_record['base_sha'] or
+            gate_result['observed_shared_head'] != prior_record['base_sha'] or
+            not gate_result['ready'] or gate_result['action'] != 'READY_FOR_INTEGRATOR' or gate_result['blockers']):
+        raise ContractError('invalid CDC 2.10.2 integration gate result binding')
+    if gate_result['writer_result_shas'] != prior_record['writer_result_shas']:
+        raise ContractError('invalid CDC 2.10.2 gate/result writer binding')
+    if assembly['writer_result_shas'] != prior_record['writer_result_shas']:
+        raise ContractError('invalid CDC 2.10.2 assembly/result writer binding')
     if assembly['gate_sha256'] != prior_record['gate_artifact_ref']['sha256']:
         raise ContractError('invalid CDC 2.10.2 prior-wave gate/assembly binding')
     if prior_record['base_sha'] == prior_record['integrated_head']:
