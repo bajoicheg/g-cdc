@@ -97,3 +97,13 @@ A result is not durably published merely because a matching local `refs/heads/*`
 Optional work also requires explicit disposition. A planned or recoverable optional task blocks pool terminal state until it is either executed or explicitly marked omitted; a successful optional result blocks terminal state until integration or explicit discard.
 
 Retry reservation uses remaining per-task budget, not the original maximum. Prior attempt consumption stays in the aggregate ledger while the next retry reserves only `max - consumed` for runtime and cost.
+
+## Final trust-boundary closure
+
+The production pool/state contract binds one authoritative coordination ref. A pure in-memory queue transition is planning only; durable queue reservation is still not physical start authority. Start authority is one-shot and exists only after an atomic durable queued-to-running CAS wins for the exact task, attempt and reservation token.
+
+Writer scope validation is historical: inspect every commit introduced after the exact base (or require a separately validated sanitized single commit). The union of all touched paths, including paths later restored, is the manifest checked against the portable write claim.
+
+Required task dependency closure must contain only required tasks. Optional omission/discard cannot be a prerequisite escape hatch.
+
+Publication remote identity comes from trusted parent policy and is cryptographically bound. Validate one identical fetch/push endpoint and compare its fingerprint to the expected identity before accepting the authoritative remote ref; never expose the underlying URL in diagnostics.
