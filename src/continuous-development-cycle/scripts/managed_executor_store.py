@@ -33,31 +33,62 @@ def _canonical(state):
     ).encode("utf-8") + b"\n"
 
 
-def _normalized_remote_endpoint(value):
+def _normalized_remote_endpoint(value, *, repo_root=None):
     if not isinstance(value, str) or not value.strip():
         raise ValueError("pool store remote endpoint invalid")
     raw = value.strip()
+
     if "://" in raw:
         parsed = urlsplit(raw)
-        if not parsed.scheme or not parsed.hostname:
+        scheme = parsed.scheme.lower()
+        if scheme == "file":
+            path = Path(parsed.path)
+            if not path.is_absolute():
+                if repo_root is None:
+                    raise ValueError("relative file remote requires repository root")
+                path = Path(repo_root) / path
+            return str(path.expanduser().resolve())
+        if not parsed.hostname:
             raise ValueError("pool store remote endpoint invalid")
         host = parsed.hostname.lower()
+        authority = host
+        if scheme in {"ssh", "git+ssh"} and parsed.username:
+            authority = f"{parsed.username}@{host}"
         if parsed.port is not None:
-            host += f":{parsed.port}"
+            authority += f":{parsed.port}"
         path = parsed.path.rstrip("/") or "/"
-        return urlunsplit((parsed.scheme.lower(), host, path, "", ""))
+        return urlunsplit((scheme, authority, path, "", ""))
+
+    # scp-like SSH syntax: [user@]host:path. Preserve user identity.
     if ":" in raw and not raw.startswith(("/", "./", "../")):
         left, right = raw.split(":", 1)
-        host = left.split("@")[-1].lower()
-        if host and right:
-            return f"ssh://{host}/{right.lstrip('/')}".rstrip("/")
-    return str(Path(raw).expanduser().resolve())
+        if right:
+            if "@" in left:
+                user, host = left.rsplit("@", 1)
+                if not user or not host:
+                    raise ValueError("pool store remote endpoint invalid")
+                authority = f"{user}@{host.lower()}"
+            else:
+                if not left:
+                    raise ValueError("pool store remote endpoint invalid")
+                authority = left.lower()
+            return f"ssh://{authority}/{right.lstrip('/')}".rstrip("/")
+
+    path = Path(raw).expanduser()
+    if not path.is_absolute():
+        if repo_root is None:
+            raise ValueError("relative local remote requires repository root")
+        path = Path(repo_root) / path
+    return str(path.resolve())
 
 
-def coordination_store_id_for_endpoint(value):
-    normalized = _normalized_remote_endpoint(value)
+def coordination_store_id_for_endpoint(value, *, repo_root=None):
+    normalized = _normalized_remote_endpoint(value, repo_root=repo_root)
     return "sha256:" + hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
+
+def _remote_store_id(url, *, repo_root=None):
+    return coordination_store_id_for_endpoint(url, repo_root=repo_root)
 
 def _canonical_heads_ref(value, name):
     if not isinstance(value, str) or not value.startswith("refs/heads/"):
@@ -67,8 +98,6 @@ def _canonical_heads_ref(value, name):
     return value
 
 
-def _remote_store_id(url):
-    return coordination_store_id_for_endpoint(url)
 
 
 class GitManagedExecutorStore:
@@ -118,7 +147,7 @@ class GitManagedExecutorStore:
         push_urls = self._git("remote", "get-url", "--push", "--all", self.remote).splitlines()
         if len(fetch_urls) != 1 or len(push_urls) != 1 or push_urls != fetch_urls:
             raise ValueError("pool store remote configuration drift")
-        if _remote_store_id(fetch_urls[0]) != self.plan["coordination_store_id"]:
+        if _remote_store_id(fetch_urls[0], repo_root=self.repo) != self.plan["coordination_store_id"]:
             raise ValueError("pool store identity drift")
         return True
 
