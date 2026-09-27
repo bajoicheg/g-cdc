@@ -96,6 +96,12 @@ Acceptance:
 
 Expected benefit: CDC gains safe concurrency — speed from parallel work, while ownership and final integration remain deterministic.
 
+Finalization RCA — 2026-09-27:
+- Root cause of the prolonged 2.10.2 closeout was a moving-target validation loop: source fixes continued after expensive benchmark/consumer evidence, which correctly made that evidence stale; release manifests were not refreshed atomically; and benchmark observations from different package trees/workload states were informally compared as one trend.
+- Correction: freeze source/spec before expensive evidence; freeze the exact benchmark plan; run final consumer compatibility and observed benchmark once per exact package-tree + plan pair; persist environment, observations, benchmark manifest, consumer evidence and candidate binding atomically; metadata-only evidence commits do not invalidate package evidence; rerun expensive evidence only when package tree or benchmark plan changes.
+- Concurrency correction: one canonical writer/reviewer owner per task; duplicate recovery/review requests are reconciled or cancelled; non-fast-forward ref updates fail closed and force-push remains forbidden.
+- Evidence interpretation: provider/setup failure is not product RED, and benchmark comparisons are meaningful only for matching workload fingerprint/environment class; cross-candidate runs are separate observations rather than a degradation series.
+
 ### CDC 2.10 release proposal
 
 Recommended release sequence:
