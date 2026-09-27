@@ -91,17 +91,19 @@ class T(unittest.TestCase):
   bad=copy.deepcopy(self.state);bad["pool_id"]="other"
   with self.assertRaisesRegex(ValueError,"pool_id mismatch"):
    self.store.compare_and_swap(None,bad)
+  q=copy.deepcopy(self.plan);q["coordination_ref"]="refs/heads/MAIN"
   with self.assertRaisesRegex(ValueError,"portable-isolated"):
-   GitManagedExecutorStore(self.repo,"origin","refs/heads/MAIN",self.plan,
+   GitManagedExecutorStore(self.repo,"origin","refs/heads/MAIN",q,
                            protected_refs=["refs/heads/main"])
+  q=copy.deepcopy(self.plan);q["coordination_ref"]="refs/heads/WORKER-A"
   with self.assertRaisesRegex(ValueError,"portable-isolated"):
-   GitManagedExecutorStore(self.repo,"origin","refs/heads/WORKER-A",self.plan)
+   GitManagedExecutorStore(self.repo,"origin","refs/heads/WORKER-A",q)
 
  def test_remote_fetch_push_configuration_must_match(self):
   other=self.root/"other.git";subprocess.check_call(["git","init","--bare","-q",str(other)])
   subprocess.check_call(["git","-C",str(self.repo),"remote","set-url","--add","--push","origin",str(other)])
-  with self.assertRaisesRegex(ValueError,"identical fetch/push"):
-   GitManagedExecutorStore(self.repo,"origin","refs/heads/cdc/other",self.plan)
+  with self.assertRaisesRegex(ValueError,"configuration drift"):
+   GitManagedExecutorStore(self.repo,"origin",self.ref,self.plan)
 
  def test_plan_binds_one_coordination_ref_and_store_identity(self):
   with self.assertRaisesRegex(ValueError,"coordination ref does not match"):
