@@ -5,8 +5,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import subprocess
+import tempfile
 import sys
 import unicodedata
 from pathlib import Path
@@ -178,7 +180,87 @@ def _portable_set(paths):
     return {portable_path_key(p) for p in paths}
 
 
-def validate_publication_proof(proof, handoff, git_worktree):
+def _git_changed_paths(root, base_sha, result_commit):
+    try:
+        raw = subprocess.check_output(
+            ["git", "-C", str(root), "diff", "--name-only", "--no-renames", "-z",
+             base_sha, result_commit],
+            stderr=subprocess.PIPE, timeout=15,
+        )
+        text = raw.decode("utf-8")
+    except (OSError, subprocess.SubprocessError, UnicodeDecodeError) as exc:
+        raise ValueError(f"cannot derive published changed paths: {exc}") from exc
+    paths = [path for path in text.split("\0") if path]
+    _paths(paths, "published changed paths")
+    return paths
+
+
+def _verify_unified_diff_artifact(handoff, payload, root, published_commit):
+    fd, index_path = tempfile.mkstemp(prefix="cdc-handoff-index-")
+    os.close(fd)
+    os.unlink(index_path)
+    env = dict(os.environ, GIT_INDEX_FILE=index_path)
+    try:
+        read_tree = subprocess.run(
+            ["git", "-C", str(root), "read-tree", handoff["base_sha"]],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, timeout=15,
+        )
+        if read_tree.returncode != 0:
+            raise ValueError("cannot initialize artifact verification index from base")
+        apply = subprocess.run(
+            ["git", "-C", str(root), "apply", "--cached", "--whitespace=nowarn", "--recount", "-"],
+            input=payload, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, timeout=15,
+        )
+        if apply.returncode != 0:
+            raise ValueError("authenticated unified_diff does not apply cleanly to declared base")
+        expected_tree = subprocess.check_output(
+            ["git", "-C", str(root), "write-tree"], env=env, text=True,
+            stderr=subprocess.PIPE, timeout=15,
+        ).strip()
+        published_tree = subprocess.check_output(
+            ["git", "-C", str(root), "rev-parse", f"{published_commit}^{{tree}}"],
+            text=True, stderr=subprocess.PIPE, timeout=15,
+        ).strip()
+        raw_paths = subprocess.check_output(
+            ["git", "-C", str(root), "diff", "--cached", "--name-only", "--no-renames", "-z"],
+            env=env, stderr=subprocess.PIPE, timeout=15,
+        )
+        artifact_paths = [p for p in raw_paths.decode("utf-8").split("\0") if p]
+        _paths(artifact_paths, "artifact changed paths")
+    except (OSError, subprocess.SubprocessError, UnicodeDecodeError) as exc:
+        raise ValueError(f"cannot verify unified_diff publication: {exc}") from exc
+    finally:
+        try:
+            os.unlink(index_path)
+        except FileNotFoundError:
+            pass
+    if expected_tree != published_tree:
+        raise ValueError("published commit tree does not match authenticated unified_diff result")
+    if _portable_set(artifact_paths) != _portable_set(handoff["changed_paths"]):
+        raise ValueError("authenticated unified_diff paths do not match handoff manifest")
+    return expected_tree
+
+
+def _verify_git_bundle_artifact(handoff, artifact_path, root, published_commit):
+    try:
+        verify = subprocess.run(
+            ["git", "-C", str(root), "bundle", "verify", str(artifact_path)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=15,
+        )
+        if verify.returncode != 0:
+            raise ValueError("git_bundle verification failed")
+        heads = subprocess.check_output(
+            ["git", "-C", str(root), "bundle", "list-heads", str(artifact_path)],
+            text=True, stderr=subprocess.PIPE, timeout=15,
+        ).splitlines()
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise ValueError(f"cannot verify git_bundle publication: {exc}") from exc
+    if not any(line.split()[0] == published_commit for line in heads if line.split()):
+        raise ValueError("git_bundle does not contain published source result commit")
+    return True
+
+
+def validate_publication_proof(proof, handoff, git_worktree, evidence_root=None):
     validate_handoff(handoff)
     if not isinstance(proof, dict) or set(proof) != PROOF_FIELDS or proof.get("schema") != PROOF_SCHEMA:
         raise ValueError("managed executor publication proof fields/schema mismatch")
@@ -196,8 +278,7 @@ def validate_publication_proof(proof, handoff, git_worktree):
     if handoff["source_result_commit"] is not None and handoff["artifact_ref"] and handoff["artifact_ref"]["format"] == "git_bundle":
         if proof["published_commit"] != handoff["source_result_commit"]:
             raise ValueError("git_bundle publication must preserve source result commit")
-    if _portable_set(proof["observed_changed_paths"]) != _portable_set(handoff["changed_paths"]):
-        raise ValueError("published changed paths do not match handoff manifest")
+    _paths(proof["observed_changed_paths"], "publication proof observed_changed_paths")
     _refs(proof["evidence_refs"], "publication proof evidence_refs")
     if type(proof["result_verified"]) is not bool or not proof["result_verified"]:
         raise ValueError("publication proof must be result_verified")
@@ -230,6 +311,19 @@ def validate_publication_proof(proof, handoff, git_worktree):
         raise ValueError(f"cannot verify published result: {exc}") from exc
     if live != proof["published_commit"]:
         raise ValueError("published commit is not exact assigned branch head")
+    actual_changed_paths = _git_changed_paths(root, handoff["base_sha"], proof["published_commit"])
+    if _portable_set(actual_changed_paths) != _portable_set(handoff["changed_paths"]):
+        raise ValueError("actual published Git diff does not match handoff manifest")
+    if _portable_set(actual_changed_paths) != _portable_set(proof["observed_changed_paths"]):
+        raise ValueError("publication proof changed paths do not match actual Git diff")
+    if handoff["transport"] == "content_artifact":
+        artifact_root = Path(evidence_root).resolve() if evidence_root is not None else root.resolve()
+        artifact_path = (artifact_root / handoff["artifact_ref"]["path"]).resolve()
+        payload = resolve_artifact(handoff, artifact_root)
+        if handoff["artifact_ref"]["format"] == "unified_diff":
+            _verify_unified_diff_artifact(handoff, payload, root, proof["published_commit"])
+        else:
+            _verify_git_bundle_artifact(handoff, artifact_path, root, proof["published_commit"])
     return proof
 
 
