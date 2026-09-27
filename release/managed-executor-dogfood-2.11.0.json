@@ -1,0 +1,75 @@
+{
+  "schema": "cdc-managed-executor-dogfood/v1",
+  "version": "2.11.0",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "integration_pr": 20,
+  "development_authority": "2.10.2",
+  "common_base_sha": "d64599f27c5e11663c8c9148d8eb86410a003129",
+  "workers": [
+    {
+      "task_id": "worker-a-core",
+      "pr": 17,
+      "trigger_comment": 5853785611,
+      "triggered_at_utc": "2026-09-27T07:25:07Z",
+      "accepted_by_connector_at_utc": "2026-09-27T07:25:16Z",
+      "first_completion_comment": 5853825045,
+      "first_completion_at_utc": "2026-09-27T07:31:14Z",
+      "write_set": [
+        "scripts/managed_executor_pool.py",
+        "templates/managed-executor-pool-plan.json",
+        "templates/managed-executor-pool-state.json",
+        "tests/test_managed_executor_pool.py"
+      ]
+    },
+    {
+      "task_id": "worker-b-attempts",
+      "pr": 18,
+      "trigger_comment": 5853785830,
+      "triggered_at_utc": "2026-09-27T07:25:09Z",
+      "accepted_by_connector_at_utc": "2026-09-27T07:25:21Z",
+      "first_completion_comment": 5853813712,
+      "first_completion_at_utc": "2026-09-27T07:29:37Z",
+      "write_set": [
+        "scripts/managed_executor_attempt.py",
+        "templates/managed-executor-attempt.json",
+        "templates/managed-executor-result.json",
+        "tests/test_managed_executor_attempt.py"
+      ]
+    },
+    {
+      "task_id": "worker-c-guidance",
+      "pr": 19,
+      "trigger_comment": 5853786066,
+      "triggered_at_utc": "2026-09-27T07:25:11Z",
+      "accepted_by_connector_at_utc": "2026-09-27T07:25:20Z",
+      "first_completion_comment": 5853811518,
+      "first_completion_at_utc": "2026-09-27T07:29:20Z",
+      "write_set": [
+        "references/managed-executor-pool.md",
+        "SKILL.md",
+        "README.md",
+        "tests/test_v2110_guidance.py",
+        "fault-injection/scenarios.json",
+        "tests/pressure-scenarios.md"
+      ]
+    }
+  ],
+  "concurrency_observation": {
+    "observed_concurrent_workers": 3,
+    "overlap_window_start_utc": "2026-09-27T07:25:21Z",
+    "overlap_window_end_utc": "2026-09-27T07:29:20Z",
+    "overlap_lower_bound_seconds": 239,
+    "basis": "all three connector acceptances precede the earliest worker completion comment",
+    "unresolved_write_set_conflicts": 0
+  },
+  "authority": {
+    "workers_wrote_shared_integration_branch": false,
+    "workers_authorized_merge": false,
+    "workers_authorized_release": false
+  },
+  "result_transport_rca": {
+    "worker_push_capability_observed": false,
+    "recomputation_required": false,
+    "integrator_reconstructed_and_published_exact_semantic_results": true
+  }
+}
