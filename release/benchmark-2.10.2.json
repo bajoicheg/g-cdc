@@ -1,0 +1,43 @@
+{
+  "schema": "cdc-parallel-benchmark-release-evidence/v1",
+  "version": "2.10.2",
+  "candidate_source_commit": "e27bf6346a4eb307bb9921cf0ab471639530cbe9",
+  "package_tree": "ffd6a6b7f42c675cd9b6f84b54ed3eae9ad6dbbb",
+  "provider": "codex_compute",
+  "evidence_comment": "https://github.com/bajoicheg/g-cdc/pull/14#issuecomment-5851604418",
+  "evidence_class": "release_observed",
+  "observed": true,
+  "environment": {
+    "python": "3.12.13",
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "reported_processing_units": 3,
+    "working_directory": "/workspace/g-cdc/src/continuous-development-cycle"
+  },
+  "workload": {
+    "commands": [
+      "python -m unittest tests/test_parallel_task_planner.py tests/test_worktree_worker_contract.py",
+      "python -m unittest tests/test_integration_gate.py tests/test_parallel_benchmark.py"
+    ],
+    "repeat_count_per_batch": 10,
+    "batches": 3,
+    "total_repetitions_per_workstream_per_mode": 30,
+    "workload_fingerprint": "sha256:fab23cf25d7b56f5d20a30c7f002f39bee70311c62b852f911a5f3d72fd4cdc4"
+  },
+  "observations": {
+    "sequential_elapsed_seconds": 12.007404839,
+    "parallel_elapsed_seconds": 9.843233131,
+    "speedup_ratio": 1.219863908,
+    "seconds_saved": 2.164171708,
+    "relative_wall_clock_reduction_percent": 18.023642385,
+    "warmup_invocations_passed": "2/2",
+    "sequential_timed_invocations_passed": "60/60",
+    "parallel_timed_invocations_passed": "60/60",
+    "total_invocations_passed": "122/122",
+    "unresolved_conflicts": 0,
+    "rollbacks": 0
+  },
+  "exact_identity_preserved": true,
+  "clean_worktree": true,
+  "authorizes_release": false
+}
