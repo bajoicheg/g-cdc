@@ -28,7 +28,10 @@
         "local"
       ],
       "max_runtime_seconds": 300,
-      "max_cost_units": 30
+      "max_cost_units": 30,
+      "executor_id": "executor-a",
+      "branch": "cdc/worker-a",
+      "worktree": "worktrees/worker-a"
     },
     {
       "id": "writer-b",
@@ -49,7 +52,10 @@
         "local"
       ],
       "max_runtime_seconds": 300,
-      "max_cost_units": 30
+      "max_cost_units": 30,
+      "executor_id": "executor-b",
+      "branch": "cdc/worker-b",
+      "worktree": "worktrees/worker-b"
     },
     {
       "id": "review",
@@ -71,7 +77,10 @@
         "local"
       ],
       "max_runtime_seconds": 180,
-      "max_cost_units": 20
+      "max_cost_units": 20,
+      "executor_id": "reviewer-a",
+      "branch": null,
+      "worktree": null
     }
   ]
 }
