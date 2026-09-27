@@ -30,13 +30,18 @@ class T(unittest.TestCase):
    "managed-pool-optional-work-silent-omission",
    "managed-pool-retry-reserves-original-budget",
    "managed-pool-inmemory-queue-bypasses-durable-cas",
+   "managed-pool-coordination-ref-split-brain",
+   "managed-pool-launch-grant-replay",
+   "managed-pool-history-touch-hidden",
+   "managed-pool-required-depends-on-optional",
+   "managed-pool-publication-remote-identity-drift",
   }
   self.assertTrue(expected<=ids)
 
  def test_pressure_numbering_is_continuous_through_101(self):
   text=(ROOT/"tests"/"pressure-scenarios.md").read_text()
   numbers=[int(x) for x in re.findall(r"(?m)^## (\d+)\.",text)]
-  self.assertEqual(numbers,list(range(1,102)))
+  self.assertEqual(numbers,list(range(1,107)))
 
  def test_guidance_preserves_authority_boundary(self):
   ref=(ROOT/"references"/"managed-executor-pool.md").read_text().lower()
