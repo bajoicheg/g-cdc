@@ -3,7 +3,7 @@
 from __future__ import annotations
 import argparse,hashlib,json,math,re,sys
 from pathlib import Path
-SCHEMA="parallel-benchmark/v1";OBS_SCHEMA="parallel-benchmark-observation/v1"
+SCHEMA="parallel-benchmark/v1";OBS_SCHEMA="parallel-benchmark-observation/v1";PLAN_SCHEMA="cdc-parallel-benchmark-plan/v1"
 SHA=re.compile(r"^[0-9a-f]{40}$");DIGEST=re.compile(r"^sha256:[0-9a-f]{64}$");MODES={"sequential","parallel"};EVIDENCE_CLASSES={"fixture","release_observed"}
 
 def _text(v,n):
@@ -30,12 +30,12 @@ def validate_observation(v):
             or v["elapsed_seconds"]<=0):raise ValueError("elapsed_seconds invalid")
     return v
 def validate(d):
-    fields={"schema","benchmark_id","evidence_class","representative_task_ref","candidate_sha","environment_ref","plan_ref","plan_artifact_ref","workstreams","observation_refs",
+    fields={"schema","benchmark_id","evidence_class","representative_task_ref","candidate_sha","package_tree","environment_ref","plan_ref","plan_artifact_ref","workstreams","observation_refs",
             "baseline_unresolved_conflicts","parallel_unresolved_conflicts","baseline_rollbacks","parallel_rollbacks"}
     if not isinstance(d,dict) or set(d)!=fields or d.get("schema")!=SCHEMA:raise ValueError("benchmark fields/schema mismatch")
     _text(d["benchmark_id"],"benchmark_id");_text(d["representative_task_ref"],"representative_task_ref")
     if d["evidence_class"] not in EVIDENCE_CLASSES:raise ValueError("benchmark evidence_class invalid")
-    _text(d["environment_ref"],"environment_ref");_sha(d["candidate_sha"],"candidate_sha")
+    _text(d["environment_ref"],"environment_ref");_sha(d["candidate_sha"],"candidate_sha");_sha(d["package_tree"],"package_tree")
     if not isinstance(d["plan_ref"],str) or not DIGEST.fullmatch(d["plan_ref"]):raise ValueError("benchmark plan_ref must be sha256 digest")
     artifact=d["plan_artifact_ref"]
     if not isinstance(artifact,dict) or set(artifact)!={"path","sha256"}:raise ValueError("plan artifact ref fields mismatch")
@@ -63,7 +63,34 @@ def load_plan_artifact(d,evidence_root):
     except OSError as exc:raise ValueError(f"cannot read benchmark plan artifact: {exc}") from exc
     observed="sha256:"+hashlib.sha256(payload).hexdigest()
     if observed!=ref["sha256"] or observed!=d["plan_ref"]:raise ValueError("benchmark plan artifact digest mismatch")
-    return {"path":ref["path"],"sha256":observed}
+    try:plan=json.loads(payload)
+    except json.JSONDecodeError as exc:raise ValueError("benchmark plan artifact JSON invalid") from exc
+    fields={"schema","version","candidate_source_commit","package_tree","representative_task_ref","workstreams",
+            "warmup_repetitions_per_workstream","measurement_batches","repetitions_per_batch_per_workstream",
+            "sequential_mode","parallel_mode","timer","acceptance"}
+    if not isinstance(plan,dict) or set(plan)!=fields or plan.get("schema")!=PLAN_SCHEMA:
+        raise ValueError("benchmark plan artifact fields/schema mismatch")
+    _text(plan["version"],"benchmark plan version");_sha(plan["candidate_source_commit"],"benchmark plan candidate_source_commit")
+    _sha(plan["package_tree"],"benchmark plan package_tree");_text(plan["representative_task_ref"],"benchmark plan representative_task_ref")
+    if plan["candidate_source_commit"]!=d["candidate_sha"]:raise ValueError("benchmark plan candidate binding mismatch")
+    if plan["package_tree"]!=d["package_tree"]:raise ValueError("benchmark plan package-tree binding mismatch")
+    if plan["representative_task_ref"]!=d["representative_task_ref"]:raise ValueError("benchmark plan representative-task mismatch")
+    if not isinstance(plan["workstreams"],list) or len(plan["workstreams"])!=d["workstreams"]:raise ValueError("benchmark plan workstream count mismatch")
+    ids=[]
+    for i,item in enumerate(plan["workstreams"]):
+        if not isinstance(item,dict) or set(item)!={"id","command"}:raise ValueError("benchmark plan workstream fields mismatch")
+        _text(item["id"],f"benchmark plan workstream[{i}].id");_text(item["command"],f"benchmark plan workstream[{i}].command");ids.append(item["id"])
+    if len(ids)!=len(set(ids)):raise ValueError("benchmark plan workstream ids duplicated")
+    for name in ("warmup_repetitions_per_workstream","measurement_batches","repetitions_per_batch_per_workstream"):
+        if type(plan[name]) is not int or plan[name]<1:raise ValueError("benchmark plan "+name+" invalid")
+    _text(plan["sequential_mode"],"benchmark plan sequential_mode");_text(plan["parallel_mode"],"benchmark plan parallel_mode")
+    if plan["timer"]!="time.perf_counter()":raise ValueError("benchmark plan timer invalid")
+    expected_acceptance={"parallel_elapsed_less_than_sequential","parallel_unresolved_conflicts_lte_baseline",
+                         "parallel_rollbacks_lte_baseline","all_invocations_must_pass"}
+    if not isinstance(plan["acceptance"],dict) or set(plan["acceptance"])!=expected_acceptance or any(v is not True for v in plan["acceptance"].values()):
+        raise ValueError("benchmark plan acceptance invalid")
+    return {"path":ref["path"],"sha256":observed,"candidate_source_commit":plan["candidate_source_commit"],
+            "package_tree":plan["package_tree"],"representative_task_ref":plan["representative_task_ref"]}
 
 def load_observations(d,evidence_root):
     validate(d);root=Path(evidence_root).resolve();observations=[]
@@ -79,8 +106,13 @@ def load_observations(d,evidence_root):
         except json.JSONDecodeError as exc:raise ValueError("benchmark observation JSON invalid") from exc
         validate_observation(obs);observations.append(obs)
     return observations
-def evaluate(d,observations,plan_artifact_verified=False):
+def evaluate(d,observations,plan_artifact=None):
     validate(d)
+    if plan_artifact is not None:
+        expected={"path","sha256","candidate_source_commit","package_tree","representative_task_ref"}
+        if not isinstance(plan_artifact,dict) or set(plan_artifact)!=expected:raise ValueError("resolved plan artifact proof invalid")
+        if plan_artifact["sha256"]!=d["plan_ref"] or plan_artifact["candidate_source_commit"]!=d["candidate_sha"] or plan_artifact["package_tree"]!=d["package_tree"] or plan_artifact["representative_task_ref"]!=d["representative_task_ref"]:
+            raise ValueError("resolved plan artifact proof binding mismatch")
     if not isinstance(observations,list) or len(observations)!=2:raise ValueError("resolved observations required")
     obs=[validate_observation(x) for x in observations];by={x["mode"]:x for x in obs}
     if d["evidence_class"]=="release_observed" and any(x["observed"] is not True for x in obs):
@@ -105,12 +137,12 @@ def evaluate(d,observations,plan_artifact_verified=False):
             "sequential_elapsed_seconds":seq,"parallel_elapsed_seconds":par,"passed":passed,
             "speedup_ratio":round(seq/par,3),"seconds_saved":seq-par,"blockers":b,
             "resolved_observation_count":2,"evidence_class":d["evidence_class"],
-            "plan_artifact_verified":bool(plan_artifact_verified),
-            "release_evidence_eligible":passed and d["evidence_class"]=="release_observed" and bool(plan_artifact_verified),
+            "plan_artifact_verified":plan_artifact is not None,
+            "release_evidence_eligible":passed and d["evidence_class"]=="release_observed" and plan_artifact is not None,
             "authorizes_worker_launch":False,"authorizes_product_write":False,"authorizes_merge":False,"authorizes_release":False}
 def evaluate_from_files(d,evidence_root):
-    load_plan_artifact(d,evidence_root)
-    return evaluate(d,load_observations(d,evidence_root),plan_artifact_verified=True)
+    plan=load_plan_artifact(d,evidence_root)
+    return evaluate(d,load_observations(d,evidence_root),plan_artifact=plan)
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument("input");p.add_argument("--evidence-root",required=True);a=p.parse_args(argv)
     try:d=json.loads(Path(a.input).read_text());r=evaluate_from_files(d,a.evidence_root)
