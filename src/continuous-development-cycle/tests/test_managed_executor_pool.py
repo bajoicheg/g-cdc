@@ -169,4 +169,10 @@ class T(unittest.TestCase):
   self.assertTrue(r["complete"]);self.assertTrue(r["terminal_allowed"])
   for name in m.AUTHORITY_FIELDS:self.assertFalse(r[name])
 
+ def test_writer_branch_and_worktree_assignments_are_portable_unique(self):
+  p=plan();p["tasks"][1]["branch"]="refs/heads/WORKER-A"
+  with self.assertRaisesRegex(ValueError,"branches must be portable-unique"):m.validate_plan(p)
+  p=plan();p["tasks"][1]["worktree"]="WORKTREES/A"
+  with self.assertRaisesRegex(ValueError,"worktrees must be portable-unique"):m.validate_plan(p)
+
 if __name__=="__main__":unittest.main()
