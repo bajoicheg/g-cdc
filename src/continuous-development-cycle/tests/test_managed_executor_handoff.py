@@ -1,3 +1,4 @@
+# R8 corrective remote-identity workstream seed; worker removes before final validation.
 import hashlib,subprocess,sys,tempfile,unittest
 from pathlib import Path
 from unittest import mock
