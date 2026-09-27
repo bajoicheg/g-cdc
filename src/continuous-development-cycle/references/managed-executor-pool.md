@@ -42,6 +42,14 @@ A successful writer result remains `integrated=false` until the single integrato
 
 Failure of one worker does not cancel unrelated independent work. Other safe tasks continue while the failed required task is retried, replanned or explicitly dispositioned.
 
+## Portable result handoff
+
+Direct worker push is a transport capability, not a correctness requirement. If an isolated worker finishes valid work but cannot push its assigned branch, preserve the completed attempt and return a **content-addressed result handoff** bound to the exact base SHA, task/attempt/parent/executor identity, assigned branch, changed-path manifest and validation evidence.
+
+Prefer a Git bundle when exact result-commit identity can be preserved; a content-addressed unified diff may be used when the parent must reconstruct a new commit. The parent/integrator authenticates the artifact before publication and independently verifies the published branch head, base-to-result ancestry and changed paths afterward.
+
+Missing worker push capability must never cause silent work loss, fabricated remote success or blind re-execution. The publication fallback sets `requires_reexecution=false` and grants no product-write, force-push, merge, release, scope or scheduler authority by itself.
+
 ## Terminal-state relationship
 
 Pool progress is not terminal progress. The parent cannot return COMPLETE while any required task is runnable, queued or running, while a required failed/stale task still needs recovery, or while a successful required result remains unintegrated.
