@@ -4,7 +4,7 @@
   "canonical_repository": "bajoicheg/g-cdc",
   "candidate_source_commit": "a29fb4221b63bff9ecac4e1b8c821f6c25ca7c0c",
   "package_tree": "6ffacd32cce74c3537150778d9b37cfeb361a621",
-  "status": "candidate",
+  "status": "released",
   "development_driver": {
     "version": "2.11.0",
     "commit": "5865399c2ddc0cb9c84fd8ebad207612d6e6e02b",
@@ -18,9 +18,12 @@
     "consumers": "3/3 archived snapshots PASS; not live adoption",
     "local_record": "release/validation-2.11.1.json",
     "ci": {
-      "state": "pending exact GitHub head"
+      "run_id": 36394984137,
+      "url": "https://github.com/bajoicheg/g-cdc/actions/runs/36394984137",
+      "head_sha": "6d35383a8bc8f1f520bddf994d3a0160e7e4b96f",
+      "conclusion": "success"
     },
-    "binding_note": "Local reviewed and final tested package tree equals published source. Final metadata-only head requires its own exact-head CI before merge/release."
+    "binding_note": "Candidate exact-head CI GREEN. The final metadata-only PR head requires its own exact-head CI before merge and immutable release-ref creation; that result is observed externally to avoid a self-referential commit binding."
   },
   "reviews": {
     "spec": {

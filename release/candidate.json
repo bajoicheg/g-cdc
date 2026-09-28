@@ -5,7 +5,7 @@
   "canonical_repository": "bajoicheg/g-cdc",
   "source_commit": "a29fb4221b63bff9ecac4e1b8c821f6c25ca7c0c",
   "package_tree": "6ffacd32cce74c3537150778d9b37cfeb361a621",
-  "status": "candidate",
+  "status": "released",
   "evidence": {
     "bootstrap": [
       "release/evidence-2.11.1.json#bootstrap"

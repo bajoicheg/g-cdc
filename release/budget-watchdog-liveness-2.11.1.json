@@ -247,6 +247,54 @@
         "tokens": null
       },
       "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T08:02:11Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "watchdog-candidate-ci",
+      "kind": "ci_start",
+      "operation_key": "sha256:21d536d1606e747b7d219b188a9595eb8ed4ae7d5fec7c9f15a87e613ff34c06",
+      "recovery_ref": null,
+      "scope": "watchdog-candidate-ci",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T08:06:08Z",
+      "event_id": "watchdog-candidate-ci-done",
+      "failure": null,
+      "reservation_id": "watchdog-candidate-ci",
+      "status": "succeeded",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T08:06:08Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "watchdog-final-metadata-ci",
+      "kind": "ci_start",
+      "operation_key": "sha256:5a812c1f475d91e0f9fd7634dd0cfbf2d4b7f323f8ee235549b833f58dfa8d6e",
+      "recovery_ref": null,
+      "scope": "watchdog-final-metadata-ci",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
     }
   ],
   "policy": {

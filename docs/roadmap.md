@@ -43,7 +43,7 @@ Acceptance:
 
 Release: `refs/heads/release/v2.11.0`, integration PR #67, frozen source `ffc64490e069318221e2c0d05996d39ed231fd46`, package tree `06078676bef395c56453f9e9066b4c0583c84ba3`. Evidence: 656 package tests, 17 independent bootstrap tests, validator286files,3archivedconsumer snapshots, independent spec/quality closure, exact package CI `36389114227` at `9136058` plus final metadata-head gate. See `release/evidence-2.11.0.json`. This stage is a milestone; authorized2.11.1/2.11.2 remain runnable after its release.
 
-### 2.11.1 — Persistent Watchdogs & Fleet Wake Enforcement — P1 / NOT RELEASED
+### 2.11.1 — Persistent Watchdogs & Fleet Wake Enforcement — P1 / RELEASED
 
 Goal: make an unexpectedly idle or disabled watchdog a critical recoverable control-plane fault whenever the project is not truly terminal.
 
@@ -66,6 +66,8 @@ Acceptance:
 - external `submitting|queued|running|unknown` state prevents duplicate external work while still allowing safe observation/reconciliation;
 - no watchdog may self-disable merely because one wake, task, PR, validation step or status report completed;
 - scheduler disable is acceptable without incident only after verified project `COMPLETE` (or a fresh explicit owner stop that intentionally supersedes this liveness policy).
+
+Release: `refs/heads/release/v2.11.1`, integration PR #68, frozen source `a29fb4221b63bff9ecac4e1b8c821f6c25ca7c0c`, package tree `6ffacd32cce74c3537150778d9b37cfeb361a621`. Full validation: 740 package tests, 18 independent bootstrap tests, 299 required files/templates and three archived consumers PASS. Ordered spec and quality reviews closed durable wake, transport isolation and raw Git object/ancestry findings. Candidate CI `36394984137` GREEN; final metadata head has a separate required CI gate. See `release/evidence-2.11.1.json`. Owner pause remains authoritative; this release starts no scheduler. Authorized cooperative lanes remain the next stage.
 
 ### 2.11.2 — Cooperative Project Lanes — P2 / NOT RELEASED
 
