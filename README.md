@@ -1,9 +1,7 @@
 # Continuous Development Cycle
 
-`bajoicheg/g-cdc` is the canonical source repository for CDC 2.7+.
+`bajoicheg/g-cdc` is the canonical source for CDC.
 
-CDC 2.11.2 is the current stabilization line with package tree `829ae9d6783ab1922b0cd49d0c3c344da5d68b3c`.
+Released CDC **2.10.3** repairs premature lease finalization, restores release consistency and puts the active continuation contract first. It was developed under independently released 2.10.2; the installed personal skill now matches the 2.10.3 package.
 
-CDC 2.10 is complete: 2.10.0 Behavioral Skill TDD & Verification Gate, 2.10.1 Specification Compliance & Two-Stage Review, and 2.10.2 Worktree-Isolated Parallel Development & Single Integrator are independently released.
-
-CDC 2.11 extends the 2.10.2 foundation with execution lease governance, release diagnostics, consumer snapshot validation, and managed stabilization workflows.
+Unreleased 2.11 work is preserved and queued after recovery; see [recovery findings](docs/continuity-recovery-2026-09-28.md) and [roadmap](docs/roadmap.md). Candidate/release status and exact package identity are recorded in `release/candidate.json`.

@@ -1,17 +1,25 @@
 # CDC roadmap
 
-## CDC 2.11 — Managed Multi-Executor & Watchdog Resilience — AUTHORIZED / ACTIVE
+## CDC 2.10.3 — Continuous execution recovery — RELEASED
+
+Owner-directed corrective priority (2026-09-28): retain stable 2.10.2 capabilities, reject milestone finalization while eligible work remains, bind lease completion to the real final-response decision, restore immutable prior evidence, and verify the installed skill against the released package. Current 2.11 progress remains preserved at `archive/2.11.2-before-continuity-recovery` (5ff81bc) and existing source/review branches. No 2.11 stage is considered released; staged release gates still apply after recovery. Schedulers remain explicitly paused.
+
+Acceptance: real acquire→finalization regressions RED→GREEN; candidate/manifest/source lock/version/tree agree; full bootstrap/package/three-consumer validation; independent review; installed package readback. See `docs/continuity-recovery-2026-09-28.md`.
+
+Evidence: 525/525 package tests, 17/17 independent bootstrap tests, package validator PASS, 3/3 archived consumer snapshots, spec and code-quality review PASS, GitHub Actions run `36383383699` GREEN for `fd11ff5`, and installed runtime-byte readback against package tree `a1fdca8c4a00409069b790e6dd13944e64fbf9bd` (host metadata normalization recorded in release evidence). The recovery release changes no live consumer deployment or scheduler state. Release ref: `refs/heads/release/v2.10.3`; integration: PR #66.
+
+## CDC 2.11 — Managed Multi-Executor & Watchdog Resilience — AUTHORIZED / BACKLOG AFTER RECOVERY
 
 Owner authorization on 2026-09-27 starts a new CDC line under independently released CDC 2.10.2. The line extends 2.10.2 safe parallelism from isolated implementation workers to a managed multi-executor control plane and makes watchdog continuity a release-grade invariant.
 
 CDC 2.11 preserves staged bootstrap/release discipline:
-- develop 2.11.0 under independently released 2.10.2;
+- resume 2.11.0 under independently released corrective 2.10.3 (initial work used 2.10.2);
 - develop 2.11.1 only after 2.11.0 is independently GREEN and released;
 - develop 2.11.2 only after 2.11.1 is independently GREEN and released.
 
 All three stages are explicitly authorized by the owner. They may be developed continuously without another approval boundary, but each release still requires its normal independent evidence.
 
-### 2.11.0 — Managed Executor Pool — P0 / AUTHORIZED
+### 2.11.0 — Managed Executor Pool — P0 / INCOMPLETE, PRESERVED
 
 Goal: provide a CDC-native analogue of Work-style subagents: one parent invocation can decompose work, launch or bind multiple bounded executors when the runtime supports it, observe them as first-class tasks, and integrate their results without granting workers shared-branch or release authority.
 
@@ -33,7 +41,7 @@ Acceptance:
 - cancellation and retry preserve exact attempt lineage rather than silently replacing evidence;
 - a deterministic sequential fallback produces the same required task/evidence set.
 
-### 2.11.1 — Cooperative Project Lanes — P1 / AUTHORIZED
+### 2.11.1 — Cooperative Project Lanes — P1 / NOT RELEASED
 
 Goal: allow the foreground user chat and one or more watchdog/Work/Codex executors to make useful progress on the same repository at the same time without reverting to split-brain shared writers.
 
@@ -54,7 +62,7 @@ Acceptance:
 - watchdog stays scheduled while foreground execution is active;
 - integrator remains the only shared-branch writer and validates all accepted lane results against fresh HEAD.
 
-### 2.11.2 — Persistent Watchdogs & Fleet Wake Enforcement — P2 / AUTHORIZED
+### 2.11.2 — Persistent Watchdogs & Fleet Wake Enforcement — P2 / NOT RELEASED
 
 Goal: make an unexpectedly idle or disabled watchdog a critical recoverable control-plane fault whenever the project is not truly terminal.
 

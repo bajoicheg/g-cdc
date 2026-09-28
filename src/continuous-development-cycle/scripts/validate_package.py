@@ -211,6 +211,8 @@ REQUIRED = [
     'tests/test_parallel_task_planner.py', 'tests/test_worktree_worker_contract.py',
     'tests/test_integration_gate.py', 'tests/test_parallel_benchmark.py',
     'tests/test_v2102_guidance.py',
+    'tests/test_continuity_recovery.py',
+    'tests/continuity_fixtures.py',
 ]
 
 
@@ -250,7 +252,9 @@ def validate():
     validate_lease(json.loads((ROOT / 'templates/execution-lease.json').read_text()))
     validate_lease_v2(json.loads((ROOT / 'templates/execution-lease-v2.json').read_text()))
     validate_resume_capsule(json.loads((ROOT / 'templates/resume-capsule.json').read_text()))
-    continuity = evaluate_continuity(json.loads((ROOT / 'templates/execution-continuity.json').read_text()))
+    continuity_template = json.loads((ROOT / 'templates/execution-continuity.json').read_text())
+    # Static example validation uses its own observation time, not live evidence.
+    continuity = evaluate_continuity(continuity_template, now_utc=continuity_template['blocker_proof']['observed_at_utc'])
     if not continuity['allowed']:
         raise ContractError('invalid CDC 2.4 execution-continuity template: ' + continuity['reason'])
     validate_ledger(json.loads((ROOT / 'templates/budget-ledger.json').read_text()))

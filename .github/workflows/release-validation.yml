@@ -1,9 +1,9 @@
 name: CDC Release Validation
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -19,6 +19,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -41,7 +43,7 @@ jobs:
       - name: Full bootstrap binding
         run: python -B bootstrap/validate_release.py --mode full
 
-      - name: Validate three live consumer snapshots
+      - name: Validate three archived consumer snapshots
         shell: bash
         run: |
           set -euo pipefail
@@ -50,7 +52,6 @@ jobs:
           for consumer in g-supervisor g-ad-control g-pc-health-check; do
             python -B src/continuous-development-cycle/scripts/validate_adapter.py "consumer/evidence/$consumer/development-cycle.yaml"
             python -B src/continuous-development-cycle/scripts/validate_checkpoint_24.py "consumer/evidence/$consumer/work-status.md" --adapter "consumer/evidence/$consumer/development-cycle.yaml"
-            python -B src/continuous-development-cycle/scripts/validate_snapshot_diagnostics.py "$consumer" "$CANDIDATE" "$PACKAGE_TREE"
-            python -B -c 'import json, pathlib, sys; c=sys.argv[1]; d=json.loads((pathlib.Path("consumer/evidence")/c/"source.json").read_text()); print("CONSUMER_GREEN",c,d["repository"],d["source_commit"],d["vendored_cdc_version"])' "$consumer"
+            CONSUMER="$consumer" PACKAGE_TREE="$PACKAGE_TREE" CANDIDATE="$CANDIDATE" python -c 'import json,os,pathlib; n=os.environ["CONSUMER"]; d=json.loads((pathlib.Path("consumer/evidence")/n/"source.json").read_text()); assert d["candidate_version"]==os.environ["CANDIDATE"]; assert d["candidate_package_tree"]==os.environ["PACKAGE_TREE"]; assert len(d["source_commit"])==40; print("CONSUMER_GREEN",n,d["repository"],d["source_commit"],d["vendored_cdc_version"])'
           done
           echo "THREE_CONSUMERS_GREEN package_tree=$PACKAGE_TREE"

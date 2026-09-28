@@ -1,0 +1,63 @@
+{
+  "schema": "cdc-release-evidence/v1",
+  "version": "2.10.3",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "candidate_source_commit": "652148a698bf591fe032a59437dc27830ad1f80a",
+  "package_tree": "a1fdca8c4a00409069b790e6dd13944e64fbf9bd",
+  "status": "released",
+  "release_validation": {
+    "provider": "github_actions_and_independent_local_review",
+    "conclusion": "success",
+    "package": "525/525",
+    "package_validator": "PASS: 262 files and parsed templates",
+    "bootstrap": "17/17; bootstrap and full validators GREEN",
+    "aggregate_unittests": "542/542",
+    "ci": {
+      "run_id": 36383383699,
+      "url": "https://github.com/bajoicheg/g-cdc/actions/runs/36383383699",
+      "head_sha": "fd11ff587eca1ea4109244ed8359e40aadbfa082",
+      "conclusion": "success"
+    },
+    "consumers": "3/3 archived snapshot compatibility; not live deployment",
+    "binding_note": "Source/package proof binds the frozen package tree. Subsequent metadata-only commits record observed evidence; their PR CI must pass before merge."
+  },
+  "reviews": {
+    "spec": {
+      "result": "PASS",
+      "scope": "independent source/spec review, 9 recovery regressions and 6 additional real-finalizer negative cases"
+    },
+    "quality": {
+      "result": "PASS",
+      "reviewed_head": "fd11ff587eca1ea4109244ed8359e40aadbfa082",
+      "scope": "full package/bootstrap suites, package validator, release binding and 16 additional malformed/mismatched evidence cases"
+    }
+  },
+  "scope": "continuity recovery; no new parallel benchmark claim",
+  "preserved_unreleased_source": "5ff81bc6fc3b515aab22550a192ad522bec0e102",
+  "review_corrections": "3 spec findings reproduced RED and fixed; final spec and quality PASS",
+  "agent_smoke": {
+    "completed_steps": 3,
+    "tests": "4/4",
+    "commit": "48cf3c69be34d1b66d7faffc24e4b735349370ee",
+    "scope": "isolated local multi-step smoke, no general guarantee"
+  },
+  "candidate_validation_head": "fd11ff587eca1ea4109244ed8359e40aadbfa082",
+  "release_ref": "refs/heads/release/v2.10.3",
+  "installed_skill": {
+    "version": "2.10.3",
+    "package_tree": "a1fdca8c4a00409069b790e6dd13944e64fbf9bd",
+    "tracked_files": 268,
+    "result": "PASS: active saved package read back after reconciliation; all runtime code, instructions, references and tests byte-identical",
+    "previous_version": "2.3.5",
+    "saved_package_tree": "c1c69b27264a889ce74787b07619cb0a5f354f0e",
+    "byte_identical_files": 266,
+    "normalization": {
+      "agents/openai.yaml": "formatting only; parsed YAML equal",
+      "assets/icon.svg": "host icon substitution",
+      "file_modes": "28 executable bits normalized to 100644; Python entry points verified through python invocation"
+    },
+    "tests": "525/525",
+    "package_validator": "PASS: 262 files"
+  },
+  "scheduler_state": "Owner-paused; no scheduler changes performed"
+}

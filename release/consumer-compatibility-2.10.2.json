@@ -1,22 +1,38 @@
 {
   "schema": "cdc-consumer-compatibility-release-evidence/v1",
-  "version": "2.11.2",
-  "candidate_source_commit": "72ea755251f4b19b9c5d6f40381725b09cd77141",
-  "package_tree": "829ae9d6783ab1922b0cd49d0c3c344da5d68b3c",
-  "provider": "cdc_release_validation",
-  "result": "PENDING_VALIDATION",
+  "version": "2.10.2",
+  "candidate_source_commit": "82046d663cc2c86f0dd79c5c349f0797171bc66b",
+  "package_tree": "2bee3b8159aaf80de981afba7cf284f21bafa1c3",
+  "provider": "codex_compute",
+  "evidence_comment": "https://github.com/bajoicheg/g-cdc/pull/14#issuecomment-5853481451",
+  "result": "3/3 GREEN",
   "consumers": [
     {
       "repository": "bajoicheg-private/g-supervisor",
-      "snapshot_validation": "pending"
+      "source_commit": "f250ace4cf0f5a4086c31099c0017d53770008bd",
+      "adapter_blob": "6e97525c450bd4e318c9fb720ad6d9f3b17f6ec6",
+      "checkpoint_blob": "0b5e14795ca2c2afeae1c87f26814cef8bff2067",
+      "snapshot_blob_identity_verified": true,
+      "candidate_adapter_validation": "success",
+      "candidate_checkpoint_validation": "success"
     },
     {
       "repository": "bajoicheg-private/g-ad-control",
-      "snapshot_validation": "pending"
+      "source_commit": "a65c36461d56aa80f129b65a0782be02529e1fc7",
+      "adapter_blob": "8ef78702d5e5eb7d44224b9bde18975ce4adc09d",
+      "checkpoint_blob": "893e226a20dd879635d80353f3c3c980717aadb8",
+      "snapshot_blob_identity_verified": true,
+      "candidate_adapter_validation": "success",
+      "candidate_checkpoint_validation": "success"
     },
     {
       "repository": "bajoicheg/g-pc-health-check",
-      "snapshot_validation": "pending"
+      "source_commit": "5afac455f6d4d10a0f8e71258c0250ecdbb1fb1a",
+      "adapter_blob": "2a5017ea1cf08b1cdbc77f3fcab752b0958e1bc1",
+      "checkpoint_blob": "b697d02e1c132b1add7c04271eef29bf29b39755",
+      "snapshot_blob_identity_verified": true,
+      "candidate_adapter_validation": "success",
+      "candidate_checkpoint_validation": "success"
     }
   ],
   "establishes_adoption_authority": false,
