@@ -3,7 +3,7 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.10.3
+# Continuous Development Cycle v2.11.0
 
 ## Active execution contract — apply before recovery detail
 
@@ -296,3 +296,11 @@ Writer acceptance covers the **entire introduced commit history**, not only the 
 A required task may not depend directly or transitively on optional work that can be omitted/discarded. Optional disposition must never strand required work.
 
 Publication proof uses a trusted immutable **remote identity/fingerprint** supplied by parent/integrator policy. The configured remote must have one identical fetch/push endpoint, and proof must verify the exact remote branch without logging credential-bearing URLs. A mutable remote name alone is not authority.
+
+### Actual execution and parent closure
+
+Use `scripts/managed_executor_runtime.py` to connect durable pool claims to actual backend effects. Its Linux local-command backend supervises real argument-array subprocesses in isolated Git worktrees, retains an exact attempt journal, and requires descendant quiescence before terminal process acceptance. Host adapters implement the documented start/observe/cancel interface; a validator or stored claim cannot create a Work/Codex tool capability. Unknown starts are observed, never blindly replayed.
+
+Before managed-parent finalization, call `ManagedExecutorRuntime.evaluate_parent()` with fresh continuity evidence. It reads the authoritative pool and combines it with the 2.10.3 terminal contract; required active or unintegrated work keeps the parent running. Read `references/managed-executor-runtime.md`.
+
+Verify active installation with `scripts/active_package.py` against the pinned canonical tree. Exact Git vendoring is strict; explicit host normalization may cover only equivalent interface YAML, icon substitution and executable-mode normalization. Modified runtime/instruction bytes fail closed. Package verification does not prove that the model obeys its instructions.

@@ -79,6 +79,8 @@ from managed_executor_handoff import validate_handoff as validate_managed_handof
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
     'SKILL.md', 'VERSION', 'manifest.json', 'agents/openai.yaml',
+    'scripts/managed_executor_runtime.py', 'tests/test_managed_executor_runtime.py',
+    'references/managed-executor-runtime.md',
     'references/runtime-routing-and-subagents.md', 'references/task-lifecycle.md',
     'references/validation-compute-and-ci.md', 'references/codex-compute.md',
     'references/progress-and-checkpoints.md', 'references/watchdog-recovery-and-migration.md',

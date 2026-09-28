@@ -227,3 +227,5 @@ Read `references/managed-executor-pool.md`.
 ### Managed-pool final safety boundary
 
 CDC 2.11.0 uses one authoritative coordination ref per pool and a one-shot durable launch CAS. Queue reservation alone cannot start a worker. Writer scope covers every path touched across the introduced history, required tasks cannot depend on omittable optional work, and remote publication is bound to a trusted immutable remote identity rather than a mutable remote name.
+
+The executable adapter in `scripts/managed_executor_runtime.py` provides a real Linux command backend, restart-safe attempt observations, descendant-aware cancellation and managed-parent terminal evaluation. See `references/managed-executor-runtime.md`; the backend is cooperative process supervision, not a security sandbox. `scripts/active_package.py` separately verifies actually installed runtime bytes against a pinned canonical package.
