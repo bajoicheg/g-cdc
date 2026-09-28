@@ -2,6 +2,8 @@
 
 `bajoicheg/g-cdc` is the canonical source for CDC.
 
-Released CDC **2.10.3** repairs premature lease finalization, restores release consistency and puts the active continuation contract first. It was developed under independently released 2.10.2; the installed personal skill now matches the 2.10.3 package.
+CDC **2.11.0** releases real managed execution on the corrected 2.10.3 continuity foundation: durable plan/launch claims, actual bounded Linux workers, result publication/integration checks and parent completion gating. Independent reviews closed reproduced endpoint, CAS, bytecode, exhausted-budget, queued-plan and preparation-deadline defects. See [release evidence](release/evidence-2.11.0.json).
 
-CDC **2.11.0** is the active managed-execution candidate under released 2.10.3. It adds real worker supervision and closes preserved pool identity/CAS defects; independent release gates are still pending. Watchdog liveness (2.11.1) precedes cooperative lanes (2.11.2); see [recovery findings](docs/continuity-recovery-2026-09-28.md) and [roadmap](docs/roadmap.md). Candidate/release status and exact package identity are recorded in `release/candidate.json`.
+The approved sequence continues with **2.11.1 watchdog/Fleet liveness and live target resolution**, then **2.11.2 cooperative lanes**. Schedulers remain explicitly owner-paused. [Roadmap](docs/roadmap.md) separates active work from implemented historical candidates.
+
+Actual installed and consumer package versions require separate byte/remote readback; source release alone does not deploy them. Prior verified2.10.3installation and safe g-ad-control adoption are recorded separately. Candidate/release identity is in `release/candidate.json`; installation2.11.0 follows release.

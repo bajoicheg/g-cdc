@@ -4,7 +4,7 @@
   "canonical_repository": "bajoicheg/g-cdc",
   "candidate_source_commit": "ffc64490e069318221e2c0d05996d39ed231fd46",
   "package_tree": "06078676bef395c56453f9e9066b4c0583c84ba3",
-  "status": "candidate",
+  "status": "released",
   "development_driver": {
     "version": "2.10.3",
     "commit": "685d35cac8316c303fc466345a18ed8abf9fb256",
@@ -16,13 +16,19 @@
     "package_validator": "PASS:286files and parsed templates",
     "bootstrap": "17/17; bootstrap/full GREEN",
     "consumers": "3/3 archived snapshots PASS; not live2.11.0adoption",
-    "ci": null,
+    "ci": {
+      "run_id": 36389114227,
+      "url": "https://github.com/bajoicheg/g-cdc/actions/runs/36389114227",
+      "head_sha": "91360589cec3f4bf31e1e2adf8d63fc1262f1864",
+      "conclusion": "success"
+    },
     "historical_candidate_ci": {
       "run_id": 36388437156,
       "head_sha": "d18b8af0f5e3249421cce45f47a548f5754a16a8",
       "conclusion": "success",
       "note": "Prior candidate; final corrected head requires new CI."
-    }
+    },
+    "binding_note": "Frozen package source is independently reviewed and CI GREEN. Final metadata-only PR head must also pass exact-head Actions before merge/release; its result is observed externally to avoid self-referential commit binding."
   },
   "reviews": {
     "spec": {
@@ -72,5 +78,6 @@
   "remaining_authorized_stages": [
     "2.11.1 watchdog/Fleet liveness and live target resolution",
     "2.11.2 cooperative lanes"
-  ]
+  ],
+  "release_ref": "refs/heads/release/v2.11.0"
 }

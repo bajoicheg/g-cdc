@@ -2,13 +2,13 @@
 
 ## CDC 2.10.3 — Continuous execution recovery — RELEASED
 
-Owner-directed corrective priority (2026-09-28): retain stable 2.10.2 capabilities, reject milestone finalization while eligible work remains, bind lease completion to the real final-response decision, restore immutable prior evidence, and verify the installed skill against the released package. Current 2.11 progress remains preserved at `archive/2.11.2-before-continuity-recovery` (5ff81bc) and existing source/review branches. No 2.11 stage is considered released; staged release gates still apply after recovery. Schedulers remain explicitly paused.
+Owner-directed corrective priority (2026-09-28): retain stable 2.10.2 capabilities, reject milestone finalization while eligible work remains, bind lease completion to the real final-response decision, restore immutable prior evidence, and verify the installed skill against the released package. Current 2.11 progress remains preserved at `archive/2.11.2-before-continuity-recovery` (5ff81bc) and existing source/review branches. At the recovery boundary no 2.11 stage was released; current stage status is recorded below. Schedulers remain explicitly paused.
 
 Acceptance: real acquire→finalization regressions RED→GREEN; candidate/manifest/source lock/version/tree agree; full bootstrap/package/three-consumer validation; independent review; installed package readback. See `docs/continuity-recovery-2026-09-28.md`.
 
 Evidence: 525/525 package tests, 17/17 independent bootstrap tests, package validator PASS, 3/3 archived consumer snapshots, spec and code-quality review PASS, GitHub Actions run `36383383699` GREEN for `fd11ff5`, and installed runtime-byte readback against package tree `a1fdca8c4a00409069b790e6dd13944e64fbf9bd` (host metadata normalization recorded in release evidence). The recovery release changes no live consumer deployment or scheduler state. Release ref: `refs/heads/release/v2.10.3`; integration: PR #66.
 
-## CDC 2.11 — Managed Multi-Executor & Watchdog Resilience — AUTHORIZED / BACKLOG AFTER RECOVERY
+## CDC 2.11 — Managed Multi-Executor & Watchdog Resilience — AUTHORIZED / IN PROGRESS
 
 Initial owner authorization on 2026-09-27 started CDC 2.11 under released 2.10.2. The 2026-09-28 recovery plan resumes it under 2.10.3 and puts watchdog liveness before cooperative lanes. The line extends 2.10.2 safe parallelism from isolated implementation workers to a managed multi-executor control plane and makes watchdog continuity a release-grade invariant.
 
@@ -19,7 +19,7 @@ CDC 2.11 preserves staged bootstrap/release discipline:
 
 All three stages are explicitly authorized by the owner. They may be developed continuously without another approval boundary, but each release still requires its normal independent evidence.
 
-### 2.11.0 — Managed Executor Pool — P0 / IN PROGRESS
+### 2.11.0 — Managed Executor Pool — P0 / RELEASED
 
 Goal: provide a CDC-native analogue of Work-style subagents: one parent invocation can decompose work, launch or bind multiple bounded executors when the runtime supports it, observe them as first-class tasks, and integrate their results without granting workers shared-branch or release authority.
 
@@ -40,6 +40,8 @@ Acceptance:
 - duplicate launch of the same task/attempt is rejected or reconciled;
 - cancellation and retry preserve exact attempt lineage rather than silently replacing evidence;
 - a deterministic sequential fallback produces the same required task/evidence set.
+
+Release: `refs/heads/release/v2.11.0`, integration PR #67, frozen source `ffc64490e069318221e2c0d05996d39ed231fd46`, package tree `06078676bef395c56453f9e9066b4c0583c84ba3`. Evidence: 656 package tests, 17 independent bootstrap tests, validator286files,3archivedconsumer snapshots, independent spec/quality closure, exact package CI `36389114227` at `9136058` plus final metadata-head gate. See `release/evidence-2.11.0.json`. This stage is a milestone; authorized2.11.1/2.11.2 remain runnable after its release.
 
 ### 2.11.1 — Persistent Watchdogs & Fleet Wake Enforcement — P1 / NOT RELEASED
 
@@ -362,10 +364,10 @@ The former 13 future candidates contained 12 implemented capabilities and one re
 Remaining feature: **registry-driven watchdog target resolution**, included in 2.11.1. Resolve the live `cdc/fleet` registry and target; project prompts load current repository policy, lock, checkpoint and coordination. Historical prompt targets never override live provenance.
 
 Active recovery work:
-- 2.11.0: integrate real worker execution and exact parent finalization; close the three preserved remote-identity findings and the reproduced identical-CAS-commit race; independent review/release remains required.
+- 2.11.0: released with real execution, exact parent finalization and independently verified corrections. Active installation readback remains a distinct rollout step.
 - 2.11.1: combine target resolution, persistent liveness and bounded Fleet recovery; fresh explicit owner pause takes precedence.
 - 2.11.2: cooperative lanes with portable conflict exclusion and one integrator.
-- Consumer adoption: g-ad-control is eligible for ordinary acquisition at the observed released lease; g-supervisor, g-pc-health-check and g-switcher require current-owner release or independently established quiescence. Re-read live refs before every mutation.
+- Consumer adoption: g-ad-control adopted2.10.3 and released generation42 at verified coordination794e152; g-supervisor, g-pc-health-check and g-switcher require current-owner release or independently established quiescence. Re-read live refs before every mutation.
 - PR consolidation: #20/#61/#62/#63/#64 preserve one historical pool implementation and its review/consumer attempts. Supersede only after the corrected integration is durably published; keep historical evidence and unresolved findings visible until verified closed.
 
 Schedulers are explicitly owner-paused. Neither liveness implementation nor backlog cleanup authorizes enabling or running them.
