@@ -28,6 +28,10 @@ def test_parent_child_paths_overlap():
     assert not admit_writer([claim("a", {"src"})], claim("b", {"src/a"}))
 
 
+def test_portable_case_and_separator_variants_overlap():
+    assert paths_overlap(claim("a", {"SRC\\Feature"}), claim("b", {"src/feature"}))
+
+
 def test_read_only_lane_does_not_block_writer():
     assert admit_writer([claim("review", set(), LaneKind.REVIEW)], claim("worker", {"src/a"}))
 
