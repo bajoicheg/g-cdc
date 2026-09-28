@@ -1,6 +1,6 @@
 {
   "schema": "cdc-release-candidate/v1",
-  "version": "2.11.1",
+  "version": "2.11.2",
   "developed_under_version": "2.11.0",
   "canonical_repository": "bajoicheg/g-cdc",
   "source_commit": "a6cc137c2f2c3193d9a184725941155f90eb3e60",
