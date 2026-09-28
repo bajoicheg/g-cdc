@@ -1,8 +1,8 @@
 {
   "schema": "cdc-consumer-compatibility-evidence/v1",
   "version": "2.10.3",
-  "candidate_source_commit": "9ea87e08ed363634c94e70d33367ef00df3531f0",
-  "package_tree": "ce9bfb5383fd13e3a104e19fd30205339fd553f1",
+  "candidate_source_commit": "652148a698bf591fe032a59437dc27830ad1f80a",
+  "package_tree": "a1fdca8c4a00409069b790e6dd13944e64fbf9bd",
   "result": "PASS",
   "kind": "archived-consumer-snapshot-compatibility",
   "consumers": [
@@ -12,7 +12,7 @@
       "source_commit": "a65c36461d56aa80f129b65a0782be02529e1fc7",
       "vendored_cdc_version": "2.7.2",
       "candidate_version": "2.10.3",
-      "candidate_package_tree": "ce9bfb5383fd13e3a104e19fd30205339fd553f1"
+      "candidate_package_tree": "a1fdca8c4a00409069b790e6dd13944e64fbf9bd"
     },
     {
       "schema": "cdc-consumer-validation-source/v1",
@@ -20,7 +20,7 @@
       "source_commit": "5afac455f6d4d10a0f8e71258c0250ecdbb1fb1a",
       "vendored_cdc_version": "2.7.1",
       "candidate_version": "2.10.3",
-      "candidate_package_tree": "ce9bfb5383fd13e3a104e19fd30205339fd553f1"
+      "candidate_package_tree": "a1fdca8c4a00409069b790e6dd13944e64fbf9bd"
     },
     {
       "schema": "cdc-consumer-validation-source/v1",
@@ -28,7 +28,7 @@
       "source_commit": "f250ace4cf0f5a4086c31099c0017d53770008bd",
       "vendored_cdc_version": "2.6.0",
       "candidate_version": "2.10.3",
-      "candidate_package_tree": "ce9bfb5383fd13e3a104e19fd30205339fd553f1"
+      "candidate_package_tree": "a1fdca8c4a00409069b790e6dd13944e64fbf9bd"
     }
   ],
   "validation_commands": [

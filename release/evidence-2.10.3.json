@@ -2,13 +2,13 @@
   "schema": "cdc-release-evidence/v1",
   "version": "2.10.3",
   "canonical_repository": "bajoicheg/g-cdc",
-  "candidate_source_commit": "9ea87e08ed363634c94e70d33367ef00df3531f0",
-  "package_tree": "ce9bfb5383fd13e3a104e19fd30205339fd553f1",
+  "candidate_source_commit": "652148a698bf591fe032a59437dc27830ad1f80a",
+  "package_tree": "a1fdca8c4a00409069b790e6dd13944e64fbf9bd",
   "status": "candidate",
   "release_validation": {
     "provider": "local_python_preflight",
-    "package": "522/522",
-    "package_validator": "PASS: 261 files and parsed templates",
+    "package": "525/525",
+    "package_validator": "PASS: 262 files and parsed templates",
     "bootstrap": "17/17 local; CI pending",
     "ci": "not submitted",
     "consumers": "3/3 snapshot compatibility"
@@ -18,5 +18,12 @@
     "quality": "pending"
   },
   "scope": "continuity recovery; no new parallel benchmark claim",
-  "preserved_unreleased_source": "5ff81bc6fc3b515aab22550a192ad522bec0e102"
+  "preserved_unreleased_source": "5ff81bc6fc3b515aab22550a192ad522bec0e102",
+  "review_corrections": "3 findings reproduced RED and fixed; final disposition pending",
+  "agent_smoke": {
+    "completed_steps": 3,
+    "tests": "4/4",
+    "commit": "48cf3c69be34d1b66d7faffc24e4b735349370ee",
+    "scope": "isolated local multi-step smoke, no general guarantee"
+  }
 }
