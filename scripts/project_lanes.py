@@ -30,6 +30,8 @@ class LaneClaim:
     branch: str
     read_paths: FrozenSet[str] = field(default_factory=frozenset)
     write_paths: FrozenSet[str] = field(default_factory=frozenset)
+    executor_id: str = "unknown"
+    role: str = "worker"
 
     def normalized_writes(self) -> FrozenSet[str]:
         return frozenset(normalize_path(p) for p in self.write_paths)
@@ -40,8 +42,14 @@ class LaneClaim:
 
 
 def normalize_path(path: str) -> str:
-    """Normalize portable paths for overlap comparison."""
+    """Normalize portable paths for overlap comparison.
+
+    Portable lane ownership treats equivalent Unicode spellings, path
+    separators and case variants as the same scope. It is intentionally a
+    comparison rule, not an OS-level filesystem fence.
+    """
     value = unicodedata.normalize("NFC", path).replace("\\", "/")
+    value = value.casefold()
     return str(PurePosixPath(value))
 
 
