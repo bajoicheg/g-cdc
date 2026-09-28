@@ -738,6 +738,42 @@
       "forbidden_authorities": [
         "release"
       ]
+    },
+    {
+      "id": "managed-identical-cas-race",
+      "fault": "same-state concurrent CAS proposals at identical clock",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "active-package-unpinned-bytecode",
+      "fault": "unchanged source with executable unchecked-hash bytecode",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-exhausted-budget-effect",
+      "fault": "retry or legacy queued launch after runtime or cost exhausted",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-controller-unknown-start",
+      "fault": "controller exits or supervisor disappears without terminal descendant proof",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
     }
   ]
 }

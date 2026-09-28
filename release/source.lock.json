@@ -8,5 +8,6 @@
   "base_package_tree": "a1fdca8c4a00409069b790e6dd13944e64fbf9bd",
   "base_validation_run_id": 36383960130,
   "bootstrap_contract": "cdc-bootstrap/v1",
-  "direct_product_repo_development": false
+  "direct_product_repo_development": false,
+  "base_validation_evidence_ref": null
 }

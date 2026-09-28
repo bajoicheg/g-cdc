@@ -1,23 +1,25 @@
 {
   "schema": "cdc-release-candidate/v1",
-  "version": "2.10.3",
-  "developed_under_version": "2.10.2",
+  "version": "2.11.0",
+  "developed_under_version": "2.10.3",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "652148a698bf591fe032a59437dc27830ad1f80a",
-  "package_tree": "a1fdca8c4a00409069b790e6dd13944e64fbf9bd",
-  "status": "released",
+  "source_commit": "cc918de1145d172a42ac4bbcb4bbbe31a3c66876",
+  "package_tree": "10b0f1ded56b763d09b7f93b47c3d598447a94ed",
+  "status": "candidate",
   "evidence": {
     "bootstrap": [
-      "release/evidence-2.10.3.json#bootstrap"
+      "release/evidence-2.11.0.json#bootstrap"
     ],
     "package": [
-      "release/evidence-2.10.3.json#package"
+      "release/evidence-2.11.0.json#package"
     ],
     "compatibility": [
-      "release/consumer-compatibility-2.10.3.json"
+      "release/consumer-compatibility-2.11.0.json"
     ],
     "fault_injection": [
-      "src/continuous-development-cycle/tests/test_continuity_recovery.py",
+      "src/continuous-development-cycle/tests/test_managed_executor_runtime.py",
+      "src/continuous-development-cycle/tests/test_managed_executor_pool.py",
+      "src/continuous-development-cycle/tests/test_active_package.py",
       "fault-injection/scenarios.json"
     ],
     "consumers": [

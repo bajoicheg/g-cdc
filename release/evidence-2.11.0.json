@@ -1,0 +1,63 @@
+{
+  "schema": "cdc-release-evidence/v1",
+  "version": "2.11.0",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "candidate_source_commit": "cc918de1145d172a42ac4bbcb4bbbe31a3c66876",
+  "package_tree": "10b0f1ded56b763d09b7f93b47c3d598447a94ed",
+  "status": "candidate",
+  "development_driver": {
+    "version": "2.10.3",
+    "commit": "685d35cac8316c303fc466345a18ed8abf9fb256",
+    "package_tree": "a1fdca8c4a00409069b790e6dd13944e64fbf9bd",
+    "validation_run_id": 36383960130
+  },
+  "release_validation": {
+    "package": "653/653 PASS",
+    "package_validator": "PASS:286files and parsed templates",
+    "bootstrap": "17/17; bootstrap/full GREEN",
+    "consumers": "3/3 archived snapshots PASS; not live2.11.0adoption",
+    "ci": null
+  },
+  "reviews": {
+    "spec": {
+      "result": "PASS",
+      "reviewed_head": "aa0d783273752fa3374de0604d4b063cf11b995c",
+      "package_tree": "10b0f1ded56b763d09b7f93b47c3d598447a94ed",
+      "corrections": [
+        "unpinned executable cache rejected; actual Python import RED\u2192GREEN",
+        "exhausted runtime/cost cannot retry/dispatch/launch; real effect RED\u2192GREEN"
+      ]
+    },
+    "quality": {
+      "result": "pending"
+    }
+  },
+  "runtime_acceptance": {
+    "backend": "real Linux subprocess and Git worktree backend",
+    "tests": "21 real runtime regressions included in653",
+    "observed": [
+      "parallel overlap",
+      "same-plan sequential capacity1",
+      "independent failure",
+      "controller exit and unknown-start no-replay",
+      "descendant-aware cancellation and timeout",
+      "exact published result and integration before parent closure",
+      "exhausted legacyqueue cannot create effect; unrelated work still runs"
+    ],
+    "limits": [
+      "cooperative control, not security sandbox",
+      "Linux local backend; host APIs remain separate actual capabilities",
+      "validators cannot intercept model final channel"
+    ]
+  },
+  "historical_pool_source": "d7156fecca13ee9989c5241ee8fc834ba88e7d7d",
+  "preserved_archive": "5ff81bc6fc3b515aab22550a192ad522bec0e102",
+  "prior_active_installation": "release/active-package-acceptance-2.10.3.json",
+  "live_consumer_adoption": "release/consumer-live-rollout-2.10.3.json",
+  "installed_skill_2_11_0": "pending release",
+  "scheduler_state": "Owner-paused; no scheduler mutations",
+  "remaining_authorized_stages": [
+    "2.11.1 watchdog/Fleet liveness and live target resolution",
+    "2.11.2 cooperative lanes"
+  ]
+}
