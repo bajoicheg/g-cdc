@@ -3,7 +3,20 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.10.2
+# Continuous Development Cycle v2.10.3
+
+## Active execution contract — apply before recovery detail
+
+A request to continue/develop/fix means execute the authorized scope through its real terminal boundary. After every commit, test, review, report or child task, choose and perform the next eligible action in the SAME invocation. Send progress in commentary; do not use a final response as a progress report. A milestone is never permission to stop.
+
+1. Verify the code actually loaded: installed `VERSION`, `manifest.json`, `SKILL.md` and the authorized canonical release must agree. A version label in a repository does not update the installed skill. Resolve drift by loading the verified authorized package before using its controls; never claim adoption until installed bytes are verified.
+2. Keep the remaining scope and next runnable action explicit. A dependency blocks its dependent work, not unrelated authorized actions. Missing workflow dispatch or a failed tool route means try a safe available route, not ask the owner to do a mechanical step.
+3. Before beginning lease finalization, evaluate `scripts/execution_continuity.py` against fresh scope facts. `allowed` alone is insufficient: only `final_response_allowed=true` permits the terminal path. `continue` and `progress` are always nonterminal. Supply `terminal_state` (Terminal-State v2) with separate scope-completion evidence or an exact external binding; BLOCKED also requires a fresh `blocker_proof`. Bind these to the same invocation and persisted checkpoint. A pre-release decision skips only the release check; final response still requires actual lease release. Do not enter draining while more work is runnable.
+4. End only for verified scope completion, an evidenced blocker/external wait with no eligible same-invocation work, an explicit owner pause, or an actual runtime/tool/budget limit requiring durable handoff. Report the specific limit and remaining action; never relabel a milestone or model convenience as a limit. Preserve the unfinished queue and external guards. A child task's completion is not scope completion when another task remains.
+5. Current user authorization governs routine recovery and existing implementation plans. Engineering skills supply tests/review/worktree discipline, not redundant requests to approve already-authorized work. Apply the governing instruction hierarchy; never waive a real security, destructive, ownership or protected gate.
+6. Honor an explicit owner scheduler pause. Never enable paused watchdogs merely to make the system appear continuous. Continue eligible foreground work.
+
+These are cooperative agent/runtime controls. Python validators do not intercept ChatGPT's final-response channel or autonomously launch workers; the active executor must actually invoke them and obey the decision. Test the real lease path and agent behavior, not just words in a response.
 
 Durable repository state is the project state. Sessions, agents and schedulers are disposable. Apply the instruction hierarchy, preserve the source/scope of existing user authorization, and reconcile repository policy. Live remote facts override stale checkpoint/chat claims. A spinner, lease or submitted request is not progress evidence.
 
@@ -47,7 +60,7 @@ Persist/read back the exact operation intent and external guard before submissio
 
 Use `scripts/resume_capsule.py` to validate the compact durable resume capsule. Fast resume is allowed only when the fresh live probe exactly matches repository/ref/HEAD, policy version, checkpoint digest and lease revision; any drift expands to normal reconciliation. The capsule is an optimization and handoff record, never authority.
 
-Use `scripts/execution_continuity.py` as the hard pre-final-response gate. The execution FSM is `BOOTSTRAP → RECONCILE → OWNERSHIP → EXECUTE → VALIDATE → CHECKPOINT → CONTINUE` with explicit `WAIT_EXTERNAL`, `BLOCKED` and `COMPLETE` outcomes. A runnable invocation cannot terminate on status/health/lease/poll/report/heartbeat activity alone. Valid terminal boundaries are meaningful durable progress, a durable external binding, a resumable blocker with exact next action, or verified task/scope completion.
+Use `scripts/execution_continuity.py` as the hard pre-final-response gate. The execution FSM is `BOOTSTRAP → RECONCILE → OWNERSHIP → EXECUTE → VALIDATE → CHECKPOINT → CONTINUE` with explicit `WAIT_EXTERNAL`, `BLOCKED` and `COMPLETE` outcomes. A runnable invocation cannot terminate on status/health/lease/poll/report/heartbeat activity alone. Meaningful durable progress is nonterminal. Terminal boundaries require no eligible remaining action plus a durable external binding, an evidenced resumable blocker with exact next action, or verified completion of the authorized scope.
 
 Lease v2 and checkpoint v4 are forward write formats. Legacy lease v1 and checkpoint v3 remain readable for migration; do not mutate an owned v1 lease merely to upgrade it. See `references/control-plane-v2.4.md`.
 

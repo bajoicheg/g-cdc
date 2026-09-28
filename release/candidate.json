@@ -1,25 +1,29 @@
 {
   "schema": "cdc-release-candidate/v1",
-  "version": "2.11.2",
-  "developed_under_version": "2.11.1",
+  "version": "2.10.3",
+  "developed_under_version": "2.10.2",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "72ea755251f4b19b9c5d6f40381725b09cd77141",
-  "package_tree": "829ae9d6783ab1922b0cd49d0c3c344da5d68b3c",
-  "status": "stabilization",
+  "source_commit": "9ea87e08ed363634c94e70d33367ef00df3531f0",
+  "package_tree": "ce9bfb5383fd13e3a104e19fd30205339fd553f1",
+  "status": "candidate",
   "evidence": {
     "bootstrap": [
-      "release/2.11.2-stabilization"
+      "release/evidence-2.10.3.json#bootstrap"
     ],
     "package": [
-      "src/continuous-development-cycle/scripts/validate_snapshot_diagnostics.py"
+      "release/evidence-2.10.3.json#package"
     ],
     "compatibility": [
-      "release/consumer-compatibility-2.11.2.json"
+      "release/consumer-compatibility-2.10.3.json"
+    ],
+    "fault_injection": [
+      "src/continuous-development-cycle/tests/test_continuity_recovery.py",
+      "fault-injection/scenarios.json"
     ],
     "consumers": [
-      "consumer:g-supervisor:GREEN_PENDING_VALIDATION",
-      "consumer:g-ad-control:GREEN_PENDING_VALIDATION",
-      "consumer:g-pc-health-check:GREEN_PENDING_VALIDATION"
+      "consumer:g-supervisor:compatibility-snapshot",
+      "consumer:g-ad-control:compatibility-snapshot",
+      "consumer:g-pc-health-check:compatibility-snapshot"
     ]
   }
 }

@@ -33,17 +33,13 @@ def _nullable_text(value, name):
         op._text(value, name)
 
 def _validate_invocation(value):
-    if "execution_required" not in value:
-        value["execution_required"] = False
     op._object(value, {"invocation_id", "automation_id", "conversation_id",
-                       "execution_surface", "execution_required", "started_at_utc"}, "invocation")
+                       "execution_surface", "started_at_utc"}, "invocation")
     op._text(value["invocation_id"], "invocation_id")
     _nullable_text(value["automation_id"], "automation_id")
     _nullable_text(value["conversation_id"], "conversation_id")
     if value["execution_surface"] not in SURFACES:
         raise ValueError("unsupported execution_surface")
-    if type(value["execution_required"]) is not bool:
-        raise ValueError("execution_required must be bool")
     op._timestamp(value["started_at_utc"], "invocation start")
     return value
 
@@ -169,9 +165,6 @@ def validate(record):
         _uuid(record["owner_id"])
         _validate_invocation(record["invocation"])
         _validate_finalization(record["finalization"])
-        if (record["invocation"]["execution_required"] is True
-                and record["finalization"]["state"] == "plan_only"):
-            raise ValueError("execution_required cannot finalize as PLAN_ONLY")
         if op._timestamp(record["invocation"]["started_at_utc"], "invocation start") > op._timestamp(
                 record["acquired_at_utc"], "acquired"):
             raise ValueError("invocation cannot start after lease acquisition")
@@ -332,7 +325,8 @@ def begin_finalization(record, owner_id, generation, invocation_id, at, *, pendi
                                   completion_reason=None, updated_at_utc=at, failure=None)
     return validate(result)
 
-def record_checkpoint(record, owner_id, generation, invocation_id, at, *, checkpoint_ref, pending_shared_writes):
+def record_checkpoint(record, owner_id, generation, invocation_id, at, *,
+                      checkpoint_ref, pending_shared_writes):
     _owner(record, owner_id, generation, invocation_id, at)
     op._text(checkpoint_ref, "checkpoint_ref")
     if pending_shared_writes is not False:
@@ -368,8 +362,10 @@ def mark_ready(record, owner_id, generation, invocation_id, at, *, continuity_st
         raise ValueError("continuity state must bind the exact invocation")
     if continuity_state.get("lease_release_required") is not False or continuity_state.get("lease_released") is not False:
         raise ValueError("pre-release continuity state must describe an owned, not-yet-released lease")
-    decision = evaluate(continuity_state)
-    if not decision["allowed"] or continuity_state.get("requested_terminal_outcome") == "continue":
+    if continuity_state.get("checkpoint_ref") != record["finalization"]["checkpoint_ref"]:
+        raise ValueError("continuity state must bind the persisted checkpoint")
+    decision = evaluate(continuity_state, now_utc=at)
+    if not decision["allowed"] or decision.get("final_response_allowed") is not True:
         raise ValueError("hard execution-continuity gate rejected finalization")
     result = copy.deepcopy(record)
     result["finalization"].update(state="ready", completion_reason=decision["reason"], updated_at_utc=at)
@@ -415,7 +411,8 @@ def clear_guard(record, owner_id, generation, invocation_id, at, observation, ev
     result["last_terminal"] = projected["last_terminal"]
     return validate(result)
 
-def check_record(record, owner_id, generation, invocation_id, at, *, action, intent_digest=None, heartbeat_freshness=600):
+def check_record(record, owner_id, generation, invocation_id, at, *,
+                 action, intent_digest=None, heartbeat_freshness=600):
     _owner(record, owner_id, generation, invocation_id, at)
     if action not in {"product_write", "external_start", "observe"}:
         raise ValueError("unknown ownership action")
@@ -441,7 +438,8 @@ def check_record(record, owner_id, generation, invocation_id, at, *, action, int
     return {"action": action, "generation": generation, "owner_id": owner_id,
             "invocation_id": invocation_id}
 
-def check(store, expected_revision, repository, source_ref, owner_id, generation, invocation_id, at, **kwargs):
+def check(store, expected_revision, repository, source_ref, owner_id, generation,
+          invocation_id, at, **kwargs):
     revision, record = store.read()
     if revision != expected_revision or record is None:
         raise ValueError("stale coordination store revision")
@@ -450,7 +448,8 @@ def check(store, expected_revision, repository, source_ref, owner_id, generation
     result = check_record(record, owner_id, generation, invocation_id, at, **kwargs)
     return dict(result, revision=revision, repository=repository, source_ref=source_ref)
 
-def claim_submission(store, expected_revision, repository, source_ref, owner_id, generation, invocation_id, at, *, intent_digest, heartbeat_freshness=600):
+def claim_submission(store, expected_revision, repository, source_ref, owner_id,
+                     generation, invocation_id, at, *, intent_digest, heartbeat_freshness=600):
     revision, record = store.read()
     if revision != expected_revision or record is None:
         raise ValueError("stale coordination store revision")

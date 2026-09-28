@@ -4,7 +4,7 @@ ROOT=Path(__file__).resolve().parents[1]
 class T(unittest.TestCase):
  def test_version(self):
   v=(ROOT/"VERSION").read_text().strip()
-  self.assertEqual(v,"2.10.2")
+  self.assertGreaterEqual(tuple(map(int,v.split("."))),(2,10,2))
   self.assertEqual(json.loads((ROOT/"manifest.json").read_text())["version"],v)
  def test_package_validator_binds_gate_result_fixture(self):
   s=(ROOT/"scripts"/"validate_package.py").read_text()
