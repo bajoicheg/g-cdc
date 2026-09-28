@@ -774,6 +774,24 @@
         "product_write",
         "release"
       ]
+    },
+    {
+      "id": "managed-queued-plan-scope-drift",
+      "fault": "expanded plan reused with queued claim after reconstruction",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-preparation-deadline-effect",
+      "fault": "worktree preparation exhausts deadline or receives cancellation before command launch",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
     }
   ]
 }
