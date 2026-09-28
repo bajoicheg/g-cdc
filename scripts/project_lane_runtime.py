@@ -1,7 +1,7 @@
 """CDC 2.11.2 lane runtime lifecycle primitives.
 
-The runtime models admission and safe release decisions. It deliberately
-requires an external durable store for CAS, heartbeat evidence and Git effects.
+The runtime models safe lifecycle transitions. Durable CAS, process evidence
+and Git effects are supplied by the caller and are never inferred here.
 """
 
 from dataclasses import dataclass
@@ -23,6 +23,7 @@ class LaneRuntime:
     generation: int
     state: LaneState = LaneState.QUEUED
     last_activity_ref: Optional[str] = None
+    pending_effects: bool = False
 
     def heartbeat(self, activity_ref: str) -> None:
         if not activity_ref or activity_ref == self.last_activity_ref:
@@ -36,6 +37,8 @@ class LaneRuntime:
         self.state = LaneState.HANDOFF_PENDING
 
     def release(self) -> None:
+        if self.pending_effects:
+            raise ValueError("lane release requires drained effects")
         if self.state not in (LaneState.HANDOFF_PENDING, LaneState.RUNNING):
             raise ValueError("lane is not releasable")
         self.state = LaneState.RELEASED
