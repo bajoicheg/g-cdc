@@ -55,5 +55,6 @@
   "authorizes_user_approval": false,
   "revision": 0,
   "coordination_ref": "refs/heads/cdc/pool-example",
-  "coordination_store_id": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  "coordination_store_id": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "plan_digest": "sha256:1a79b68bc124e74d105ae8d3d53618ade5cd0a504639b229b35c3d651dccd0ae"
 }

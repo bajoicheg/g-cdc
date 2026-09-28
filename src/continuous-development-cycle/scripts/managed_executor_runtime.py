@@ -219,14 +219,19 @@ def _supervise(directory):
         else:
             command += ["--detach"]
         _git(request["repo_root"], *command, str(cwd), request["identity"]["base_sha"])
-        with (directory / "stdout.log").open("ab") as out, (directory / "stderr.log").open("ab") as err:
-            child = subprocess.Popen(request["argv"], cwd=cwd, stdin=subprocess.DEVNULL,
-                                     stdout=out, stderr=err, close_fds=True)
-        receipt.update(status="running", started_at_utc=_utc(), worker_pid=child.pid)
-        _write(directory / "receipt.json", receipt)
-        termination = None
-        stopping_at = None
+        # Preparation is inside the admitted interval. Never create a new worker
+        # after its deadline/cancellation, but still reap any preparation descendants.
+        termination = ("cancelled" if (directory / "cancel.json").exists() else
+                       "timed_out" if time.monotonic() - started >= request["timeout_seconds"] else None)
+        stopping_at = time.monotonic() if termination else None
+        child = None
         exit_code = None
+        if termination is None:
+            with (directory / "stdout.log").open("ab") as out, (directory / "stderr.log").open("ab") as err:
+                child = subprocess.Popen(request["argv"], cwd=cwd, stdin=subprocess.DEVNULL,
+                                         stdout=out, stderr=err, close_fds=True)
+            receipt.update(status="running", started_at_utc=_utc(), worker_pid=child.pid)
+            _write(directory / "receipt.json", receipt)
         while True:
             # waitpid(ECHILD) is the closure proof: root exit alone is insufficient.
             no_children = False
@@ -238,7 +243,7 @@ def _supervise(directory):
                     break
                 if not reaped:
                     break
-                if reaped == child.pid:
+                if child is not None and reaped == child.pid:
                     exit_code = os.waitstatus_to_exitcode(status)
                     child.returncode = exit_code
             if no_children:

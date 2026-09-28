@@ -45,7 +45,7 @@ TASK_FIELDS = {
     "max_runtime_seconds", "max_cost_units",
 }
 STATE_FIELDS = {
-    "schema", "pool_id", "change_id", "parent_invocation_id", "base_sha", "integrator_id",
+    "plan_digest", "schema", "pool_id", "change_id", "parent_invocation_id", "base_sha", "integrator_id",
     "coordination_ref", "coordination_store_id",
     "revision", "execution_mode", "tasks", "runtime_consumed_seconds", "cost_consumed_units",
     *AUTHORITY_FIELDS,
@@ -258,6 +258,7 @@ def initial_state(plan, *, parallel_capable):
         raise ValueError("parallel_capable must be boolean")
     state = {
         "schema": STATE_SCHEMA,
+        "plan_digest": canonical_state_ref(plan),
         "pool_id": plan["pool_id"],
         "change_id": plan["change_id"],
         "parent_invocation_id": plan["parent_invocation_id"],
@@ -299,6 +300,8 @@ def validate_state(plan, state):
                   "coordination_ref", "coordination_store_id"):
         if state[field] != plan[field]:
             raise ValueError(f"pool state {field} mismatch")
+    if state["plan_digest"] != canonical_state_ref(plan):
+        raise ValueError("pool plan digest binding mismatch")
     if type(state["revision"]) is not int or state["revision"] < 0:
         raise ValueError("pool state revision must be a nonnegative integer")
     if state["execution_mode"] not in {"parallel", "sequential_fallback"}:

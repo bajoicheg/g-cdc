@@ -47,6 +47,8 @@ commit their scoped changes and leave the worktree clean. This is cooperative
 isolation, not a hostile-code sandbox: Git worktrees share repository metadata,
 and commands retain the invoking user's privileges.
 
+The initialized durable pool state pins a canonical digest of the entire plan, including write scope, backend and budgets. Reads and every queue/launch transition reject plan drift, including after controller reconstruction. Existing pool plans are immutable: authorized replanning must preserve the old attempt history and establish a separately identified plan/store; never rewrite the digest of live state. Legacy candidate state without the digest fails closed and needs explicit quiescent migration.
+
 `start` first reserves the queued task with CAS, then consumes its launch claim
 with a second CAS. Only the successful launch-claim caller invokes the backend.
 The pool enforces configured parallel capacity, sequential fallback, dependencies,
@@ -91,7 +93,7 @@ cancelled, and timed-out receipts and the pool's attempt history remain intact.
 The pool changes to failed/cancelled only after a matching quiescent observation.
 A successful process remains running in the pool until result acceptance.
 
-Timeout covers the local supervised preparation/execution interval. The receipt
+Timeout covers the local supervised preparation/execution interval. Deadline and cancellation are checked again after worktree preparation, before creating the worker process; any preparation descendants still pass the quiescence loop. The receipt
 retains full observed `elapsed_seconds`, including termination overhead.
 `runtime_seconds` is capped at the admitted remaining task budget for the pool's
 bounded ledger; a timed-out attempt therefore consumes its entire remaining

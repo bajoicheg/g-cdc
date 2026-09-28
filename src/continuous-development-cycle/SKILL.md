@@ -289,7 +289,7 @@ Read `references/managed-executor-pool.md`.
 
 ### Final managed-pool trust boundaries
 
-A managed pool has exactly one **authoritative coordination ref** bound into the validated plan and durable state. Callers do not choose a different ref for the same pool. Queue reservation is not worker-start authority: only a successful **one-shot durable queued→running CAS** for the exact task/attempt/reservation token may return launch authority, and replay/stale contenders fail closed.
+A managed pool has exactly one **authoritative coordination ref** bound into the validated plan and durable state. Initial durable state pins the full canonical plan digest before queue admission; altered scope, backend or budget cannot reuse an existing queued claim, including across restart. Callers do not choose a different ref for the same pool. Queue reservation is not worker-start authority: only a successful **one-shot durable queued→running CAS** for the exact task/attempt/reservation token may return launch authority, and replay/stale contenders fail closed.
 
 Writer acceptance covers the **entire introduced commit history**, not only the final tree delta. A touched-and-restored out-of-claim path is still an escape. Ambiguous/merge history must be rejected or normalized into an independently validated sanitized result before acceptance.
 

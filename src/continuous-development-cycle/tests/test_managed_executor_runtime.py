@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -70,6 +71,12 @@ class RuntimeTests(unittest.TestCase):
         self.backend = runtime.LocalCommandBackend(self.root / "journal")
         self.rt = runtime.ManagedExecutorRuntime(self.plan, self.store, self.repo, self.backend)
         self.addCleanup(self.cleanup_workers)
+
+    def configure_fresh_pool(self):
+        # Configure before initializing a new durable pool; admitted plans are immutable.
+        self.plan["pool_id"] += "-configured"
+        self.plan["coordination_ref"] += "-configured"
+        self.make_runtime()
 
     def cleanup_workers(self):
         for task in self.plan["tasks"]:
@@ -140,6 +147,7 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
 
     def test_same_tasks_execute_sequentially_when_capacity_is_one(self):
         self.plan["max_parallel"] = 1
+        self.configure_fresh_pool()
         self.launch("a")
         with self.assertRaisesRegex(ValueError, "eligible"):
             self.launch("b")
@@ -214,6 +222,7 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
 
     def test_timeout_stops_descendant_and_preserves_exact_attempt(self):
         self.plan["tasks"][0]["max_runtime_seconds"] = .4
+        self.configure_fresh_pool()
         marker = self.root / "timeout-writing"
         self.launch("a", self.descendant_worker(marker))
         self.wait_file(marker)
@@ -232,6 +241,7 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
     def test_exhausted_attempt_cannot_launch_effect_even_from_legacy_queue(self):
         self.plan["tasks"][0].update(role="read_only", branch=None, worktree=None,
                                       write_paths=[], max_runtime_seconds=.1)
+        self.configure_fresh_pool()
         self.launch("a", [sys.executable, "-c", "import time; time.sleep(1)"])
         self.assertEqual(self.wait("a")["status"], "timed_out")
         revision, state = self.store.read()
@@ -379,6 +389,7 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
 
     def test_worker_exit_does_not_end_descendant_observation(self):
         self.plan["tasks"][0]["max_runtime_seconds"] = .4
+        self.configure_fresh_pool()
         marker = self.root / "root-exited-child-writing"
         argv = self.descendant_worker(marker)
         argv[2] = argv[2].replace("; time.sleep(60)", "")
@@ -436,6 +447,7 @@ os._exit(0)
 
     def test_read_only_worker_cannot_hide_a_committed_change(self):
         self.plan["tasks"][0].update(role="read_only", branch=None, worktree=None, write_paths=[])
+        self.configure_fresh_pool()
         code = "import pathlib,subprocess; pathlib.Path('seed').write_text('changed'); subprocess.run(['git','add','seed'],check=True); subprocess.run(['git','commit','-qm','hidden change'],check=True)"
         self.launch("a", [sys.executable, "-c", code])
         self.assertEqual(self.wait("a")["status"], "succeeded")
@@ -452,6 +464,48 @@ os._exit(0)
         with self.assertRaisesRegex(ValueError, "durable request identity"):
             self.accept("a")
         self.assertEqual(self.store.read()[1]["tasks"][0]["status"], "running")
+
+    def test_queued_assignment_cannot_expand_scope_even_after_reconstruction(self):
+        revision, _ = self.store.read()
+        queued = pool.queue_task_cas(self.store, revision, self.plan, "a", "a1", reservation_token="queued-a")
+        expanded = copy.deepcopy(self.plan)
+        expanded["tasks"][0]["write_paths"].append("outside")
+        rebound_store = GitManagedExecutorStore(self.repo, "origin", expanded["coordination_ref"], expanded,
+                                                protected_refs=["refs/heads/integration"])
+        rebound = runtime.ManagedExecutorRuntime(expanded, rebound_store, self.repo, self.backend)
+        marker = self.root / "expanded-effect"
+        with self.assertRaisesRegex(ValueError, "plan.*(digest|binding)|assignment"):
+            rebound.start_queued(queued["store_revision"], "a", "a1", reservation_token="queued-a",
+                                 argv=[shutil.which("touch"), str(marker)])
+        self.assertFalse(marker.exists())
+        self.assertEqual(self.store.read()[1]["tasks"][0]["status"], "queued")
+
+    def test_preparation_deadline_prevents_worker_effect(self):
+        self.plan["tasks"][0]["max_runtime_seconds"] = .1
+        self.configure_fresh_pool()
+        hook = self.repo / ".git/hooks/post-checkout"
+        hook.write_text("#!/bin/sh\nsleep 0.5\n")
+        hook.chmod(0o755)
+        marker = self.root / "late-effect"
+        self.launch("a", [shutil.which("touch"), str(marker)])
+        observation = self.wait("a")
+        self.assertEqual(observation["status"], "timed_out")
+        self.assertTrue(observation["quiescent"])
+        self.assertFalse(marker.exists())
+        self.assertNotIn("worker_pid", observation)
+
+    def test_preparation_cancellation_prevents_worker_effect(self):
+        hook = self.repo / ".git/hooks/post-checkout"
+        hook.write_text("#!/bin/sh\nsleep 0.5\n")
+        hook.chmod(0o755)
+        marker = self.root / "cancelled-effect"
+        self.launch("a", [shutil.which("touch"), str(marker)])
+        self.rt.cancel("a", "a1")
+        observation = self.wait("a")
+        self.assertEqual(observation["status"], "cancelled")
+        self.assertTrue(observation["quiescent"])
+        self.assertFalse(marker.exists())
+        self.assertNotIn("worker_pid", observation)
 
 
 if __name__ == "__main__":
