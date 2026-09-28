@@ -3,7 +3,7 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.10.3
+# Continuous Development Cycle v2.11.0
 
 ## Active execution contract — apply before recovery detail
 
@@ -269,3 +269,38 @@ Preserve one **single integrator**. After worker completion, use `scripts/integr
 Measure real benefit with an **observed parallel benchmark** through `scripts/parallel_benchmark.py`. Planner estimates are not release evidence. The benchmark manifest must resolve the actual plan artifact bytes and require `plan_ref` to equal their SHA-256; matching hash-shaped labels are insufficient. The benchmark is GREEN only when observed parallel wall-clock time beats the sequential baseline without increasing unresolved conflicts or rollbacks.
 
 After integration, the final candidate still passes CDC 2.10.1 branch finishing and CDC 2.10.0 verification-before-terminal controls, plus normal ownership/release gates. Read `references/worktree-parallelism-and-integration.md`.
+
+## CDC 2.11.0 Managed Executor Pool
+
+Use a **managed executor pool** for bounded Work-style delegation. The parent invocation remains authoritative for the change; children receive task contracts and evidence obligations, never shared-branch write, merge, release, scope-expansion, scheduler or user-approval authority.
+
+Worker launch is **capability-gated**. When the current runtime cannot launch independent executors, use the **deterministic sequential fallback** over the same task/evidence plan and **must not fabricate subagents** or parallel execution evidence. Already-authorized child tasks need no per-launch user approval when runtime and project policy permit delegation.
+
+Writers remain isolated on exact-base branches/worktrees with portable write claims, and a **single integrator** is the only shared-branch writer. Read-only/review executors carry no write claim.
+
+Worker launch authority is **durable-CAS gated**. Queue/dispatch calculation is advisory until a production durable state store (the built-in `scripts/managed_executor_store.py` Git CAS store or an equivalent store satisfying the same compare-and-swap contract) atomically commits the exact task/attempt/reservation token. **Never launch from an in-memory `queue_task()` result alone.** Only the successful CAS winner may launch; stale sibling reservations fail closed.
+
+Every attempt has durable lifecycle and **attempt lineage**. Duplicate active launches are reconciled, retries create new attempt identities, and one worker failure does not cancel unrelated independent tasks. A successful worker result is still an **unintegrated successful result** until accepted by the integrator. If a worker cannot push, return a **content-addressed result handoff** for parent-mediated publication; missing push capability must not discard or rerun completed work. Publication is GREEN only when the exact **authoritative remote ref** equals the verified result commit; a local branch is not publication evidence. Verify bundle artifacts from an immutable snapshot of already-authenticated bytes.
+
+Required runnable/queued/running work, required recoverable failures, or an unintegrated successful result keep the parent non-terminal. Optional planned/recoverable work also requires explicit execution or omission, and retries reserve only their remaining per-task runtime/cost budget. **Progress is not terminal**: after a child or milestone completes, continue the CDC loop until the project-level terminal gate accepts a real boundary.
+
+Read `references/managed-executor-pool.md`.
+
+
+### Final managed-pool trust boundaries
+
+A managed pool has exactly one **authoritative coordination ref** bound into the validated plan and durable state. Initial durable state pins the full canonical plan digest before queue admission; altered scope, backend or budget cannot reuse an existing queued claim, including across restart. Callers do not choose a different ref for the same pool. Queue reservation is not worker-start authority: only a successful **one-shot durable queued→running CAS** for the exact task/attempt/reservation token may return launch authority, and replay/stale contenders fail closed.
+
+Writer acceptance covers the **entire introduced commit history**, not only the final tree delta. A touched-and-restored out-of-claim path is still an escape. Ambiguous/merge history must be rejected or normalized into an independently validated sanitized result before acceptance.
+
+A required task may not depend directly or transitively on optional work that can be omitted/discarded. Optional disposition must never strand required work.
+
+Publication proof uses a trusted immutable **remote identity/fingerprint** supplied by parent/integrator policy. The configured remote must have one identical fetch/push endpoint, and proof must verify the exact remote branch without logging credential-bearing URLs. A mutable remote name alone is not authority.
+
+### Actual execution and parent closure
+
+Use `scripts/managed_executor_runtime.py` to connect durable pool claims to actual backend effects. Its Linux local-command backend supervises real argument-array subprocesses in isolated Git worktrees, retains an exact attempt journal, and requires descendant quiescence before terminal process acceptance. Host adapters implement the documented start/observe/cancel interface; a validator or stored claim cannot create a Work/Codex tool capability. Unknown starts are observed, never blindly replayed.
+
+Before managed-parent finalization, call `ManagedExecutorRuntime.evaluate_parent()` with fresh continuity evidence. It reads the authoritative pool and combines it with the 2.10.3 terminal contract; required active or unintegrated work keeps the parent running. Read `references/managed-executor-runtime.md`.
+
+Verify active installation with `scripts/active_package.py` against the pinned canonical tree. Exact Git vendoring is strict; explicit host normalization may cover only equivalent interface YAML, icon substitution and executable-mode normalization. Modified runtime/instruction bytes and unpinned executable bytecode caches fail closed. Before installation verification, remove only known generated Python caches; use source-only imports or an empty external cache prefix when execution must avoid loading local cached bytecode (`-B` alone disables writes, not reads). Package verification does not prove that the model obeys its instructions.

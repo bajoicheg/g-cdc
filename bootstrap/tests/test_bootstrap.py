@@ -15,7 +15,7 @@ class Tests(unittest.TestCase):
  def test_patch_release_is_supported(self):
   validate_source_lock(load("release/source.lock.json"))
  def test_external_base_evidence_requires_ref(self):
-  d=load("release/source.lock.json");d["base_validation_evidence_ref"]=None
+  d=load("release/source.lock.json");d["base_validation_run_id"]=0;d["base_validation_evidence_ref"]=None
   with self.assertRaises(ValueError):validate_source_lock(d)
  def test_actions_base_evidence_mode_is_supported(self):
   d=load("release/source.lock.json");d["base_validation_run_id"]=123;d["base_validation_evidence_ref"]=None

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check installed package integrity and validate templates with their actual parsers."""
 from pathlib import Path
+from datetime import datetime
 import hashlib
 import json
 import re
@@ -71,9 +72,15 @@ from worktree_worker_contract import (
 from integration_gate import evaluate as evaluate_integration_gate
 from parallel_benchmark import evaluate_from_files as evaluate_parallel_benchmark_files, load_observations as load_parallel_benchmark_observations
 
+from managed_executor_attempt import validate_attempt as validate_managed_executor_attempt, validate_result as validate_managed_executor_result, acceptance as accept_managed_executor_result
+from managed_executor_pool import validate_plan as validate_managed_pool_plan, validate_state as validate_managed_pool_state, dispatch as dispatch_managed_pool, assess as assess_managed_pool
+from managed_executor_handoff import validate_handoff as validate_managed_handoff, publication_plan as plan_managed_handoff_publication
+
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
     'SKILL.md', 'VERSION', 'manifest.json', 'agents/openai.yaml',
+    'scripts/managed_executor_runtime.py', 'tests/test_managed_executor_runtime.py',
+    'references/managed-executor-runtime.md',
     'references/runtime-routing-and-subagents.md', 'references/task-lifecycle.md',
     'references/validation-compute-and-ci.md', 'references/codex-compute.md',
     'references/progress-and-checkpoints.md', 'references/watchdog-recovery-and-migration.md',
@@ -213,6 +220,16 @@ REQUIRED = [
     'tests/test_v2102_guidance.py',
     'tests/test_continuity_recovery.py',
     'tests/continuity_fixtures.py',
+    'references/managed-executor-pool.md',
+    'scripts/managed_executor_attempt.py', 'scripts/managed_executor_pool.py', 'scripts/managed_executor_handoff.py', 'scripts/managed_executor_store.py',
+    'templates/managed-executor-attempt.json', 'templates/managed-executor-result.json',
+    'templates/managed-executor-pool-plan.json', 'templates/managed-executor-pool-state.json',
+    'templates/managed-executor-handoff.json', 'templates/managed-executor-publication-proof.json',
+    'templates/managed-executor-handoff-artifact.patch',
+    'tests/test_managed_executor_attempt.py', 'tests/test_managed_executor_pool.py',
+    'tests/test_managed_executor_handoff.py', 'tests/test_managed_executor_store.py', 'tests/test_v2110_guidance.py',
+    'scripts/git_remote_identity.py', 'tests/test_git_remote_identity.py',
+    'scripts/active_package.py', 'tests/test_active_package.py',
 ]
 
 
@@ -397,7 +414,9 @@ def validate():
     continuation = decide_continuation_cycle(json.loads((ROOT / 'templates/continuation-cycle.json').read_text()))
     if continuation['action'] != 'CONTINUE_NOW' or continuation['final_response_allowed'] or continuation['progress_is_terminal']:
         raise ContractError('invalid continuation cycle template')
-    timestamp = render_command_timestamp(json.loads((ROOT / 'templates/command-timestamp-request.json').read_text()))
+    timestamp_request = json.loads((ROOT / 'templates/command-timestamp-request.json').read_text())
+    timestamp_fixture_clock = datetime.fromisoformat(timestamp_request['observed_at'].replace('Z','+00:00'))
+    timestamp = render_command_timestamp(timestamp_request, now=timestamp_fixture_clock)
     if timestamp['action'] != 'EMIT_ONCE' or timestamp['display'] != '[19:31 26.09]' or timestamp['authorizes_anything']:
         raise ContractError('invalid command timestamp template')
     rca = disposition_rca_feedback(json.loads((ROOT / 'templates/rca-feedback.json').read_text()))
@@ -495,6 +514,41 @@ def validate():
             or any(benchmark[name] for name in ('authorizes_worker_launch','authorizes_product_write',
                                                  'authorizes_merge','authorizes_release'))):
         raise ContractError('invalid CDC 2.10.2 fixture-only benchmark template')
+    managed_attempt = json.loads((ROOT / 'templates/managed-executor-attempt.json').read_text())
+    managed_result = json.loads((ROOT / 'templates/managed-executor-result.json').read_text())
+    validate_managed_executor_attempt(managed_attempt)
+    validate_managed_executor_result(managed_result, managed_attempt)
+    managed_acceptance = accept_managed_executor_result(managed_result, managed_attempt)
+    if (not managed_acceptance['accepted'] or managed_acceptance['integrated'] or
+            any(managed_acceptance[name] for name in ('authorizes_shared_branch_write','authorizes_merge',
+                                                       'authorizes_release','authorizes_scope_expansion',
+                                                       'authorizes_scheduler_mutation','authorizes_user_approval'))):
+        raise ContractError('invalid CDC 2.11.0 managed executor attempt/result templates')
+    managed_pool_plan = json.loads((ROOT / 'templates/managed-executor-pool-plan.json').read_text())
+    managed_pool_state = json.loads((ROOT / 'templates/managed-executor-pool-state.json').read_text())
+    validate_managed_pool_plan(managed_pool_plan)
+    validate_managed_pool_state(managed_pool_plan, managed_pool_state)
+    managed_dispatch = dispatch_managed_pool(managed_pool_plan, managed_pool_state)
+    managed_assessment = assess_managed_pool(managed_pool_plan, managed_pool_state)
+    if (managed_dispatch['task_ids'] != ['writer-a','writer-b'] or
+            managed_dispatch['fallback_serialized'] or managed_assessment['complete'] or
+            managed_assessment['terminal_allowed'] or
+            any(managed_dispatch[name] for name in ('authorizes_worker_launch','authorizes_shared_branch_write',
+                                                    'authorizes_merge','authorizes_release','authorizes_scope_expansion',
+                                                    'authorizes_scheduler_mutation','authorizes_user_approval')) or
+            any(managed_assessment[name] for name in ('authorizes_worker_launch','authorizes_shared_branch_write',
+                                                      'authorizes_merge','authorizes_release','authorizes_scope_expansion',
+                                                      'authorizes_scheduler_mutation','authorizes_user_approval'))):
+        raise ContractError('invalid CDC 2.11.0 managed executor pool templates')
+    managed_handoff = json.loads((ROOT / 'templates/managed-executor-handoff.json').read_text())
+    validate_managed_handoff(managed_handoff)
+    handoff_plan = plan_managed_handoff_publication(managed_handoff, ROOT)
+    if (handoff_plan['action'] != 'IMPORT_CONTENT_ARTIFACT_TO_ASSIGNED_BRANCH' or
+            handoff_plan['requires_reexecution'] or
+            any(handoff_plan[name] for name in ('authorizes_product_write','authorizes_shared_branch_write',
+                                                'authorizes_force_push','authorizes_merge','authorizes_release',
+                                                'authorizes_scope_expansion','authorizes_scheduler_mutation'))):
+        raise ContractError('invalid CDC 2.11.0 managed executor handoff template')
     for path in ROOT.rglob('*.md'):
         content = path.read_text()
         # Only portable package paths; repository paths in examples remain project-specific inputs.

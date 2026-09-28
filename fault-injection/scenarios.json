@@ -573,6 +573,225 @@
         "product_write",
         "auto_merge"
       ]
+    },
+    {
+      "id": "managed-pool-fabricated-worker-launch",
+      "fault": "runtime_without_worker_capability_reports_parallel_worker_execution",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-premature-parent-complete",
+      "fault": "parent_declares_terminal_with_required_pool_task_runnable_queued_or_running",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-duplicate-active-attempt",
+      "fault": "same_pool_task_has_multiple_active_attempts_without_reconciliation",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "managed-pool-worker-failure-cancels-unrelated",
+      "fault": "one_worker_failure_cancels_independent_runnable_pool_tasks",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-sequential-fallback-drift",
+      "fault": "sequential_fallback_changes_pool_task_or_required_evidence_contract",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-unintegrated-success-terminal",
+      "fault": "parent_declares_complete_with_required_successful_result_still_unintegrated",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-worker-result-push-unavailable",
+      "fault": "worker_completed_validated_result_but_execution_environment_has_no_git_remote_or_push_credentials",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-local-only-publication-proof",
+      "fault": "publication_proof_accepts_local_assigned_branch_without_authoritative_remote_ref",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-bundle-artifact-toctou",
+      "fault": "authenticated_git_bundle_path_is_reopened_after_digest_and_can_be_replaced_before_proof",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-optional-work-implicit-omission",
+      "fault": "terminal_state_silently_omits_optional_planned_or_recoverable_task_without_explicit_disposition",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-retry-budget-overreservation",
+      "fault": "retry_dispatch_reserves_original_task_maximum_instead_of_remaining_task_budget",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write"
+      ]
+    },
+    {
+      "id": "managed-pool-local-branch-fakes-publication",
+      "fault": "publication_proof_accepts_local_assigned_branch_without_authoritative_remote_ref",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-optional-work-silent-omission",
+      "fault": "optional_planned_or_recoverable_task_is_ignored_at_terminal_without_explicit_omission",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-retry-reserves-original-budget",
+      "fault": "retry_dispatch_reserves_original_task_max_instead_of_remaining_budget_after_prior_attempt_consumption",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-inmemory-queue-bypasses-durable-cas",
+      "fault": "executor_launch_occurs_after_in_memory_queue_transition_without_successful_durable_store_compare_and_swap",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-coordination-ref-split-brain",
+      "fault": "same_pool_plan_can_be_initialized_on_two_caller_selected_coordination_refs_and_both_return_launch_authority",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-launch-grant-replay",
+      "fault": "queued_reservation_launch_grant_can_be_replayed_without_one_shot_durable_queued_to_running_cas",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-history-touch-hidden",
+      "fault": "worker_commit_history_touches_out_of_claim_path_then_restores_it_before_result_commit",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-required-depends-on-optional",
+      "fault": "required_task_depends_directly_or_transitively_on_optional_task_that_can_be_omitted",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-pool-publication-remote-identity-drift",
+      "fault": "publication_proof_trusts_mutable_or_alternate_remote_name_without_immutable_expected_remote_identity",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "release"
+      ]
+    },
+    {
+      "id": "managed-identical-cas-race",
+      "fault": "same-state concurrent CAS proposals at identical clock",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "active-package-unpinned-bytecode",
+      "fault": "unchanged source with executable unchecked-hash bytecode",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-exhausted-budget-effect",
+      "fault": "retry or legacy queued launch after runtime or cost exhausted",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-controller-unknown-start",
+      "fault": "controller exits or supervisor disappears without terminal descendant proof",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-queued-plan-scope-drift",
+      "fault": "expanded plan reused with queued claim after reconstruction",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "managed-preparation-deadline-effect",
+      "fault": "worktree preparation exhausts deadline or receives cancellation before command launch",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
     }
   ]
 }

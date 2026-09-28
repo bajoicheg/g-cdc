@@ -2,15 +2,15 @@
 
 ## CDC 2.10.3 — Continuous execution recovery — RELEASED
 
-Owner-directed corrective priority (2026-09-28): retain stable 2.10.2 capabilities, reject milestone finalization while eligible work remains, bind lease completion to the real final-response decision, restore immutable prior evidence, and verify the installed skill against the released package. Current 2.11 progress remains preserved at `archive/2.11.2-before-continuity-recovery` (5ff81bc) and existing source/review branches. No 2.11 stage is considered released; staged release gates still apply after recovery. Schedulers remain explicitly paused.
+Owner-directed corrective priority (2026-09-28): retain stable 2.10.2 capabilities, reject milestone finalization while eligible work remains, bind lease completion to the real final-response decision, restore immutable prior evidence, and verify the installed skill against the released package. Current 2.11 progress remains preserved at `archive/2.11.2-before-continuity-recovery` (5ff81bc) and existing source/review branches. At the recovery boundary no 2.11 stage was released; current stage status is recorded below. Schedulers remain explicitly paused.
 
 Acceptance: real acquire→finalization regressions RED→GREEN; candidate/manifest/source lock/version/tree agree; full bootstrap/package/three-consumer validation; independent review; installed package readback. See `docs/continuity-recovery-2026-09-28.md`.
 
 Evidence: 525/525 package tests, 17/17 independent bootstrap tests, package validator PASS, 3/3 archived consumer snapshots, spec and code-quality review PASS, GitHub Actions run `36383383699` GREEN for `fd11ff5`, and installed runtime-byte readback against package tree `a1fdca8c4a00409069b790e6dd13944e64fbf9bd` (host metadata normalization recorded in release evidence). The recovery release changes no live consumer deployment or scheduler state. Release ref: `refs/heads/release/v2.10.3`; integration: PR #66.
 
-## CDC 2.11 — Managed Multi-Executor & Watchdog Resilience — AUTHORIZED / BACKLOG AFTER RECOVERY
+## CDC 2.11 — Managed Multi-Executor & Watchdog Resilience — AUTHORIZED / IN PROGRESS
 
-Owner authorization on 2026-09-27 starts a new CDC line under independently released CDC 2.10.2. The line extends 2.10.2 safe parallelism from isolated implementation workers to a managed multi-executor control plane and makes watchdog continuity a release-grade invariant.
+Initial owner authorization on 2026-09-27 started CDC 2.11 under released 2.10.2. The 2026-09-28 recovery plan resumes it under 2.10.3 and puts watchdog liveness before cooperative lanes. The line extends 2.10.2 safe parallelism from isolated implementation workers to a managed multi-executor control plane and makes watchdog continuity a release-grade invariant.
 
 CDC 2.11 preserves staged bootstrap/release discipline:
 - resume 2.11.0 under independently released corrective 2.10.3 (initial work used 2.10.2);
@@ -19,7 +19,7 @@ CDC 2.11 preserves staged bootstrap/release discipline:
 
 All three stages are explicitly authorized by the owner. They may be developed continuously without another approval boundary, but each release still requires its normal independent evidence.
 
-### 2.11.0 — Managed Executor Pool — P0 / INCOMPLETE, PRESERVED
+### 2.11.0 — Managed Executor Pool — P0 / RELEASED
 
 Goal: provide a CDC-native analogue of Work-style subagents: one parent invocation can decompose work, launch or bind multiple bounded executors when the runtime supports it, observe them as first-class tasks, and integrate their results without granting workers shared-branch or release authority.
 
@@ -41,28 +41,9 @@ Acceptance:
 - cancellation and retry preserve exact attempt lineage rather than silently replacing evidence;
 - a deterministic sequential fallback produces the same required task/evidence set.
 
-### 2.11.1 — Cooperative Project Lanes — P1 / NOT RELEASED
+Release: `refs/heads/release/v2.11.0`, integration PR #67, frozen source `ffc64490e069318221e2c0d05996d39ed231fd46`, package tree `06078676bef395c56453f9e9066b4c0583c84ba3`. Evidence: 656 package tests, 17 independent bootstrap tests, validator286files,3archivedconsumer snapshots, independent spec/quality closure, exact package CI `36389114227` at `9136058` plus final metadata-head gate. See `release/evidence-2.11.0.json`. This stage is a milestone; authorized2.11.1/2.11.2 remain runnable after its release.
 
-Goal: allow the foreground user chat and one or more watchdog/Work/Codex executors to make useful progress on the same repository at the same time without reverting to split-brain shared writers.
-
-Required controls:
-- replace project-wide mutual exclusion for ordinary work with durable **execution lanes**: each active executor declares identity, surface, exact observed HEAD, role and portable read/write claims;
-- non-overlapping writer lanes may coexist; read-only/review lanes may coexist with writers;
-- overlapping portable write claims serialize; a reserved shared-branch/integration lane remains exclusive;
-- user chat and watchdog remain independently alive: starting foreground work does not disable/pause the watchdog, and a watchdog encountering an occupied lane chooses another runnable non-conflicting task or observer/review work;
-- existing valid claims are never stolen merely because foreground work has higher urgency; handoff/preemption requires a safe checkpoint plus explicit quiescence of the relinquished lane;
-- every lane heartbeat requires new observable activity; TTL/staleness alone never proves the executor stopped;
-- shared HEAD movement is reconciled before integration; no executor force-pushes around another;
-- terminal evaluation is project-scope aware: one idle lane cannot make the project terminal while runnable work exists in another lane/queue.
-
-Acceptance:
-- foreground chat + watchdog can both be `running` on one project with disjoint write claims and no ownership contradiction;
-- overlapping claims deterministically block/serialize before either writer mutates the same portable path;
-- one executor can finish/release its lane without releasing or invalidating other active lanes;
-- watchdog stays scheduled while foreground execution is active;
-- integrator remains the only shared-branch writer and validates all accepted lane results against fresh HEAD.
-
-### 2.11.2 — Persistent Watchdogs & Fleet Wake Enforcement — P2 / NOT RELEASED
+### 2.11.1 — Persistent Watchdogs & Fleet Wake Enforcement — P1 / NOT RELEASED
 
 Goal: make an unexpectedly idle or disabled watchdog a critical recoverable control-plane fault whenever the project is not truly terminal.
 
@@ -85,6 +66,27 @@ Acceptance:
 - external `submitting|queued|running|unknown` state prevents duplicate external work while still allowing safe observation/reconciliation;
 - no watchdog may self-disable merely because one wake, task, PR, validation step or status report completed;
 - scheduler disable is acceptable without incident only after verified project `COMPLETE` (or a fresh explicit owner stop that intentionally supersedes this liveness policy).
+
+### 2.11.2 — Cooperative Project Lanes — P2 / NOT RELEASED
+
+Goal: allow the foreground user chat and one or more watchdog/Work/Codex executors to make useful progress on the same repository at the same time without reverting to split-brain shared writers.
+
+Required controls:
+- replace project-wide mutual exclusion for ordinary work with durable **execution lanes**: each active executor declares identity, surface, exact observed HEAD, role and portable read/write claims;
+- non-overlapping writer lanes may coexist; read-only/review lanes may coexist with writers;
+- overlapping portable write claims serialize; a reserved shared-branch/integration lane remains exclusive;
+- user chat and watchdog remain independently alive: starting foreground work does not disable/pause the watchdog, and a watchdog encountering an occupied lane chooses another runnable non-conflicting task or observer/review work;
+- existing valid claims are never stolen merely because foreground work has higher urgency; handoff/preemption requires a safe checkpoint plus explicit quiescence of the relinquished lane;
+- every lane heartbeat requires new observable activity; TTL/staleness alone never proves the executor stopped;
+- shared HEAD movement is reconciled before integration; no executor force-pushes around another;
+- terminal evaluation is project-scope aware: one idle lane cannot make the project terminal while runnable work exists in another lane/queue.
+
+Acceptance:
+- foreground chat + watchdog can both be `running` on one project with disjoint write claims and no ownership contradiction;
+- overlapping claims deterministically block/serialize before either writer mutates the same portable path;
+- one executor can finish/release its lane without releasing or invalidating other active lanes;
+- watchdog stays scheduled while foreground execution is active;
+- integrator remains the only shared-branch writer and validates all accepted lane results against fresh HEAD.
 
 Expected benefit: CDC moves from “safe parallel tasks” to a resilient multi-executor development system: useful work continues concurrently, foreground and watchdog execution cooperate instead of excluding each other, and fleet supervision actively restores projects that are idle for the wrong reason.
 
@@ -340,167 +342,32 @@ CDC 2.8.2 independent validation:
 
 There is no authorized next 2.8 development task. A new version line requires a new explicit roadmap; it must not be inferred from this completed roadmap.
 
-## Future roadmap candidates — owner-requested backlog
-
-These items are explicit future CDC roadmap candidates. They do not reopen the completed CDC 2.8 scope and do not assign a version number by themselves.
-
-### Chat command timestamping
-
-**Problem:** long-running CDC conversations make it hard to correlate a user command with repository, watchdog and compute events after the fact.
-
-**Accepted fix:** after every user command handled under CDC in any conversation, read the actual current Moscow time (MSK, UTC+3) from a runtime/authoritative clock and emit exactly one compact timestamp before or with the first substantive progress update. Never extrapolate from the previous timestamp and never manually increment minutes. The timestamp is evidence metadata only; it must not be treated as authorization, lease ownership or a repository event.
-
-**Acceptance direction:**
-- one timestamp per user command in every CDC-managed chat;
-- timestamp appears before substantive CDC progress for that command;
-- exact display format: `[HH:MM DD.MM]`, for example `[19:31 26.09]`;
-- source time is freshly observed for that command, not derived from an earlier chat timestamp;
-- no `MSK` label, seconds or synthetic minute advancement;
-- no duplicate timestamp spam inside one command.
-
-**Evidence reinforcement — 2026-09-26:** one live CDC invocation emitted a second fresh timestamp on a later progress update within the same user command. Freshness alone is insufficient: the per-command ledger is authoritative. After the first emitted `[HH:MM DD.MM]` marker, all later progress updates in that same command must suppress additional timestamps even if real time has advanced.
-
-### RCA-to-roadmap feedback loop
-
-**Problem:** anomalous or unclear CDC behavior can be diagnosed and fixed locally but then recur because the systemic correction never becomes roadmap input.
-
-**Proposed fix:** for every materially unclear, contradictory or unexpected CDC case, perform a bounded RCA and convert the result into a short **fix formulation** in the CDC roadmap/backlog. Record the corrective mechanism, not a verbose incident diary. Deduplicate against existing roadmap items before adding a new one.
-
-**Acceptance direction:**
-- RCA distinguishes product failure, policy failure, execution-channel failure, stale state, concurrent-writer movement and operator/tooling error where applicable;
-- every material RCA ends with one of: existing fix confirmed, existing roadmap item strengthened, or new fix formulation added;
-- roadmap entries state the invariant/control to add or change;
-- secrets, sensitive operational identifiers and disposable incident noise are not copied into the roadmap;
-- repeated occurrences strengthen one canonical fix instead of creating duplicate backlog items.
-
-### Fleet Watcher improvement harvesting
-
-**Problem:** Fleet Watcher currently observes project health but can finish without converting repeated operational friction into CDC product improvement.
-
-**Proposed fix:** every CDC Fleet Watcher run must produce exactly one bounded improvement proposal for CDC based on evidence from that run. The proposal may strengthen an existing roadmap item instead of creating a new one. If no novel improvement exists, record a deduplicated reinforcement/evidence update rather than inventing novelty.
-
-**Acceptance direction:**
-- exactly one proposal or reinforcement per Fleet Watcher run;
-- proposal is derived from observed fleet evidence;
-- proposal is checked against existing roadmap/backlog for duplicates;
-- proposal does not grant new authority or expand project scope;
-- proposal is concise: problem → fix formulation → expected invariant/benefit;
-- low-value noise is prevented by allowing an existing item to receive additional evidence instead of forcing a new item.
-
-### RCA-derived fix — canonical package distribution
-
-**Observed failure class:** consumer GitHub Actions could not fetch private canonical `g-cdc` using its repository-scoped `GITHUB_TOKEN`; cross-repository checkout failed before migration logic.
-
-**Root cause:** CDC release provenance and CDC package distribution currently share one private repository boundary, while consumer automation tokens are intentionally repository-scoped.
-
-**Fix formulation:** publish or expose an immutable **CDC package transport** that can be consumed without broadening consumer repository credentials. The transport must remain bound to canonical release commit + exact package Git tree and must not require making the canonical development repository public.
-
-**Expected invariant:** a consumer can fetch a released CDC package with least privilege while independently verifying the canonical release identity and exact package tree.
-
-### RCA-derived fix — Git-tree fidelity in package transport
-
-**Observed failure class:** archive/tarball transport preserved file contents but produced a different vendored subtree SHA because Git mode metadata was not faithfully reconstructed.
-
-**Root cause:** filesystem/archive transport is content-oriented, while CDC package identity is a Git tree identity that includes path/mode/object metadata.
-
-**Fix formulation:** CDC package transport and adoption tooling must be **Git-object-aware** or carry a signed/validated mode manifest sufficient to reconstruct the exact canonical subtree. Adoption must fail closed when reconstructed subtree SHA differs.
-
-**Expected invariant:** every consumer that claims CDC version X has vendored subtree SHA exactly equal to the canonical package tree for X.
-
-### RCA-derived fix — pre-run CI failure classification
-
-**Observed failure class:** several GitHub Actions runs failed at `Set up job` / zero executable steps; treating those as product RED would trigger wrong remediation.
-
-**Root cause:** CI state classification does not always distinguish runner/provider/pre-execution failure from executed test failure early enough.
-
-**Fix formulation:** classify CI evidence into at least `pre_run_infrastructure`, `setup`, `product_test`, and `terminal_success` before applying recovery policy. Zero-step/pre-job failure must route to execution-channel recovery/failover rather than product correction.
-
-**Expected invariant:** no source change is made solely in response to a run where product validation never executed.
-
-### RCA-derived fix — idempotent policy migration under concurrent writers
-
-**Observed failure class:** CDC adoption appended 2.8 policy sections after another writer had already introduced equivalent sections, producing duplicate strict-YAML keys even though package and lock identity were correct.
-
-**Root cause:** migration logic was presence-aware only at an earlier observation and did not re-read/reconcile the live adapter immediately before applying section additions.
-
-**Fix formulation:** CDC adoption/migration must be **idempotent and section-aware at commit time**. Re-read the current target adapter immediately before mutation; merge or replace canonical control sections by key, never append duplicate top-level keys. If HEAD moved, rerun semantic reconciliation on the fresh HEAD before commit.
-
-**Expected invariant:** repeated or concurrent CDC adoption converges to one valid semantic policy document; rerunning adoption is a no-op when the same target version is already represented.
-
-### RCA-derived fix — non-terminal progress must never stop execution
-
-**Observed failure class:** a CDC invocation completes a smaller implementation or validation step, reports that milestone to the user, and then stops even though authorized runnable work remains and no real blocker exists.
-
-**Root cause:** progress reporting and terminal control are insufficiently separated. A successful primitive or milestone can be misinterpreted as an invocation boundary, allowing the conversational response path to end execution before the CDC terminal-state evaluator proves COMPLETE, WAIT_EXTERNAL, or BLOCKED.
-
-**Fix formulation:** introduce a strict **Progress-Is-Not-Terminal invariant**. A progress update is informational only and MUST NOT transfer control back to the user, release ownership, or end the continuation loop. After every reported milestone, CDC must immediately re-run observe → reconcile → choose-next → act. Final response is permitted only when Terminal-State v2 accepts a real terminal boundary.
-
-**Acceptance direction:**
-- completion of a primitive step, commit, test subset, migration batch, validation stage, PR creation, artifact creation, or status report is never sufficient to stop execution by itself;
-- if any authorized runnable action remains, the same invocation continues automatically after the progress update;
-- progress updates and durable actions may be interleaved, but progress text never changes execution state;
-- `WAIT_EXTERNAL` requires a durable external binding and no same-invocation useful work;
-- `BLOCKED` requires fresh blocker proof and exhaustion of useful same-invocation work;
-- `COMPLETE` requires scope-completion evidence;
-- an invocation that returns control after a milestone while runnable work remains is a CDC contract violation and must trigger recovery/self-correction;
-- Fleet Watcher and dogfooding metrics should track occurrences of premature milestone stops as No-Idle violations.
-
-**Expected invariant:** CDC never pauses merely because it has something useful to report. It reports progress and keeps working until a genuine terminal state.
-
-**Evidence reinforcement — 2026-09-26:** a consumer adoption reached `finalization.state=reconciled` with `pending_shared_writes=false` and all exact-head validation GREEN, but ownership remained unreleased and no independent `executor_stopped` proof existed. TTL expiry was correctly rejected as takeover evidence. This strengthens the existing Progress-Is-Not-Terminal control: `reconciled` is still a continuation point; the owning invocation must immediately proceed to ready/release, while other executors may only observe or wake/re-enter the owner until explicit quiescence is proven.
-
-### RCA-derived fix — schema-typed checkpoint migration
-
-**Observed failure class:** an adoption checkpoint stored explanatory text in `execution_continuity.runnable_next_action`, while checkpoint v4 requires a Boolean; package, adapter and lock were GREEN but the terminal checkpoint failed validation.
-
-**Root cause:** migration logic reused human-readable next-action text for a typed control field instead of constructing checkpoint fields from the checkpoint schema.
-
-**Fix formulation:** checkpoint migration must be **schema-typed by construction**. Typed control fields are generated from schema-aware builders/templates, never inferred from arbitrary display text. Run checkpoint validation before committing a migration boundary; if a field type is wrong, correct the migration logic rather than weakening the validator.
-
-**Expected invariant:** every CDC-written checkpoint is schema-valid at commit time; descriptive text stays in descriptive fields and cannot leak into Boolean/enumerated control fields.
-
-**Evidence reinforcement — 2026-09-26:** a consumer checkpoint under CDC 2.9.2 stored a task-specific label in `execution_continuity.completion_gate` while runnable validation work remained. Strict v4 validation correctly rejected it. Corrective rule remains schema-typed construction: use the enum value `continue` for ongoing runnable work and keep task labels in descriptive fields.
-
-### RCA-derived fix — bounded Git-object migration transactions
-
-**Observed failure class:** a bulk CDC vendor-copy operation exceeded the execution connector's per-call tool-operation limit before a target tree was created.
-
-**Root cause:** migration batching was sized by file count only and did not account for the execution channel's maximum nested tool-call budget.
-
-**Fix formulation:** CDC migration planning must calculate a conservative **operation budget per batch**, split large Git-object transfers into bounded chunks, and persist each intermediate result only as an unreferenced/detached tree checkpoint. Product/adoption refs move only after exact subtree convergence and final policy reconciliation.
-
-**Expected invariant:** channel/tool-call limits cannot leave a branch partially migrated; oversized migrations automatically chunk and resume from the last detached tree checkpoint.
-
-### Fleet Watcher proposal — canonical convergence vector
-
-**Fleet observation:** a project may report CDC version `2.8.2` while exact package-tree readback, policy digest, checkpoint binding, or live ownership state is not yet proven on the same source ref. Version-only fleet status therefore overstates convergence.
-
-**Proposed fix:** Fleet Watcher should emit one normalized **convergence vector** per project: source ref + exact HEAD, CDC version, exact package tree, consumer-lock identity, semantic policy digest, checkpoint-valid flag, lease/guard state, and adoption state (`not_started | staged | validated | integrated | blocked`). A project is `integrated` only when all required components are mutually consistent on the same ref.
-
-**Expected invariant/benefit:** fleet status cannot show a project as fully converged from a version string alone; rollout state becomes deterministic, comparable across projects, and safe under concurrent writers.
-
-**Fleet Watcher reinforcement — 2026-09-26:** one consumer had canonical 2.9.2 version/tree plus all validation GREEN while its invocation-bound lease remained unreleased. Fleet status therefore correctly distinguishes package/policy adoption from full integrated convergence; exact version/tree evidence cannot erase live ownership state.
-
-**Evidence reinforcement — 2026-09-26:** a product checkpoint reported `lease_state: released` while the authoritative `cdc/coordination/lease.json` still held a newer active watchdog generation. Safe-boundary decisions must therefore read the live coordination lease/guard first; checkpoint ownership fields are historical/projected evidence only and may never override a newer coordination record.
-
-### RCA-derived fix — terminal-provider guard reconciliation
-
-**Observed failure class:** a guarded external CI operation becomes terminal at the provider, but the CDC lease/control-plane record remains `active` with `external_guard.state=running` and pending finalization.
-
-**Root cause:** provider-terminal observation and owner/finalization reconciliation are decoupled; a foreground owner can stop or lose execution after the provider finishes, leaving truthful provider state and durable CDC guard state inconsistent.
-
-**Fix formulation:** add a **terminal-provider reconciliation trigger**. Whenever Fleet Watcher/watchdog/provider observation proves a guarded task terminal, CDC must immediately schedule/re-enter reconciliation for that exact operation key. Reconciliation updates the guard/operation observation and prompts owner finalization. If the original executor is independently proven stopped and no pending shared writes/effects exist, recovery may construct explicit `executor_stopped` takeover evidence. Provider terminal state or lease TTL alone never grants takeover.
-
-**Expected invariant:** no provider-terminal task remains indefinitely represented as running in CDC state, while split-brain safety remains intact.
-
-
-
-### RCA-derived fix — registry-driven watchdog target resolution
-
-**Observed failure class:** recurring project/Fleet watchdog automation prompts retained hardcoded historical CDC targets after canonical CDC had advanced. Repository package/policy could be current while the scheduler prompt continued evaluating against an obsolete version/tree or remained disabled.
-
-**Root cause:** scheduler configuration duplicated mutable release identity instead of resolving authority from durable live sources. Updating repositories did not atomically update every automation prompt, creating a second configuration plane that could silently drift.
-
-**Fix formulation:** watchdog prompts must be **target-resolution instructions, not target storage**. Fleet Supervisor resolves the current target from live `cdc/fleet/fleet/registry.json` + `fleet/target.json`. Project watchdogs re-read their live `AGENTS.md`, `docs/cdc-consumer-lock.json`, adapter/checkpoint and coordination state on every run; a fleet-announced newer target is adopted only through normal safe-boundary migration. Any version/commit/tree mentioned in an automation prompt is informational bootstrap context only and can never override live durable provenance.
-
-**Expected invariant:** releasing or adopting a newer CDC version cannot leave watchdog logic pinned to an older target; scheduler state and project state converge from one durable authority chain instead of duplicated hardcoded constants.
+## Consolidated backlog — owner-approved execution order
+
+The former 13 future candidates contained 12 implemented capabilities and one remaining feature. Preserve their original problem statements in [backlog history](backlog-history-through-2.10.3.md); track observed defects independently instead of duplicating completed features. A release label proves only its scoped evidence, not live consumer adoption or general agent obedience.
+
+| Former candidate | Implementation disposition | Executable entry point |
+|---|---|---|
+| Chat command timestamping | 2.9.2; freshness correction in 2.11.0 | `command_timestamp.py` |
+| RCA-to-roadmap feedback | 2.9.2 | `rca_feedback.py` |
+| Fleet improvement harvesting | 2.9.2 | `fleet_improvement.py` |
+| Canonical distribution | 2.9.0 | `package_transport.py` |
+| Git-tree transport fidelity | 2.9.0 | `package_transport.py` |
+| Pre-run CI classification | 2.9.0 | `ci_evidence_classifier.py` |
+| Idempotent policy migration | 2.9.1 | `policy_migration.py` |
+| Nonterminal progress | 2.9.2; finalizer and effective-load defects corrected in 2.10.3 | `continuation_cycle.py / execution_continuity.py` |
+| Schema-typed checkpoint migration | 2.9.1 | `checkpoint_builder.py` |
+| Bounded Git-object migration | 2.9.1 | `migration_transaction.py` |
+| Convergence vector | 2.9.0 | `convergence_vector.py` |
+| Terminal-provider reconciliation | 2.9.1; operational liveness integration in 2.11.1 | `provider_reconciliation.py` |
+
+Remaining feature: **registry-driven watchdog target resolution**, included in 2.11.1. Resolve the live `cdc/fleet` registry and target; project prompts load current repository policy, lock, checkpoint and coordination. Historical prompt targets never override live provenance.
+
+Active recovery work:
+- 2.11.0: released with real execution, exact parent finalization and independently verified corrections. Active installation readback remains a distinct rollout step.
+- 2.11.1: combine target resolution, persistent liveness and bounded Fleet recovery; fresh explicit owner pause takes precedence.
+- 2.11.2: cooperative lanes with portable conflict exclusion and one integrator.
+- Consumer adoption: g-ad-control adopted2.10.3 and released generation42 at verified coordination794e152; g-supervisor, g-pc-health-check and g-switcher require current-owner release or independently established quiescence. Re-read live refs before every mutation.
+- PR consolidation: #20/#61/#62/#63/#64 preserve one historical pool implementation and its review/consumer attempts. Supersede only after the corrected integration is durably published; keep historical evidence and unresolved findings visible until verified closed.
+
+Schedulers are explicitly owner-paused. Neither liveness implementation nor backlog cleanup authorizes enabling or running them.

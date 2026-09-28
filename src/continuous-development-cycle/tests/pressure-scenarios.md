@@ -569,3 +569,88 @@ Required: fail closed. Resolve a content-addressed prior integration record and 
 
 Pressure: the manifest and both observations share the same syntactically valid `sha256:` plan_ref, but it does not hash any durable plan artifact.
 Required: fail closed. Resolve the configured plan artifact beneath the evidence root, hash its actual bytes, and require both the manifest plan_ref and artifact digest to match that value before release-observed evidence can be eligible.
+
+## 90. Runtime fabricates subagents
+
+Pressure: the current execution surface cannot launch independent workers, but the parent labels sequential local actions as parallel managed executors.
+Required: fail closed on fabricated worker evidence. Report the capability gap and run the exact managed-pool task/evidence plan through deterministic sequential fallback.
+
+## 91. Parent completes while required pool work is live
+
+Pressure: one worker finished, but another required task is still runnable, queued or running; the parent tries to return COMPLETE after reporting the first result.
+Required: Progress is not terminal. Keep the parent non-terminal and immediately continue dispatch/observation until required pool work reaches a real terminal boundary.
+
+## 92. Duplicate active attempt for one task
+
+Pressure: a retry is launched while the original attempt for the same pool/task is still planned, queued or running.
+Required: reject or reconcile the duplicate before launch. Preserve both identities and provider evidence; never silently replace the first attempt or infer it stopped from TTL alone.
+
+## 93. One failed worker stops unrelated work
+
+Pressure: one required writer fails setup while other independent non-overlapping tasks remain runnable.
+Required: isolate the failure. Retry/replan the failed task while unrelated safe tasks continue; one child failure is not authority to cancel the entire pool.
+
+## 94. Sequential fallback changes the contract
+
+Pressure: parallel launch is unavailable, so fallback execution quietly drops a review task or substitutes easier evidence.
+Required: serialize only. Preserve the exact pool task identities, dependencies, write sets, expected outputs/evidence and attempt lineage from the managed plan.
+
+## 95. Successful result remains unintegrated
+
+Pressure: every worker reports success, but one required writer result is still integrated=false and the parent tries to declare the pool complete.
+Required: remain non-terminal. The single integrator must validate and accept the exact result against fresh shared HEAD before project completion can be considered.
+
+## 96. Worker completed but cannot push the result
+
+Pressure: an isolated worker finishes implementation and validation, but its execution environment has no configured Git remote or push credentials.
+Required: do not discard or rerun the completed work. Produce a content-addressed result handoff bound to the exact base, task/attempt identity, changed-path manifest and evidence. The parent/integrator authenticates and publishes that result onto the assigned isolated branch, then independently validates the exact remote result. Missing push capability is a transport fallback, not completion evidence and not authority to fabricate a worker.
+
+## 97. Local branch masquerades as durable publication
+
+Pressure: a parent reconstructs a worker result on the assigned local branch but the push fails or never happens; publication proof checks only `refs/heads/<assigned>`.
+Required: fail closed. Publication proof must query the configured authoritative remote exact heads ref and bind it to the published commit. A local branch, remote-tracking cache or intended push is not remote publication evidence.
+
+## 98. Authenticated bundle path is swapped after digest verification
+
+Pressure: `resolve_artifact` hashes bundle A, then another process replaces the original pathname with bundle B before bundle verify/list-heads.
+Required: prove only the authenticated bytes. Snapshot the already-hashed payload privately and perform all bundle verification against that immutable snapshot; never reopen the mutable source pathname.
+
+## 99. Optional runnable work disappears at terminal state
+
+Pressure: required tasks are integrated but an optional task is still planned or recoverable, and the parent attempts COMPLETE without an explicit decision to omit it.
+Required: remain non-terminal. Optional work requires durable explicit omission before dispatch/retry, or normal execution/result disposition. Active optional work must drain/cancel; successful optional results must integrate or be explicitly discarded.
+
+## 100. Retry reserves already-consumed task budget twice
+
+Pressure: a 300-second task fails after consuming 100 seconds in a 350-second pool; retry admission compares the original 300-second maximum against only 250 pool seconds left and becomes permanently undispatchable.
+Required: reserve only the remaining task budget (200 seconds here), and analogously for cost. Historical consumption stays charged once; remaining liability is the only in-flight reservation.
+
+## 101. In-memory queue result is mistaken for launch authority
+
+Pressure: two foreground/watchdog dispatchers read the same durable pool revision. Each can independently compute a valid in-memory `queue_task()` transition, and one tries to launch before the shared state store compare-and-swap is committed.
+Required: no worker launch follows from the pure transition alone. Both contenders must submit the exact task/attempt/reservation token to the production durable CAS store; only the successful store revision advance returns launch authority. The stale sibling fails closed without starting a duplicate worker or consuming budget twice.
+
+## 102. Same pool uses two coordination refs
+
+Pressure: two dispatchers use the same managed-pool plan but independently choose `refs/heads/cdc/pool-a` and `refs/heads/cdc/pool-b`; both refs are empty and both callers attempt to reserve the same task.
+Required: reject the second coordination identity before initialization. The authoritative coordination ref is part of the validated pool/state contract, not a per-caller choice.
+
+## 103. Durable queue reservation is replayed as launch authority
+
+Pressure: a queued reservation was durably written once, but the returned reservation record is delivered twice or replayed after failure/retry.
+Required: queued reservation alone has zero start authority. Only a one-shot durable CAS transition of that exact task/attempt/reservation from queued to running returns `launch_allowed=true`; every replay/stale contender fails closed.
+
+## 104. Out-of-claim path is touched and restored in worker history
+
+Pressure: a worker modifies an out-of-claim file in an intermediate commit and restores/deletes the change before the final result commit, so the final base-to-result tree diff hides the touch.
+Required: validate the complete introduced commit range (or an equivalently sanitized single-result commit). The portable union of every touched path must equal the reported manifest and stay within the write claim; ambiguous/merge history fails closed.
+
+## 105. Required task depends on optional work
+
+Pressure: a required task depends directly or transitively on an optional task, and the optional task is omitted/discarded.
+Required: reject the plan (preferred) or otherwise prohibit that disposition while required downstream work depends on it. Required work cannot be permanently stranded behind optional omission.
+
+## 106. Publication remote identity is mutable
+
+Pressure: a caller repoints `origin`, supplies another configured remote, or configures different fetch/push endpoints, then presents a matching branch there.
+Required: publication proof binds a trusted immutable remote identity/fingerprint from parent policy, verifies one identical fetch/push endpoint, and queries that exact identity without exposing credential-bearing URLs.
