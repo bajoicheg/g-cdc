@@ -4,13 +4,14 @@ from scripts.project_lanes import (
     admit_writer,
     paths_overlap,
 )
+from scripts.project_lane_runtime import LaneRuntime, LaneState
 
 
-def claim(name, writes):
+def claim(name, writes, kind=LaneKind.WORKER):
     return LaneClaim(
         lane_id=name,
         invocation_id=name,
-        kind=LaneKind.WORKER,
+        kind=kind,
         source_head="head",
         worktree=name,
         branch=name,
@@ -27,21 +28,24 @@ def test_parent_child_paths_overlap():
     assert not admit_writer([claim("a", {"src"})], claim("b", {"src/a"}))
 
 
+def test_read_only_lane_does_not_block_writer():
+    assert admit_writer([claim("review", set(), LaneKind.REVIEW)], claim("worker", {"src/a"}))
+
+
 def test_integrator_is_singleton():
-    existing = LaneClaim(
-        lane_id="i1",
-        invocation_id="i1",
-        kind=LaneKind.INTEGRATOR,
-        source_head="head",
-        worktree="i1",
-        branch="main",
-    )
-    candidate = LaneClaim(
-        lane_id="i2",
-        invocation_id="i2",
-        kind=LaneKind.INTEGRATOR,
-        source_head="head",
-        worktree="i2",
-        branch="main",
-    )
+    existing = claim("i1", set(), LaneKind.INTEGRATOR)
+    candidate = claim("i2", set(), LaneKind.INTEGRATOR)
     assert not admit_writer([existing], candidate)
+
+
+def test_runtime_requires_fresh_heartbeat_and_drained_effects():
+    runtime = LaneRuntime("lane", 1)
+    runtime.heartbeat("activity-1")
+    assert runtime.state == LaneState.RUNNING
+    runtime.pending_effects = True
+    try:
+        runtime.release()
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("release accepted pending effects")
