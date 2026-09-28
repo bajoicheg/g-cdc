@@ -21,6 +21,8 @@ Python source is limited to `bootstrap`, `src/cdc27` and
 directories need tracked `__init__.py` files for unittest discovery on Python 3.12.
 Test module filenames must also be accepted by unittest discovery; names such as
 `test-hidden.py` or `test.hidden.py` are rejected because discovery skips them.
+Python files and nested package markers must be tracked regular files; symlinks
+cannot stand in for discoverable modules or package markers.
 
 For the candidate's full commit SHA, read commit status, check runs and Actions
 workflow runs. An empty legacy `statuses` array does not establish that CI is

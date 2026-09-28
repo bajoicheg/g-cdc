@@ -49,6 +49,11 @@ def assess(snapshot):
     runs, ac = _collection(snapshot.get('actions'), 'workflow_runs')
     if snapshot.get('statuses') is not None and snapshot['statuses'].get('sha') != sha:
         raise ValueError('legacy status response is for another commit')
+    for record in checks + runs:
+        if not isinstance(record.get('status'), str):
+            raise ValueError('invalid execution status')
+        if record.get('conclusion') is not None and not isinstance(record['conclusion'], str):
+            raise ValueError('invalid execution conclusion')
     for run in runs:
         repository = run.get('repository')
         if not isinstance(repository, dict) or not isinstance(repository.get('full_name'), str):

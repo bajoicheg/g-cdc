@@ -25,6 +25,8 @@ The independent bootstrap and release workflow now reject tracked Python code
 outside canonical source roots and tests outside the executed test roots. Nested
 tests require tracked package markers so Python 3.12 discovery can reach them.
 Test filenames skipped by discovery, such as `test-hidden.py`, are rejected.
+Tracked file modes are checked so dangling symlinks cannot count as test modules
+or nested package markers.
 The gate runs before candidate imports and uses only the standard library.
 
 The advisory GitHub CI snapshot helper considers commit status, check runs and
@@ -43,7 +45,7 @@ observations. The existing independent bootstrap tests remain part of the suite.
 
 Local verification of this correction passed:
 
-- 34 independent bootstrap tests, including the new regressions;
+- 37 independent bootstrap tests, including the new regressions;
 - 740 candidate package tests;
 - repository placement, full independent bootstrap and package validation;
 - all three archived consumer snapshot validations, bound to unchanged package
@@ -55,6 +57,12 @@ zero legacy statuses, one successful check and one successful Actions run yielde
 review found the filename-discovery gap; its regression failed before correction
 and passed afterwards. Hosted validation of this correction must be observed on
 its own PR head; the earlier PR #69 run is incident evidence only.
+
+The quality review then found a dangling-symlink discovery gap and an uncaught
+error on malformed execution status fields. Both were reproduced with failing
+regressions before correction. Index-mode checks reject non-regular Python
+files/package markers, and malformed status/conclusion fields receive explicit
+validation errors.
 
 ## Remaining development
 

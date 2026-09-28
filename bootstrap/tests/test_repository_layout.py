@@ -70,6 +70,23 @@ class RepositoryLayoutTests(unittest.TestCase):
         self.assertIn('test-hidden.py', str(caught.exception))
         self.assertIn('test.hidden.py', str(caught.exception))
 
+    def test_symlink_marker_does_not_prove_nested_discovery(self):
+        base = 'bootstrap/tests/nested/'
+        self.add(base + 'test_hidden.py')
+        marker = self.root / base / '__init__.py'
+        marker.symlink_to('missing.py')
+        subprocess.run(['git', '-C', str(self.root), 'add', str(marker)], check=True)
+        with self.assertRaisesRegex(ValueError, '__init__'):
+            layout.validate(self.root)
+
+    def test_symlink_test_is_not_a_regular_discoverable_module(self):
+        path = self.root / 'bootstrap/tests/test_hidden.py'
+        path.parent.mkdir(parents=True)
+        path.symlink_to('missing.py')
+        subprocess.run(['git', '-C', str(self.root), 'add', str(path)], check=True)
+        with self.assertRaisesRegex(ValueError, 'test_hidden.py'):
+            layout.validate(self.root)
+
     def test_cli_fails_before_candidate_import(self):
         self.add('scripts/project_lanes.py', "raise RuntimeError('must not import')")
         result = subprocess.run([sys.executable, '-B', str(BOOTSTRAP / 'repository_layout.py'),

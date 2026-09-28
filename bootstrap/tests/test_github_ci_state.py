@@ -93,3 +93,11 @@ class GithubCIStateTests(unittest.TestCase):
             data['actions']['workflow_runs'][0]['repository'] = value
             with self.assertRaisesRegex(ValueError, 'repository'):
                 probe.assess(data)
+
+    def test_malformed_execution_state_is_rejected_explicitly(self):
+        for surface, key in (('actions', 'workflow_runs'), ('checks', 'check_runs')):
+            for field in ('status', 'conclusion'):
+                data = snapshot()
+                data[surface][key][0][field] = []
+                with self.assertRaisesRegex(ValueError, field):
+                    probe.assess(data)

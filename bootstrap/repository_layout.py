@@ -8,19 +8,29 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_ROOTS = ('bootstrap/', 'src/cdc27/', 'src/continuous-development-cycle/')
 TEST_ROOTS = ('bootstrap/tests/', 'src/continuous-development-cycle/tests/')
+REGULAR_MODES = {'100644', '100755'}
 
 
 def validate(root):
     try:
-        tracked = set(subprocess.check_output(
-            ['git', '-C', str(root), 'ls-files', '-z'], text=True).split('\0')) - {''}
+        entries = subprocess.check_output(
+            ['git', '-C', str(root), 'ls-files', '--stage', '-z'], text=True).split('\0')
     except subprocess.CalledProcessError as exc:
         raise ValueError('cannot inspect tracked repository paths') from exc
     errors = []
+    tracked = {}
+    for entry in filter(None, entries):
+        metadata, name = entry.split('\t', 1)
+        mode, _, stage = metadata.split()
+        tracked[name] = mode
+        if stage != '0':
+            errors.append(f'{name}: unresolved Git index entry')
     for name in sorted(tracked):
         path = PurePosixPath(name)
         if path.suffix != '.py':
             continue
+        if tracked[name] not in REGULAR_MODES:
+            errors.append(f'{name}: Python source must be a tracked regular file')
         if not name.startswith(SOURCE_ROOTS):
             errors.append(f'{name}: Python code outside canonical source roots')
         if not path.name.startswith('test'):
@@ -35,8 +45,8 @@ def validate(root):
         parent = path.parent
         while str(parent) + '/' != test_root:
             marker = str(parent / '__init__.py')
-            if marker not in tracked:
-                errors.append(f'{name}: unittest discovery requires tracked {marker}')
+            if tracked.get(marker) not in REGULAR_MODES:
+                errors.append(f'{name}: unittest discovery requires tracked regular file {marker}')
             parent = parent.parent
     if errors:
         raise ValueError('\n'.join(errors))
