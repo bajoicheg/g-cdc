@@ -2,6 +2,16 @@
 
 This repository develops CDC itself.
 
+## Implementation entry point and CI observations
+
+After repository/access inspection, execute the next eligible action from the authorized plan in the same invocation. Inspection alone is not completion. Before concluding that implementation is absent, inspect relevant branches, pull requests, checkpoints and available worktrees; an unchanged `main` is insufficient evidence.
+
+Repository access, local command execution and hosted CI are separate capabilities. A missing local shell does not establish that GitHub Actions is unavailable. For the exact candidate SHA inspect all three surfaces: commit status, check runs and Actions workflow runs. `bootstrap/github_ci_state.py --requests OWNER/REPO SHA` lists the read endpoints; `--snapshot FILE` reconciles their decoded responses. Failed reads must be recorded as null, and incomplete pagination remains unknown. Inspect run jobs, steps and logs before deciding what a run actually validated. Reuse an existing run rather than launching a duplicate.
+
+The current release workflow triggers on pull requests to `main`, including drafts. Inspect the workflow definition before treating a missing dispatch tool as a blocker. Continue through authorized execution routes and other eligible work. If all eligible work is blocked, report the attempted operation, observed error or missing capability, and the exact remaining action. Successful CI only supports the files and checks it actually covers.
+
+Core implementation belongs under `src/continuous-development-cycle`; independent development tooling belongs under `bootstrap`. Run `python -B bootstrap/repository_layout.py` after staging new files. The release workflow rejects misplaced Python code/tests before candidate imports. These checks protect repository validation; they cannot intercept arbitrary ChatGPT final responses or guarantee that another chat continues.
+
 ## Bootstrap rule
 
 CDC N is developed under the previously released CDC N-1. CDC 2.10.2 is released at `refs/heads/release/v2.10.2`, package tree `2bee3b8159aaf80de981afba7cf284f21bafa1c3`.

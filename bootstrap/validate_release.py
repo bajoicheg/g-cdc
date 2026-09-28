@@ -3,6 +3,7 @@
 from __future__ import annotations
 import argparse,ast,json,re,sys
 from pathlib import Path
+from repository_layout import validate as validate_repository_layout
 ROOT=Path(__file__).resolve().parents[1]
 SEMVER=re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
 SHA=re.compile(r"^[0-9a-f]{40}$")
@@ -42,6 +43,7 @@ def full_source():
 def main(argv=None):
     p=argparse.ArgumentParser();p.add_argument("--mode",choices=("bootstrap","full"),default="full");a=p.parse_args(argv)
     try:
+        validate_repository_layout(ROOT)
         if (ROOT/"VERSION").read_text().strip()!=load("release/source.lock.json")["target_version"]:raise ValueError("repository VERSION mismatch")
         source_lock(load("release/source.lock.json"));matrix(load("compatibility/matrix.json"));faults(load("fault-injection/scenarios.json"));syntax_check()
         if a.mode=="full":full_source()
