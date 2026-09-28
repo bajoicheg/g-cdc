@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """CDC 2.10.2 per-wave single-integrator gate bound to worker contract and Git diff proofs."""
 from __future__ import annotations
+
+from git_object_integrity import git_object_environment
 import argparse,json,re,subprocess,sys
 from pathlib import Path
 from worktree_worker_contract import validate as validate_worker_contract
@@ -35,7 +37,7 @@ def resolve_shared_head(worktree, shared_branch):
     ref="refs/heads/"+shared_branch.removeprefix("refs/heads/")
     try:
         head=subprocess.check_output(["git","-C",str(root),"rev-parse","--verify",ref],
-                                     text=True,stderr=subprocess.PIPE,timeout=15).strip()
+                                     env=git_object_environment(), text=True,stderr=subprocess.PIPE,timeout=15).strip()
     except (OSError,subprocess.SubprocessError) as exc:
         raise ValueError(f"cannot resolve live shared branch {ref}: {exc}") from exc
     _sha(head,"live shared head")
@@ -58,7 +60,7 @@ def _registered_worktrees(shared_worktree):
     root=Path(shared_worktree)
     try:
         out=subprocess.check_output(["git","-C",str(root),"worktree","list","--porcelain"],
-                                    text=True,stderr=subprocess.PIPE,timeout=15)
+                                    env=git_object_environment(), text=True,stderr=subprocess.PIPE,timeout=15)
     except (OSError,subprocess.SubprocessError) as exc:
         raise ValueError(f"cannot inspect registered worktrees: {exc}") from exc
     result=[];current={}
@@ -92,9 +94,9 @@ def verify_worker_origins(d, shared_worktree, worker_worktrees, evidence_root=No
         if record.get("HEAD")!=r["result_sha"]:raise ValueError("registered worktree HEAD does not match worker result")
         try:
             branch_head=subprocess.check_output(["git","-C",str(root),"rev-parse","--verify",expected_ref],
-                                               text=True,stderr=subprocess.PIPE,timeout=15).strip()
+                                               env=git_object_environment(), text=True,stderr=subprocess.PIPE,timeout=15).strip()
             actual_head=subprocess.check_output(["git","-C",str(worker_path),"rev-parse","HEAD"],
-                                               text=True,stderr=subprocess.PIPE,timeout=15).strip()
+                                               env=git_object_environment(), text=True,stderr=subprocess.PIPE,timeout=15).strip()
         except (OSError,subprocess.SubprocessError) as exc:
             raise ValueError(f"cannot verify worker branch/worktree origin: {exc}") from exc
         if branch_head!=r["result_sha"] or actual_head!=r["result_sha"]:
@@ -107,17 +109,17 @@ def resolve_git_diff(worktree, *, worker_id, task_id, base_sha, result_sha, evid
     _text(worker_id,"worker_id");_text(task_id,"task_id");_text(evidence_ref,"evidence_ref")
     _sha(base_sha,"base_sha");_sha(result_sha,"result_sha")
     for sha in (base_sha,result_sha):
-        try:t=subprocess.check_output(["git","-C",str(root),"cat-file","-t",sha],text=True,stderr=subprocess.PIPE,timeout=15).strip()
+        try:t=subprocess.check_output(["git","-C",str(root),"cat-file","-t",sha],env=git_object_environment(), text=True,stderr=subprocess.PIPE,timeout=15).strip()
         except (OSError,subprocess.SubprocessError) as exc:raise ValueError(f"cannot resolve worker commit {sha}: {exc}") from exc
         if t!="commit":raise ValueError("worker diff endpoint is not a commit")
     try:
         ancestry=subprocess.run(["git","-C",str(root),"merge-base","--is-ancestor",base_sha,result_sha],
-                                stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=15)
+                                env=git_object_environment(), stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=15)
     except (OSError,subprocess.SubprocessError) as exc:raise ValueError(f"cannot verify worker ancestry: {exc}") from exc
     if ancestry.returncode==1:raise ValueError("worker result does not descend from contracted base")
     if ancestry.returncode!=0:raise ValueError("worker ancestry verification failed")
     try:
-        out=subprocess.check_output(["git","-C",str(root),"diff","--name-only","--no-renames",base_sha,result_sha,"--"],text=True,stderr=subprocess.PIPE,timeout=30)
+        out=subprocess.check_output(["git","-C",str(root),"diff","--name-only","--no-renames",base_sha,result_sha,"--"],env=git_object_environment(), text=True,stderr=subprocess.PIPE,timeout=30)
     except (OSError,subprocess.SubprocessError) as exc:raise ValueError(f"cannot resolve worker diff: {exc}") from exc
     paths=[x for x in out.splitlines() if x.strip()]
     for p in paths:_path(p)

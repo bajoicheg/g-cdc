@@ -8,6 +8,8 @@ This is a cooperative execution adapter, not a command sandbox or a Work API.
 """
 from __future__ import annotations
 
+from git_object_integrity import git_object_environment
+
 import argparse
 import ctypes
 from datetime import datetime, timezone
@@ -52,7 +54,7 @@ def _write(path, value):
 
 
 def _git(root, *args):
-    result = subprocess.run(["git", "-C", str(root), *args], text=True, stdout=subprocess.PIPE,
+    result = subprocess.run(["git", "-C", str(root), *args], env=git_object_environment(), text=True, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, timeout=20)
     if result.returncode:
         raise ValueError("Git operation failed: " + args[0])
@@ -477,7 +479,7 @@ class ManagedExecutorRuntime:
         if not isinstance(integration_commit, str) or not pool.SHA.fullmatch(integration_commit):
             raise ValueError("integration commit must be an exact SHA")
         ancestry = subprocess.run(["git", "-C", str(self.repo_root), "merge-base", "--is-ancestor",
-                                   result["result_commit"], integration_commit], stdout=subprocess.PIPE,
+                                   result["result_commit"], integration_commit], env=git_object_environment(), stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE, timeout=15)
         if ancestry.returncode:
             raise ValueError("integration does not contain the accepted worker result")

@@ -2,6 +2,8 @@
 """CDC 2.11.0 portable managed-executor result handoff and publication proof."""
 from __future__ import annotations
 
+from git_object_integrity import git_object_environment
+
 import argparse
 import hashlib
 import json
@@ -156,7 +158,7 @@ def resolve_artifact(handoff, evidence_root):
     if handoff["artifact_ref"]["format"] == "unified_diff":
         parsed = subprocess.run(
             ["git", "apply", "--numstat", "--recount", "-"],
-            input=payload, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15,
+            env=git_object_environment(), input=payload, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15,
         )
         if parsed.returncode != 0:
             raise ValueError("result artifact is not a syntactically valid unified_diff")
@@ -199,7 +201,7 @@ def _git_changed_paths(root, base_sha, result_commit):
         raw = subprocess.check_output(
             ["git", "-C", str(root), "diff", "--name-only", "--no-renames", "-z",
              base_sha, result_commit],
-            stderr=subprocess.PIPE, timeout=15,
+            env=git_object_environment(), stderr=subprocess.PIPE, timeout=15,
         )
         text = raw.decode("utf-8")
     except (OSError, subprocess.SubprocessError, UnicodeDecodeError) as exc:
@@ -213,7 +215,7 @@ def _verify_unified_diff_artifact(handoff, payload, root, published_commit):
     fd, index_path = tempfile.mkstemp(prefix="cdc-handoff-index-")
     os.close(fd)
     os.unlink(index_path)
-    env = dict(os.environ, GIT_INDEX_FILE=index_path)
+    env = git_object_environment(GIT_INDEX_FILE=index_path)
     try:
         read_tree = subprocess.run(
             ["git", "-C", str(root), "read-tree", handoff["base_sha"]],
@@ -233,7 +235,7 @@ def _verify_unified_diff_artifact(handoff, payload, root, published_commit):
         ).strip()
         published_tree = subprocess.check_output(
             ["git", "-C", str(root), "rev-parse", f"{published_commit}^{{tree}}"],
-            text=True, stderr=subprocess.PIPE, timeout=15,
+            env=git_object_environment(), text=True, stderr=subprocess.PIPE, timeout=15,
         ).strip()
         raw_paths = subprocess.check_output(
             ["git", "-C", str(root), "diff", "--cached", "--name-only", "--no-renames", "-z",
@@ -266,13 +268,13 @@ def _verify_git_bundle_artifact(handoff, payload, root, published_commit):
         os.chmod(snapshot_path, 0o600)
         verify = subprocess.run(
             ["git", "-C", str(root), "bundle", "verify", snapshot_path],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=15,
+            env=git_object_environment(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=15,
         )
         if verify.returncode != 0:
             raise ValueError("git_bundle verification failed")
         heads = subprocess.check_output(
             ["git", "-C", str(root), "bundle", "list-heads", snapshot_path],
-            text=True, stderr=subprocess.PIPE, timeout=15,
+            env=git_object_environment(), text=True, stderr=subprocess.PIPE, timeout=15,
         ).splitlines()
     except (OSError, subprocess.SubprocessError) as exc:
         raise ValueError(f"cannot verify git_bundle publication: {exc}") from exc
@@ -294,7 +296,7 @@ def _verify_remote_branch(root, remote, branch_ref, published_commit, expected_r
     observed_remote_id = publication_remote_identity(root, remote)
     if observed_remote_id != expected_remote_id:
         raise ValueError("publication remote identity mismatch")
-    environment = dict(os.environ, GIT_TERMINAL_PROMPT="0")
+    environment = git_object_environment(GIT_TERMINAL_PROMPT="0")
     try:
         query = subprocess.run(
             ["git", "-C", str(root), "ls-remote", "--refs", remote, branch_ref],
@@ -360,13 +362,13 @@ def validate_publication_proof(proof, handoff, git_worktree, evidence_root=None,
         for sha in (handoff["base_sha"], proof["published_commit"]):
             kind = subprocess.check_output(
                 ["git", "-C", str(root), "cat-file", "-t", sha],
-                text=True, stderr=subprocess.PIPE, timeout=15,
+                env=git_object_environment(), text=True, stderr=subprocess.PIPE, timeout=15,
             ).strip()
             if kind != "commit":
                 raise ValueError("publication ancestry endpoint is not a commit")
         ancestry = subprocess.run(
             ["git", "-C", str(root), "merge-base", "--is-ancestor", handoff["base_sha"], proof["published_commit"]],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=15,
+            env=git_object_environment(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=15,
         )
         if ancestry.returncode != 0:
             raise ValueError("published result does not descend from handoff base")

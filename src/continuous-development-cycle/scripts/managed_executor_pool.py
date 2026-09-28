@@ -2,6 +2,8 @@
 """CDC 2.11.0 managed executor-pool planning, dispatch and completion contract."""
 from __future__ import annotations
 
+from git_object_integrity import git_object_environment
+
 import argparse
 import copy
 import hashlib
@@ -531,7 +533,7 @@ def _git_changed_paths(base_sha, result_commit, git_worktree):
         raw = subprocess.check_output(
             ["git", "-C", str(git_worktree), "diff", "--name-only", "--no-renames", "-z",
              base_sha, result_commit],
-            stderr=subprocess.PIPE, timeout=15,
+            env=git_object_environment(), stderr=subprocess.PIPE, timeout=15,
         )
         text = raw.decode("utf-8")
     except (OSError, subprocess.SubprocessError, UnicodeDecodeError) as exc:
@@ -546,7 +548,7 @@ def _git_touched_paths(base_sha, result_commit, git_worktree):
         commits = subprocess.check_output(
             ["git", "-C", str(git_worktree), "rev-list", "--reverse", "--topo-order",
              f"{base_sha}..{result_commit}"],
-            text=True, stderr=subprocess.PIPE, timeout=15,
+            env=git_object_environment(), text=True, stderr=subprocess.PIPE, timeout=15,
         ).splitlines()
     except (OSError, subprocess.SubprocessError) as exc:
         raise ValueError(f"cannot inspect worker commit history: {exc}") from exc
@@ -559,7 +561,7 @@ def _git_touched_paths(base_sha, result_commit, git_worktree):
         try:
             parent_row = subprocess.check_output(
                 ["git", "-C", str(git_worktree), "rev-list", "--parents", "-n", "1", commit],
-                text=True, stderr=subprocess.PIPE, timeout=15,
+                env=git_object_environment(), text=True, stderr=subprocess.PIPE, timeout=15,
             ).strip().split()
         except (OSError, subprocess.SubprocessError) as exc:
             raise ValueError(f"cannot inspect worker commit parents: {exc}") from exc
@@ -569,7 +571,7 @@ def _git_touched_paths(base_sha, result_commit, git_worktree):
             raw = subprocess.check_output(
                 ["git", "-C", str(git_worktree), "diff-tree", "--no-commit-id",
                  "--name-only", "--no-renames", "-r", "-z", previous, commit],
-                stderr=subprocess.PIPE, timeout=15,
+                env=git_object_environment(), stderr=subprocess.PIPE, timeout=15,
             )
             paths = [p for p in raw.decode("utf-8").split("\0") if p]
         except (OSError, subprocess.SubprocessError, UnicodeDecodeError) as exc:
@@ -599,19 +601,19 @@ def _verify_writer_result_git(task, base_sha, result_commit, git_worktree):
         for sha in (base_sha, result_commit):
             kind = subprocess.check_output(
                 ["git", "-C", str(git_worktree), "cat-file", "-t", sha],
-                text=True, stderr=subprocess.PIPE, timeout=15,
+                env=git_object_environment(), text=True, stderr=subprocess.PIPE, timeout=15,
             ).strip()
             if kind != "commit":
                 raise ValueError("worker result ancestry endpoint is not a commit")
         ancestry = subprocess.run(
             ["git", "-C", str(git_worktree), "merge-base", "--is-ancestor", base_sha, result_commit],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=15,
+            env=git_object_environment(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=15,
         )
         if ancestry.returncode != 0:
             raise ValueError("worker result commit does not descend from contracted base")
         live_branch = subprocess.check_output(
             ["git", "-C", str(git_worktree), "rev-parse", "--verify", branch_ref],
-            text=True, stderr=subprocess.PIPE, timeout=15,
+            env=git_object_environment(), text=True, stderr=subprocess.PIPE, timeout=15,
         ).strip()
     except (OSError, subprocess.SubprocessError) as exc:
         raise ValueError(f"cannot verify worker result git ancestry: {exc}") from exc

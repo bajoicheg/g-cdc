@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from managed_executor_handoff import publication_remote_identity
 from managed_executor_store import coordination_store_id_for_endpoint
+from git_remote_identity import isolated_remote_args
 
 
 class GitRemoteIdentityTests(unittest.TestCase):
@@ -96,6 +97,17 @@ class GitRemoteIdentityTests(unittest.TestCase):
             self.fail("malformed endpoint was accepted")
         self.assertNotIn("top-secret", diagnostic)
         self.assertNotIn("private-port", diagnostic)
+        self.assertNotIn("example.invalid", diagnostic)
+
+    def test_isolated_transport_identity_error_does_not_disclose_credentials(self):
+        self.git(self.repo, "remote", "add", "origin", "https://user:top-secret@example.invalid/repo.git")
+        try:
+            isolated_remote_args(self.repo, "origin", "sha256:" + "0" * 64)
+        except ValueError:
+            diagnostic = traceback.format_exc()
+        else:
+            self.fail("wrong transport identity was accepted")
+        self.assertNotIn("top-secret", diagnostic)
         self.assertNotIn("example.invalid", diagnostic)
 
 

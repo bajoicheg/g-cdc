@@ -6,7 +6,7 @@ This repository develops CDC itself.
 
 CDC N is developed under the previously released CDC N-1. CDC 2.10.2 is released at `refs/heads/release/v2.10.2`, package tree `2bee3b8159aaf80de981afba7cf284f21bafa1c3`.
 
-CDC 2.10.3 was developed under released CDC 2.10.2. After the corrective release, the current development authority is CDC 2.10.3 at `refs/heads/release/v2.10.3`, package tree `a1fdca8c4a00409069b790e6dd13944e64fbf9bd`. A new version line requires explicit roadmap authorization and must preserve the independent-bootstrap rule.
+CDC 2.10.3 was developed under released CDC 2.10.2. After the corrective release, CDC 2.11.0 is now released and is the current development authority at `refs/heads/release/v2.11.0`, commit `5865399c2ddc0cb9c84fd8ebad207612d6e6e02b`, package tree `06078676bef395c56453f9e9066b4c0583c84ba3`. A new version line requires explicit roadmap authorization and must preserve the independent-bootstrap rule.
 
 ## Canonical-source rule
 
@@ -18,7 +18,7 @@ A release requires independent bootstrap GREEN, candidate package GREEN, compati
 
 ## Self-hosting
 
-The installed personal skill is converged on released CDC 2.10.3, with runtime-byte readback and documented host metadata normalization. Consumer snapshots prove compatibility only; they do not update consumers' vendored packages. See `release/evidence-2.10.3.json` and `docs/roadmap.md`.
+The installed personal skill is converged on released CDC 2.11.0, with runtime-byte readback and documented host metadata normalization. Consumer snapshots prove compatibility only; they do not update consumers' vendored packages. See `release/evidence-2.10.3.json` and `docs/roadmap.md`.
 
 ## Recovery priority
 

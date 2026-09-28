@@ -1,0 +1,55 @@
+test_idle_enable_retains_unclaimed_run_across_budget_exhaustion_and_zero_budget_restart (test_fleet_watchdog_runtime.FleetTests.test_idle_enable_retains_unclaimed_run_across_budget_exhaustion_and_zero_budget_restart) ... FAIL
+test_idle_enable_retains_unclaimed_run_after_deadline_exhaustion (test_fleet_watchdog_runtime.FleetTests.test_idle_enable_retains_unclaimed_run_after_deadline_exhaustion) ... FAIL
+test_pause_or_exact_terminal_suppresses_unclaimed_run_continuation (test_fleet_watchdog_runtime.FleetTests.test_pause_or_exact_terminal_suppresses_unclaimed_run_continuation) ... ok
+test_git_read_cannot_apply_configured_fetch_mapping_to_local_product_refs (test_fleet_watchdog_runtime.FleetTests.test_git_read_cannot_apply_configured_fetch_mapping_to_local_product_refs) ... FAIL
+test_git_push_cannot_apply_configured_tracking_mapping_to_local_product_refs (test_fleet_watchdog_runtime.FleetTests.test_git_push_cannot_apply_configured_tracking_mapping_to_local_product_refs) ... FAIL
+
+======================================================================
+FAIL: test_idle_enable_retains_unclaimed_run_across_budget_exhaustion_and_zero_budget_restart (test_fleet_watchdog_runtime.FleetTests.test_idle_enable_retains_unclaimed_run_across_budget_exhaustion_and_zero_budget_restart)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/6ddf12473f4a/g-cdc-liveness-worker/src/continuous-development-cycle/tests/test_fleet_watchdog_runtime.py", line 141, in test_idle_enable_retains_unclaimed_run_across_budget_exhaustion_and_zero_budget_restart
+    self.assertTrue(first["continuation_required"])
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_idle_enable_retains_unclaimed_run_after_deadline_exhaustion (test_fleet_watchdog_runtime.FleetTests.test_idle_enable_retains_unclaimed_run_after_deadline_exhaustion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/6ddf12473f4a/g-cdc-liveness-worker/src/continuous-development-cycle/tests/test_fleet_watchdog_runtime.py", line 156, in test_idle_enable_retains_unclaimed_run_after_deadline_exhaustion
+    self.assertTrue(result["continuation_required"])
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_git_read_cannot_apply_configured_fetch_mapping_to_local_product_refs (test_fleet_watchdog_runtime.FleetTests.test_git_read_cannot_apply_configured_fetch_mapping_to_local_product_refs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/6ddf12473f4a/g-cdc-liveness-worker/src/continuous-development-cycle/tests/test_fleet_watchdog_runtime.py", line 451, in test_git_read_cannot_apply_configured_fetch_mapping_to_local_product_refs
+    self.assertEqual(self.git("for-each-ref", "--format=%(refname) %(objectname)", cwd=self.store.repo), before)
+AssertionError: 'refs[14 chars]tion 7b6bd9830c502388ad3ec5b7c970efc3564e76a4\[193 chars]76a4' != 'refs[14 chars]tion 2714f191e003d7d70a2a8b3c1915887f38b852d7\[193 chars]76a4'
+- refs/heads/integration 7b6bd9830c502388ad3ec5b7c970efc3564e76a4
+- refs/heads/main 7b6bd9830c502388ad3ec5b7c970efc3564e76a4
+- refs/heads/worker-a 7b6bd9830c502388ad3ec5b7c970efc3564e76a4
++ refs/heads/integration 2714f191e003d7d70a2a8b3c1915887f38b852d7
++ refs/heads/main 2714f191e003d7d70a2a8b3c1915887f38b852d7
++ refs/heads/worker-a 2714f191e003d7d70a2a8b3c1915887f38b852d7
+  refs/remotes/origin/cdc/fleet-state 7b6bd9830c502388ad3ec5b7c970efc3564e76a4
+
+
+======================================================================
+FAIL: test_git_push_cannot_apply_configured_tracking_mapping_to_local_product_refs (test_fleet_watchdog_runtime.FleetTests.test_git_push_cannot_apply_configured_tracking_mapping_to_local_product_refs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/6ddf12473f4a/g-cdc-liveness-worker/src/continuous-development-cycle/tests/test_fleet_watchdog_runtime.py", line 458, in test_git_push_cannot_apply_configured_tracking_mapping_to_local_product_refs
+    self.assertEqual(self.git("for-each-ref", "--format=%(refname) %(objectname)", cwd=self.store.repo), before)
+AssertionError: 'refs[72 chars]main 66c9f54d3958d7ae0b7c803ed5441eb54deff0c9\[57 chars]52d7' != 'refs[72 chars]main 2714f191e003d7d70a2a8b3c1915887f38b852d7\[57 chars]52d7'
+  refs/heads/integration 2714f191e003d7d70a2a8b3c1915887f38b852d7
+- refs/heads/main 66c9f54d3958d7ae0b7c803ed5441eb54deff0c9
++ refs/heads/main 2714f191e003d7d70a2a8b3c1915887f38b852d7
+  refs/heads/worker-a 2714f191e003d7d70a2a8b3c1915887f38b852d7
+
+
+----------------------------------------------------------------------
+Ran 5 tests in 2.779s
+
+FAILED (failures=4)

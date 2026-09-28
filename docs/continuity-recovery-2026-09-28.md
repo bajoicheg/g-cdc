@@ -56,3 +56,7 @@ A separate fresh agent completed an isolated three-step local project using the 
 - Publication: [PR #66](https://github.com/bajoicheg/g-cdc/pull/66), release ref `refs/heads/release/v2.10.3`. Evidence-only finalization preserves the frozen package; its exact-head Actions check must pass before merging. The release ref identifies the final integrated evidence snapshot.
 
 The recovery scope ends after that integration and installed readback. Preserved 2.11 work remains backlog; it does not turn this corrective request into an automatic restart of all 2.11 development. Scheduled tasks remain owner-paused.
+
+## Subsequent owner authorization
+
+The owner subsequently approved the proposed full backlog plan. The active invocation therefore continues through 2.11.0, watchdog/target resolution 2.11.1, then cooperative lanes 2.11.2, without treating a release as the parent terminal boundary. This supersedes the earlier recovery-only stopping scope above; scheduler pause remains unchanged.

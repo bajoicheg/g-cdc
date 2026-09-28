@@ -364,10 +364,10 @@ The former 13 future candidates contained 12 implemented capabilities and one re
 Remaining feature: **registry-driven watchdog target resolution**, included in 2.11.1. Resolve the live `cdc/fleet` registry and target; project prompts load current repository policy, lock, checkpoint and coordination. Historical prompt targets never override live provenance.
 
 Active recovery work:
-- 2.11.0: released with real execution, exact parent finalization and independently verified corrections. Active installation readback remains a distinct rollout step.
+- 2.11.0: released with real execution, exact parent finalization and independently verified corrections. Active installation passed runtime-byte readback; see release/active-package-acceptance-2.11.0.json.
 - 2.11.1: combine target resolution, persistent liveness and bounded Fleet recovery; fresh explicit owner pause takes precedence.
 - 2.11.2: cooperative lanes with portable conflict exclusion and one integrator.
 - Consumer adoption: g-ad-control adopted2.10.3 and released generation42 at verified coordination794e152; g-supervisor, g-pc-health-check and g-switcher require current-owner release or independently established quiescence. Re-read live refs before every mutation.
-- PR consolidation: #20/#61/#62/#63/#64 preserve one historical pool implementation and its review/consumer attempts. Supersede only after the corrected integration is durably published; keep historical evidence and unresolved findings visible until verified closed.
+- PR consolidation: #20/#61/#62/#63/#64 preserve one historical pool implementation and its review/consumer attempts. All five PRs were closed as superseded after #67 merge and release readback; historical branches and review evidence remain retained.
 
 Schedulers are explicitly owner-paused. Neither liveness implementation nor backlog cleanup authorizes enabling or running them.
