@@ -3,9 +3,9 @@
   "version": "2.11.1",
   "developed_under_version": "2.11.0",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "3d50b2de60324f54332b94d6ab5a14758abf3b38",
+  "source_commit": "a6cc137c2f2c3193d9a184725941155f90eb3e60",
   "package_tree": "55e3166971d24cb8603a326b328afcfed697070d",
-  "status": "released",
+  "status": "candidate",
   "evidence": {
     "bootstrap": [
       "release/evidence-2.11.1.json#bootstrap"
