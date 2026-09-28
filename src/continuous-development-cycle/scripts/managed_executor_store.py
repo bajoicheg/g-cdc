@@ -2,6 +2,8 @@
 """CDC 2.11.0 durable Git CAS store for managed executor pool state."""
 from __future__ import annotations
 
+from git_object_integrity import git_object_environment
+
 import copy
 import json
 import os
@@ -10,7 +12,7 @@ import secrets
 import subprocess
 
 from managed_executor_pool import validate_plan, validate_state
-from git_remote_identity import endpoint_identity, remote_identity, repository_root
+from git_remote_identity import endpoint_identity, isolated_remote_args, remote_identity, repository_root
 from parallel_task_planner import portable_path_key
 
 REVISION = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
@@ -96,9 +98,7 @@ class GitManagedExecutorStore:
         return True
 
     def _git(self, *args, input_text=None):
-        env = dict(
-            os.environ,
-            GIT_TERMINAL_PROMPT="0",
+        env = git_object_environment(GIT_TERMINAL_PROMPT="0",
             GIT_AUTHOR_NAME="CDC managed executor",
             GIT_AUTHOR_EMAIL="cdc@example.invalid",
             GIT_COMMITTER_NAME="CDC managed executor",
@@ -150,7 +150,8 @@ class GitManagedExecutorStore:
         if not rows:
             return None, None
         revision = rows[0].split("\t", 1)[0]
-        self._git("fetch", "--no-tags", "--no-write-fetch-head", self.remote, self.ref)
+        config, remote = isolated_remote_args(self.repo, self.remote, self.store_id)
+        self._git(*config, "fetch", "--no-tags", "--no-write-fetch-head", "--refmap=", remote, self.ref)
         if self._git("cat-file", "-t", revision) != "commit":
             raise ValueError("managed-executor coordination ref must point to a commit")
         tree_rows = self._git("ls-tree", "--name-only", revision).splitlines()
@@ -183,10 +184,8 @@ class GitManagedExecutorStore:
             "commit-tree", tree, *parent,
             input_text=f"Update managed executor pool state\n\nCAS proposal: {proposal_nonce}\n",
         )
-        self._git(
-            "-c", "push.followTags=false", "push", "--porcelain",
-            self.remote, f"{commit}:{self.ref}",
-        )
+        config, remote = isolated_remote_args(self.repo, self.remote, self.store_id)
+        self._git(*config, "-c", "push.followTags=false", "push", "--porcelain", remote, f"{commit}:{self.ref}")
         rows = self._remote_rows()
         if len(rows) != 1 or rows[0].split("\t", 1)[0] != commit:
             raise ValueError("managed-executor CAS push did not become authoritative")

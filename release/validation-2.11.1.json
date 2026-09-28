@@ -1,0 +1,154 @@
+{
+  "version": "2.11.1",
+  "head": "e2c51579e634bdc16d31118a53d12ae816e443de",
+  "package_tree": "6ffacd32cce74c3537150778d9b37cfeb361a621",
+  "results": [
+    {
+      "name": "bootstrap",
+      "command": [
+        "python3",
+        "-B",
+        "bootstrap/validate_release.py",
+        "--mode",
+        "bootstrap"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.032,
+      "result": "PASS"
+    },
+    {
+      "name": "bootstrap_tests",
+      "command": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "bootstrap/tests",
+        "-v"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.1,
+      "result": "PASS"
+    },
+    {
+      "name": "package_validator",
+      "command": [
+        "python3",
+        "-B",
+        "src/continuous-development-cycle/scripts/validate_package.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.198,
+      "result": "PASS"
+    },
+    {
+      "name": "package_tests",
+      "command": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "src/continuous-development-cycle/tests",
+        "-v"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 131.879,
+      "result": "PASS"
+    },
+    {
+      "name": "full_bootstrap",
+      "command": [
+        "python3",
+        "-B",
+        "bootstrap/validate_release.py",
+        "--mode",
+        "full"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.033,
+      "result": "PASS"
+    },
+    {
+      "name": "g-supervisor_adapter",
+      "command": [
+        "python3",
+        "-B",
+        "src/continuous-development-cycle/scripts/validate_adapter.py",
+        "consumer/evidence/g-supervisor/development-cycle.yaml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.078,
+      "result": "PASS"
+    },
+    {
+      "name": "g-supervisor_checkpoint",
+      "command": [
+        "python3",
+        "-B",
+        "src/continuous-development-cycle/scripts/validate_checkpoint_24.py",
+        "consumer/evidence/g-supervisor/work-status.md",
+        "--adapter",
+        "consumer/evidence/g-supervisor/development-cycle.yaml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.08,
+      "result": "PASS"
+    },
+    {
+      "name": "g-ad-control_adapter",
+      "command": [
+        "python3",
+        "-B",
+        "src/continuous-development-cycle/scripts/validate_adapter.py",
+        "consumer/evidence/g-ad-control/development-cycle.yaml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.074,
+      "result": "PASS"
+    },
+    {
+      "name": "g-ad-control_checkpoint",
+      "command": [
+        "python3",
+        "-B",
+        "src/continuous-development-cycle/scripts/validate_checkpoint_24.py",
+        "consumer/evidence/g-ad-control/work-status.md",
+        "--adapter",
+        "consumer/evidence/g-ad-control/development-cycle.yaml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.071,
+      "result": "PASS"
+    },
+    {
+      "name": "g-pc-health-check_adapter",
+      "command": [
+        "python3",
+        "-B",
+        "src/continuous-development-cycle/scripts/validate_adapter.py",
+        "consumer/evidence/g-pc-health-check/development-cycle.yaml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.069,
+      "result": "PASS"
+    },
+    {
+      "name": "g-pc-health-check_checkpoint",
+      "command": [
+        "python3",
+        "-B",
+        "src/continuous-development-cycle/scripts/validate_checkpoint_24.py",
+        "consumer/evidence/g-pc-health-check/work-status.md",
+        "--adapter",
+        "consumer/evidence/g-pc-health-check/development-cycle.yaml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.065,
+      "result": "PASS"
+    }
+  ]
+}

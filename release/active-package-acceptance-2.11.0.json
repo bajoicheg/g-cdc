@@ -1,0 +1,203 @@
+{
+  "byte_identical_files": 290,
+  "canonical_tree": "06078676bef395c56453f9e9066b4c0583c84ba3",
+  "errors": [],
+  "expected_package_tree": "06078676bef395c56453f9e9066b4c0583c84ba3",
+  "ignored_generated_files": [],
+  "installed_tree": "a9cee7acf9d52d3c7eff4d0a9328cc2bc00b65be",
+  "matched": true,
+  "normalizations": [
+    {
+      "canonical_sha256": "ae7608e6fa67d5312911d23f7301c2e828a98db9fc7e004aa26f4109ffacfc82",
+      "installed_sha256": "db3ca48b2b04c154c6d35c14ee996a65b040429a6a91d8dde798b01fcc888d52",
+      "kind": "interface_yaml_format",
+      "path": "agents/openai.yaml"
+    },
+    {
+      "canonical_sha256": "e9301497fa98ef56aaca7ede0857b9a18dc06c34040f0679c609a6bf49b1d38b",
+      "installed_sha256": "fbb6c7314886573cd56c3f86884a65afe3b5f4ce4bf1ee6baeeeb1fa50aea7a4",
+      "kind": "host_icon",
+      "path": "assets/icon.svg"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/capability_router.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/checkpoint_builder.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/ci_evidence_classifier.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/command_timestamp.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/continuation_cycle.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/continuation_queue.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/control_plane_audit.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/convergence_vector.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/execution_continuity.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/execution_lease.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/fleet_improvement.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/fleet_supervisor.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/migration_transaction.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/operation_intent.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/package_transport.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/policy_migration.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/progress_slo.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/provider_reconciliation.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/rca_feedback.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/recovery.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/recovery_recipes.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/resume_capsule.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/run_checks.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/validate_checkpoint.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/validate_checkpoint_24.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/validate_evidence.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/version_convergence.py",
+      "to": "100644"
+    },
+    {
+      "from": "100755",
+      "kind": "executable_mode",
+      "path": "scripts/watchdog_health.py",
+      "to": "100644"
+    }
+  ],
+  "proves_agent_behavior": false,
+  "schema": "active-package-verification/v1",
+  "version": "2.11.0",
+  "release_commit": "5865399c2ddc0cb9c84fd8ebad207612d6e6e02b",
+  "release_ref": "refs/heads/release/v2.11.0",
+  "final_metadata_ci": {
+    "head": "92c7f1cd96f621ace887d3197f0635dc965618ee",
+    "run_id": 36389364804,
+    "conclusion": "success"
+  },
+  "installed_skill_commit": "7c27b8472aa5b573ac98b3d6efda92c259424a83",
+  "observed_at_utc": "2026-09-28T07:10:03Z"
+}

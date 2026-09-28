@@ -2,22 +2,27 @@
 """Opaque Git endpoint identities shared by coordination and publication."""
 from __future__ import annotations
 
+from git_object_integrity import git_object_environment
+
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
+import secrets
 import subprocess
 from urllib.parse import urlsplit
 
 
-def _git(repo, *args):
+def _git(repo, *args, allow_missing=False):
     try:
         result = subprocess.run(
             ["git", "-C", str(repo), *args], text=True,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            env=dict(os.environ, GIT_TERMINAL_PROMPT="0"), timeout=15,
+            env=git_object_environment(GIT_TERMINAL_PROMPT="0"), timeout=15,
         )
+        if allow_missing and result.returncode == 1:
+            return None
         if result.returncode:
             raise ValueError
         return result.stdout.rstrip("\n")
@@ -106,3 +111,36 @@ def remote_identity(repo, remote):
     if _identity_for_effective_endpoint(push[0], root) != fetch_id:
         raise ValueError("Git remote requires one identical fetch/push endpoint")
     return fetch_id
+
+
+def isolated_remote_args(repo, remote, expected_identity):
+    """Return command-scoped remote args without inherited local ref mappings.
+
+    Copy RAW configured endpoints so Git applies insteadOf/pushInsteadOf exactly
+    once. Verify the source's effective fetch/push identities before transport.
+    Passing an already resolved URL back to Git could apply a second rewrite;
+    passing the original remote could update arbitrary local tracking/product refs.
+    Returned configuration may contain credentials and must never be logged.
+    """
+    root = repository_root(repo)
+    if remote_identity(root, remote) != expected_identity:
+        raise ValueError("Git coordination remote identity drift")
+    raw_fetch = _git(root, "config", "--get-all", f"remote.{remote}.url").splitlines()
+    raw_push_value = _git(root, "config", "--get-all", f"remote.{remote}.pushurl", allow_missing=True)
+    raw_push = raw_push_value.splitlines() if raw_push_value is not None else []
+    if len(raw_fetch) != 1 or len(raw_push) > 1:
+        raise ValueError("Git transport requires one configured endpoint")
+    alias = "cdc-isolated-" + secrets.token_hex(16)
+    config = ["-c", f"remote.{alias}.url={_endpoint(raw_fetch[0])}"]
+    if raw_push:
+        config += ["-c", f"remote.{alias}.pushurl={_endpoint(raw_push[0])}"]
+    # remote get-url requires a remote defined in a repository-scoped config and
+    # rejects command-only aliases. ls-remote --get-url resolves their fetch URL
+    # without IO. The unchanged raw pushURL (or its absence) uses the identical
+    # Git rewrite rules as the source remote, whose push identity is checked again.
+    effective = _git(root, *config, "ls-remote", "--get-url", "--", alias).splitlines()
+    if len(effective) != 1 or _identity_for_effective_endpoint(effective[0], root) != expected_identity:
+        raise ValueError("Git isolated transport identity drift")
+    if remote_identity(root, remote) != expected_identity:
+        raise ValueError("Git coordination remote identity drift")
+    return config, alias

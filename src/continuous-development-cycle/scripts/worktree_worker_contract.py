@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """CDC 2.10.2 durable per-wave isolated worker/worktree assignment contract."""
 from __future__ import annotations
+
+from git_object_integrity import git_object_environment
 import argparse,hashlib,json,re,subprocess,sys
 from pathlib import Path
 from parallel_task_planner import validate as validate_parallel_plan, plan as build_parallel_plan, validate_write_path, portable_path_key, overlaps, canonical_plan_ref
@@ -194,17 +196,17 @@ def verify_prior_integration_live(d,evidence_root,git_worktree):
     if not root.is_dir():raise ValueError("git worktree missing")
     ref=canonical_branch_ref(d["shared_branch"])
     try:
-        live=subprocess.check_output(["git","-C",str(root),"rev-parse","--verify",ref],text=True,stderr=subprocess.PIPE,timeout=15).strip()
+        live=subprocess.check_output(["git","-C",str(root),"rev-parse","--verify",ref],env=git_object_environment(), text=True,stderr=subprocess.PIPE,timeout=15).strip()
         for historical in records:
             for sha in (historical["base_sha"],historical["integrated_head"],*historical["writer_result_shas"]):
-                kind=subprocess.check_output(["git","-C",str(root),"cat-file","-t",sha],text=True,stderr=subprocess.PIPE,timeout=15).strip()
+                kind=subprocess.check_output(["git","-C",str(root),"cat-file","-t",sha],env=git_object_environment(), text=True,stderr=subprocess.PIPE,timeout=15).strip()
                 if kind!="commit":raise ValueError("prior integration endpoint is not a commit")
             ancestry=subprocess.run(["git","-C",str(root),"merge-base","--is-ancestor",historical["base_sha"],historical["integrated_head"]],
-                                    stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=15)
+                                    env=git_object_environment(), stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=15)
             if ancestry.returncode!=0:raise ValueError("prior integrated head does not descend from prior base")
             for sha in historical["writer_result_shas"]:
                 result_ancestry=subprocess.run(["git","-C",str(root),"merge-base","--is-ancestor",sha,historical["integrated_head"]],
-                                               stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=15)
+                                               env=git_object_environment(), stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=15)
                 if result_ancestry.returncode!=0:raise ValueError("prior integrated head does not contain every gated writer result")
     except (OSError,subprocess.SubprocessError) as exc:raise ValueError(f"cannot verify prior integration live state: {exc}") from exc
     if live!=record["integrated_head"] or d["base_sha"]!=live:raise ValueError("later wave base is not current integrated shared head")

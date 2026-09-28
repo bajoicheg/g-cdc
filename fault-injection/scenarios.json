@@ -792,6 +792,69 @@
         "product_write",
         "release"
       ]
+    },
+    {
+      "id": "watchdog-paused-enable",
+      "fault": "older enabled policy attempts to override fresh owner pause",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "watchdog-premature-invocation-complete",
+      "fault": "completed invocation leaves runnable project work",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "watchdog-effect-unknown-replay",
+      "fault": "scheduler accepted request loses reply before durable receipt",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "watchdog-pause-between-effects",
+      "fault": "owner pause observed after enable and before run",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "fleet-batch-truncation",
+      "fault": "bounded pass silently drops other registered projects",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "live-target-stale-alias",
+      "fault": "prompt or project alias overrides live canonical target",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
+    },
+    {
+      "id": "live-target-ref-moved",
+      "fault": "target and registry loaded from different revisions",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "product_write",
+        "release"
+      ]
     }
   ]
 }

@@ -1,25 +1,22 @@
 {
   "schema": "cdc-release-candidate/v1",
-  "version": "2.11.0",
-  "developed_under_version": "2.10.3",
+  "version": "2.11.1",
+  "developed_under_version": "2.11.0",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "ffc64490e069318221e2c0d05996d39ed231fd46",
-  "package_tree": "06078676bef395c56453f9e9066b4c0583c84ba3",
+  "source_commit": "a29fb4221b63bff9ecac4e1b8c821f6c25ca7c0c",
+  "package_tree": "6ffacd32cce74c3537150778d9b37cfeb361a621",
   "status": "released",
   "evidence": {
     "bootstrap": [
-      "release/evidence-2.11.0.json#bootstrap"
+      "release/evidence-2.11.1.json#bootstrap"
     ],
     "package": [
-      "release/evidence-2.11.0.json#package"
+      "release/evidence-2.11.1.json#package"
     ],
     "compatibility": [
-      "release/consumer-compatibility-2.11.0.json"
+      "release/consumer-compatibility-2.11.1.json"
     ],
     "fault_injection": [
-      "src/continuous-development-cycle/tests/test_managed_executor_runtime.py",
-      "src/continuous-development-cycle/tests/test_managed_executor_pool.py",
-      "src/continuous-development-cycle/tests/test_active_package.py",
       "fault-injection/scenarios.json"
     ],
     "consumers": [

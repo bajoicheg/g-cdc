@@ -1,5 +1,6 @@
 """Independent checks against actual release records, not only templates."""
 import json
+import os
 import re
 import subprocess
 import unittest
@@ -14,7 +15,8 @@ def read(path):
 
 
 def git(*args):
-    return subprocess.check_output(["git", "-C", str(ROOT), *args], text=True).strip()
+    return subprocess.check_output(["git", "-c", "advice.graftFileDeprecated=false", "-C", str(ROOT), *args], text=True,
+                                   env=dict(os.environ, GIT_NO_REPLACE_OBJECTS="1", GIT_GRAFT_FILE=os.devnull)).strip()
 
 
 class ReleaseBindingsTests(unittest.TestCase):

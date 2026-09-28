@@ -1,0 +1,78 @@
+test_health_entrypoint_dispatches_new_schema_without_weakening_old_reader (test_watchdog_liveness.LivenessTests.test_health_entrypoint_dispatches_new_schema_without_weakening_old_reader) ... ERROR
+test_zero_budget_retains_unknown_claim_even_when_next_probe_looks_healthy (test_fleet_watchdog_runtime.FleetTests.test_zero_budget_retains_unknown_claim_even_when_next_probe_looks_healthy) ... FAIL
+test_completed_checkpoint_loss_cannot_reset_effect_budget_for_next_project (test_fleet_watchdog_runtime.FleetTests.test_completed_checkpoint_loss_cannot_reset_effect_budget_for_next_project) ... FAIL
+test_changed_exact_invocation_after_claim_denies_effect (test_fleet_watchdog_runtime.FleetTests.test_changed_exact_invocation_after_claim_denies_effect) ... FAIL
+test_stale_scheduler_readback_cannot_confirm_enable (test_fleet_watchdog_runtime.FleetTests.test_stale_scheduler_readback_cannot_confirm_enable) ... FAIL
+test_run_must_read_back_a_new_exact_invocation (test_fleet_watchdog_runtime.FleetTests.test_run_must_read_back_a_new_exact_invocation) ... FAIL
+
+======================================================================
+ERROR: test_health_entrypoint_dispatches_new_schema_without_weakening_old_reader (test_watchdog_liveness.LivenessTests.test_health_entrypoint_dispatches_new_schema_without_weakening_old_reader)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/6ddf12473f4a/g-cdc-liveness-worker/src/continuous-development-cycle/tests/test_watchdog_liveness.py", line 102, in test_health_entrypoint_dispatches_new_schema_without_weakening_old_reader
+    self.assertEqual(watchdog_health.assess(probe())["overall"], "CRITICAL")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/6ddf12473f4a/g-cdc-liveness-worker/src/continuous-development-cycle/scripts/watchdog_health.py", line 80, in assess
+    validate_probe(probe)
+  File "/workspace/scratch/6ddf12473f4a/g-cdc-liveness-worker/src/continuous-development-cycle/scripts/watchdog_health.py", line 50, in validate_probe
+    raise ValueError(f"health probe must contain exactly {sorted(expected)}")
+ValueError: health probe must contain exactly ['observed_at_utc', 'repository', 'schema', 'signals']
+
+======================================================================
+FAIL: test_zero_budget_retains_unknown_claim_even_when_next_probe_looks_healthy (test_fleet_watchdog_runtime.FleetTests.test_zero_budget_retains_unknown_claim_even_when_next_probe_looks_healthy)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/6ddf12473f4a/g-cdc-liveness-worker/src/continuous-development-cycle/tests/test_fleet_watchdog_runtime.py", line 211, in test_zero_budget_retains_unknown_claim_even_when_next_probe_looks_healthy
+    self.assertTrue(result["continuation_required"])
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_completed_checkpoint_loss_cannot_reset_effect_budget_for_next_project (test_fleet_watchdog_runtime.FleetTests.test_completed_checkpoint_loss_cannot_reset_effect_budget_for_next_project)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/6ddf12473f4a/g-cdc-liveness-worker/src/continuous-development-cycle/tests/test_fleet_watchdog_runtime.py", line 223, in test_completed_checkpoint_loss_cannot_reset_effect_budget_for_next_project
+    self.assertEqual(self.backend.effects, [("alpha", "enable"), ("alpha", "run")])
+AssertionError: Lists differ: [('alpha', 'enable'), ('alpha', 'run'), ('beta', 'enable'), ('beta', 'run')] != [('alpha', 'enable'), ('alpha', 'run')]
+
+First list contains 2 additional elements.
+First extra element 2:
+('beta', 'enable')
+
+- [('alpha', 'enable'), ('alpha', 'run'), ('beta', 'enable'), ('beta', 'run')]
++ [('alpha', 'enable'), ('alpha', 'run')]
+
+======================================================================
+FAIL: test_changed_exact_invocation_after_claim_denies_effect (test_fleet_watchdog_runtime.FleetTests.test_changed_exact_invocation_after_claim_denies_effect)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/6ddf12473f4a/g-cdc-liveness-worker/src/continuous-development-cycle/tests/test_fleet_watchdog_runtime.py", line 235, in test_changed_exact_invocation_after_claim_denies_effect
+    self.assertEqual(self.backend.effects, [])
+AssertionError: Lists differ: [('alpha', 'enable'), ('alpha', 'run')] != []
+
+First list contains 2 additional elements.
+First extra element 0:
+('alpha', 'enable')
+
+- [('alpha', 'enable'), ('alpha', 'run')]
++ []
+
+======================================================================
+FAIL: test_stale_scheduler_readback_cannot_confirm_enable (test_fleet_watchdog_runtime.FleetTests.test_stale_scheduler_readback_cannot_confirm_enable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/6ddf12473f4a/g-cdc-liveness-worker/src/continuous-development-cycle/tests/test_fleet_watchdog_runtime.py", line 243, in test_stale_scheduler_readback_cannot_confirm_enable
+    self.assertIn("unknown", [op["status"] for op in self.store.read()[1]["operations"].values()])
+AssertionError: 'unknown' not found in ['succeeded']
+
+======================================================================
+FAIL: test_run_must_read_back_a_new_exact_invocation (test_fleet_watchdog_runtime.FleetTests.test_run_must_read_back_a_new_exact_invocation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/6ddf12473f4a/g-cdc-liveness-worker/src/continuous-development-cycle/tests/test_fleet_watchdog_runtime.py", line 251, in test_run_must_read_back_a_new_exact_invocation
+    self.assertIn("unknown", [op["status"] for op in self.store.read()[1]["operations"].values()])
+AssertionError: 'unknown' not found in ['succeeded', 'succeeded']
+
+----------------------------------------------------------------------
+Ran 6 tests in 5.006s
+
+FAILED (failures=5, errors=1)

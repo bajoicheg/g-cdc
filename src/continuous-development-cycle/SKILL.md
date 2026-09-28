@@ -3,7 +3,7 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.11.0
+# Continuous Development Cycle v2.11.1
 
 ## Active execution contract — apply before recovery detail
 
@@ -22,7 +22,7 @@ Durable repository state is the project state. Sessions, agents and schedulers a
 
 Before scheduler status, recovery or changes, read `references/watchdog-recovery-and-migration.md`. Keep user-authorized scheduler state separate from current-wake execution eligibility. Blockers, budget/runtime limits and quiet notifications do not authorize disabling a recurring watchdog. Honor a later verified user pause; audit unexplained drift rather than invent its cause. Protect verified task-linked chat IDs from cleanup; diagnose archived/missing chat dependencies before retrying. Read the chat recovery procedure in that reference.
 
-For watchdog/status/resume work, build the **six-signal health vector** from fresh evidence before deciding that development is healthy, blocked, stalled, or recoverable: scheduler state, chat dependency, invocation state, execution lease, external operation/guard, and last meaningful progress. Use `scripts/watchdog_health.py` and the contract in the watchdog reference. The aggregate assessment is diagnostic only: it never grants takeover, product writes, external starts, scheduler mutation, budget restoration, merge, or release authority. Persist a health snapshot on an authorized coordination path when useful; never move a guarded product HEAD merely to publish health. Use the assessment fingerprint to suppress unchanged noise while still reporting new drift or a changed recovery action.
+For watchdog/status/resume work, build the **six-signal health vector** from fresh evidence before deciding that development is healthy, blocked, stalled, or recoverable: scheduler state, chat dependency, invocation state, execution lease, external operation/guard, and last meaningful progress. Use `scripts/watchdog_health.py` and the contract in the watchdog reference. For live recovery also supply the current project scope, owner pause and exact invocation to `scripts/watchdog_liveness.py`; v1 six-signal HEALTHY alone cannot prove that a completed invocation exhausted its runnable work. The aggregate assessment is diagnostic only: it never grants takeover, product writes, external starts, scheduler mutation, budget restoration, merge, or release authority. Persist a health snapshot on an authorized coordination path when useful; never move a guarded product HEAD merely to publish health. Use the assessment fingerprint to suppress unchanged noise while still reporting new drift or a changed recovery action.
 
 ## Route the executor
 
@@ -304,3 +304,14 @@ Use `scripts/managed_executor_runtime.py` to connect durable pool claims to actu
 Before managed-parent finalization, call `ManagedExecutorRuntime.evaluate_parent()` with fresh continuity evidence. It reads the authoritative pool and combines it with the 2.10.3 terminal contract; required active or unintegrated work keeps the parent running. Read `references/managed-executor-runtime.md`.
 
 Verify active installation with `scripts/active_package.py` against the pinned canonical tree. Exact Git vendoring is strict; explicit host normalization may cover only equivalent interface YAML, icon substitution and executable-mode normalization. Modified runtime/instruction bytes and unpinned executable bytecode caches fail closed. Before installation verification, remove only known generated Python caches; use source-only imports or an empty external cache prefix when execution must avoid loading local cached bytecode (`-B` alone disables writes, not reads). Package verification does not prove that the model obeys its instructions.
+
+
+## CDC 2.11.1 Persistent watchdog liveness and live target resolution
+
+At every watchdog/Fleet entry, resolve the configured authoritative live registry and target at one fresh revision using `scripts/live_target.py`. Verify canonical released version, release commit and package tree. An embedded prompt version or an old project target alias is historical context; it cannot replace the current authority. Target resolution is evidence, never adoption permission.
+
+Use `scripts/watchdog_liveness.py` to distinguish critical nonterminal inactivity from verified project completion and explicit owner pause. A completed invocation with runnable work is a liveness incident even when it released its lease. Budget exhaustion preserves continuation for the next wake and never disables the recurring schedule. Uncertain invocation, owner, lanes or external operation must be observed/reconciled before any competing effect.
+
+Use `scripts/fleet_watchdog_runtime.py` for a bounded all-project recovery pass with an actual authorized scheduler adapter and durable conditional journal. Refresh the latest owner pause and other gates before every effect, including between enable and run. Persist one-shot effect claims before submission; lost/unknown results retain their claim across controller restart and require reconciliation. Preserve every deferred project for continuation. An enabled scheduler or accepted run request is not observed execution or meaningful product progress.
+
+An explicit current owner pause wins over enabled-until-terminal policy. Never enable, run, rebind or reschedule paused automations. Foreground eligible work continues. Cooperative validation cannot intercept an agent's final channel, manufacture unavailable host capabilities or fence arbitrary downstream writes. Read `references/watchdog-liveness-runtime.md` and `references/live-target-resolution.md` for exact contracts and capability boundaries.

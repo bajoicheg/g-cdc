@@ -1,0 +1,397 @@
+{
+  "events": [
+    {
+      "at_utc": "2026-09-28T06:14:40Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "identity-1",
+      "kind": "agent_start",
+      "operation_key": "sha256:601b8efd3b5c54dfae445d2386aff73c8b0e8063bd2592dbbb915581e25ef3ff",
+      "recovery_ref": null,
+      "scope": "managed/identity",
+      "task_id": "managed-execution-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:14:40Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "runtime-1",
+      "kind": "agent_start",
+      "operation_key": "sha256:fd1d1861b2ea11f6fe25a0a47aa614b338e0ef75a14bee2f4241cc4af235ffbd",
+      "recovery_ref": null,
+      "scope": "managed/runtime",
+      "task_id": "managed-execution-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:14:40Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "consumer-audit-1",
+      "kind": "agent_start",
+      "operation_key": "sha256:4e49c72eb83af07e6f37cb0eaa7c65470a7655656fff646511180dded3441071",
+      "recovery_ref": null,
+      "scope": "managed/consumer-audit",
+      "task_id": "managed-execution-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:20:59Z",
+      "event_id": "identity-done",
+      "failure": null,
+      "reservation_id": "identity-1",
+      "status": "succeeded",
+      "task_id": "managed-execution-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:20:59Z",
+      "event_id": "consumer-audit-done",
+      "failure": null,
+      "reservation_id": "consumer-audit-1",
+      "status": "succeeded",
+      "task_id": "managed-execution-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:20:59Z",
+      "attempt_id": "2",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "identity-race-2",
+      "kind": "agent_start",
+      "operation_key": "sha256:31871414104e3c187f06d33632ac5ec8147269e731b86fc08a6f64d04dcb3a4f",
+      "recovery_ref": null,
+      "scope": "managed/identity-race",
+      "task_id": "managed-execution-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:28:02Z",
+      "event_id": "identity-race-done",
+      "failure": null,
+      "reservation_id": "identity-race-2",
+      "status": "succeeded",
+      "task_id": "managed-execution-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:28:02Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "adoption-prep-1",
+      "kind": "agent_start",
+      "operation_key": "sha256:7f9faecfcb927b0965c8974dac8073c7be180b445abb0b6234044e8ab42ce321",
+      "recovery_ref": null,
+      "scope": "managed/adoption-prep",
+      "task_id": "managed-execution-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:33:39Z",
+      "event_id": "runtime-done",
+      "failure": null,
+      "reservation_id": "runtime-1",
+      "status": "succeeded",
+      "task_id": "managed-execution-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:35:37Z",
+      "event_id": "adoption-prep-done",
+      "failure": null,
+      "reservation_id": "adoption-prep-1",
+      "status": "succeeded",
+      "task_id": "managed-execution-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:35:37Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "pool-spec-review-1",
+      "kind": "agent_start",
+      "operation_key": "sha256:b2d26fa663120883bd84dd515fc5c03156d73e7207a239d4cb48a88c2298a6b2",
+      "recovery_ref": null,
+      "scope": "managed/spec-review",
+      "task_id": "managed-execution-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:46:46Z",
+      "event_id": "pool-spec-review-done",
+      "failure": null,
+      "reservation_id": "pool-spec-review-1",
+      "status": "succeeded",
+      "task_id": "managed-execution-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:46:46Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "pool-spec-recheck-1",
+      "kind": "agent_start",
+      "operation_key": "sha256:9bd9942a854e47fba0c17170dc4608967a6b83f7a7e39acb7f5ac36d94bde88d",
+      "recovery_ref": null,
+      "scope": "managed/spec-recheck",
+      "task_id": "managed-execution-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:49:08Z",
+      "event_id": "pool-spec-recheck-done",
+      "failure": null,
+      "reservation_id": "pool-spec-recheck-1",
+      "status": "succeeded",
+      "task_id": "managed-execution-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:49:08Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "pool-quality-review-1",
+      "kind": "agent_start",
+      "operation_key": "sha256:173641fa5020542cc456a50294a382791ef8bc6a2852af2ffca23e1eeb26342c",
+      "recovery_ref": null,
+      "scope": "managed/quality-review",
+      "task_id": "managed-execution-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:55:09Z",
+      "event_id": "pool-quality-review-done",
+      "failure": null,
+      "reservation_id": "pool-quality-review-1",
+      "status": "succeeded",
+      "task_id": "managed-execution-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:55:09Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "pool-quality-recheck-1",
+      "kind": "agent_start",
+      "operation_key": "sha256:a8932e33c568961be82be8a68a3a9095958a80bbe025fd786019ad0d108be59b",
+      "recovery_ref": null,
+      "scope": "managed/quality-recheck",
+      "task_id": "managed-execution-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:57:57Z",
+      "event_id": "pool-quality-recheck-done",
+      "failure": null,
+      "reservation_id": "pool-quality-recheck-1",
+      "status": "succeeded",
+      "task_id": "managed-execution-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:57:57Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "pool-ci-observed-d18",
+      "kind": "ci_start",
+      "operation_key": "sha256:2cb0f7286c0859ca4aeeb6db84670882e0b77359be88b929abdd177e14bad8af",
+      "recovery_ref": null,
+      "scope": "managed/ci/36388437156-observed-after-start",
+      "task_id": "managed-execution-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:57:57Z",
+      "event_id": "pool-ci-d18-done",
+      "failure": null,
+      "reservation_id": "pool-ci-observed-d18",
+      "status": "succeeded",
+      "task_id": "managed-execution-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T06:57:57Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "pool-ci-final-1",
+      "kind": "ci_start",
+      "operation_key": "sha256:5cfbbcbe0b52ce4be4e8704fbbea5f13d13f090fa0e25b21924722b3a6fbf019",
+      "recovery_ref": null,
+      "scope": "managed/ci/final-ffc64490",
+      "task_id": "managed-execution-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:00:17Z",
+      "event_id": "pool-ci-final-done",
+      "failure": null,
+      "reservation_id": "pool-ci-final-1",
+      "status": "succeeded",
+      "task_id": "managed-execution-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:00:17Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "pool-ci-release-metadata-1",
+      "kind": "ci_start",
+      "operation_key": "sha256:0c811beef3a3854f09f6a5e3f0cee09251b6913c3bbe62ecf772ad5a1b20bf19",
+      "recovery_ref": null,
+      "scope": "managed/ci/release-metadata",
+      "task_id": "managed-execution-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:07:43Z",
+      "event_id": "pool-ci-release-metadata-done",
+      "failure": null,
+      "reservation_id": "pool-ci-release-metadata-1",
+      "status": "succeeded",
+      "task_id": "managed-execution-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    }
+  ],
+  "policy": {
+    "actions_budget": "normal",
+    "checkpoint_reserve": {
+      "tokens": 3000,
+      "tool_calls": 15
+    },
+    "max_parallel_agents": 3,
+    "provider_max_age_seconds": 300,
+    "task_limits": {
+      "agent_starts": 12
+    },
+    "wake_limits": {
+      "agent_starts": 12
+    }
+  },
+  "policy_digest": "sha256:c13feada35b1032d6110013b41567b02ce04e4db0239209940bb8e3da0dfad59",
+  "schema": "budget-ledger/v1",
+  "task_id": "managed-execution-20260928",
+  "wake_ids": [
+    "foreground-1"
+  ]
+}

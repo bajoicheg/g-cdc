@@ -1,0 +1,17 @@
+test_release_binding_reader_uses_genuine_commit_bytes (test_git_object_integrity.BootstrapGitObjectIntegrityTests.test_release_binding_reader_uses_genuine_commit_bytes) ... FAIL
+
+======================================================================
+FAIL: test_release_binding_reader_uses_genuine_commit_bytes (test_git_object_integrity.BootstrapGitObjectIntegrityTests.test_release_binding_reader_uses_genuine_commit_bytes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/6ddf12473f4a/g-cdc-quality-fix/bootstrap/tests/test_git_object_integrity.py", line 28, in test_release_binding_reader_uses_genuine_commit_bytes
+    self.assertEqual(test_release_bindings.git("show", commits[0] + ":VERSION"), "genuine")
+AssertionError: 'counterfeit' != 'genuine'
+- counterfeit
++ genuine
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.020s
+
+FAILED (failures=1)

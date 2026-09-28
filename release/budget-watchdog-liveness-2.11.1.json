@@ -1,0 +1,321 @@
+{
+  "events": [
+    {
+      "at_utc": "2026-09-28T07:10:03Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "liveness-implementation",
+      "kind": "agent_start",
+      "operation_key": "sha256:20bf3de429c7489d4b8be76b1adb0afa1127d422e4a548328dc394b395f79c24",
+      "recovery_ref": null,
+      "scope": "liveness-implementation",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:10:03Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "target-implementation",
+      "kind": "agent_start",
+      "operation_key": "sha256:3ca900496de3938226c0fe3cf621201f4cb71f3523655795978b44d2aea3ded7",
+      "recovery_ref": null,
+      "scope": "target-implementation",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:24:04Z",
+      "event_id": "target-implementation-done",
+      "failure": null,
+      "reservation_id": "target-implementation",
+      "status": "succeeded",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:26:04Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "watchdog-spec-review",
+      "kind": "agent_start",
+      "operation_key": "sha256:9032a8aada0b92c1fc1a1c08083fd556c329a14dc58d553095f3781e3788a3db",
+      "recovery_ref": null,
+      "scope": "watchdog-spec-review",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:29:21Z",
+      "event_id": "liveness-implementation-done",
+      "failure": null,
+      "reservation_id": "liveness-implementation",
+      "status": "succeeded",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:31:11Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "liveness-spec-fix-1",
+      "kind": "agent_start",
+      "operation_key": "sha256:e7e424c34ce5b80ee7bdf96c6cea7045e273e35413c2738e86773397e8f9aa5d",
+      "recovery_ref": null,
+      "scope": "liveness-spec-fix-1",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:32:12Z",
+      "event_id": "watchdog-spec-review-done",
+      "failure": null,
+      "reservation_id": "watchdog-spec-review",
+      "status": "succeeded",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:42:51Z",
+      "event_id": "liveness-spec-fix-1-done",
+      "failure": null,
+      "reservation_id": "liveness-spec-fix-1",
+      "status": "succeeded",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:42:51Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "watchdog-spec-recheck",
+      "kind": "agent_start",
+      "operation_key": "sha256:e1e9660de22155829c5021031baac620d70672a238d97a3132deee4311f06f41",
+      "recovery_ref": null,
+      "scope": "watchdog-spec-recheck",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:44:29Z",
+      "event_id": "watchdog-spec-recheck-done",
+      "failure": null,
+      "reservation_id": "watchdog-spec-recheck",
+      "status": "succeeded",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:44:29Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "watchdog-quality-review",
+      "kind": "agent_start",
+      "operation_key": "sha256:d5b934a5397f6d5df65c6adb46b129ce1fbbfe852a34784f54a250e1f4f42f98",
+      "recovery_ref": null,
+      "scope": "watchdog-quality-review",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:47:35Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "watchdog-quality-fix",
+      "kind": "agent_start",
+      "operation_key": "sha256:1a4ba2dbaa75f32b36cad859168b506d85ce8f2c145a9827d9f17924363c170d",
+      "recovery_ref": null,
+      "scope": "watchdog-quality-fix",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:49:07Z",
+      "event_id": "watchdog-quality-review-done",
+      "failure": null,
+      "reservation_id": "watchdog-quality-review",
+      "status": "succeeded",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:57:14Z",
+      "event_id": "watchdog-quality-fix-done",
+      "failure": null,
+      "reservation_id": "watchdog-quality-fix",
+      "status": "succeeded",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:57:14Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "watchdog-quality-recheck",
+      "kind": "agent_start",
+      "operation_key": "sha256:24686acc172f18adc72783fde671287ca0b27668d3a134ffff946abd7b0a3b3d",
+      "recovery_ref": null,
+      "scope": "watchdog-quality-recheck",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T07:59:19Z",
+      "event_id": "watchdog-quality-recheck-done",
+      "failure": null,
+      "reservation_id": "watchdog-quality-recheck",
+      "status": "succeeded",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T08:02:11Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "watchdog-candidate-ci",
+      "kind": "ci_start",
+      "operation_key": "sha256:21d536d1606e747b7d219b188a9595eb8ed4ae7d5fec7c9f15a87e613ff34c06",
+      "recovery_ref": null,
+      "scope": "watchdog-candidate-ci",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T08:06:08Z",
+      "event_id": "watchdog-candidate-ci-done",
+      "failure": null,
+      "reservation_id": "watchdog-candidate-ci",
+      "status": "succeeded",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "outcome",
+      "usage": {
+        "elapsed_seconds": null,
+        "tokens": null
+      },
+      "wake_id": "foreground-1"
+    },
+    {
+      "at_utc": "2026-09-28T08:06:08Z",
+      "attempt_id": "1",
+      "cost": {
+        "elapsed_seconds": null,
+        "tokens": null,
+        "tool_calls": 1
+      },
+      "event_id": "watchdog-final-metadata-ci",
+      "kind": "ci_start",
+      "operation_key": "sha256:5a812c1f475d91e0f9fd7634dd0cfbf2d4b7f323f8ee235549b833f58dfa8d6e",
+      "recovery_ref": null,
+      "scope": "watchdog-final-metadata-ci",
+      "task_id": "watchdog-liveness-20260928",
+      "type": "reserve",
+      "wake_id": "foreground-1"
+    }
+  ],
+  "policy": {
+    "actions_budget": "normal",
+    "checkpoint_reserve": {
+      "tokens": 3000,
+      "tool_calls": 15
+    },
+    "max_parallel_agents": 3,
+    "provider_max_age_seconds": 300,
+    "task_limits": {
+      "agent_starts": 8
+    },
+    "wake_limits": {
+      "agent_starts": 8
+    }
+  },
+  "policy_digest": "sha256:5a588449800f6af33bafff904de45cce7f794be7bf7550816e8601d40ffc3adb",
+  "schema": "budget-ledger/v1",
+  "task_id": "watchdog-liveness-20260928",
+  "wake_ids": [
+    "foreground-1"
+  ]
+}

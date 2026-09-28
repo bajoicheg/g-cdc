@@ -27,34 +27,34 @@
 ### Task 1: Preserve source and close endpoint identity findings
 **Files:** managed_executor_{pool,attempt,handoff,store}.py, shared git_remote_identity.py, managed tests/templates/reference under src/continuous-development-cycle.
 **Interfaces:** consumes preserved source; produces coordination_store_id_for_endpoint(value, repo_root=None) and publication_remote_identity(root, remote) with one shared canonicalization implementation.
-- [ ] Import additions from frozen 2.11.0 without replacing corrected continuity files.
-- [ ] Add three real-Git identity regressions; run focused identity tests. Expected: RED on preserved source.
-- [ ] Correct shared endpoint resolution; run all managed tests. Expected: GREEN with distinct destinations never aliased.
-- [ ] Commit bounded correction and record RED/GREEN evidence.
+- [x] Import additions from frozen 2.11.0 without replacing corrected continuity files.
+- [x] Add three real-Git identity regressions; run focused identity tests. Expected: RED on preserved source.
+- [x] Correct shared endpoint resolution; run all managed tests. Expected: GREEN with distinct destinations never aliased.
+- [x] Commit bounded correction and record RED/GREEN evidence.
 
 ### Task 2: Execute managed work and enforce parent closure
 **Files:** scripts/managed_executor_runtime.py, tests/test_managed_executor_runtime.py, references/managed-executor-runtime.md.
 **Interfaces:** consumes real GitManagedExecutorStore and one-shot pool claims; produces documented start/observe/cancel adapter and parent terminal evaluation combining pool and existing execution_continuity evidence.
-- [ ] Write real subprocess/Git tests for parallel overlap, sequential fallback, failure isolation, duplicate/unknown starts, timeout and unintegrated parent rejection. Expected: RED before runtime exists.
-- [ ] Implement minimal runtime/backend and durable receipts with exact task/attempt/claim binding.
-- [ ] Run runtime and full package tests; retain observed process/result evidence. Expected: GREEN.
-- [ ] Commit adapter and integration guidance.
+- [x] Write real subprocess/Git tests for parallel overlap, sequential fallback, failure isolation, duplicate/unknown starts, timeout and unintegrated parent rejection. Expected: RED before runtime exists.
+- [x] Implement minimal runtime/backend and durable receipts with exact task/attempt/claim binding.
+- [x] Run runtime and full package tests; retain observed process/result evidence. Expected: GREEN.
+- [x] Commit adapter and integration guidance.
 
 ### Task 3: Verify actual package loading and operational continuity
 **Files:** scripts/active_package.py, tests/test_active_package.py, release/active-package-acceptance-2.11.0.json; consumer records under release/ as appropriate.
 **Interfaces:** consumes canonical directory and installed directory; produces explicit byte/semantic/mode comparison and active version evidence without conflating canonical and host-normalized trees.
-- [ ] Test changed SKILL/script rejection, version mismatch, unexpected files and narrow documented host normalization. Expected: RED without verifier.
-- [ ] Implement verifier and run it against saved 2.10.3 then the released 2.11.0 installation. Expected: exact runtime content PASS, explicit metadata normalization only.
-- [ ] Run real multi-task agent/backend acceptance; discover live consumer refs/ownership and migrate at safe boundaries. Unknown ownership is a per-consumer blocker, not a reason to stop unrelated core work.
-- [ ] Commit evidence and preserve one actionable state per consumer.
+- [x] Test changed SKILL/script rejection, version mismatch, unexpected files and narrow documented host normalization. Expected: RED without verifier.
+- [x] Implement verifier and run it against saved 2.10.3 then the released 2.11.0 installation. Expected: exact runtime content PASS, explicit metadata normalization only.
+- [x] Run real multi-task agent/backend acceptance; discover live consumer refs/ownership and migrate at safe boundaries. Unknown ownership is a per-consumer blocker, not a reason to stop unrelated core work.
+- [x] Commit evidence and preserve one actionable state per consumer.
 
 ### Task 4: Freeze, review, release and continue
 **Files:** VERSION, manifest/SKILL/agent metadata, bootstrap release bindings, release/source.lock.json, release/candidate.json, compatibility/matrix.json, consumer snapshots, roadmap and evidence.
 **Interfaces:** prior driver 2.10.3 at 685d35cac8316c303fc466345a18ed8abf9fb256 / a1fdca8c4a00409069b790e6dd13944e64fbf9bd; target 2.11.0.
-- [ ] Refresh source lock and exact package bindings; preserve old evidence.
-- [ ] Run bootstrap/package/three snapshot checks, independent spec and quality review; fix material findings with RED/GREEN regressions.
-- [ ] Freeze source, publish exact-head PR, observe Actions to success and merge/release. Expected: release ref and remote readback bind validated package.
-- [ ] Activate installed skill, reconcile readback, consolidate legacy backlog, then begin the authorized 2.11.1 stage; this release is not the parent task's terminal boundary.
+- [x] Refresh source lock and exact package bindings; preserve old evidence.
+- [x] Run bootstrap/package/three snapshot checks, independent spec and quality review; fix material findings with RED/GREEN regressions.
+- [x] Freeze source, publish exact-head PR, observe Actions to success and merge/release. Expected: release ref and remote readback bind validated package.
+- [x] Activate installed skill, reconcile readback, consolidate legacy backlog, then begin the authorized 2.11.1 stage; this release is not the parent task's terminal boundary.
 
 ## Execution ledger
 

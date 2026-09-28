@@ -21,6 +21,7 @@ from resume_capsule import validate as validate_resume_capsule
 from budget import validate_ledger
 from recovery import validate_wait_state, decide_recovery
 from watchdog_health import assess as assess_watchdog_health
+from watchdog_liveness import validate_probe as validate_liveness_probe
 from capability_router import validate_registry, validate_request, route as route_backend
 from cost_router import validate_policy as validate_cost_policy, validate_context as validate_cost_context, route as route_cost
 from recovery_recipes import validate_catalog, validate_diagnosis, select as select_recovery_recipe
@@ -79,6 +80,11 @@ from managed_executor_handoff import validate_handoff as validate_managed_handof
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
     'SKILL.md', 'VERSION', 'manifest.json', 'agents/openai.yaml',
+    'scripts/live_target.py', 'tests/test_live_target.py', 'references/live-target-resolution.md',
+    'scripts/git_object_integrity.py', 'tests/test_git_object_integrity.py',
+    'scripts/watchdog_liveness.py', 'scripts/fleet_watchdog_runtime.py', 'scripts/git_document_store.py',
+    'templates/watchdog-liveness-probe.json', 'tests/test_coordination_transport.py',
+    'tests/test_watchdog_liveness.py', 'tests/test_fleet_watchdog_runtime.py', 'references/watchdog-liveness-runtime.md',
     'scripts/managed_executor_runtime.py', 'tests/test_managed_executor_runtime.py',
     'references/managed-executor-runtime.md',
     'references/runtime-routing-and-subagents.md', 'references/task-lifecycle.md',
@@ -237,6 +243,7 @@ def validate():
     missing = [name for name in REQUIRED if not (ROOT / name).is_file()]
     if missing:
         raise ContractError('missing package files: ' + ', '.join(missing))
+    validate_liveness_probe(json.loads((ROOT / 'templates/watchdog-liveness-probe.json').read_text()))
     version = (ROOT / 'VERSION').read_text().strip()
     semver(version)
     manifest = json.loads((ROOT / 'manifest.json').read_text())
