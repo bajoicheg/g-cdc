@@ -1,17 +1,19 @@
 # CDC roadmap
 
-## CDC 2.10.3 — Continuous execution recovery — ACTIVE
+## CDC 2.10.3 — Continuous execution recovery — RELEASED
 
 Owner-directed corrective priority (2026-09-28): retain stable 2.10.2 capabilities, reject milestone finalization while eligible work remains, bind lease completion to the real final-response decision, restore immutable prior evidence, and verify the installed skill against the released package. Current 2.11 progress remains preserved at `archive/2.11.2-before-continuity-recovery` (5ff81bc) and existing source/review branches. No 2.11 stage is considered released; staged release gates still apply after recovery. Schedulers remain explicitly paused.
 
 Acceptance: real acquire→finalization regressions RED→GREEN; candidate/manifest/source lock/version/tree agree; full bootstrap/package/three-consumer validation; independent review; installed package readback. See `docs/continuity-recovery-2026-09-28.md`.
+
+Evidence: 525/525 package tests, 17/17 independent bootstrap tests, package validator PASS, 3/3 archived consumer snapshots, spec and code-quality review PASS, GitHub Actions run `36383383699` GREEN for `fd11ff5`, and installed runtime-byte readback against package tree `a1fdca8c4a00409069b790e6dd13944e64fbf9bd` (host metadata normalization recorded in release evidence). The recovery release changes no live consumer deployment or scheduler state. Release ref: `refs/heads/release/v2.10.3`; integration: PR #66.
 
 ## CDC 2.11 — Managed Multi-Executor & Watchdog Resilience — AUTHORIZED / BACKLOG AFTER RECOVERY
 
 Owner authorization on 2026-09-27 starts a new CDC line under independently released CDC 2.10.2. The line extends 2.10.2 safe parallelism from isolated implementation workers to a managed multi-executor control plane and makes watchdog continuity a release-grade invariant.
 
 CDC 2.11 preserves staged bootstrap/release discipline:
-- develop 2.11.0 under independently released 2.10.2;
+- resume 2.11.0 under independently released corrective 2.10.3 (initial work used 2.10.2);
 - develop 2.11.1 only after 2.11.0 is independently GREEN and released;
 - develop 2.11.2 only after 2.11.1 is independently GREEN and released.
 

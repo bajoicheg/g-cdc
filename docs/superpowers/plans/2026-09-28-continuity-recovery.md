@@ -33,16 +33,16 @@ Files: scripts/execution_continuity.py, scripts/execution_lease_v2.py, tests/tes
 
 ### Task 2: Recover release truth and active guidance
 Files: VERSION, package manifest/SKILL.md, release/source.lock.json, compatibility/matrix.json, README.md, AGENTS.md, docs/roadmap.md, docs/continuity-recovery-2026-09-28.md.
-- [ ] Restore stable metadata/history; mark 2.11 incomplete/backlog with exact preserved refs.
-- [ ] Put the continuation loop and active-version check at the front of SKILL.md; remove contradictory milestone-terminal wording.
-- [ ] Add executable discovery/release binding checks; verify package tree after source freeze.
-- [ ] Validate bootstrap, package, fault/behavioral cases and all three consumer snapshots.
+- [x] Restore stable metadata/history; mark 2.11 incomplete/backlog with exact preserved refs.
+- [x] Put the continuation loop and active-version check at the front of SKILL.md; remove contradictory milestone-terminal wording.
+- [x] Add executable discovery/release binding checks; verify package tree after source freeze.
+- [x] Validate bootstrap, package, fault/behavioral cases and all three consumer snapshots.
 
 ### Task 3: Review, integrate and activate
-- [ ] Independent spec review then code-quality review; fix material findings with regression tests.
-- [ ] Push bounded candidate, open PR for exact-SHA Actions validation, observe to terminal and merge only GREEN.
-- [ ] Publish immutable 2.10.3 release with actual evidence; update installed personal skill and verify byte identity after saving.
-- [ ] Leave scheduler state unchanged and record residual limits honestly.
+- [x] Independent spec review then code-quality review; fix material findings with regression tests.
+- [x] Push bounded candidate and open PR #66; exact-SHA Actions 36383383699 observed GREEN. Integration must use the final metadata head after its Actions result is GREEN.
+- [x] Prepare actual release evidence and install 2.10.3; post-save runtime bytes verified, host metadata normalization documented. Publication completion is the merged PR #66 and release/v2.10.3 ref, not this checklist.
+- [x] Leave scheduler state unchanged and record residual limits honestly.
 
 ## Rulings and evidence
 - The request authorizes inline recovery, local worktree, Git integration and updating the user's CDC skill; no new product scope or scheduler authority is inferred.
@@ -50,3 +50,5 @@ Files: VERSION, package manifest/SKILL.md, release/source.lock.json, compatibili
 - Native prior chat transcripts are unavailable; historical start time and a causal Superpowers attribution cannot be established from summaries.
 
 Task 1 complete: real-runtime RED (6 tests, 7 failing assertions/subtests) → GREEN; package suite 522/522. Source freeze 9ea87e08ed363634c94e70d33367ef00df3531f0, package ce9bfb5383fd13e3a104e19fd30205339fd553f1.
+
+Final source freeze supersedes the intermediate Task 1 snapshot: remote source 652148a698bf591fe032a59437dc27830ad1f80a, package a1fdca8c4a00409069b790e6dd13944e64fbf9bd, reviewed/CI head fd11ff587eca1ea4109244ed8359e40aadbfa082. Final spec and quality PASS; 525/525 package and 17/17 bootstrap; 3/3 archived compatibility snapshots. Installed runtime files verified after save; full installed suite 525/525. See release/evidence-2.10.3.json. Final merge/release identity is resolved from PR #66 and the immutable release ref to avoid self-referential commit hashes.

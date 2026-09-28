@@ -46,3 +46,13 @@ No blanket historical claim that all old stalls had the same cause. No automatic
 The first spec review rejected c6d0a66: a progress reference could still be relabeled as scope completion, a free-form blocker could finalize, and waiting could discard its next action. Three additional RED tests reproduced those paths. The correction binds real finalization to existing Terminal-State v2 and fresh blocker proof, rather than adding another text classifier. No historical or remote evidence is synthesized by the validators.
 
 A separate fresh agent completed an isolated three-step local project using the candidate skill: both requested functions, 4/4 tests, checkpoint and local commit 48cf3c69be34d1b66d7faffc24e4b735349370ee, with a clean worktree. This is bounded smoke evidence, not a guarantee for arbitrary long sessions.
+
+## Release and installation evidence
+
+- Frozen source: `652148a698bf591fe032a59437dc27830ad1f80a`; package tree: `a1fdca8c4a00409069b790e6dd13944e64fbf9bd`.
+- Independent final spec review: PASS. Final code-quality review at `fd11ff587eca1ea4109244ed8359e40aadbfa082`: PASS, including 16 additional malformed/mismatched finalizer cases.
+- Full package 525/525, bootstrap 17/17, package validator 262 files PASS, and three archived consumer compatibility snapshots PASS. GitHub Actions run [36383383699](https://github.com/bajoicheg/g-cdc/actions/runs/36383383699) completed successfully on that reviewed head.
+- Installed personal skill updated from 2.3.5 to 2.10.3 and read back after saving. All instructions, runtime code, references and tests match the frozen source byte-for-byte. The host reserializes interface YAML (parsed values unchanged), substitutes its icon, and normalizes 28 executable modes; the saved tree is `c1c69b27264a889ce74787b07619cb0a5f354f0e`, not falsely claimed to equal the canonical Git tree. The installed validator and full 525-test suite pass using Python entry points.
+- Publication: [PR #66](https://github.com/bajoicheg/g-cdc/pull/66), release ref `refs/heads/release/v2.10.3`. Evidence-only finalization preserves the frozen package; its exact-head Actions check must pass before merging. The release ref identifies the final integrated evidence snapshot.
+
+The recovery scope ends after that integration and installed readback. Preserved 2.11 work remains backlog; it does not turn this corrective request into an automatic restart of all 2.11 development. Scheduled tasks remain owner-paused.

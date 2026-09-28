@@ -43,7 +43,7 @@ jobs:
       - name: Full bootstrap binding
         run: python -B bootstrap/validate_release.py --mode full
 
-      - name: Validate three live consumer snapshots
+      - name: Validate three archived consumer snapshots
         shell: bash
         run: |
           set -euo pipefail
