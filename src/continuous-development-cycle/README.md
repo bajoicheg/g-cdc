@@ -209,3 +209,21 @@ Read `references/specification-review-and-finishing.md`.
 - Parallel controls are evidence/planning gates only and never grant launch, product-write, merge, release or scope authority.
 
 Read `references/worktree-parallelism-and-integration.md`.
+
+## v2.11.0 managed executor pool
+
+- Parent-controlled, bounded executor pools provide Work-style delegation without transferring shared-branch, merge, release or scope authority.
+- Durable CAS is the launch boundary: eligible in-memory queue state never starts a worker until the exact reservation wins the shared production store.
+- Worker launch is capability-gated; unsupported runtimes execute the same plan through deterministic sequential fallback and never fabricate subagents.
+- Writers use exact-base isolated branches/worktrees with portable write claims; one integrator owns shared-branch integration.
+- Attempts/results are durable and preserve retry lineage; duplicate active launches fail closed.
+- Content-addressed result handoff preserves completed worker work when direct push is unavailable; the integrator publishes and revalidates it without blind rerun.
+- Independent work survives an unrelated worker failure.
+- Required runnable/running work and every unintegrated successful result keep the parent non-terminal.
+
+Read `references/managed-executor-pool.md`.
+
+
+### Managed-pool final safety boundary
+
+CDC 2.11.0 uses one authoritative coordination ref per pool and a one-shot durable launch CAS. Queue reservation alone cannot start a worker. Writer scope covers every path touched across the introduced history, required tasks cannot depend on omittable optional work, and remote publication is bound to a trusted immutable remote identity rather than a mutable remote name.
