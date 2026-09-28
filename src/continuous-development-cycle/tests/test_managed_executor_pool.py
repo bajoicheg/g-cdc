@@ -301,6 +301,20 @@ class T(unittest.TestCase):
   self.assertEqual(s["runtime_consumed_seconds"],100)
   self.assertEqual(s["cost_consumed_units"],10)
 
+ def test_exhausted_runtime_or_cost_cannot_retry_dispatch_or_launch(self):
+  for runtime,cost in ((300,0),(0,30)):
+   with self.subTest(runtime=runtime,cost=cost):
+    p=plan();s=m.initial_state(p,parallel_capable=True)
+    s=self._queue(p,s,"a","a1");s=self._run(p,s,"a","a1")
+    s=m.fail_attempt(p,s,"a","a1",terminal_status="failed",reservation_token=self._task_state(s,"a")["reservation_token"],
+                    expected_revision=s["revision"],runtime_seconds=runtime,cost_units=cost)
+    with self.assertRaisesRegex(ValueError,"budget exhausted"):
+     m.retry_task(p,s,"a",expected_revision=s["revision"])
+    # A persisted legacy retry must also fail admission, not depend on the new retry helper.
+    self._task_state(s,"a")["status"]="planned"
+    self.assertNotIn("a",m.dispatch(p,s)["task_ids"])
+    with self.assertRaises(ValueError):self._queue(p,s,"a","a2")
+
  def test_successful_retry_enforces_cumulative_task_budget(self):
   p=plan(self.base);s=m.initial_state(p,parallel_capable=True);s=self._queue(p,s,"a","a1");s=self._run(p,s,"a","a1")
   token=self._task_state(s,"a")["reservation_token"]

@@ -438,6 +438,8 @@ def dispatch(plan, state):
             break
         task = pmap[task_id]
         remaining_runtime, remaining_cost = _remaining_task_budget(task, smap[task_id])
+        if remaining_runtime <= 0 or remaining_cost <= 0:
+            continue
         if remaining_runtime > runtime_left or remaining_cost > cost_left:
             continue
         if task["role"] == "writer":
@@ -504,6 +506,8 @@ def mark_running(plan, state, task_id, attempt_id, *, expected_revision, reserva
     if (current is None or current["status"] != "queued" or current["active_attempt_id"] != attempt_id
             or current["reservation_token"] != reservation_token):
         raise ValueError("running transition requires matching queued reservation")
+    if min(_remaining_task_budget(_task_map(plan)[task_id], current)) <= 0:
+        raise ValueError("task budget exhausted before launch")
     current["status"] = "running"
     return validate_state(plan, _advance_revision(result))
 
@@ -713,6 +717,8 @@ def retry_task(plan, state, task_id, *, expected_revision):
     current = _state_map(result).get(task_id)
     if current is None or current["status"] not in RECOVERABLE:
         raise ValueError("retry requires failed/cancelled/stale task")
+    if min(_remaining_task_budget(_task_map(plan)[task_id], current)) <= 0:
+        raise ValueError("task budget exhausted; explicit authorized replanning required")
     current["status"] = "planned"
     return validate_state(plan, _advance_revision(result))
 

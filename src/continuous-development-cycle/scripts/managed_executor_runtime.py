@@ -154,7 +154,7 @@ class LocalCommandBackend:
         finally:
             os.close(fd)
         with (directory / "supervisor.log").open("ab") as log:
-            process = subprocess.Popen([sys.executable, str(Path(__file__).resolve()),
+            process = subprocess.Popen([sys.executable, "-B", str(Path(__file__).resolve()),
                                         "--supervise", str(directory)], stdin=subprocess.DEVNULL,
                                        stdout=log, stderr=log, start_new_session=True, close_fds=True)
         # Reap the supervisor without tying its lifetime to the controller.

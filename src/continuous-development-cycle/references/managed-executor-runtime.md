@@ -95,7 +95,7 @@ Timeout covers the local supervised preparation/execution interval. The receipt
 retains full observed `elapsed_seconds`, including termination overhead.
 `runtime_seconds` is capped at the admitted remaining task budget for the pool's
 bounded ledger; a timed-out attempt therefore consumes its entire remaining
-runtime allowance and is not silently eligible for another run. Local execution
+runtime allowance and is not eligible for another run. Exhausted runtime or cost rejects retry, dispatch and even an older queued launch before any backend effect; unrelated tasks retain eligibility. Local execution
 has no inferred provider charge; callers must supply actual cost accounting for
 metered host execution.
 

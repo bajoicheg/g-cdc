@@ -229,6 +229,30 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
         self.assertGreater(final["elapsed_seconds"], .4)
         self.assertEqual(task["runtime_seconds"], .4)
 
+    def test_exhausted_attempt_cannot_launch_effect_even_from_legacy_queue(self):
+        self.plan["tasks"][0].update(role="read_only", branch=None, worktree=None,
+                                      write_paths=[], max_runtime_seconds=.1)
+        self.launch("a", [sys.executable, "-c", "import time; time.sleep(1)"])
+        self.assertEqual(self.wait("a")["status"], "timed_out")
+        revision, state = self.store.read()
+        with self.assertRaisesRegex(ValueError, "budget exhausted"):
+            pool.retry_task(self.plan, state, "a", expected_revision=state["revision"])
+        # A queue persisted by older code must not bypass launch admission.
+        task = state["tasks"][0]
+        task.update(status="queued", active_attempt_id="a2", reservation_token="legacy-a2")
+        task["attempt_ids"].append("a2")
+        state["revision"] += 1
+        revision = self.store.compare_and_swap(revision, state)
+        marker = self.root / "forbidden-effect"
+        with self.assertRaisesRegex(ValueError, "budget exhausted"):
+            self.rt.start_queued(revision, "a", "a2", reservation_token="legacy-a2",
+                                 argv=[sys.executable, "-c", "from pathlib import Path; Path(" + repr(str(marker)) + ").touch()"])
+        self.assertFalse(marker.exists())
+        self.assertIsNone(self.rt.journal.load_request(self.rt._identity("a", "a2")))
+        self.assertIn("b", pool.dispatch(self.plan, self.store.read()[1])["task_ids"])
+        self.launch("b", self.worker("b", .05))
+        self.assertEqual(self.wait("b")["status"], "succeeded")
+
     def test_supervisor_crash_is_unknown_while_orphan_can_still_write(self):
         marker = self.root / "orphan-writing"
         code = "import os,pathlib,time; pathlib.Path(" + repr(str(self.root / "child-pid")) + ").write_text(str(os.getpid())); p=pathlib.Path(" + repr(str(marker)) + ");\nwhile True: p.write_text(str(time.monotonic())); time.sleep(.01)"

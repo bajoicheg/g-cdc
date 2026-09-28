@@ -1,6 +1,7 @@
 """Installation witnesses must come from actual files, not cached version labels."""
 import importlib
 import json
+import py_compile
 import shutil
 import subprocess
 import sys
@@ -92,13 +93,30 @@ class ActivePackageTests(unittest.TestCase):
         (self.saved / 'scripts/run.py').symlink_to(self.source / 'scripts/run.py')
         self.assertFalse(self.verify(host_normalization=True)['matched'])
 
-    def test_generated_python_cache_is_reported_and_not_source_content(self):
+    def test_unpinned_python_cache_is_rejected(self):
         p = self.saved / 'scripts/__pycache__/run.cpython-311.pyc'
         p.parent.mkdir()
         p.write_bytes(b'generated cache')
         result = self.verify()
-        self.assertTrue(result['matched'], result)
-        self.assertEqual(result['ignored_generated_files'], ['scripts/__pycache__/run.cpython-311.pyc'])
+        self.assertFalse(result['matched'], result)
+        self.assertIn('unexpected:scripts/__pycache__/run.cpython-311.pyc', result['errors'])
+
+    def test_executable_unchecked_hash_cache_cannot_bypass_source_verification(self):
+        target = self.saved / 'scripts/run.py'
+        unpinned = Path(self.tmp.name) / 'unpinned.py'
+        unpinned.write_text('print("unpinned runtime")\n')
+        cache = Path(importlib.util.cache_from_source(str(target)))
+        cache.parent.mkdir(exist_ok=True)
+        py_compile.compile(str(unpinned), cfile=str(cache), dfile=str(target),
+                           invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH,
+                           doraise=True)
+        observed = subprocess.check_output([sys.executable, '-B', '-c', 'import run'],
+                                          cwd=target.parent, text=True)
+        self.assertEqual(observed.strip(), 'unpinned runtime')
+        for host in (False, True):
+            with self.subTest(host_normalization=host):
+                result = self.verify(host_normalization=host)
+                self.assertFalse(result['matched'], result)
 
 
 if __name__ == '__main__':

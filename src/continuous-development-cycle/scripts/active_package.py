@@ -33,9 +33,6 @@ def _inventory(root):
             continue
         if not stat.S_ISREG(path.stat().st_mode):
             raise ValueError('nonregular package file: ' + rel.as_posix())
-        if '__pycache__' in rel.parts and path.suffix == '.pyc':
-            ignored.append(rel.as_posix())
-            continue
         data = path.read_bytes()
         files[rel.as_posix()] = {
             'path': rel.as_posix(), 'mode': '100755' if path.stat().st_mode & 0o111 else '100644',
