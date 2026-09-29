@@ -179,6 +179,19 @@ class WatchdogSurvivabilityRuntimeTests(unittest.TestCase):
                 self.assertEqual(result["outcome"], "no_effect")
                 self.assertEqual(backend.effects, [])
 
+    def test_reconcile_registered_processes_every_desired_watchdog(self):
+        paused = desired(
+            binding={"project_id": "beta", "source_ref": "refs/heads/main", "role": "project-watchdog"},
+            canonical_object_id=None,
+            owner_stop_evidence="owner:pause-beta",
+        )
+        self.runtime.register(paused)
+        result = self.runtime.reconcile_registered()
+        self.assertEqual(result["registered_count"], 2)
+        self.assertEqual(len(result["results"]), 2)
+        self.assertEqual({item["binding"]["project_id"] for item in result["results"]}, {"alpha", "beta"})
+        self.assertFalse(result["authorizes_scheduler_mutation"])
+
     def test_stale_registered_generation_cannot_overwrite_newer_runtime_generation(self):
         self.runtime.reconcile(desired()["binding"])
         with self.assertRaisesRegex(ValueError, "generation"):
