@@ -64,7 +64,7 @@ class GitLaneResultVerifierTests(unittest.TestCase):
     def test_non_descendant_result_is_not_accepted_as_ancestry(self):
         git(self.repo, "checkout", "-qb", "other", self.base)
         other = self.commit(Path("src/a/other.py"), "x\n", "other")
-        git(self.repo, "checkout", "-q", "master")
+        git(self.repo, "checkout", "-q", self.primary)
         master = self.commit(Path("src/a/master.py"), "m\n", "master")
         self.assertTrue(self.verifier(self.claim, master)["base_ancestor"])
         unrelated = LaneClaim(
