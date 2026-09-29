@@ -97,23 +97,23 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
                 self.assertFalse(lanes.project_can_finalize(**kwargs))
 
     def test_durable_coordinator_admits_disjoint_foreground_and_watchdog_lanes(self):
-        coordinator = coordinator()
-        self.assertTrue(coordinator.admit(
+        coord = coordinator()
+        self.assertTrue(coord.admit(
             claim("fg", {"src/ui"}, lanes.LaneKind.FOREGROUND), generation=1)["admitted"])
-        self.assertTrue(coordinator.admit(
+        self.assertTrue(coord.admit(
             claim("wd", {"src/backend"}, lanes.LaneKind.WATCHDOG), generation=1)["admitted"])
-        self.assertEqual(len(coordinator.snapshot()["lanes"]), 2)
+        self.assertEqual(len(coord.snapshot()["lanes"]), 2)
 
     def test_coordinator_blocks_overlap_before_mutation_and_release_is_identity_bound(self):
-        coordinator = coordinator()
-        coordinator.admit(claim("a", {"src"}), generation=1)
-        blocked = coordinator.admit(claim("b", {"src/b"}), generation=1)
+        coord = coordinator()
+        coord.admit(claim("a", {"src"}), generation=1)
+        blocked = coord.admit(claim("b", {"src/b"}), generation=1)
         self.assertFalse(blocked["admitted"])
         self.assertEqual(blocked["reason"], "write_claim_conflict")
         with self.assertRaises(ValueError):
-            coordinator.release("a", invocation_id="other", generation=1)
-        coordinator.release("a", invocation_id="a", generation=1)
-        self.assertEqual(coordinator.snapshot()["lanes"]["a"]["state"], "released")
+            coord.release("a", invocation_id="other", generation=1)
+        coord.release("a", invocation_id="a", generation=1)
+        self.assertEqual(coord.snapshot()["lanes"]["a"]["state"], "released")
 
     def test_handoff_requires_checkpoint_and_independent_quiescence(self):
         store = MemoryStore()
@@ -128,20 +128,20 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
         self.assertEqual(coordinator.snapshot()["lanes"]["a"]["state"], "handoff_ready")
 
     def test_successful_writer_result_survives_lane_release_until_integrated(self):
-        coordinator = coordinator(result_verifier=verifier())
-        coordinator.admit(claim("a", {"src/a"}), generation=1)
-        coordinator.record_result(
+        coord = coordinator(result_verifier=verifier())
+        coord.admit(claim("a", {"src/a"}), generation=1)
+        coord.record_result(
             "a", invocation_id="a", generation=1, result_commit="b" * 40,
             evidence_refs=["test:green"])
-        coordinator.release("a", invocation_id="a", generation=1)
-        self.assertEqual(len(coordinator.snapshot()["integration_queue"]), 1)
-        self.assertFalse(coordinator.can_finalize(runnable_task_count=0, unknown_effect_count=0))
-        coordinator.admit(claim("integrator", (), lanes.LaneKind.INTEGRATOR), generation=1)
-        coordinator.mark_integrated(
+        coord.release("a", invocation_id="a", generation=1)
+        self.assertEqual(len(coord.snapshot()["integration_queue"]), 1)
+        self.assertFalse(coord.can_finalize(runnable_task_count=0, unknown_effect_count=0))
+        coord.admit(claim("integrator", (), lanes.LaneKind.INTEGRATOR), generation=1)
+        coord.mark_integrated(
             "a", result_commit="b" * 40, integrator_lane_id="integrator",
             integrator_invocation_id="integrator", integrator_generation=1)
-        coordinator.release("integrator", invocation_id="integrator", generation=1)
-        self.assertTrue(coordinator.can_finalize(runnable_task_count=0, unknown_effect_count=0))
+        coord.release("integrator", invocation_id="integrator", generation=1)
+        self.assertTrue(coord.can_finalize(runnable_task_count=0, unknown_effect_count=0))
 
     def test_result_rejects_stale_base_unverified_ancestry_or_path_escape(self):
         for check in (
@@ -149,10 +149,10 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
             verifier(SHA, False, {"src/a/x.py"}),
             verifier(SHA, True, {"src/b/x.py"}),
         ):
-            coordinator = coordinator(result_verifier=check)
-            coordinator.admit(claim("a", {"src/a"}), generation=1)
+            coord = coordinator(result_verifier=check)
+            coord.admit(claim("a", {"src/a"}), generation=1)
             with self.assertRaises(ValueError):
-                coordinator.record_result(
+                coord.record_result(
                     "a", invocation_id="a", generation=1, result_commit="b" * 40,
                     evidence_refs=["test:green"])
 
