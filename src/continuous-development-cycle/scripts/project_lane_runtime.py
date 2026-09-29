@@ -112,6 +112,92 @@ def _validate_migration_evidence(evidence):
     return evidence
 
 
+def _text_or_none(value):
+    return value is None or (isinstance(value, str) and bool(value.strip()))
+
+
+def _validate_lane_record(lane_id, value):
+    expected = {
+        "claim", "generation", "state", "last_activity_ref", "last_activity_evidence",
+        "pending_effects", "checkpoint_ref", "quiescence_evidence",
+    }
+    try:
+        if not isinstance(lane_id, str) or not lane_id.strip():
+            raise ValueError
+        if not isinstance(value, dict) or set(value) != expected:
+            raise ValueError
+        claim = _claim_from(value["claim"])
+        validate_claim(claim)
+        if _claim_dict(claim) != value["claim"] or claim.lane_id != lane_id:
+            raise ValueError
+        if type(value["generation"]) is not int or value["generation"] < 1:
+            raise ValueError
+        if value["state"] not in {"running", "handoff_ready", "released"}:
+            raise ValueError
+        if type(value["pending_effects"]) is not bool:
+            raise ValueError
+        if not _text_or_none(value["last_activity_ref"]) or not _text_or_none(value["checkpoint_ref"]):
+            raise ValueError
+        activity = value["last_activity_evidence"]
+        if value["last_activity_ref"] is None:
+            if activity is not None:
+                raise ValueError
+        elif (not isinstance(activity, dict) or activity.get("observed") is not True
+              or activity.get("activity_ref") != value["last_activity_ref"]
+              or not isinstance(activity.get("evidence_ref"), str)
+              or not activity["evidence_ref"].strip()):
+            raise ValueError
+        quiescence = value["quiescence_evidence"]
+        if quiescence is not None and (
+                not isinstance(quiescence, dict) or quiescence.get("quiescent") is not True
+                or not isinstance(quiescence.get("evidence_ref"), str)
+                or not quiescence["evidence_ref"].strip()):
+            raise ValueError
+        if value["state"] == "handoff_ready" and (
+                value["checkpoint_ref"] is None or quiescence is None):
+            raise ValueError
+        if value["state"] == "released" and value["checkpoint_ref"] is None:
+            raise ValueError
+    except (KeyError, TypeError, ValueError):
+        raise ValueError("lane registry lane invalid") from None
+    return value
+
+
+def _validate_start_operation(lane_id, operation, lane):
+    expected = {
+        "operation_id", "status", "lane_id", "invocation_id", "generation",
+        "executor_id", "source_head", "branch", "worktree", "evidence_ref",
+    }
+    try:
+        if not isinstance(operation, dict) or set(operation) != expected:
+            raise ValueError
+        claim = lane["claim"]
+        if (operation["lane_id"] != lane_id
+                or operation["invocation_id"] != claim["invocation_id"]
+                or operation["generation"] != lane["generation"]
+                or operation["executor_id"] != claim["executor_id"]
+                or operation["source_head"] != claim["source_head"]
+                or operation["branch"] != claim["branch"]
+                or operation["worktree"] != claim["worktree"]):
+            raise ValueError
+        if not isinstance(operation["operation_id"], str) or not operation["operation_id"].strip():
+            raise ValueError
+        active = {"claimed", "starting", "running", "unknown"}
+        terminal = {"succeeded", "failed", "cancelled", "timed_out"}
+        if operation["status"] not in active | terminal:
+            raise ValueError
+        if operation["status"] == "claimed":
+            if operation["evidence_ref"] is not None:
+                raise ValueError
+        elif not isinstance(operation["evidence_ref"], str) or not operation["evidence_ref"].strip():
+            raise ValueError
+        if lane["pending_effects"] is not (operation["status"] in active):
+            raise ValueError
+    except (KeyError, TypeError, ValueError):
+        raise ValueError("lane registry start operation invalid") from None
+    return operation
+
+
 class ProjectLaneCoordinator:
     def __init__(self, store, config, *, result_verifier=None, quiescence_verifier=None,
                  integration_verifier=None, activity_verifier=None, migration_verifier=None):
@@ -173,6 +259,12 @@ class ProjectLaneCoordinator:
                 or not isinstance(state["integration_intents"], dict)
                 or not isinstance(state["integrated_results"], list)):
             raise ValueError("project lane registry collections invalid")
+        for lane_id, lane in state["lanes"].items():
+            _validate_lane_record(lane_id, lane)
+        for lane_id, operation in state["start_operations"].items():
+            if lane_id not in state["lanes"]:
+                raise ValueError("lane registry start operation invalid")
+            _validate_start_operation(lane_id, operation, state["lanes"][lane_id])
         return revision, state
 
     def _change(self, transform):
