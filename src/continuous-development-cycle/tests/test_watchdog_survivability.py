@@ -75,6 +75,13 @@ class WatchdogSurvivabilityTests(unittest.TestCase):
     def setUp(self):
         self.assertIsNotNone(survivability, "watchdog survivability contract is not implemented")
 
+    def test_missing_canonical_waits_for_running_noncanonical_materialization(self):
+        running_old = obj("wd-old", generation=6, execution_state="running")
+        result = survivability.assess(desired(), inventory([running_old]), now=NOW)
+        self.assertEqual((result["overall"], result["action"]), ("DUPLICATE", "OBSERVE"))
+        self.assertFalse(result["recovery_eligible"])
+        self.assertEqual(result["stale_object_ids"], ["wd-old"])
+
     def test_missing_required_watchdog_requests_recreation_with_new_generation(self):
         result = survivability.assess(desired(canonical_object_id=None), inventory([]), now=NOW)
         self.assertEqual(result["overall"], "MISSING")
