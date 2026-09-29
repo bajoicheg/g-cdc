@@ -69,6 +69,40 @@ class ProjectLaneRegistryBindingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             config(canonical_repository="not-a-repository")
 
+    def test_lane_admission_requires_verified_legacy_migration_gate(self):
+        from project_lanes import LaneClaim, LaneKind
+        store = MemoryStore()
+        coordinator = runtime.ProjectLaneCoordinator(store, config())
+        claim = LaneClaim(
+            "lane", "inv", LaneKind.WORKER, "a" * 40, "/tmp/lane", "cdc/lane",
+            write_paths=frozenset({"src/a"}), executor_id="e", role="writer")
+        with self.assertRaisesRegex(ValueError, "safe legacy boundary"):
+            coordinator.admit(claim, generation=1)
+
+    def test_legacy_gate_requires_independent_safe_evidence_and_is_immutable(self):
+        store = MemoryStore()
+        unsafe = runtime.ProjectLaneCoordinator(
+            store, config(), migration_verifier=lambda observation: {
+                "safe": False, "legacy_lease": "released", "external_guard": "none",
+                "legacy_mode_disabled": True, "evidence_ref": "legacy:unsafe"})
+        with self.assertRaisesRegex(ValueError, "not independently proven"):
+            unsafe.establish_migration_gate({"legacy": "observed"})
+
+        store = MemoryStore()
+        safe_evidence = {
+            "safe": True, "legacy_lease": "released", "external_guard": "reconciled",
+            "legacy_mode_disabled": True, "evidence_ref": "legacy:safe"}
+        coordinator = runtime.ProjectLaneCoordinator(
+            store, config(), migration_verifier=lambda observation: dict(safe_evidence))
+        self.assertEqual(coordinator.establish_migration_gate({"legacy": "observed"}), safe_evidence)
+        self.assertEqual(coordinator.establish_migration_gate({"legacy": "observed"}), safe_evidence)
+
+        different = runtime.ProjectLaneCoordinator(
+            store, config(), migration_verifier=lambda observation: {
+                **safe_evidence, "evidence_ref": "legacy:different"})
+        with self.assertRaisesRegex(ValueError, "immutable"):
+            different.establish_migration_gate({"legacy": "new"})
+
     def test_configuration_digest_is_deterministic(self):
         left = config()
         right = config()
