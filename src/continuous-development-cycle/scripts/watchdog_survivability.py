@@ -225,15 +225,30 @@ def assess(desired, inventory, *, now=None, max_age_seconds=120):
     if canonical["execution_state"] == "unknown":
         return _result(desired, "EXECUTION_BROKEN", "OBSERVE", canonical_object_id=canonical["object_id"],
                        reasons=["watchdog execution outcome is unknown"])
-    if canonical["generation"] != desired["generation"] or canonical["schedule"] != desired["schedule"] or canonical["template_digest"] != desired["template_digest"]:
+    config_drift = (canonical["generation"] != desired["generation"]
+                    or canonical["schedule"] != desired["schedule"]
+                    or canonical["template_digest"] != desired["template_digest"])
+    if canonical["execution_state"] == "running":
+        if not canonical["enabled"]:
+            return _result(desired, "DISABLED_DRIFT", "ENABLE", eligible=True,
+                           canonical_object_id=canonical["object_id"],
+                           reasons=["active watchdog schedule is disabled; enable without a second run"])
+        if config_drift:
+            return _result(desired, "CONFIG_DRIFT", "OBSERVE",
+                           canonical_object_id=canonical["object_id"],
+                           reasons=["active watchdog must become quiescent before destructive configuration replacement"])
+        if canonical["consecutive_failures"] >= policy["flap_threshold"]:
+            return _result(desired, "FLAPPING", "OBSERVE",
+                           canonical_object_id=canonical["object_id"],
+                           reasons=["active watchdog is not recreated until the running invocation is quiescent"])
+        return _result(desired, "HEALTHY", "NONE", canonical_object_id=canonical["object_id"],
+                       reasons=["watchdog invocation is already running; duplicate wake suppressed"])
+    if config_drift:
         return _result(desired, "CONFIG_DRIFT", "RECREATE", eligible=True, next_generation=desired["generation"] + 1,
                        canonical_object_id=canonical["object_id"], reasons=["canonical watchdog configuration disagrees with desired state"])
     if canonical["consecutive_failures"] >= policy["flap_threshold"]:
         return _result(desired, "FLAPPING", "RECREATE", eligible=True, next_generation=desired["generation"] + 1,
                        canonical_object_id=canonical["object_id"], reasons=["watchdog reached configured failure threshold"])
-    if canonical["execution_state"] == "running":
-        return _result(desired, "HEALTHY", "NONE", canonical_object_id=canonical["object_id"],
-                       reasons=["watchdog invocation is already running; duplicate wake suppressed"])
     if not canonical["enabled"]:
         return _result(desired, "DISABLED_DRIFT", "ENABLE", eligible=True,
                        canonical_object_id=canonical["object_id"], reasons=["required watchdog is disabled"])
