@@ -25,6 +25,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Validate repository code and test placement
+        run: python -B bootstrap/repository_layout.py
+
       - name: Independent bootstrap before candidate imports
         run: |
           python -B bootstrap/validate_release.py --mode bootstrap
