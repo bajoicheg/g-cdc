@@ -1,0 +1,170 @@
+import importlib.util
+from pathlib import Path
+import sys
+import unittest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+if importlib.util.find_spec("watchdog_survivability"):
+    import watchdog_survivability as survivability
+else:
+    survivability = None
+
+NOW = "2026-09-29T12:30:00Z"
+SHA = "a" * 40
+DIGEST = "sha256:" + "b" * 64
+
+
+def desired(**patch):
+    value = {
+        "schema": "watchdog-desired-state/v1",
+        "binding": {"project_id": "alpha", "source_ref": "refs/heads/main", "role": "project-watchdog"},
+        "required": True,
+        "desired_state": "enabled",
+        "generation": 7,
+        "canonical_object_id": "wd-current",
+        "schedule": "RRULE:FREQ=HOURLY",
+        "template_digest": DIGEST,
+        "owner_stop_evidence": None,
+        "recovery_policy": {
+            "allowed": True,
+            "owner_authorization": "owner:cdc-2.11.2",
+            "overdue_after_seconds": 7200,
+            "flap_threshold": 3,
+        },
+    }
+    value.update(patch)
+    return value
+
+
+def obj(object_id="wd-current", **patch):
+    value = {
+        "object_id": object_id,
+        "generation": 7,
+        "enabled": True,
+        "schedule": "RRULE:FREQ=HOURLY",
+        "template_digest": DIGEST,
+        "last_run_at_utc": "2026-09-29T12:00:00Z",
+        "consecutive_failures": 0,
+        "execution_state": "idle",
+    }
+    value.update(patch)
+    return value
+
+
+def inventory(objects=None, **patch):
+    value = {
+        "schema": "watchdog-runtime-inventory/v1",
+        "binding": {"project_id": "alpha", "source_ref": "refs/heads/main", "role": "project-watchdog"},
+        "observed_at_utc": NOW,
+        "project": {"state": "runnable", "source_revision": SHA, "terminal_proof": None},
+        "safety": {
+            "owner": "released",
+            "guard": "released",
+            "external": "none",
+            "pause": "running",
+            "owner_pause_evidence": None,
+            "observed_at_utc": NOW,
+        },
+        "objects": [obj()] if objects is None else objects,
+    }
+    value.update(patch)
+    return value
+
+
+class WatchdogSurvivabilityTests(unittest.TestCase):
+    def setUp(self):
+        self.assertIsNotNone(survivability, "watchdog survivability contract is not implemented")
+
+    def test_missing_required_watchdog_requests_recreation_with_new_generation(self):
+        result = survivability.assess(desired(canonical_object_id=None), inventory([]), now=NOW)
+        self.assertEqual(result["overall"], "MISSING")
+        self.assertEqual(result["action"], "RECREATE")
+        self.assertEqual(result["next_generation"], 8)
+        self.assertTrue(result["recovery_eligible"])
+        self.assertFalse(result["authorizes_scheduler_mutation"])
+
+    def test_explicit_owner_stop_tombstone_never_self_heals(self):
+        result = survivability.assess(desired(owner_stop_evidence="owner-message:42"), inventory([]), now=NOW)
+        self.assertEqual(result["overall"], "OWNER_PAUSED")
+        self.assertEqual(result["action"], "NONE")
+        self.assertFalse(result["recovery_eligible"])
+
+    def test_fresh_project_terminal_proof_never_recreates_watchdog(self):
+        proof = {"project_id": "alpha", "source_ref": "refs/heads/main", "source_revision": SHA,
+                 "evidence_ref": "git:terminal-proof"}
+        inv = inventory([], project={"state": "terminal", "source_revision": SHA, "terminal_proof": proof})
+        result = survivability.assess(desired(canonical_object_id=None), inv, now=NOW)
+        self.assertEqual(result["overall"], "PROJECT_TERMINAL")
+        self.assertEqual(result["action"], "NONE")
+
+    def test_disabled_current_object_is_enabled_without_generation_change(self):
+        result = survivability.assess(desired(), inventory([obj(enabled=False)]), now=NOW)
+        self.assertEqual((result["overall"], result["action"], result["next_generation"]),
+                         ("DISABLED_DRIFT", "ENABLE", 7))
+
+    def test_configuration_drift_requires_recreation_and_fences_old_generation(self):
+        result = survivability.assess(desired(), inventory([obj(schedule="RRULE:FREQ=DAILY")]), now=NOW)
+        self.assertEqual((result["overall"], result["action"], result["next_generation"]),
+                         ("CONFIG_DRIFT", "RECREATE", 8))
+
+    def test_duplicate_or_stale_objects_are_quiesced_after_current_object_is_known(self):
+        stale = obj("wd-old", generation=6)
+        result = survivability.assess(desired(), inventory([obj(), stale]), now=NOW)
+        self.assertEqual((result["overall"], result["action"]), ("DUPLICATE", "QUIESCE_DUPLICATES"))
+        self.assertEqual(result["stale_object_ids"], ["wd-old"])
+
+    def test_unbound_matching_generation_can_be_adopted_without_scheduler_effect(self):
+        result = survivability.assess(desired(canonical_object_id=None), inventory([obj("wd-new")]), now=NOW)
+        self.assertEqual((result["overall"], result["action"]), ("CONFIG_DRIFT", "ADOPT"))
+        self.assertEqual(result["canonical_object_id"], "wd-new")
+        self.assertFalse(result["authorizes_scheduler_mutation"])
+
+    def test_old_generation_is_fenced_from_execution_even_if_it_wakes_late(self):
+        self.assertTrue(survivability.execution_is_current(desired(), obj()))
+        self.assertFalse(survivability.execution_is_current(desired(), obj("wd-old", generation=6)))
+        self.assertFalse(survivability.execution_is_current(desired(), obj("other")))
+
+    def test_overdue_object_is_kicked_before_replacement(self):
+        old = obj(last_run_at_utc="2026-09-29T09:00:00Z")
+        result = survivability.assess(desired(), inventory([old]), now=NOW)
+        self.assertEqual((result["overall"], result["action"]), ("OVERDUE", "RUN"))
+        self.assertEqual(result["next_generation"], 7)
+
+    def test_flapping_object_recreates_only_when_owner_authorized(self):
+        flapping = obj(consecutive_failures=3, execution_state="failed")
+        result = survivability.assess(desired(), inventory([flapping]), now=NOW)
+        self.assertEqual((result["overall"], result["action"], result["next_generation"]),
+                         ("FLAPPING", "RECREATE", 8))
+        denied_policy = dict(desired()["recovery_policy"], allowed=False)
+        denied = survivability.assess(desired(recovery_policy=denied_policy), inventory([flapping]), now=NOW)
+        self.assertFalse(denied["recovery_eligible"])
+
+    def test_safety_or_freshness_uncertainty_blocks_scheduler_recovery(self):
+        for inv in (
+            inventory(safety={**inventory()["safety"], "owner": "active"}),
+            inventory(safety={**inventory()["safety"], "guard": "active"}),
+            inventory(safety={**inventory()["safety"], "external": "running"}),
+            inventory(safety={**inventory()["safety"], "pause": "paused", "owner_pause_evidence": "owner:pause"}),
+            inventory(observed_at_utc="2026-09-29T12:00:00Z"),
+        ):
+            with self.subTest(inv=inv):
+                result = survivability.assess(desired(canonical_object_id=None), inv, now=NOW, max_age_seconds=120)
+                self.assertFalse(result["recovery_eligible"])
+                self.assertEqual(result["action"], "OBSERVE")
+
+    def test_unknown_execution_is_not_assumed_dead(self):
+        result = survivability.assess(desired(), inventory([obj(execution_state="unknown")]), now=NOW)
+        self.assertEqual((result["overall"], result["action"]), ("EXECUTION_BROKEN", "OBSERVE"))
+        self.assertFalse(result["recovery_eligible"])
+
+    def test_malformed_binding_or_duplicate_object_id_fails_closed(self):
+        bad = inventory([obj(), obj()])
+        with self.assertRaises(ValueError):
+            survivability.assess(desired(), bad, now=NOW)
+        mismatched = inventory([], binding={"project_id": "beta", "source_ref": "refs/heads/main", "role": "project-watchdog"})
+        with self.assertRaises(ValueError):
+            survivability.assess(desired(canonical_object_id=None), mismatched, now=NOW)
+
+
+if __name__ == "__main__":
+    unittest.main()
