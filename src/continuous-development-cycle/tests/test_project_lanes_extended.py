@@ -63,6 +63,22 @@ def verifier(observed_base=SHA, ancestor=True, touched=None):
     }
 
 
+def activity_verifier(lane, activity_ref):
+    return {"observed": True, "activity_ref": activity_ref,
+            "evidence_ref": "process:activity:" + activity_ref}
+
+
+def integration_verifier(item, integrator):
+    return {
+        "integrated": True,
+        "result_commit": item["result_commit"],
+        "observed_shared_head": "c" * 40,
+        "integrated_head": "d" * 40,
+        "force_push": False,
+        "evidence_ref": "git:conditional-integration",
+    }
+
+
 class CooperativeLaneExtendedTests(unittest.TestCase):
     def test_integrator_is_singleton_but_does_not_block_isolated_writer(self):
         integrator = claim("i", (), lanes.LaneKind.INTEGRATOR)
@@ -111,8 +127,8 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
         self.assertFalse(blocked["admitted"])
         self.assertEqual(blocked["reason"], "write_claim_conflict")
         with self.assertRaises(ValueError):
-            coord.release("a", invocation_id="other", generation=1)
-        coord.release("a", invocation_id="a", generation=1)
+            coord.release("a", invocation_id="other", generation=1, executor_id="a", checkpoint_ref="cp-a")
+        coord.release("a", invocation_id="a", generation=1, executor_id="a", checkpoint_ref="cp-a")
         self.assertEqual(coord.snapshot()["lanes"]["a"]["state"], "released")
 
     def test_handoff_requires_checkpoint_and_independent_quiescence(self):
@@ -120,27 +136,46 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
         coordinator = globals()["coordinator"](store)
         coordinator.admit(claim("a", {"src/a"}), generation=1)
         with self.assertRaises(ValueError):
-            coordinator.handoff("a", invocation_id="a", generation=1, checkpoint_ref=None)
+            coordinator.handoff("a", invocation_id="a", generation=1, executor_id="a", checkpoint_ref=None)
         with self.assertRaises(ValueError):
-            coordinator.handoff("a", invocation_id="a", generation=1, checkpoint_ref="cp-1")
+            coordinator.handoff("a", invocation_id="a", generation=1, executor_id="a", checkpoint_ref="cp-1")
         coordinator = globals()["coordinator"](store, quiescence_verifier=quiescent)
-        coordinator.handoff("a", invocation_id="a", generation=1, checkpoint_ref="cp-1")
+        coordinator.handoff("a", invocation_id="a", generation=1, executor_id="a", checkpoint_ref="cp-1")
         self.assertEqual(coordinator.snapshot()["lanes"]["a"]["state"], "handoff_ready")
 
+    def test_heartbeat_requires_independent_observable_activity(self):
+        coord = coordinator()
+        coord.admit(claim("a", {"src/a"}), generation=1)
+        with self.assertRaisesRegex(ValueError, "activity verifier"):
+            coord.heartbeat("a", invocation_id="a", generation=1, executor_id="a", activity_ref="commit:a")
+        coord = coordinator(activity_verifier=activity_verifier)
+        coord.admit(claim("a", {"src/a"}), generation=1)
+        coord.heartbeat("a", invocation_id="a", generation=1, executor_id="a", activity_ref="commit:a")
+        with self.assertRaises(ValueError):
+            coord.heartbeat("a", invocation_id="a", generation=1, executor_id="a", activity_ref="commit:a")
+
+    def test_release_requires_bound_executor_and_checkpoint(self):
+        coord = coordinator()
+        coord.admit(claim("a", {"src/a"}), generation=1)
+        with self.assertRaises(ValueError):
+            coord.release("a", invocation_id="a", generation=1, executor_id="other", checkpoint_ref="cp-a")
+        with self.assertRaises(ValueError):
+            coord.release("a", invocation_id="a", generation=1, executor_id="a", checkpoint_ref=None)
+
     def test_successful_writer_result_survives_lane_release_until_integrated(self):
-        coord = coordinator(result_verifier=verifier())
+        coord = coordinator(result_verifier=verifier(), integration_verifier=integration_verifier)
         coord.admit(claim("a", {"src/a"}), generation=1)
         coord.record_result(
-            "a", invocation_id="a", generation=1, result_commit="b" * 40,
+            "a", invocation_id="a", generation=1, executor_id="a", result_commit="b" * 40,
             evidence_refs=["test:green"])
-        coord.release("a", invocation_id="a", generation=1)
+        coord.release("a", invocation_id="a", generation=1, executor_id="a", checkpoint_ref="cp-a")
         self.assertEqual(len(coord.snapshot()["integration_queue"]), 1)
         self.assertFalse(coord.can_finalize(runnable_task_count=0, unknown_effect_count=0))
         coord.admit(claim("integrator", (), lanes.LaneKind.INTEGRATOR), generation=1)
         coord.mark_integrated(
             "a", result_commit="b" * 40, integrator_lane_id="integrator",
-            integrator_invocation_id="integrator", integrator_generation=1)
-        coord.release("integrator", invocation_id="integrator", generation=1)
+            integrator_invocation_id="integrator", integrator_generation=1, integrator_executor_id="integrator")
+        coord.release("integrator", invocation_id="integrator", generation=1, executor_id="integrator", checkpoint_ref="cp-integrator")
         self.assertTrue(coord.can_finalize(runnable_task_count=0, unknown_effect_count=0))
 
     def test_result_rejects_stale_base_unverified_ancestry_or_path_escape(self):
@@ -153,7 +188,7 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
             coord.admit(claim("a", {"src/a"}), generation=1)
             with self.assertRaises(ValueError):
                 coord.record_result(
-                    "a", invocation_id="a", generation=1, result_commit="b" * 40,
+                    "a", invocation_id="a", generation=1, executor_id="a", result_commit="b" * 40,
                     evidence_refs=["test:green"])
 
 
