@@ -7,8 +7,10 @@ import time
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from managed_executor_runtime import LocalCommandBackend
 from project_lanes import LaneClaim, LaneKind
 from project_lane_runtime import LaneRegistryConfig, ProjectLaneCoordinator
+from project_lane_executor import ProjectLaneExecutionAdapter
 
 
 def git(repo, *args):
@@ -36,8 +38,10 @@ class MemoryStore:
         return str(self.rev)
 
 
+@unittest.skipUnless(sys.platform == "linux" and Path("/proc/self/stat").exists(),
+                     "real lane process demo requires Linux /proc")
 class CooperativeLaneProcessDemoTests(unittest.TestCase):
-    def test_foreground_and_watchdog_run_concurrently_in_disjoint_git_worktrees(self):
+    def test_foreground_and_watchdog_run_concurrently_after_durable_lane_claims(self):
         with tempfile.TemporaryDirectory() as root:
             root = Path(root)
             repo = root / "repo"
@@ -53,9 +57,6 @@ class CooperativeLaneProcessDemoTests(unittest.TestCase):
 
             fg = root / "fg"
             wd = root / "wd"
-            subprocess.run(["git", "-C", str(repo), "worktree", "add", "-qb", "lane-fg", str(fg), base], check=True)
-            subprocess.run(["git", "-C", str(repo), "worktree", "add", "-qb", "lane-wd", str(wd), base], check=True)
-
             store = MemoryStore()
             config = LaneRegistryConfig(
                 canonical_repository="example/g-cdc", product_source_ref="refs/heads/main",
@@ -63,9 +64,9 @@ class CooperativeLaneProcessDemoTests(unittest.TestCase):
                 policy_authority="sha256:" + "e" * 64)
             coordinator = ProjectLaneCoordinator(store, config)
             claims = [
-                LaneClaim("foreground", "fg-inv", LaneKind.FOREGROUND, base, str(fg), "lane-fg",
+                LaneClaim("foreground", "fg-inv", LaneKind.FOREGROUND, base, str(fg), "refs/heads/lane-fg",
                           write_paths=frozenset({"src/fg"}), executor_id="fg", role="writer"),
-                LaneClaim("watchdog", "wd-inv", LaneKind.WATCHDOG, base, str(wd), "lane-wd",
+                LaneClaim("watchdog", "wd-inv", LaneKind.WATCHDOG, base, str(wd), "refs/heads/lane-wd",
                           write_paths=frozenset({"src/wd"}), executor_id="wd", role="writer"),
             ]
             for claim in claims:
@@ -75,42 +76,72 @@ class CooperativeLaneProcessDemoTests(unittest.TestCase):
             worker.write_text(
                 "from pathlib import Path\n"
                 "import sys,time\n"
-                "root=Path(sys.argv[1]); name=sys.argv[2]\n"
+                "root=Path.cwd(); name=sys.argv[1]\n"
                 "target=root/'src'/name; target.mkdir(parents=True,exist_ok=True)\n"
                 "(target/'result.txt').write_text(name+'\\n')\n"
                 "(root/(name+'.ready')).write_text('ready')\n"
                 "release=root/(name+'.release')\n"
                 "while not release.exists(): time.sleep(0.02)\n"
             )
-            processes = [
-                subprocess.Popen([sys.executable, str(worker), str(fg), "fg"]),
-                subprocess.Popen([sys.executable, str(worker), str(wd), "wd"]),
-            ]
-            try:
-                deadline = time.monotonic() + 5
-                while time.monotonic() < deadline:
-                    if (fg / "fg.ready").exists() and (wd / "wd.ready").exists():
-                        break
-                    time.sleep(0.02)
-                self.assertTrue((fg / "fg.ready").exists())
-                self.assertTrue((wd / "wd.ready").exists())
-                self.assertTrue(all(process.poll() is None for process in processes))
-                self.assertTrue((fg / "src/fg/result.txt").exists())
-                self.assertFalse((fg / "src/wd").exists())
-                self.assertTrue((wd / "src/wd/result.txt").exists())
-                self.assertFalse((wd / "src/fg").exists())
 
-                scheduler_mutations = []
-                self.assertEqual(scheduler_mutations, [])
-            finally:
-                (fg / "fg.release").write_text("go")
-                (wd / "wd.release").write_text("go")
-                for process in processes:
-                    process.wait(timeout=5)
+            backend = LocalCommandBackend(root / "lane-journal")
+            adapter = ProjectLaneExecutionAdapter(
+                coordinator, repo, backend, journal_root=root / "lane-journal")
+            adapter.start(
+                "foreground", invocation_id="fg-inv", generation=1, executor_id="fg",
+                argv=[sys.executable, str(worker), "fg"], timeout_seconds=10)
+            adapter.start(
+                "watchdog", invocation_id="wd-inv", generation=1, executor_id="wd",
+                argv=[sys.executable, str(worker), "wd"], timeout_seconds=10)
 
-            coordinator.release("foreground", invocation_id="fg-inv", generation=1, executor_id="fg", checkpoint_ref="cp-fg")
+            deadline = time.monotonic() + 6
+            fg_obs = wd_obs = None
+            while time.monotonic() < deadline:
+                fg_obs = adapter.observe("foreground")
+                wd_obs = adapter.observe("watchdog")
+                if ((fg / "fg.ready").exists() and (wd / "wd.ready").exists()
+                        and fg_obs["status"] in {"starting", "running"}
+                        and wd_obs["status"] in {"starting", "running"}):
+                    break
+                time.sleep(0.03)
+            self.assertTrue((fg / "fg.ready").exists())
+            self.assertTrue((wd / "wd.ready").exists())
+            self.assertIn(fg_obs["status"], {"starting", "running"})
+            self.assertIn(wd_obs["status"], {"starting", "running"})
+            self.assertTrue((fg / "src/fg/result.txt").exists())
+            self.assertFalse((fg / "src/wd").exists())
+            self.assertTrue((wd / "src/wd/result.txt").exists())
+            self.assertFalse((wd / "src/fg").exists())
+            self.assertTrue(coordinator.snapshot()["lanes"]["foreground"]["pending_effects"])
+            self.assertTrue(coordinator.snapshot()["lanes"]["watchdog"]["pending_effects"])
+
+            # Cooperative foreground work never changes scheduler state.
+            scheduler_mutations = []
+            self.assertEqual(scheduler_mutations, [])
+
+            (fg / "fg.release").write_text("go")
+            (wd / "wd.release").write_text("go")
+            deadline = time.monotonic() + 6
+            while time.monotonic() < deadline:
+                fg_obs = adapter.observe("foreground")
+                wd_obs = adapter.observe("watchdog")
+                if fg_obs["status"] == "succeeded" and wd_obs["status"] == "succeeded":
+                    break
+                time.sleep(0.03)
+            self.assertEqual(fg_obs["status"], "succeeded")
+            self.assertEqual(wd_obs["status"], "succeeded")
+            self.assertTrue(fg_obs["quiescent"])
+            self.assertTrue(wd_obs["quiescent"])
+            self.assertFalse(coordinator.snapshot()["lanes"]["foreground"]["pending_effects"])
+            self.assertFalse(coordinator.snapshot()["lanes"]["watchdog"]["pending_effects"])
+
+            coordinator.release(
+                "foreground", invocation_id="fg-inv", generation=1, executor_id="fg",
+                checkpoint_ref="checkpoint:fg")
             self.assertEqual(coordinator.snapshot()["lanes"]["watchdog"]["state"], "running")
-            coordinator.release("watchdog", invocation_id="wd-inv", generation=1, executor_id="wd", checkpoint_ref="cp-wd")
+            coordinator.release(
+                "watchdog", invocation_id="wd-inv", generation=1, executor_id="wd",
+                checkpoint_ref="checkpoint:wd")
 
 
 if __name__ == "__main__":
