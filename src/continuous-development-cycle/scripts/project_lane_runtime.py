@@ -5,6 +5,9 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass
 from enum import Enum
+import hashlib
+import json
+import re
 from typing import Optional
 
 try:
@@ -19,6 +22,46 @@ except ModuleNotFoundError:
     )
 
 SCHEMA = "project-lane-registry/v1"
+DIGEST = re.compile(r"sha256:[0-9a-f]{64}$")
+REPOSITORY = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+
+
+@dataclass(frozen=True)
+class LaneRegistryConfig:
+    canonical_repository: str
+    product_source_ref: str
+    coordination_ref: str
+    coordination_store_id: str
+    policy_authority: str
+
+    def __post_init__(self):
+        if not isinstance(self.canonical_repository, str) or not REPOSITORY.fullmatch(self.canonical_repository):
+            raise ValueError("canonical_repository must be owner/name")
+        if (not isinstance(self.product_source_ref, str)
+                or not self.product_source_ref.startswith("refs/heads/")
+                or self.product_source_ref.endswith(("/", "."))
+                or ".." in self.product_source_ref or "@{" in self.product_source_ref
+                or "//" in self.product_source_ref):
+            raise ValueError("product_source_ref must be a canonical refs/heads/ ref")
+        if not isinstance(self.coordination_ref, str) or not self.coordination_ref.startswith("refs/heads/cdc/"):
+            raise ValueError("coordination_ref must be a dedicated CDC branch ref")
+        if not isinstance(self.coordination_store_id, str) or not DIGEST.fullmatch(self.coordination_store_id):
+            raise ValueError("coordination_store_id must be sha256")
+        if not isinstance(self.policy_authority, str) or not DIGEST.fullmatch(self.policy_authority):
+            raise ValueError("policy_authority must be sha256")
+
+    def to_dict(self):
+        return {
+            "canonical_repository": self.canonical_repository,
+            "product_source_ref": self.product_source_ref,
+            "coordination_ref": self.coordination_ref,
+            "coordination_store_id": self.coordination_store_id,
+            "policy_authority": self.policy_authority,
+        }
+
+    def digest(self):
+        payload = json.dumps(self.to_dict(), sort_keys=True, separators=(",", ":")).encode("utf-8")
+        return "sha256:" + hashlib.sha256(payload).hexdigest()
 
 
 class LaneState(str, Enum):
@@ -88,16 +131,25 @@ def _claim_from(value):
 
 
 class ProjectLaneCoordinator:
-    def __init__(self, store, *, result_verifier=None, quiescence_verifier=None):
+    def __init__(self, store, config, *, result_verifier=None, quiescence_verifier=None,
+                 integration_verifier=None):
+        if not isinstance(config, LaneRegistryConfig):
+            raise ValueError("project lane registry configuration is required")
+        if config.coordination_ref != store.ref or config.coordination_store_id != store.store_id:
+            raise ValueError("project lane registry configuration disagrees with coordination store")
         self.store = store
+        self.config = config
         self.result_verifier = result_verifier
         self.quiescence_verifier = quiescence_verifier
+        self.integration_verifier = integration_verifier
 
     def _initial(self):
         return {
             "schema": SCHEMA,
             "coordination_ref": self.store.ref,
             "coordination_store_id": self.store.store_id,
+            "config": self.config.to_dict(),
+            "config_digest": self.config.digest(),
             "lanes": {},
             "integration_queue": [],
         }
@@ -110,6 +162,8 @@ class ProjectLaneCoordinator:
                 or state["coordination_ref"] != self.store.ref
                 or state["coordination_store_id"] != self.store.store_id):
             raise ValueError("project lane registry identity mismatch")
+        if state["config"] != self.config.to_dict() or state["config_digest"] != self.config.digest():
+            raise ValueError("project lane registry configuration drift")
         if not isinstance(state["lanes"], dict) or not isinstance(state["integration_queue"], list):
             raise ValueError("project lane registry collections invalid")
         return revision, state
