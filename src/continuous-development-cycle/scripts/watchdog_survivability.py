@@ -209,7 +209,7 @@ def assess(desired, inventory, *, now=None, max_age_seconds=120):
     if canonical is None:
         return _result(desired, "MISSING", "RECREATE", eligible=True, next_generation=desired["generation"] + 1,
                        stale_object_ids=[item["object_id"] for item in objects], reasons=["required canonical watchdog object is missing"])
-    extras = [item["object_id"] for item in objects if item["object_id"] != canonical["object_id"]]
+    extras = [item["object_id"] for item in objects\n              if item["object_id"] != canonical["object_id"]\n              and (item["enabled"] or item["execution_state"] in {"running", "unknown"})]
     if extras:
         return _result(desired, "DUPLICATE", "QUIESCE_DUPLICATES", eligible=True,
                        canonical_object_id=canonical["object_id"], stale_object_ids=extras,
