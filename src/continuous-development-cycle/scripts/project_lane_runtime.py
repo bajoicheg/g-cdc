@@ -372,7 +372,9 @@ class ProjectLaneCoordinator:
 
         def transform(state):
             lane = self._bound(state, lane_id, invocation_id, generation, executor_id)
-            if lane["state"] != "running" or lane["pending_effects"]:
+            start = state["start_operations"].get(lane_id)
+            start_active = start is not None and start["status"] in {"claimed", "starting", "running", "unknown"}
+            if lane["state"] != "running" or lane["pending_effects"] or start_active:
                 raise ValueError("lane is not handoff-safe")
             evidence = self.quiescence_verifier(copy.deepcopy(lane), checkpoint_ref)
             if (not isinstance(evidence, dict) or evidence.get("quiescent") is not True
@@ -383,16 +385,6 @@ class ProjectLaneCoordinator:
                 checkpoint_ref=checkpoint_ref,
                 quiescence_evidence=copy.deepcopy(evidence),
             )
-            return True
-
-        self._change(transform)
-
-    def set_pending_effects(self, lane_id, *, invocation_id, generation, executor_id, pending):
-        if type(pending) is not bool:
-            raise ValueError("pending must be bool")
-
-        def transform(state):
-            self._bound(state, lane_id, invocation_id, generation, executor_id)["pending_effects"] = pending
             return True
 
         self._change(transform)
@@ -437,7 +429,9 @@ class ProjectLaneCoordinator:
 
         def transform(state):
             lane = self._bound(state, lane_id, invocation_id, generation, executor_id)
-            if lane["pending_effects"]:
+            start = state["start_operations"].get(lane_id)
+            start_active = start is not None and start["status"] in {"claimed", "starting", "running", "unknown"}
+            if lane["pending_effects"] or start_active:
                 raise ValueError("lane release requires drained effects")
             if lane["state"] not in {"running", "handoff_ready"}:
                 raise ValueError("lane not releasable")
