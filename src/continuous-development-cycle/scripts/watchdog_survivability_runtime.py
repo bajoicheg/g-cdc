@@ -8,6 +8,7 @@ never replayed; a later inventory may reconcile them by exact generation/readbac
 from __future__ import annotations
 
 import copy
+from datetime import datetime
 import hashlib
 import json
 import secrets
@@ -95,6 +96,8 @@ class WatchdogSurvivabilityRuntime:
                 raise ValueError("cannot roll back watchdog desired generation")
             if incoming == existing:
                 return False
+            if any(op["status"] in {"claimed", "unknown"} for op in current["operations"].values()):
+                raise ValueError("cannot replace watchdog desired state while an effect is unresolved")
             if incoming["generation"] == existing["generation"]:
                 raise ValueError("desired-state mutation requires an explicit newer generation")
             current["desired"] = incoming
@@ -165,6 +168,15 @@ class WatchdogSurvivabilityRuntime:
             return True
         self._change(transform)
 
+    @staticmethod
+    def _at_or_after(value, lower_bound):
+        try:
+            left = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            right = datetime.fromisoformat(lower_bound.replace("Z", "+00:00"))
+        except (AttributeError, ValueError):
+            return False
+        return left >= right
+
     def _reconcile_uncertain(self, key, entry):
         uncertain = [(op_key, op) for op_key, op in entry["operations"].items() if op["status"] in {"claimed", "unknown"}]
         if not uncertain:
@@ -185,6 +197,13 @@ class WatchdogSurvivabilityRuntime:
                 if item is None or not item["enabled"]:
                     self._finish_unknown(key, op_key, op["operation_id"], "disabled readback")
                     return {"outcome": "duplicates_quiesced", "assessment": result}
+            if op["action"] == "run":
+                item = next((x for x in inventory["objects"] if x["object_id"] == op["object_id"]), None)
+                if (item is not None and item["last_run_at_utc"] is not None
+                        and item["execution_state"] in {"running", "idle"}
+                        and self._at_or_after(item["last_run_at_utc"], op["claimed_at_utc"])):
+                    self._finish_unknown(key, op_key, op["operation_id"], "run readback after durable claim")
+                    return {"outcome": "run_requested", "assessment": result}
         return {"outcome": "unreconciled_operation", "assessment": result}
 
     def _finish_unknown(self, key, op_key, operation_id, detail):
@@ -214,15 +233,18 @@ class WatchdogSurvivabilityRuntime:
                     "error_class": type(exc).__name__,
                 }
             results.append({"binding": binding, **result})
+        def needs_continuation(item):
+            if item["outcome"] == "no_effect":
+                overall = item.get("assessment", {}).get("overall")
+                return overall not in {"HEALTHY", "OWNER_PAUSED", "PROJECT_TERMINAL"}
+            return item["outcome"] not in {"adopted", "enabled", "run_requested",
+                                           "recreated", "duplicates_quiesced"}
+
         return {
             "schema": "watchdog-survivability-batch/v1",
             "registered_count": len(state["entries"]),
             "results": results,
-            "continuation_required": any(
-                item["outcome"] not in {"no_effect", "adopted", "enabled", "run_requested",
-                                        "recreated", "duplicates_quiesced"}
-                for item in results
-            ),
+            "continuation_required": any(needs_continuation(item) for item in results),
             "authorizes_scheduler_mutation": False,
         }
 
@@ -282,6 +304,7 @@ class WatchdogSurvivabilityRuntime:
                 return {"outcome": "post_claim_gate_denied", "assessment": assessment}
             try:
                 method = getattr(self.backend, verb)
+                claimed_at = self._entry_by_key(key)["operations"][op_key]["claimed_at_utc"]
                 reply = method(copy.deepcopy(binding), object_id=object_id, operation_id=operation_id)
                 inv, readback = self._observe(current)
                 item = next((x for x in inv["objects"] if x["object_id"] == object_id), None)
@@ -289,7 +312,9 @@ class WatchdogSurvivabilityRuntime:
                 if verb == "enable":
                     valid = valid and item["enabled"]
                 else:
-                    valid = valid and item["last_run_at_utc"] is not None and item["execution_state"] in {"running", "idle"}
+                    valid = (valid and item["last_run_at_utc"] is not None
+                             and item["execution_state"] in {"running", "idle"}
+                             and self._at_or_after(item["last_run_at_utc"], claimed_at))
                 if not valid:
                     raise ValueError("scheduler exact readback disagrees")
             except Exception:
