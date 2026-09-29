@@ -220,9 +220,9 @@ class WatchdogSurvivabilityRuntime:
             return True
         self._change(transform)
 
-    def _post_claim_allowed(self, desired):
+    def _post_claim_assessment(self, desired):
         _, assessment = self._observe(desired)
-        return assessment["overall"] not in {"OWNER_PAUSED", "PROJECT_TERMINAL", "EXECUTION_BROKEN"}
+        return assessment
 
     def reconcile_registered(self, *, max_effects=100):
         """Assess every registered watchdog and apply a bounded number of scheduler effects."""
@@ -299,10 +299,11 @@ class WatchdogSurvivabilityRuntime:
             if operation_id is None:
                 return {"outcome": "unreconciled_operation", "assessment": assessment}
             desired = self._entry_by_key(key)["desired"]
-            if not self._post_claim_allowed(desired):
-                self._finish(key, op_key, operation_id, "blocked", "post-claim safety gate denied")
-                return {"outcome": "post_claim_gate_denied", "assessment": assessment}
-            _, after_fence = self._observe(desired)
+            after_fence = self._post_claim_assessment(desired)
+            if (after_fence["action"] not in {"RECREATE", "ADOPT"}
+                    or (after_fence["action"] == "RECREATE" and not after_fence["recovery_eligible"])):
+                self._finish(key, op_key, operation_id, "blocked", "post-claim recovery action changed")
+                return {"outcome": "post_claim_gate_denied", "assessment": after_fence}
             if after_fence["action"] == "ADOPT":
                 self._adopt(key, after_fence["canonical_object_id"], op_key=op_key, operation_id=operation_id)
                 return {"outcome": "adopted", "assessment": after_fence}
@@ -336,9 +337,10 @@ class WatchdogSurvivabilityRuntime:
             if operation_id is None:
                 return {"outcome": "unreconciled_operation", "assessment": assessment}
             current = self._entry_by_key(key)["desired"]
-            if not self._post_claim_allowed(current):
-                self._finish(key, op_key, operation_id, "blocked", "post-claim safety gate denied")
-                return {"outcome": "post_claim_gate_denied", "assessment": assessment}
+            post_claim = self._post_claim_assessment(current)
+            if post_claim["action"] != action or not post_claim["recovery_eligible"]:
+                self._finish(key, op_key, operation_id, "blocked", "post-claim recovery action changed")
+                return {"outcome": "post_claim_gate_denied", "assessment": post_claim}
             try:
                 method = getattr(self.backend, verb)
                 claimed_at = self._entry_by_key(key)["operations"][op_key]["claimed_at_utc"]
@@ -371,9 +373,12 @@ class WatchdogSurvivabilityRuntime:
             if operation_id is None:
                 return {"outcome": "unreconciled_operation", "assessment": assessment}
             current = self._entry_by_key(key)["desired"]
-            if not self._post_claim_allowed(current):
-                self._finish(key, op_key, operation_id, "blocked", "post-claim safety gate denied")
-                return {"outcome": "post_claim_gate_denied", "assessment": assessment}
+            post_claim = self._post_claim_assessment(current)
+            if (post_claim["action"] != "QUIESCE_DUPLICATES"
+                    or object_id not in post_claim["stale_object_ids"]
+                    or not post_claim["recovery_eligible"]):
+                self._finish(key, op_key, operation_id, "blocked", "post-claim duplicate action changed")
+                return {"outcome": "post_claim_gate_denied", "assessment": post_claim}
             try:
                 reply = self.backend.disable(copy.deepcopy(binding), object_id=object_id, operation_id=operation_id)
                 inv, readback = self._observe(current)
