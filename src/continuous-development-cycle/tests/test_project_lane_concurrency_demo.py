@@ -8,7 +8,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from project_lanes import LaneClaim, LaneKind
-from project_lane_runtime import ProjectLaneCoordinator
+from project_lane_runtime import LaneRegistryConfig, ProjectLaneCoordinator
 
 
 def git(repo, *args):
@@ -56,7 +56,12 @@ class CooperativeLaneProcessDemoTests(unittest.TestCase):
             subprocess.run(["git", "-C", str(repo), "worktree", "add", "-qb", "lane-fg", str(fg), base], check=True)
             subprocess.run(["git", "-C", str(repo), "worktree", "add", "-qb", "lane-wd", str(wd), base], check=True)
 
-            coordinator = ProjectLaneCoordinator(MemoryStore())
+            store = MemoryStore()
+            config = LaneRegistryConfig(
+                canonical_repository="example/g-cdc", product_source_ref="refs/heads/main",
+                coordination_ref=store.ref, coordination_store_id=store.store_id,
+                policy_authority="sha256:" + "e" * 64)
+            coordinator = ProjectLaneCoordinator(store, config)
             claims = [
                 LaneClaim("foreground", "fg-inv", LaneKind.FOREGROUND, base, str(fg), "lane-fg",
                           write_paths=frozenset({"src/fg"}), executor_id="fg", role="writer"),
