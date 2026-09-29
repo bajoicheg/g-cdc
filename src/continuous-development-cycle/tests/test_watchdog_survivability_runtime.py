@@ -40,6 +40,7 @@ class RecordingBackend:
         self.inventory = copy.deepcopy(inv or inventory([]))
         self.effects = []
         self.lose_create_reply = False
+        self.lose_run_reply = False
         self.next_id = 1
 
     def observe(self, binding):
@@ -70,6 +71,8 @@ class RecordingBackend:
             if item["object_id"] == object_id:
                 item["last_run_at_utc"] = NOW
                 item["execution_state"] = "running"
+        if self.lose_run_reply:
+            raise TimeoutError("run reply lost")
         return {"status": "accepted", "object_id": object_id, "operation_id": operation_id}
 
     def disable(self, binding, *, object_id, operation_id):
@@ -122,6 +125,26 @@ class WatchdogSurvivabilityRuntimeTests(unittest.TestCase):
     def _unknown_without_object(self, binding, *, generation, schedule, template_digest, operation_id):
         self.backend.effects.append(("create", generation, operation_id))
         raise TimeoutError("unknown before readback")
+
+    def test_lost_run_reply_reconciles_from_post_claim_run_timestamp_without_replay(self):
+        store = MemoryStore()
+        backend = RecordingBackend(inventory([obj(last_run_at_utc="2026-09-29T09:00:00Z")]))
+        backend.lose_run_reply = True
+        runtime = runtime_mod.WatchdogSurvivabilityRuntime(store, backend, clock=lambda: NOW)
+        runtime.register(desired())
+        first = runtime.reconcile(desired()["binding"])
+        self.assertEqual(first["outcome"], "provider_outcome_unknown")
+        backend.lose_run_reply = False
+        second = runtime.reconcile(desired()["binding"])
+        self.assertEqual(second["outcome"], "run_requested")
+        self.assertEqual([effect[0] for effect in backend.effects], ["run"])
+
+    def test_unresolved_effect_blocks_desired_generation_replacement(self):
+        self.backend.create = self._unknown_without_object
+        self.runtime.reconcile(desired()["binding"])
+        newer = desired(canonical_object_id=None, generation=9)
+        with self.assertRaisesRegex(ValueError, "unresolved"):
+            self.runtime.register(newer)
 
     def test_owner_stop_committed_after_claim_blocks_scheduler_io(self):
         fired = {"done": False}
@@ -191,6 +214,16 @@ class WatchdogSurvivabilityRuntimeTests(unittest.TestCase):
         self.assertEqual(len(result["results"]), 2)
         self.assertEqual({item["binding"]["project_id"] for item in result["results"]}, {"alpha", "beta"})
         self.assertFalse(result["authorizes_scheduler_mutation"])
+
+    def test_batch_keeps_execution_broken_watchdog_for_continuation(self):
+        store = MemoryStore()
+        inv = inventory([obj(execution_state="unknown")])
+        backend = RecordingBackend(inv)
+        runtime = runtime_mod.WatchdogSurvivabilityRuntime(store, backend, clock=lambda: NOW)
+        runtime.register(desired())
+        result = runtime.reconcile_registered()
+        self.assertTrue(result["continuation_required"])
+        self.assertEqual(result["results"][0]["assessment"]["overall"], "EXECUTION_BROKEN")
 
     def test_stale_registered_generation_cannot_overwrite_newer_runtime_generation(self):
         self.runtime.reconcile(desired()["binding"])
