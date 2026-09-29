@@ -63,7 +63,11 @@ class CooperativeLaneProcessDemoTests(unittest.TestCase):
                 canonical_repository="example/g-cdc", product_source_ref="refs/heads/main",
                 coordination_ref=store.ref, coordination_store_id=store.store_id,
                 policy_authority="sha256:" + "e" * 64)
-            coordinator = ProjectLaneCoordinator(store, config)
+            coordinator = ProjectLaneCoordinator(
+                store, config, migration_verifier=lambda observation: {
+                    "safe": True, "legacy_lease": "absent", "external_guard": "none",
+                    "legacy_mode_disabled": True, "evidence_ref": "legacy:none"})
+            coordinator.establish_migration_gate({"legacy": "observed"})
             claims = [
                 LaneClaim("foreground", "fg-inv", LaneKind.FOREGROUND, base, str(fg), "refs/heads/lane-fg",
                           write_paths=frozenset({"src/fg"}), executor_id="fg", role="writer"),
