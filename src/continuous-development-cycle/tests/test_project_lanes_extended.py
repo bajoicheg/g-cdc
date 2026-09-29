@@ -38,7 +38,7 @@ class MemoryStore:
 
 def registry_config(store):
     return runtime.LaneRegistryConfig(
-        canonical_repository="bajoicheg/g-cdc",
+        canonical_repository="example/g-cdc",
         product_source_ref="refs/heads/main",
         coordination_ref=store.ref,
         coordination_store_id=store.store_id,
