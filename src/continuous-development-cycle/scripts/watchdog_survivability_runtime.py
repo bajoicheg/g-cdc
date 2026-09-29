@@ -99,10 +99,22 @@ class WatchdogSurvivabilityRuntime:
                 raise ValueError("cannot roll back watchdog desired generation")
             if incoming == existing:
                 return False
-            if any(op["status"] in {"claimed", "unknown"} for op in current["operations"].values()):
-                raise ValueError("cannot replace watchdog desired state while an effect is unresolved")
             if incoming["generation"] == existing["generation"]:
                 raise ValueError("desired-state mutation requires an explicit newer generation")
+            unresolved = any(op["status"] in {"claimed", "unknown"} for op in current["operations"].values())
+            if unresolved:
+                stop_only = (incoming["desired_state"] == "paused"
+                             or incoming["owner_stop_evidence"] is not None
+                             or not incoming["required"])
+                stable_materialization = (
+                    incoming["schedule"] == existing["schedule"]
+                    and incoming["template_digest"] == existing["template_digest"]
+                    and incoming["canonical_object_id"] == existing["canonical_object_id"])
+                if not stop_only or not stable_materialization:
+                    raise ValueError("cannot replace watchdog desired state while an effect is unresolved")
+                # Owner stop/fencing is authoritative, but never erase the uncertain effect journal.
+                current["desired"] = incoming
+                return True
             current["desired"] = incoming
             current["operations"] = {}
             return True
@@ -189,9 +201,19 @@ class WatchdogSurvivabilityRuntime:
         desired = entry["desired"]
         inventory, result = self._observe(desired)
         for op_key, op in uncertain:
-            if op["action"] == "create" and result["action"] == "ADOPT" and result["canonical_object_id"]:
-                self._adopt(key, result["canonical_object_id"], op_key=op_key, operation_id=op["operation_id"])
-                return {"outcome": "adopted", "assessment": result}
+            if op["action"] == "create":
+                matching = [
+                    item for item in inventory["objects"]
+                    if item["generation"] == op["generation"]
+                    and item["schedule"] == desired["schedule"]
+                    and item["template_digest"] == desired["template_digest"]
+                ]
+                object_id = (result["canonical_object_id"]
+                             if result["action"] == "ADOPT" and result["canonical_object_id"]
+                             else matching[0]["object_id"] if len(matching) == 1 else None)
+                if object_id:
+                    self._adopt(key, object_id, op_key=op_key, operation_id=op["operation_id"])
+                    return {"outcome": "adopted", "assessment": result}
             if op["action"] == "enable":
                 item = next((x for x in inventory["objects"] if x["object_id"] == op["object_id"]), None)
                 if item is not None and item["enabled"]:
@@ -199,8 +221,9 @@ class WatchdogSurvivabilityRuntime:
                     return {"outcome": "enabled", "assessment": result}
             if op["action"] == "disable":
                 item = next((x for x in inventory["objects"] if x["object_id"] == op["object_id"]), None)
-                if item is None or not item["enabled"]:
-                    self._finish_unknown(key, op_key, op["operation_id"], "disabled readback")
+                if (item is None
+                        or (not item["enabled"] and item["execution_state"] in {"idle", "failed"})):
+                    self._finish_unknown(key, op_key, op["operation_id"], "disabled and quiescent readback")
                     return {"outcome": "duplicates_quiesced", "assessment": result}
             if op["action"] == "run":
                 item = next((x for x in inventory["objects"] if x["object_id"] == op["object_id"]), None)
@@ -257,13 +280,13 @@ class WatchdogSurvivabilityRuntime:
             results.append({"binding": binding, **result})
 
         def needs_continuation(item):
+            assessment = item.get("assessment", {})
             if item["outcome"] == "no_effect":
-                overall = item.get("assessment", {}).get("overall")
-                return overall not in {"HEALTHY", "OWNER_PAUSED", "PROJECT_TERMINAL"}
-            if item["outcome"] in {"adopted", "enabled", "run_requested", "recreated"}:
+                return assessment.get("overall") not in {"HEALTHY", "OWNER_PAUSED", "PROJECT_TERMINAL"}
+            if assessment.get("action") in {"ADOPT", "RECREATE", "ENABLE", "RUN", "QUIESCE_DUPLICATES"}:
+                return True
+            if item["outcome"] in {"adopted", "enabled", "run_requested", "recreated", "duplicates_quiesced"}:
                 return False
-            if item["outcome"] == "duplicates_quiesced":
-                return item.get("assessment", {}).get("action") == "QUIESCE_DUPLICATES"
             return True
 
         return {
@@ -385,8 +408,9 @@ class WatchdogSurvivabilityRuntime:
                 item = next((x for x in inv["objects"] if x["object_id"] == object_id), None)
                 if not (isinstance(reply, dict) and reply.get("status") == "accepted"
                         and reply.get("operation_id") == operation_id
-                        and (item is None or not item["enabled"])):
-                    raise ValueError("disable exact readback disagrees")
+                        and (item is None
+                             or (not item["enabled"] and item["execution_state"] in {"idle", "failed"}))):
+                    raise ValueError("disable exact readback has not proven duplicate quiescence")
             except Exception:
                 self._finish(key, op_key, operation_id, "unknown", "provider disable outcome unconfirmed")
                 return {"outcome": "provider_outcome_unknown", "assessment": assessment}
