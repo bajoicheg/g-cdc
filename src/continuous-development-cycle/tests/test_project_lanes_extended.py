@@ -71,6 +71,11 @@ def verifier(observed_base=SHA, ancestor=True, touched=None):
     }
 
 
+def stopped_quiescent(lane, checkpoint):
+    return {"quiescent": True, "executor_stopped": True,
+            "evidence_ref": "process:executor-stopped:" + checkpoint}
+
+
 def activity_verifier(lane, activity_ref):
     return {"observed": True, "activity_ref": activity_ref,
             "evidence_ref": "process:activity:" + activity_ref}
@@ -162,6 +167,18 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
         coordinator = globals()["coordinator"](store, quiescence_verifier=quiescent)
         coordinator.handoff("a", invocation_id="a", generation=1, executor_id="a", checkpoint_ref="cp-1")
         self.assertEqual(coordinator.snapshot()["lanes"]["a"]["state"], "handoff_ready")
+
+    def test_recovery_release_requires_executor_stopped_quiescence_not_ttl_or_silence(self):
+        store = MemoryStore()
+        coord = coordinator(store, quiescence_verifier=quiescent)
+        coord.admit(claim("dead", {"src/a"}), generation=1)
+        with self.assertRaisesRegex(ValueError, "executor_stopped"):
+            coord.recovery_release("dead", checkpoint_ref="cp-dead")
+        recovered = coordinator(store, quiescence_verifier=stopped_quiescent)
+        recovered.recovery_release("dead", checkpoint_ref="cp-dead")
+        lane = recovered.snapshot()["lanes"]["dead"]
+        self.assertEqual(lane["state"], "released")
+        self.assertTrue(lane["quiescence_evidence"]["executor_stopped"])
 
     def test_heartbeat_requires_independent_observable_activity(self):
         coord = coordinator()
