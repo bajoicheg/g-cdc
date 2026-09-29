@@ -47,10 +47,9 @@ class ProjectLaneRegistryBindingTests(unittest.TestCase):
         self.assertEqual(snapshot["config"]["canonical_repository"], "example/g-cdc")
         self.assertRegex(snapshot["config_digest"], r"^sha256:[0-9a-f]{64}$")
 
-        drifted = runtime.ProjectLaneCoordinator(
-            store, config(policy_authority="sha256:" + "e" * 64))
         with self.assertRaisesRegex(ValueError, "configuration"):
-            drifted.snapshot()
+            runtime.ProjectLaneCoordinator(
+                store, config(policy_authority="sha256:" + "e" * 64))
 
     def test_coordination_endpoint_must_match_store_identity(self):
         for value in (
