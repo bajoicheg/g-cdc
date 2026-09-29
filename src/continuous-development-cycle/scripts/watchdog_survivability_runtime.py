@@ -23,8 +23,9 @@ def binding_key(binding):
     return hashlib.sha256(raw).hexdigest()
 
 
-def operation_key(binding, action, generation, object_id=None):
-    payload = {"binding": binding, "action": action, "generation": generation, "object_id": object_id}
+def operation_key(binding, action, generation, object_id=None, basis=None):
+    payload = {"binding": binding, "action": action, "generation": generation,
+               "object_id": object_id, "basis": basis}
     raw = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(raw).hexdigest()
 
@@ -59,7 +60,9 @@ class WatchdogSurvivabilityRuntime:
                         or operation.get("action") not in {"create", "enable", "run", "disable"}
                         or not isinstance(operation.get("operation_id"), str) or not operation["operation_id"]):
                     raise ValueError("watchdog survivability operation invalid")
-                expected = operation_key(entry["desired"]["binding"], operation["action"], operation["generation"], operation.get("object_id"))
+                expected = operation_key(entry["desired"]["binding"], operation["action"],
+                                         operation["generation"], operation.get("object_id"),
+                                         operation.get("basis"))
                 if op_key != expected:
                     raise ValueError("watchdog survivability operation key mismatch")
         return revision, state
@@ -119,8 +122,9 @@ class WatchdogSurvivabilityRuntime:
         result = assess(desired, inventory, now=self.clock(), max_age_seconds=self.max_age_seconds)
         return inventory, result
 
-    def _set_operation(self, key, action, generation, object_id=None, *, fence_generation=None):
-        op_key = operation_key(self._entry_by_key(key)["desired"]["binding"], action, generation, object_id)
+    def _set_operation(self, key, action, generation, object_id=None, *, basis=None, fence_generation=None):
+        op_key = operation_key(self._entry_by_key(key)["desired"]["binding"],
+                               action, generation, object_id, basis)
         operation_id = "watchdog-operation-" + secrets.token_hex(24)
 
         def transform(state):
@@ -136,7 +140,8 @@ class WatchdogSurvivabilityRuntime:
                 entry["desired"]["canonical_object_id"] = None
             entry["operations"][op_key] = {
                 "action": action, "generation": generation, "object_id": object_id,
-                "operation_id": operation_id, "status": "claimed", "claimed_at_utc": self.clock(),
+                "basis": basis, "operation_id": operation_id,
+                "status": "claimed", "claimed_at_utc": self.clock(),
             }
             return True
 
@@ -288,7 +293,9 @@ class WatchdogSurvivabilityRuntime:
             return {"outcome": "no_effect", "assessment": assessment}
         if action == "RECREATE":
             target_generation = assessment["next_generation"]
-            operation_id, op_key = self._set_operation(key, "create", target_generation, fence_generation=target_generation)
+            operation_id, op_key = self._set_operation(
+                key, "create", target_generation,
+                basis="generation:" + str(target_generation), fence_generation=target_generation)
             if operation_id is None:
                 return {"outcome": "unreconciled_operation", "assessment": assessment}
             desired = self._entry_by_key(key)["desired"]
@@ -318,7 +325,14 @@ class WatchdogSurvivabilityRuntime:
             verb = action.lower()
             object_id = assessment["canonical_object_id"]
             generation = desired["generation"]
-            operation_id, op_key = self._set_operation(key, verb, generation, object_id)
+            before = next((x for x in inventory["objects"] if x["object_id"] == object_id), None)
+            if before is None:
+                return {"outcome": "observation_changed", "assessment": assessment}
+            basis = ("disabled@" + inventory["observed_at_utc"] if verb == "enable"
+                     else "run-after:" + str(before["last_run_at_utc"] or "never")
+                     + ":failures:" + str(before["consecutive_failures"]))
+            operation_id, op_key = self._set_operation(
+                key, verb, generation, object_id, basis=basis)
             if operation_id is None:
                 return {"outcome": "unreconciled_operation", "assessment": assessment}
             current = self._entry_by_key(key)["desired"]
@@ -347,7 +361,13 @@ class WatchdogSurvivabilityRuntime:
             return {"outcome": "enabled" if verb == "enable" else "run_requested", "assessment": readback}
         if action == "QUIESCE_DUPLICATES":
             object_id = assessment["stale_object_ids"][0]
-            operation_id, op_key = self._set_operation(key, "disable", desired["generation"], object_id)
+            stale = next((x for x in inventory["objects"] if x["object_id"] == object_id), None)
+            if stale is None:
+                return {"outcome": "observation_changed", "assessment": assessment}
+            basis = ("duplicate:" + str(stale["generation"]) + "@"
+                     + inventory["observed_at_utc"])
+            operation_id, op_key = self._set_operation(
+                key, "disable", desired["generation"], object_id, basis=basis)
             if operation_id is None:
                 return {"outcome": "unreconciled_operation", "assessment": assessment}
             current = self._entry_by_key(key)["desired"]
