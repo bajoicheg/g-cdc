@@ -17,8 +17,9 @@ Each lane binds executor + invocation + generation + exact source HEAD + surface
 - Writer acceptance validates base ancestry and every touched path in every introduced commit, including touched-and-restored paths.
 - Normal release is executor/invocation/generation-bound, drains pending effects and persists an exact checkpoint reference.
 - Computed/accepted work remains nonterminal until required integration is complete.
-- Before any shared-ref publication, the integrator persists a one-shot durable integration intent. Unknown publication outcomes retain that intent for readback/reconciliation rather than creating a new effect grant.
-- Fresh shared-HEAD movement is reconciled before publication; force-push is forbidden. Integration is removed from the queue only after an independent verifier proves the claimed operation and records durable integration evidence.
+- Before any shared-ref publication, the integrator persists a one-shot durable integration intent binding the observed shared HEAD and the intended integrated HEAD. Unknown publication outcomes retain that intent for readback/reconciliation rather than creating a new effect grant.
+- Release-grade Git publication uses `GitLaneIntegrationPublisher`: the intended head must contain both the observed shared head and the accepted result, the authoritative remote must still equal the observed head, and the update is performed with an exact-head lease plus authoritative readback. The lease is only a CAS primitive; ancestry is checked first so no non-fast-forward rewrite is authorized.
+- `GitLaneIntegrationVerifier` is read-only ancestry/readback evidence and explicitly reports `conditional_update=false`; it cannot close the integration queue by itself. Queue removal requires evidence with `conditional_update=true`, exact intended head, the original operation ID and no force rewrite.
 
 ## Watchdog survivability invariants
 
