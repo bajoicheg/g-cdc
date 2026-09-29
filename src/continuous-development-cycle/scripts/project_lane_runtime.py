@@ -443,6 +443,35 @@ class ProjectLaneCoordinator:
 
         self._change(transform)
 
+    def recovery_release(self, lane_id, *, checkpoint_ref):
+        if not isinstance(checkpoint_ref, str) or not checkpoint_ref.strip():
+            raise ValueError("recovery release requires checkpoint_ref")
+        if self.quiescence_verifier is None:
+            raise ValueError("recovery release requires independent quiescence verifier")
+
+        def transform(state):
+            lane = state["lanes"].get(lane_id)
+            if lane is None:
+                raise ValueError("unknown lane")
+            start = state["start_operations"].get(lane_id)
+            start_active = start is not None and start["status"] in {"claimed", "starting", "running", "unknown"}
+            if lane["state"] not in {"running", "handoff_ready"} or lane["pending_effects"] or start_active:
+                raise ValueError("lane is not recovery-release safe")
+            if lane["checkpoint_ref"] is not None and lane["checkpoint_ref"] != checkpoint_ref:
+                raise ValueError("recovery checkpoint disagrees with durable lane checkpoint")
+            evidence = self.quiescence_verifier(copy.deepcopy(lane), checkpoint_ref)
+            if (not isinstance(evidence, dict) or evidence.get("quiescent") is not True
+                    or evidence.get("executor_stopped") is not True
+                    or not isinstance(evidence.get("evidence_ref"), str)
+                    or not evidence["evidence_ref"].strip()):
+                raise ValueError("recovery release requires independently proven executor_stopped quiescence")
+            lane["checkpoint_ref"] = checkpoint_ref
+            lane["quiescence_evidence"] = copy.deepcopy(evidence)
+            lane["state"] = "released"
+            return True
+
+        self._change(transform)
+
     @staticmethod
     def _integration_key(lane_id, result_commit):
         raw = json.dumps({"lane_id": lane_id, "result_commit": result_commit},
