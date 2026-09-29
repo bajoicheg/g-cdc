@@ -200,6 +200,32 @@ class WatchdogSurvivabilityRuntime:
         _, assessment = self._observe(desired)
         return assessment["overall"] not in {"OWNER_PAUSED", "PROJECT_TERMINAL", "EXECUTION_BROKEN"}
 
+    def reconcile_registered(self):
+        """Reconcile every registered watchdog once; one failure must not skip siblings."""
+        _, state = self._read()
+        results = []
+        for key in sorted(state["entries"]):
+            binding = copy.deepcopy(state["entries"][key]["desired"]["binding"])
+            try:
+                result = self.reconcile(binding)
+            except Exception as exc:
+                result = {
+                    "outcome": "coordination_or_observation_unavailable",
+                    "error_class": type(exc).__name__,
+                }
+            results.append({"binding": binding, **result})
+        return {
+            "schema": "watchdog-survivability-batch/v1",
+            "registered_count": len(state["entries"]),
+            "results": results,
+            "continuation_required": any(
+                item["outcome"] not in {"no_effect", "adopted", "enabled", "run_requested",
+                                        "recreated", "duplicates_quiesced"}
+                for item in results
+            ),
+            "authorizes_scheduler_mutation": False,
+        }
+
     def reconcile(self, binding):
         key, entry = self._entry(binding)
         uncertain = self._reconcile_uncertain(key, entry)
