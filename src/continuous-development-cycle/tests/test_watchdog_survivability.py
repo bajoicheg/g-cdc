@@ -163,6 +163,22 @@ class WatchdogSurvivabilityTests(unittest.TestCase):
         result = survivability.assess(desired(), inventory([running]), now=NOW)
         self.assertEqual((result["overall"], result["action"]), ("HEALTHY", "NONE"))
 
+    def test_running_config_drift_or_flapping_waits_for_quiescence(self):
+        for running in (
+            obj(schedule="RRULE:FREQ=DAILY", execution_state="running"),
+            obj(consecutive_failures=3, execution_state="running"),
+        ):
+            with self.subTest(running=running):
+                result = survivability.assess(desired(), inventory([running]), now=NOW)
+                self.assertEqual(result["action"], "OBSERVE")
+                self.assertFalse(result["recovery_eligible"])
+
+    def test_running_disabled_watchdog_enables_schedule_without_second_run(self):
+        running = obj(enabled=False, execution_state="running")
+        result = survivability.assess(desired(), inventory([running]), now=NOW)
+        self.assertEqual((result["overall"], result["action"]), ("DISABLED_DRIFT", "ENABLE"))
+        self.assertTrue(result["recovery_eligible"])
+
     def test_recent_failed_watchdog_gets_bounded_retry_before_flap_threshold(self):
         failed = obj(execution_state="failed", consecutive_failures=1)
         result = survivability.assess(desired(), inventory([failed]), now=NOW)
