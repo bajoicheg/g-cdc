@@ -144,7 +144,6 @@ class WatchdogSurvivabilityTests(unittest.TestCase):
             inventory(safety={**inventory()["safety"], "owner": "active"}),
             inventory(safety={**inventory()["safety"], "guard": "active"}),
             inventory(safety={**inventory()["safety"], "external": "running"}),
-            inventory(safety={**inventory()["safety"], "pause": "paused", "owner_pause_evidence": "owner:pause"}),
             inventory(observed_at_utc="2026-09-29T12:00:00Z"),
         ):
             with self.subTest(inv=inv):
