@@ -306,9 +306,9 @@ class ProjectLaneCoordinator:
             if (verified["observed_base"] != claim.source_head or verified["base_ancestor"] is not True
                     or not result_within_claim(claim, verified["touched_paths"])):
                 raise ValueError("writer result violates bound base or write claim")
-            if any(item["lane_id"] == lane_id and item["result_commit"] == result_commit
-                   for item in state["integration_queue"]):
-                raise ValueError("duplicate writer result")
+            if (any(item["lane_id"] == lane_id for item in state["integration_queue"])
+                    or any(item["lane_id"] == lane_id for item in state["integrated_results"])):
+                raise ValueError("lane already has an accepted writer result")
             state["integration_queue"].append({
                 "lane_id": lane_id,
                 "result_commit": result_commit,
