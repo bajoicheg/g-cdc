@@ -103,6 +103,23 @@ class ProjectLaneRegistryBindingTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "immutable"):
             different.establish_migration_gate({"legacy": "new"})
 
+    def test_malformed_live_lane_state_fails_closed_on_read(self):
+        from project_lanes import LaneClaim, LaneKind
+        store = MemoryStore()
+        safe_evidence = {
+            "safe": True, "legacy_lease": "released", "external_guard": "none",
+            "legacy_mode_disabled": True, "evidence_ref": "legacy:safe"}
+        coordinator = runtime.ProjectLaneCoordinator(
+            store, config(), migration_verifier=lambda observation: dict(safe_evidence))
+        coordinator.establish_migration_gate({"legacy": "observed"})
+        claim = LaneClaim(
+            "lane", "inv", LaneKind.WORKER, "a" * 40, "/tmp/lane", "cdc/lane",
+            write_paths=frozenset({"src/a"}), executor_id="e", role="writer")
+        coordinator.admit(claim, generation=1)
+        store.value["lanes"]["lane"]["state"] = "corrupt"
+        with self.assertRaisesRegex(ValueError, "lane registry lane"):
+            coordinator.snapshot()
+
     def test_configuration_digest_is_deterministic(self):
         left = config()
         right = config()
