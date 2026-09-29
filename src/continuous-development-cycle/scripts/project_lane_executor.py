@@ -57,7 +57,9 @@ class ProjectLaneExecutionAdapter:
             raise ValueError("project lane execution requires a Git worktree root")
         self.worktree_root = Path(worktree_root).resolve()
         self.worktree_root.mkdir(parents=True, exist_ok=True)
-        if self.worktree_root == self.repo_root or self.repo_root in self.worktree_root.parents:
+        if (self.worktree_root == self.repo_root
+                or self.repo_root in self.worktree_root.parents
+                or self.worktree_root in self.repo_root.parents):
             raise ValueError("worktree_root must be isolated from the product worktree")
         root = journal_root if journal_root is not None else getattr(backend, "journal_root", None)
         if root is None:
@@ -65,7 +67,9 @@ class ProjectLaneExecutionAdapter:
         self.journal_root = Path(root).resolve()
         self.journal_root.mkdir(parents=True, exist_ok=True)
         if (self.journal_root == self.repo_root or self.repo_root in self.journal_root.parents
-                or self.journal_root == self.worktree_root):
+                or self.journal_root == self.worktree_root
+                or self.journal_root in self.worktree_root.parents
+                or self.worktree_root in self.journal_root.parents):
             raise ValueError("journal_root must be isolated from product and worktree roots")
 
     def _lane(self, lane_id):
@@ -111,6 +115,9 @@ class ProjectLaneExecutionAdapter:
             raise ValueError("lane worktree escapes authorized worktree_root")
         if cwd == self.repo_root or self.repo_root in cwd.parents:
             raise ValueError("lane worktree overlaps the product worktree")
+        if (cwd == self.journal_root or self.journal_root in cwd.parents
+                or cwd in self.journal_root.parents):
+            raise ValueError("lane worktree overlaps the execution journal")
         return {
             "schema": "project-lane-start/v1",
             "identity": identity,
