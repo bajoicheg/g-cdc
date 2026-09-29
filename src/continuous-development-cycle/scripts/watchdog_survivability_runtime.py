@@ -205,7 +205,7 @@ class WatchdogSurvivabilityRuntime:
             if op["action"] == "run":
                 item = next((x for x in inventory["objects"] if x["object_id"] == op["object_id"]), None)
                 if (item is not None and item["last_run_at_utc"] is not None
-                        and item["execution_state"] in {"running", "idle"}
+                        and item["execution_state"] in {"running", "idle", "failed"}
                         and self._at_or_after(item["last_run_at_utc"], op["claimed_at_utc"])):
                     self._finish_unknown(key, op_key, op["operation_id"], "run readback after durable claim")
                     return {"outcome": "run_requested", "assessment": result}
@@ -350,7 +350,7 @@ class WatchdogSurvivabilityRuntime:
                     valid = valid and item["enabled"]
                 else:
                     valid = (valid and item["last_run_at_utc"] is not None
-                             and item["execution_state"] in {"running", "idle"}
+                             and item["execution_state"] in {"running", "idle", "failed"}
                              and self._at_or_after(item["last_run_at_utc"], claimed_at))
                 if not valid:
                     raise ValueError("scheduler exact readback disagrees")
