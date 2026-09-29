@@ -18,7 +18,7 @@ try:
     )
 except ModuleNotFoundError:
     from scripts.project_lanes import (
-        LaneClaim, LaneKind, admit_writer, project_can_finalize,
+        LaneClaim, LaneKind, admit_writer, paths_overlap, project_can_finalize,
         result_within_claim, validate_claim,
     )
 
