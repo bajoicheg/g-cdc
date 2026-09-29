@@ -13,7 +13,7 @@ from typing import Optional
 
 try:
     from project_lanes import (
-        LaneClaim, LaneKind, admit_writer, project_can_finalize,
+        LaneClaim, LaneKind, admit_writer, paths_overlap, project_can_finalize,
         result_within_claim, validate_claim,
     )
 except ModuleNotFoundError:
@@ -223,18 +223,19 @@ class ProjectLaneCoordinator:
                 decision.update(reason="duplicate_lane")
                 return False
             existing = self._active_claims(state)
-            if claim.kind != LaneKind.INTEGRATOR:
-                for item in existing:
-                    if (item.kind != LaneKind.INTEGRATOR and item.is_writer and claim.is_writer
-                            and (item.branch == claim.branch or item.worktree == claim.worktree)):
-                        decision.update(reason="isolation_conflict")
-                        return False
-                    if (item.kind != LaneKind.INTEGRATOR and item.is_writer and claim.is_writer
-                            and not admit_writer([item], claim)):
-                        decision.update(reason="write_claim_conflict")
-                        return False
-            elif any(item.kind == LaneKind.INTEGRATOR for item in existing):
-                decision.update(reason="integrator_conflict")
+            if not admit_writer(existing, claim):
+                writer_isolation = any(
+                    item.is_writer and claim.is_writer
+                    and not admit_writer([item], claim)
+                    and not (item.kind != LaneKind.INTEGRATOR
+                             and claim.kind != LaneKind.INTEGRATOR
+                             and paths_overlap(item, claim))
+                    for item in existing
+                )
+                if writer_isolation:
+                    decision.update(reason="isolation_or_integrator_conflict")
+                else:
+                    decision.update(reason="write_claim_conflict")
                 return False
             state["lanes"][claim.lane_id] = {
                 "claim": _claim_dict(claim),
