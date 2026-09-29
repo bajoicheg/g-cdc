@@ -165,6 +165,48 @@ class WatchdogSurvivabilityRuntimeTests(unittest.TestCase):
         self.assertEqual(result["outcome"], "post_claim_gate_denied")
         self.assertEqual(backend.effects, [])
 
+    def test_owner_stop_can_fence_unknown_effect_without_erasing_journal(self):
+        self.backend.create = self._unknown_without_object
+        first = self.runtime.reconcile(desired()["binding"])
+        self.assertEqual(first["outcome"], "provider_outcome_unknown")
+        stopped = desired(
+            canonical_object_id=None, generation=9, desired_state="paused",
+            owner_stop_evidence="owner:pause")
+        self.runtime.register(stopped)
+        state = self.runtime.snapshot()
+        entry = state["entries"][runtime_mod.binding_key(stopped["binding"])]
+        self.assertEqual(entry["desired"]["desired_state"], "paused")
+        self.assertTrue(any(op["status"] == "unknown" for op in entry["operations"].values()))
+        second = self.runtime.reconcile(stopped["binding"])
+        self.assertEqual(second["outcome"], "unreconciled_operation")
+        self.assertEqual([e[0] for e in self.backend.effects], ["create"])
+        self.backend.inventory["objects"].append(
+            obj("wd-late", generation=8, last_run_at_utc=None))
+        third = self.runtime.reconcile(stopped["binding"])
+        self.assertEqual(third["outcome"], "adopted")
+        self.assertEqual([e[0] for e in self.backend.effects], ["create"])
+        current = self.runtime.snapshot()["entries"][runtime_mod.binding_key(stopped["binding"])]["desired"]
+        self.assertEqual(current["desired_state"], "paused")
+        self.assertEqual(current["canonical_object_id"], "wd-late")
+
+    def test_running_duplicate_is_disabled_once_but_not_declared_quiescent_until_it_stops(self):
+        d = desired()
+        store = MemoryStore()
+        backend = RecordingBackend(
+            inventory([obj(), obj("wd-old", generation=6, execution_state="running")]))
+        runtime = runtime_mod.WatchdogSurvivabilityRuntime(store, backend, clock=lambda: NOW)
+        runtime.register(d)
+        first = runtime.reconcile(d["binding"])
+        self.assertEqual(first["outcome"], "provider_outcome_unknown")
+        self.assertEqual([(e[0], e[1]) for e in backend.effects], [("disable", "wd-old")])
+        second = runtime.reconcile(d["binding"])
+        self.assertEqual(second["outcome"], "unreconciled_operation")
+        self.assertEqual([(e[0], e[1]) for e in backend.effects], [("disable", "wd-old")])
+        next(item for item in backend.inventory["objects"] if item["object_id"] == "wd-old")["execution_state"] = "idle"
+        third = runtime.reconcile(d["binding"])
+        self.assertEqual(third["outcome"], "duplicates_quiesced")
+        self.assertEqual([(e[0], e[1]) for e in backend.effects], [("disable", "wd-old")])
+
     def test_owner_stop_committed_after_claim_blocks_scheduler_io(self):
         fired = {"done": False}
         def pause_after_claim(store):
@@ -271,6 +313,12 @@ class WatchdogSurvivabilityRuntimeTests(unittest.TestCase):
         result = runtime.reconcile_registered()
         self.assertTrue(result["continuation_required"])
         self.assertEqual(result["results"][0]["assessment"]["overall"], "EXECUTION_BROKEN")
+
+    def test_recreation_keeps_batch_continuation_until_new_watchdog_is_woken(self):
+        result = self.runtime.reconcile_registered(max_effects=1)
+        self.assertEqual(result["effects_attempted"], 1)
+        self.assertEqual(result["results"][0]["outcome"], "recreated")
+        self.assertTrue(result["continuation_required"])
 
     def test_registered_reconciliation_assesses_all_but_bounds_scheduler_effects(self):
         store = MemoryStore()
