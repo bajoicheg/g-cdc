@@ -4,12 +4,10 @@ from __future__ import annotations
 
 import copy
 from dataclasses import dataclass
-from enum import Enum
 import hashlib
 import json
 import re
 import secrets
-from typing import Optional
 
 try:
     from project_lanes import (
@@ -67,40 +65,6 @@ class LaneRegistryConfig:
         payload = json.dumps(self.to_dict(), sort_keys=True, separators=(",", ":")).encode("utf-8")
         return "sha256:" + hashlib.sha256(payload).hexdigest()
 
-
-class LaneState(str, Enum):
-    QUEUED = "queued"
-    RUNNING = "running"
-    HANDOFF_PENDING = "handoff_pending"
-    RELEASED = "released"
-    STALE = "stale"
-
-
-@dataclass
-class LaneRuntime:
-    lane_id: str
-    generation: int
-    state: LaneState = LaneState.QUEUED
-    last_activity_ref: Optional[str] = None
-    pending_effects: bool = False
-
-    def heartbeat(self, activity_ref):
-        if not activity_ref or activity_ref == self.last_activity_ref:
-            raise ValueError("heartbeat requires a new activity reference")
-        self.last_activity_ref = activity_ref
-        self.state = LaneState.RUNNING
-
-    def request_handoff(self):
-        if self.state != LaneState.RUNNING:
-            raise ValueError("only active lanes can handoff")
-        self.state = LaneState.HANDOFF_PENDING
-
-    def release(self):
-        if self.pending_effects:
-            raise ValueError("lane release requires drained effects")
-        if self.state not in (LaneState.HANDOFF_PENDING, LaneState.RUNNING):
-            raise ValueError("lane is not releasable")
-        self.state = LaneState.RELEASED
 
 
 def _claim_dict(claim):
