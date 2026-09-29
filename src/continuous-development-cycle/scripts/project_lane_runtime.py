@@ -499,6 +499,17 @@ class ProjectLaneCoordinator:
             if (integrator["state"] != "running"
                     or integrator["claim"]["kind"] != LaneKind.INTEGRATOR.value):
                 raise ValueError("active integrator lane required")
+            existing = state["integration_intents"].get(key)
+            if existing is not None:
+                if (existing.get("integrator_lane_id") != integrator_lane_id
+                        or existing.get("integrator_invocation_id") != integrator_invocation_id
+                        or existing.get("integrator_generation") != integrator_generation
+                        or existing.get("integrator_executor_id") != integrator_executor_id
+                        or existing.get("observed_shared_head") != observed_shared_head
+                        or existing.get("intended_integrated_head") != intended_integrated_head):
+                    raise ValueError("integration replay does not match the durable intent")
+                decision.update(claimed=False, operation_id=existing["operation_id"])
+                return False
             if integrator["pending_effects"]:
                 raise ValueError("integrator already has a pending effect")
             matches = [
@@ -507,10 +518,6 @@ class ProjectLaneCoordinator:
             ]
             if len(matches) != 1:
                 raise ValueError("pending integration result not found")
-            existing = state["integration_intents"].get(key)
-            if existing is not None:
-                decision.update(claimed=False, operation_id=existing["operation_id"])
-                return False
             operation_id = "lane-integration-" + secrets.token_hex(24)
             state["integration_intents"][key] = {
                 "operation_id": operation_id,
