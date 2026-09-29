@@ -96,7 +96,11 @@ class ProjectLaneExecutionAdapterTests(unittest.TestCase):
             coordination_store_id=self.store.store_id,
             policy_authority="sha256:" + "b" * 64,
         )
-        self.coordinator = ProjectLaneCoordinator(self.store, config)
+        self.coordinator = ProjectLaneCoordinator(
+            self.store, config, migration_verifier=lambda observation: {
+                "safe": True, "legacy_lease": "absent", "external_guard": "none",
+                "legacy_mode_disabled": True, "evidence_ref": "legacy:none"})
+        self.coordinator.establish_migration_gate({"legacy": "observed"})
         self.worktrees = self.root / "worktrees"
         self.claim = LaneClaim(
             "lane-a", "inv-a", LaneKind.WORKER, self.base,
@@ -170,7 +174,11 @@ class ProjectLaneExecutionAdapterTests(unittest.TestCase):
             coordination_store_id=store.store_id,
             policy_authority="sha256:" + "b" * 64,
         )
-        coord = ProjectLaneCoordinator(store, config)
+        coord = ProjectLaneCoordinator(
+            store, config, migration_verifier=lambda observation: {
+                "safe": True, "legacy_lease": "absent", "external_guard": "none",
+                "legacy_mode_disabled": True, "evidence_ref": "legacy:none"})
+        coord.establish_migration_gate({"legacy": "observed"})
         claim = LaneClaim(
             "integrator", "int-inv", LaneKind.INTEGRATOR, self.base,
             str(self.worktrees / "integrator"), "refs/heads/integration",
