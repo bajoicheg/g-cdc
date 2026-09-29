@@ -29,7 +29,7 @@ class MemoryStore:
 
 def config(**patch):
     value = {
-        "canonical_repository": "bajoicheg/g-cdc",
+        "canonical_repository": "example/g-cdc",
         "product_source_ref": "refs/heads/main",
         "coordination_ref": "refs/heads/cdc/project-lanes",
         "coordination_store_id": "sha256:" + "c" * 64,
@@ -44,7 +44,7 @@ class ProjectLaneRegistryBindingTests(unittest.TestCase):
         store = MemoryStore()
         first = runtime.ProjectLaneCoordinator(store, config())
         snapshot = first.snapshot()
-        self.assertEqual(snapshot["config"]["canonical_repository"], "bajoicheg/g-cdc")
+        self.assertEqual(snapshot["config"]["canonical_repository"], "example/g-cdc")
         self.assertRegex(snapshot["config_digest"], r"^sha256:[0-9a-f]{64}$")
 
         drifted = runtime.ProjectLaneCoordinator(
