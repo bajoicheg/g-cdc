@@ -466,6 +466,8 @@ class ProjectLaneCoordinator:
             if (integrator["state"] != "running"
                     or integrator["claim"]["kind"] != LaneKind.INTEGRATOR.value):
                 raise ValueError("active integrator lane required")
+            if integrator["pending_effects"]:
+                raise ValueError("integrator already has a pending effect")
             matches = [
                 item for item in state["integration_queue"]
                 if item["lane_id"] == lane_id and item["result_commit"] == result_commit
@@ -488,6 +490,7 @@ class ProjectLaneCoordinator:
                 "integrator_executor_id": integrator_executor_id,
                 "observed_shared_head": observed_shared_head,
             }
+            integrator["pending_effects"] = True
             decision.update(claimed=True, operation_id=operation_id)
             return True
 
@@ -545,6 +548,7 @@ class ProjectLaneCoordinator:
             state["integration_queue"].remove(queued[0])
             current["status"] = "integrated"
             current["integration_evidence"] = copy.deepcopy(evidence)
+            state["lanes"][integrator_lane_id]["pending_effects"] = False
             state["integrated_results"].append({
                 **copy.deepcopy(queued[0]),
                 "integrator_lane_id": integrator_lane_id,
