@@ -10,7 +10,7 @@ class CooperativeLaneTests(unittest.TestCase):
             lane_id=name,
             invocation_id=name,
             kind=kind,
-            source_head="head",
+            source_head="a" * 40,
             worktree=name,
             branch=name,
             write_paths=frozenset(writes),
@@ -23,8 +23,9 @@ class CooperativeLaneTests(unittest.TestCase):
         self.assertTrue(paths_overlap(self.claim("a", {"src"}), self.claim("b", {"src/a"})))
         self.assertFalse(admit_writer([self.claim("a", {"src"})], self.claim("b", {"src/a"})))
 
-    def test_portable_case_and_separator_variants_overlap(self):
-        self.assertTrue(paths_overlap(self.claim("a", {"SRC\\Feature"}), self.claim("b", {"src/feature"})))
+    def test_portable_case_and_unicode_variants_overlap(self):
+        self.assertTrue(paths_overlap(self.claim("a", {"SRC/Feature"}), self.claim("b", {"src/feature"})))
+        self.assertTrue(paths_overlap(self.claim("a", {"docs/café"}), self.claim("b", {"docs/cafe\u0301"})))
 
     def test_read_only_lane_does_not_block_writer(self):
         self.assertTrue(admit_writer([self.claim("review", set(), LaneKind.REVIEW)], self.claim("worker", {"src/a"})))
