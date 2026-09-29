@@ -42,8 +42,13 @@ class RecordingBackend:
         self.lose_create_reply = False
         self.lose_run_reply = False
         self.next_id = 1
+        self.reads = 0
+        self.before_observe = None
 
     def observe(self, binding):
+        self.reads += 1
+        if self.before_observe:
+            self.before_observe(self, self.reads)
         self.inventory["binding"] = copy.deepcopy(binding)
         return copy.deepcopy(self.inventory)
 
@@ -145,6 +150,20 @@ class WatchdogSurvivabilityRuntimeTests(unittest.TestCase):
         newer = desired(canonical_object_id=None, generation=9)
         with self.assertRaisesRegex(ValueError, "unresolved"):
             self.runtime.register(newer)
+
+    def test_post_claim_run_is_blocked_if_another_actor_already_started_watchdog(self):
+        store = MemoryStore()
+        backend = RecordingBackend(inventory([obj(last_run_at_utc="2026-09-29T09:00:00Z")]))
+        def race(other, reads):
+            if reads == 2:
+                other.inventory["objects"][0]["last_run_at_utc"] = NOW
+                other.inventory["objects"][0]["execution_state"] = "running"
+        backend.before_observe = race
+        runtime = runtime_mod.WatchdogSurvivabilityRuntime(store, backend, clock=lambda: NOW)
+        runtime.register(desired())
+        result = runtime.reconcile(desired()["binding"])
+        self.assertEqual(result["outcome"], "post_claim_gate_denied")
+        self.assertEqual(backend.effects, [])
 
     def test_owner_stop_committed_after_claim_blocks_scheduler_io(self):
         fired = {"done": False}
