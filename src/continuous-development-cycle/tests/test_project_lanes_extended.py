@@ -219,6 +219,15 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
         self.assertFalse(second["claimed"])
         self.assertEqual(first["operation_id"], second["operation_id"])
 
+    def test_lane_cannot_publish_multiple_accepted_results(self):
+        coord = coordinator(result_verifier=verifier())
+        coord.admit(claim("a", {"src/a"}), generation=1)
+        coord.record_result("a", invocation_id="a", generation=1, executor_id="a",
+                            result_commit="b" * 40, evidence_refs=["test:first"])
+        with self.assertRaisesRegex(ValueError, "accepted writer result"):
+            coord.record_result("a", invocation_id="a", generation=1, executor_id="a",
+                                result_commit="c" * 40, evidence_refs=["test:second"])
+
     def test_result_rejects_stale_base_unverified_ancestry_or_path_escape(self):
         for check in (
             verifier("c" * 40, True, {"src/a/x.py"}),
