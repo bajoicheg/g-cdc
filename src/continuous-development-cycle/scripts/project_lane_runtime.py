@@ -25,6 +25,15 @@ except ModuleNotFoundError:
 SCHEMA = "project-lane-registry/v1"
 DIGEST = re.compile(r"sha256:[0-9a-f]{64}$")
 REPOSITORY = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+INVALID_REF = re.compile(r"[\x00-\x20\x7f~^:?*\[\\]")
+
+
+def _branch_ref(value, label, prefix="refs/heads/"):
+    if (not isinstance(value, str) or not value.startswith(prefix)
+            or value.endswith(("/", ".")) or ".." in value or "@{" in value
+            or "//" in value or INVALID_REF.search(value)):
+        raise ValueError(label + " must be a canonical branch ref")
+    return value
 
 
 @dataclass(frozen=True)
@@ -38,14 +47,8 @@ class LaneRegistryConfig:
     def __post_init__(self):
         if not isinstance(self.canonical_repository, str) or not REPOSITORY.fullmatch(self.canonical_repository):
             raise ValueError("canonical_repository must be owner/name")
-        if (not isinstance(self.product_source_ref, str)
-                or not self.product_source_ref.startswith("refs/heads/")
-                or self.product_source_ref.endswith(("/", "."))
-                or ".." in self.product_source_ref or "@{" in self.product_source_ref
-                or "//" in self.product_source_ref):
-            raise ValueError("product_source_ref must be a canonical refs/heads/ ref")
-        if not isinstance(self.coordination_ref, str) or not self.coordination_ref.startswith("refs/heads/cdc/"):
-            raise ValueError("coordination_ref must be a dedicated CDC branch ref")
+        _branch_ref(self.product_source_ref, "product_source_ref")
+        _branch_ref(self.coordination_ref, "coordination_ref", "refs/heads/cdc/")
         if not isinstance(self.coordination_store_id, str) or not DIGEST.fullmatch(self.coordination_store_id):
             raise ValueError("coordination_store_id must be sha256")
         if not isinstance(self.policy_authority, str) or not DIGEST.fullmatch(self.policy_authority):
