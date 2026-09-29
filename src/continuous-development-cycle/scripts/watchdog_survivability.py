@@ -213,6 +213,15 @@ def assess(desired, inventory, *, now=None, max_age_seconds=120):
     if desired["canonical_object_id"] is None and len(matching) > 1:
         return _result(desired, "DUPLICATE", "OBSERVE", reasons=["multiple current materializations prevent canonical adoption"])
     if canonical is None:
+        active_noncanonical = [
+            item["object_id"] for item in objects
+            if item["execution_state"] in {"running", "unknown"}
+        ]
+        if active_noncanonical:
+            return _result(
+                desired, "DUPLICATE", "OBSERVE",
+                stale_object_ids=[item["object_id"] for item in objects],
+                reasons=["canonical watchdog is missing but another materialization may still execute"])
         return _result(desired, "MISSING", "RECREATE", eligible=True, next_generation=desired["generation"] + 1,
                        stale_object_ids=[item["object_id"] for item in objects], reasons=["required canonical watchdog object is missing"])
     extras = [item["object_id"] for item in objects
