@@ -150,9 +150,12 @@ def _terminal(desired, inventory, fresh):
 def execution_is_current(desired, runtime_object):
     validate_desired(desired)
     _validate_object(runtime_object)
-    return (desired["desired_state"] == "enabled" and desired["owner_stop_evidence"] is None
+    return (desired["required"] and desired["desired_state"] == "enabled"
+            and desired["owner_stop_evidence"] is None and runtime_object["enabled"]
             and desired["canonical_object_id"] == runtime_object["object_id"]
-            and desired["generation"] == runtime_object["generation"])
+            and desired["generation"] == runtime_object["generation"]
+            and desired["schedule"] == runtime_object["schedule"]
+            and desired["template_digest"] == runtime_object["template_digest"])
 
 
 def _result(desired, overall, action, *, eligible=False, next_generation=None, canonical_object_id=None,
@@ -188,10 +191,13 @@ def assess(desired, inventory, *, now=None, max_age_seconds=120):
             and isinstance(policy["owner_authorization"], str) and bool(policy["owner_authorization"].strip())
             and inventory["project"]["state"] == "runnable"
             and safety["owner"] == "released" and safety["guard"] == "released"
-            and safety["external"] in {"none", "terminal_reconciled"} and safety["pause"] == "running")
+            and safety["external"] in {"none", "terminal_reconciled"} and safety["pause"] == "running"
+            and safety["owner_pause_evidence"] is None)
 
     if desired["desired_state"] == "paused" or desired["owner_stop_evidence"] is not None or not desired["required"]:
         return _result(desired, "OWNER_PAUSED", "NONE", reasons=["desired state intentionally suppresses watchdog recovery"])
+    if fresh and (safety["pause"] == "paused" or safety["owner_pause_evidence"] is not None):
+        return _result(desired, "OWNER_PAUSED", "NONE", reasons=["fresh owner pause suppresses watchdog recovery"])
     if _terminal(desired, inventory, fresh):
         return _result(desired, "PROJECT_TERMINAL", "NONE", reasons=["fresh exact terminal proof suppresses watchdog recovery"])
     if not safe:
@@ -225,9 +231,15 @@ def assess(desired, inventory, *, now=None, max_age_seconds=120):
     if canonical["consecutive_failures"] >= policy["flap_threshold"]:
         return _result(desired, "FLAPPING", "RECREATE", eligible=True, next_generation=desired["generation"] + 1,
                        canonical_object_id=canonical["object_id"], reasons=["watchdog reached configured failure threshold"])
+    if canonical["execution_state"] == "running":
+        return _result(desired, "HEALTHY", "NONE", canonical_object_id=canonical["object_id"],
+                       reasons=["watchdog invocation is already running; duplicate wake suppressed"])
     if not canonical["enabled"]:
         return _result(desired, "DISABLED_DRIFT", "ENABLE", eligible=True,
                        canonical_object_id=canonical["object_id"], reasons=["required watchdog is disabled"])
+    if canonical["execution_state"] == "failed":
+        return _result(desired, "OVERDUE", "RUN", eligible=True,
+                       canonical_object_id=canonical["object_id"], reasons=["last watchdog invocation failed; bounded retry requested"])
     if canonical["last_run_at_utc"] is None or (instant - _utc(canonical["last_run_at_utc"])).total_seconds() > policy["overdue_after_seconds"]:
         return _result(desired, "OVERDUE", "RUN", eligible=True,
                        canonical_object_id=canonical["object_id"], reasons=["watchdog wake is overdue"])
