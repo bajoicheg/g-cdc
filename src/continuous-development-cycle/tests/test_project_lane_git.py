@@ -81,6 +81,41 @@ class GitLaneResultVerifierTests(unittest.TestCase):
         result = self.verifier(self.claim, head)
         self.assertIn("src/b/outside.txt", result["touched_paths"])
 
+    def test_integration_verifier_proves_result_and_observed_head_ancestry(self):
+        git(self.repo, "checkout", "-qb", "worker-result", self.base)
+        result_commit = self.commit(Path("src/a/integrated.py"), "ok\n", "worker result")
+        git(self.repo, "checkout", "-q", self.primary)
+        git(self.repo, "merge", "--ff-only", "worker-result")
+        integrator = LaneClaim(
+            "integrator", "integrator-inv", LaneKind.INTEGRATOR, self.base,
+            str(self.repo), self.primary, executor_id="integrator", role="integrator")
+        verifier = project_lane_git.GitLaneIntegrationVerifier(
+            self.repo, "refs/heads/" + self.primary)
+        evidence = verifier(
+            {"lane_id": "lane", "result_commit": result_commit},
+            integrator,
+            {"lane_id": "lane", "result_commit": result_commit,
+             "observed_shared_head": self.base, "operation_id": "op-1"})
+        self.assertTrue(evidence["integrated"])
+        self.assertEqual(evidence["integrated_head"], result_commit)
+        self.assertFalse(evidence["force_push"])
+
+    def test_integration_verifier_rejects_result_not_present_on_shared_head(self):
+        git(self.repo, "checkout", "-qb", "worker-result", self.base)
+        result_commit = self.commit(Path("src/a/not-integrated.py"), "no\n", "worker result")
+        git(self.repo, "checkout", "-q", self.primary)
+        integrator = LaneClaim(
+            "integrator", "integrator-inv", LaneKind.INTEGRATOR, self.base,
+            str(self.repo), self.primary, executor_id="integrator", role="integrator")
+        verifier = project_lane_git.GitLaneIntegrationVerifier(
+            self.repo, "refs/heads/" + self.primary)
+        with self.assertRaisesRegex(ValueError, "ancestry"):
+            verifier(
+                {"lane_id": "lane", "result_commit": result_commit},
+                integrator,
+                {"lane_id": "lane", "result_commit": result_commit,
+                 "observed_shared_head": self.base, "operation_id": "op-1"})
+
     def test_invalid_or_missing_commit_fails_closed(self):
         for value in ("main", "f" * 40):
             with self.subTest(value=value), self.assertRaises(ValueError):
