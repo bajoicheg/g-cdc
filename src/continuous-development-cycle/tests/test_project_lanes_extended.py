@@ -87,7 +87,8 @@ def integration_verifier(item, integrator, intent):
         "operation_id": intent["operation_id"],
         "result_commit": item["result_commit"],
         "observed_shared_head": intent["observed_shared_head"],
-        "integrated_head": "d" * 40,
+        "integrated_head": intent["intended_integrated_head"],
+        "conditional_update": True,
         "force_push": False,
         "evidence_ref": "git:conditional-integration",
     }
@@ -212,7 +213,8 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
         intent = coord.claim_integration(
             "a", result_commit="b" * 40, integrator_lane_id="integrator",
             integrator_invocation_id="integrator", integrator_generation=1,
-            integrator_executor_id="integrator", observed_shared_head="c" * 40)
+            integrator_executor_id="integrator", observed_shared_head="c" * 40,
+            intended_integrated_head="d" * 40)
         self.assertTrue(intent["claimed"])
         coord.mark_integrated(
             "a", result_commit="b" * 40, operation_id=intent["operation_id"],
@@ -230,7 +232,8 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
         intent = coord.claim_integration(
             "a", result_commit="b" * 40, integrator_lane_id="integrator",
             integrator_invocation_id="integrator", integrator_generation=1,
-            integrator_executor_id="integrator", observed_shared_head="c" * 40)
+            integrator_executor_id="integrator", observed_shared_head="c" * 40,
+            intended_integrated_head="d" * 40)
         self.assertTrue(coord.snapshot()["lanes"]["integrator"]["pending_effects"])
         with self.assertRaisesRegex(ValueError, "drained effects"):
             coord.release(
@@ -259,11 +262,13 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
         first = coord.claim_integration(
             "a", result_commit="b" * 40, integrator_lane_id="integrator",
             integrator_invocation_id="integrator", integrator_generation=1,
-            integrator_executor_id="integrator", observed_shared_head="c" * 40)
+            integrator_executor_id="integrator", observed_shared_head="c" * 40,
+            intended_integrated_head="d" * 40)
         second = coord.claim_integration(
             "a", result_commit="b" * 40, integrator_lane_id="integrator",
             integrator_invocation_id="integrator", integrator_generation=1,
-            integrator_executor_id="integrator", observed_shared_head="c" * 40)
+            integrator_executor_id="integrator", observed_shared_head="c" * 40,
+            intended_integrated_head="d" * 40)
         self.assertTrue(first["claimed"])
         self.assertFalse(second["claimed"])
         self.assertEqual(first["operation_id"], second["operation_id"])
