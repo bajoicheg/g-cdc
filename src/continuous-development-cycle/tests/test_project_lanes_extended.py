@@ -46,9 +46,17 @@ def registry_config(store):
     )
 
 
+def migration_verifier(observation):
+    return {"safe": True, "legacy_lease": "absent", "external_guard": "none",
+            "legacy_mode_disabled": True, "evidence_ref": "legacy:none"}
+
+
 def coordinator(store=None, **kwargs):
     store = store or MemoryStore()
-    return runtime.ProjectLaneCoordinator(store, registry_config(store), **kwargs)
+    kwargs.setdefault("migration_verifier", migration_verifier)
+    value = runtime.ProjectLaneCoordinator(store, registry_config(store), **kwargs)
+    value.establish_migration_gate({"legacy": "observed"})
+    return value
 
 
 def quiescent(lane, checkpoint):
