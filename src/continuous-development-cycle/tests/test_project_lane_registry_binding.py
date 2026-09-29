@@ -60,8 +60,12 @@ class ProjectLaneRegistryBindingTests(unittest.TestCase):
                 runtime.ProjectLaneCoordinator(MemoryStore(), value)
 
     def test_source_ref_and_repository_identity_are_canonical(self):
-        with self.assertRaises(ValueError):
-            config(product_source_ref="main")
+        for source_ref in ("main", "refs/heads/bad ref", "refs/heads/bad:ref", "refs/heads/a..b"):
+            with self.subTest(source_ref=source_ref), self.assertRaises(ValueError):
+                config(product_source_ref=source_ref)
+        for coordination_ref in ("refs/heads/cdc/bad ref", "refs/heads/cdc/a..b", "refs/heads/other"):
+            with self.subTest(coordination_ref=coordination_ref), self.assertRaises(ValueError):
+                config(coordination_ref=coordination_ref)
         with self.assertRaises(ValueError):
             config(canonical_repository="not-a-repository")
 
