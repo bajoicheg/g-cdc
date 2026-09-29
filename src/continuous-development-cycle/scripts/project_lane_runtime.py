@@ -8,6 +8,7 @@ from enum import Enum
 import hashlib
 import json
 import re
+import secrets
 from typing import Optional
 
 try:
@@ -167,6 +168,7 @@ class ProjectLaneCoordinator:
             "config_digest": self.config.digest(),
             "lanes": {},
             "integration_queue": [],
+            "integration_intents": {},
             "integrated_results": [],
         }
 
@@ -181,6 +183,7 @@ class ProjectLaneCoordinator:
         if state["config"] != self.config.to_dict() or state["config_digest"] != self.config.digest():
             raise ValueError("project lane registry configuration drift")
         if (not isinstance(state["lanes"], dict) or not isinstance(state["integration_queue"], list)
+                or not isinstance(state["integration_intents"], dict)
                 or not isinstance(state["integrated_results"], list)):
             raise ValueError("project lane registry collections invalid")
         return revision, state
@@ -318,7 +321,7 @@ class ProjectLaneCoordinator:
     def record_result(self, lane_id, *, invocation_id, generation, executor_id, result_commit, evidence_refs):
         if self.result_verifier is None:
             raise ValueError("writer result requires independent verifier")
-        if not isinstance(result_commit, str) or len(result_commit) not in {40, 64}:
+        if not isinstance(result_commit, str) or not SHA.fullmatch(result_commit):
             raise ValueError("result_commit invalid")
         if (not isinstance(evidence_refs, list) or not evidence_refs
                 or any(not isinstance(item, str) or not item.strip() for item in evidence_refs)):
@@ -367,10 +370,21 @@ class ProjectLaneCoordinator:
 
         self._change(transform)
 
-    def mark_integrated(self, lane_id, *, result_commit, integrator_lane_id,
-                        integrator_invocation_id, integrator_generation, integrator_executor_id):
-        if self.integration_verifier is None:
-            raise ValueError("integration requires fresh independent verifier")
+    @staticmethod
+    def _integration_key(lane_id, result_commit):
+        raw = json.dumps({"lane_id": lane_id, "result_commit": result_commit},
+                         sort_keys=True, separators=(",", ":")).encode("utf-8")
+        return hashlib.sha256(raw).hexdigest()
+
+    def claim_integration(self, lane_id, *, result_commit, integrator_lane_id,
+                          integrator_invocation_id, integrator_generation,
+                          integrator_executor_id, observed_shared_head):
+        if not isinstance(result_commit, str) or not SHA.fullmatch(result_commit):
+            raise ValueError("result_commit invalid")
+        if not isinstance(observed_shared_head, str) or not SHA.fullmatch(observed_shared_head):
+            raise ValueError("observed_shared_head must be an exact Git commit")
+        key = self._integration_key(lane_id, result_commit)
+        decision = {"claimed": False, "operation_id": None}
 
         def transform(state):
             integrator = self._bound(
@@ -385,24 +399,81 @@ class ProjectLaneCoordinator:
             ]
             if len(matches) != 1:
                 raise ValueError("pending integration result not found")
-            evidence = self.integration_verifier(
-                copy.deepcopy(matches[0]), _claim_from(integrator["claim"]))
-            expected = {"integrated", "result_commit", "observed_shared_head",
-                        "integrated_head", "force_push", "evidence_ref"}
-            if (not isinstance(evidence, dict) or set(evidence) != expected
-                    or evidence["integrated"] is not True
-                    or evidence["result_commit"] != result_commit
-                    or not isinstance(evidence["observed_shared_head"], str)
-                    or not SHA.fullmatch(evidence["observed_shared_head"])
-                    or not isinstance(evidence["integrated_head"], str)
-                    or not SHA.fullmatch(evidence["integrated_head"])
-                    or evidence["force_push"] is not False
-                    or not isinstance(evidence["evidence_ref"], str)
-                    or not evidence["evidence_ref"].strip()):
-                raise ValueError("integration verifier did not prove fresh conditional integration")
-            state["integration_queue"].remove(matches[0])
+            existing = state["integration_intents"].get(key)
+            if existing is not None:
+                decision.update(claimed=False, operation_id=existing["operation_id"])
+                return False
+            operation_id = "lane-integration-" + secrets.token_hex(24)
+            state["integration_intents"][key] = {
+                "operation_id": operation_id,
+                "status": "claimed",
+                "lane_id": lane_id,
+                "result_commit": result_commit,
+                "integrator_lane_id": integrator_lane_id,
+                "integrator_invocation_id": integrator_invocation_id,
+                "integrator_generation": integrator_generation,
+                "integrator_executor_id": integrator_executor_id,
+                "observed_shared_head": observed_shared_head,
+            }
+            decision.update(claimed=True, operation_id=operation_id)
+            return True
+
+        self._change(transform)
+        return decision
+
+    def mark_integrated(self, lane_id, *, result_commit, operation_id, integrator_lane_id,
+                        integrator_invocation_id, integrator_generation, integrator_executor_id):
+        if self.integration_verifier is None:
+            raise ValueError("integration requires fresh independent verifier")
+        key = self._integration_key(lane_id, result_commit)
+        _, snapshot = self._read()
+        intent = snapshot["integration_intents"].get(key)
+        if (intent is None or intent.get("status") != "claimed"
+                or intent.get("operation_id") != operation_id):
+            raise ValueError("durable integration intent is required before publication reconciliation")
+        integrator = self._bound(
+            snapshot, integrator_lane_id, integrator_invocation_id,
+            integrator_generation, integrator_executor_id)
+        matches = [
+            item for item in snapshot["integration_queue"]
+            if item["lane_id"] == lane_id and item["result_commit"] == result_commit
+        ]
+        if len(matches) != 1:
+            raise ValueError("pending integration result not found")
+        evidence = self.integration_verifier(
+            copy.deepcopy(matches[0]), _claim_from(integrator["claim"]), copy.deepcopy(intent))
+        expected = {"integrated", "operation_id", "result_commit", "observed_shared_head",
+                    "integrated_head", "force_push", "evidence_ref"}
+        if (not isinstance(evidence, dict) or set(evidence) != expected
+                or evidence["integrated"] is not True
+                or evidence["operation_id"] != operation_id
+                or evidence["result_commit"] != result_commit
+                or evidence["observed_shared_head"] != intent["observed_shared_head"]
+                or not isinstance(evidence["integrated_head"], str)
+                or not SHA.fullmatch(evidence["integrated_head"])
+                or evidence["force_push"] is not False
+                or not isinstance(evidence["evidence_ref"], str)
+                or not evidence["evidence_ref"].strip()):
+            raise ValueError("integration verifier did not prove claimed conditional integration")
+
+        def transform(state):
+            current = state["integration_intents"].get(key)
+            if (current is None or current.get("status") != "claimed"
+                    or current.get("operation_id") != operation_id):
+                raise ValueError("integration intent changed before reconciliation")
+            self._bound(state, integrator_lane_id, integrator_invocation_id,
+                        integrator_generation, integrator_executor_id)
+            queued = [
+                item for item in state["integration_queue"]
+                if item["lane_id"] == lane_id and item["result_commit"] == result_commit
+            ]
+            if len(queued) != 1:
+                raise ValueError("pending integration result changed before reconciliation")
+            state["integration_queue"].remove(queued[0])
+            current["status"] = "integrated"
+            current["integration_evidence"] = copy.deepcopy(evidence)
             state["integrated_results"].append({
-                **copy.deepcopy(matches[0]),
+                **copy.deepcopy(queued[0]),
                 "integrator_lane_id": integrator_lane_id,
                 "integration_evidence": copy.deepcopy(evidence),
             })
