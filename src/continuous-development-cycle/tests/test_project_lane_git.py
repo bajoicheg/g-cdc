@@ -41,6 +41,7 @@ class GitLaneResultVerifierTests(unittest.TestCase):
         git(self.repo, "add", ".")
         git(self.repo, "commit", "-qm", "base")
         self.base = git(self.repo, "rev-parse", "HEAD")
+        self.primary = git(self.repo, "branch", "--show-current")
         self.claim = LaneClaim(
             "lane", "inv", LaneKind.WORKER, self.base, str(self.repo), "worker",
             write_paths=frozenset({"src/a"}), executor_id="e", role="writer")
