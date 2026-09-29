@@ -134,6 +134,7 @@ class ProjectLaneCoordinator:
             "config": self.config.to_dict(),
             "config_digest": self.config.digest(),
             "lanes": {},
+            "start_operations": {},
             "integration_queue": [],
             "integration_intents": {},
             "integrated_results": [],
@@ -149,7 +150,8 @@ class ProjectLaneCoordinator:
             raise ValueError("project lane registry identity mismatch")
         if state["config"] != self.config.to_dict() or state["config_digest"] != self.config.digest():
             raise ValueError("project lane registry configuration drift")
-        if (not isinstance(state["lanes"], dict) or not isinstance(state["integration_queue"], list)
+        if (not isinstance(state["lanes"], dict) or not isinstance(state["start_operations"], dict)
+                or not isinstance(state["integration_queue"], list)
                 or not isinstance(state["integration_intents"], dict)
                 or not isinstance(state["integrated_results"], list)):
             raise ValueError("project lane registry collections invalid")
@@ -230,6 +232,74 @@ class ProjectLaneCoordinator:
         if executor_id is not None and claim["executor_id"] != executor_id:
             raise ValueError("lane executor identity mismatch")
         return lane
+
+    def claim_start(self, lane_id, *, invocation_id, generation, executor_id):
+        decision = {"claimed": False, "operation_id": None}
+
+        def transform(state):
+            lane = self._bound(state, lane_id, invocation_id, generation, executor_id)
+            claim = _claim_from(lane["claim"])
+            if lane["state"] != "running":
+                raise ValueError("lane must be running before worker start")
+            if claim.kind == LaneKind.INTEGRATOR:
+                raise ValueError("integrator lane cannot launch a worker backend")
+            existing = state["start_operations"].get(lane_id)
+            if existing is not None:
+                decision.update(operation_id=existing["operation_id"])
+                return False
+            if lane["pending_effects"]:
+                raise ValueError("lane already has a pending effect")
+            operation_id = "lane-start-" + secrets.token_hex(24)
+            state["start_operations"][lane_id] = {
+                "operation_id": operation_id,
+                "status": "claimed",
+                "lane_id": lane_id,
+                "invocation_id": invocation_id,
+                "generation": generation,
+                "executor_id": executor_id,
+                "source_head": claim.source_head,
+                "branch": claim.branch,
+                "worktree": claim.worktree,
+                "evidence_ref": None,
+            }
+            lane["pending_effects"] = True
+            decision.update(claimed=True, operation_id=operation_id)
+            return True
+
+        self._change(transform)
+        return decision
+
+    def reconcile_start(self, lane_id, *, invocation_id, generation, executor_id,
+                        operation_id, status, evidence_ref):
+        allowed = {"starting", "running", "succeeded", "failed", "cancelled", "timed_out", "unknown"}
+        if status not in allowed:
+            raise ValueError("unsupported lane start observation")
+        if not isinstance(evidence_ref, str) or not evidence_ref.strip():
+            raise ValueError("lane start observation requires evidence_ref")
+
+        def transform(state):
+            lane = self._bound(state, lane_id, invocation_id, generation, executor_id)
+            op = state["start_operations"].get(lane_id)
+            if (op is None or op["operation_id"] != operation_id
+                    or op["invocation_id"] != invocation_id
+                    or op["generation"] != generation
+                    or op["executor_id"] != executor_id):
+                raise ValueError("lane start operation identity mismatch")
+            if op["status"] in {"succeeded", "failed", "cancelled", "timed_out"}:
+                if op["status"] != status or op["evidence_ref"] != evidence_ref:
+                    raise ValueError("terminal lane start observation is immutable")
+                return False
+            op["status"] = status
+            op["evidence_ref"] = evidence_ref
+            lane["pending_effects"] = status in {"claimed", "starting", "running", "unknown"}
+            return True
+
+        self._change(transform)
+
+    def start_operation(self, lane_id):
+        state = self._read()[1]
+        value = state["start_operations"].get(lane_id)
+        return copy.deepcopy(value) if value is not None else None
 
     def heartbeat(self, lane_id, *, invocation_id, generation, executor_id, activity_ref):
         if not isinstance(activity_ref, str) or not activity_ref.strip():
