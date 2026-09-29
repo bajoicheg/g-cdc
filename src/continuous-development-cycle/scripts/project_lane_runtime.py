@@ -480,11 +480,14 @@ class ProjectLaneCoordinator:
 
     def claim_integration(self, lane_id, *, result_commit, integrator_lane_id,
                           integrator_invocation_id, integrator_generation,
-                          integrator_executor_id, observed_shared_head):
+                          integrator_executor_id, observed_shared_head,
+                          intended_integrated_head):
         if not isinstance(result_commit, str) or not SHA.fullmatch(result_commit):
             raise ValueError("result_commit invalid")
         if not isinstance(observed_shared_head, str) or not SHA.fullmatch(observed_shared_head):
             raise ValueError("observed_shared_head must be an exact Git commit")
+        if not isinstance(intended_integrated_head, str) or not SHA.fullmatch(intended_integrated_head):
+            raise ValueError("intended_integrated_head must be an exact Git commit")
         key = self._integration_key(lane_id, result_commit)
         decision = {"claimed": False, "operation_id": None}
 
@@ -518,6 +521,7 @@ class ProjectLaneCoordinator:
                 "integrator_generation": integrator_generation,
                 "integrator_executor_id": integrator_executor_id,
                 "observed_shared_head": observed_shared_head,
+                "intended_integrated_head": intended_integrated_head,
             }
             integrator["pending_effects"] = True
             decision.update(claimed=True, operation_id=operation_id)
@@ -548,14 +552,16 @@ class ProjectLaneCoordinator:
         evidence = self.integration_verifier(
             copy.deepcopy(matches[0]), _claim_from(integrator["claim"]), copy.deepcopy(intent))
         expected = {"integrated", "operation_id", "result_commit", "observed_shared_head",
-                    "integrated_head", "force_push", "evidence_ref"}
+                    "integrated_head", "conditional_update", "force_push", "evidence_ref"}
         if (not isinstance(evidence, dict) or set(evidence) != expected
                 or evidence["integrated"] is not True
                 or evidence["operation_id"] != operation_id
                 or evidence["result_commit"] != result_commit
                 or evidence["observed_shared_head"] != intent["observed_shared_head"]
+                or evidence["integrated_head"] != intent["intended_integrated_head"]
                 or not isinstance(evidence["integrated_head"], str)
                 or not SHA.fullmatch(evidence["integrated_head"])
+                or evidence["conditional_update"] is not True
                 or evidence["force_push"] is not False
                 or not isinstance(evidence["evidence_ref"], str)
                 or not evidence["evidence_ref"].strip()):
