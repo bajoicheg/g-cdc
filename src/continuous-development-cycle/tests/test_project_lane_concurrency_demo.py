@@ -86,7 +86,8 @@ class CooperativeLaneProcessDemoTests(unittest.TestCase):
 
             backend = LocalCommandBackend(root / "lane-journal")
             adapter = ProjectLaneExecutionAdapter(
-                coordinator, repo, backend, journal_root=root / "lane-journal")
+                coordinator, repo, backend, worktree_root=root,
+                journal_root=root / "lane-journal")
             adapter.start(
                 "foreground", invocation_id="fg-inv", generation=1, executor_id="fg",
                 argv=[sys.executable, str(worker), "fg"], timeout_seconds=10)
