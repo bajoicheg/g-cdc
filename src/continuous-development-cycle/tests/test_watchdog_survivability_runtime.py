@@ -42,6 +42,7 @@ class RecordingBackend:
         self.lose_create_reply = False
         self.lose_run_reply = False
         self.next_id = 1
+        self.run_at_utc = NOW
         self.reads = 0
         self.before_observe = None
 
@@ -74,7 +75,7 @@ class RecordingBackend:
         self.effects.append(("run", object_id, operation_id))
         for item in self.inventory["objects"]:
             if item["object_id"] == object_id:
-                item["last_run_at_utc"] = NOW
+                item["last_run_at_utc"] = self.run_at_utc
                 item["execution_state"] = "running"
         if self.lose_run_reply:
             raise TimeoutError("run reply lost")
@@ -270,6 +271,7 @@ class WatchdogSurvivabilityRuntimeTests(unittest.TestCase):
         self.assertEqual(runtime.reconcile(desired()["binding"])["outcome"], "run_requested")
         backend.inventory["objects"][0]["execution_state"] = "idle"
         instant[0] = "2026-09-29T15:00:00Z"
+        backend.run_at_utc = instant[0]
         backend.inventory["observed_at_utc"] = instant[0]
         backend.inventory["safety"]["observed_at_utc"] = instant[0]
         self.assertEqual(runtime.reconcile(desired()["binding"])["outcome"], "run_requested")
