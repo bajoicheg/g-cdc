@@ -36,11 +36,11 @@ class FleetSupervisorSentinelTests(unittest.TestCase):
             self.assertFalse(result["authorizes_product_write"])
             self.assertEqual(runtime.calls, [BINDING])
 
-    def test_completed_recreation_is_settled_but_unknown_provider_outcome_continues(self):
+    def test_recreation_requests_continuation_until_supervisor_is_actually_woken(self):
         repaired = sentinel.reconcile_supervisor(
             FakeRuntime({"outcome": "recreated", "assessment": {"overall": "MISSING"}}),
             BINDING)
-        self.assertFalse(repaired["continuation_required"])
+        self.assertTrue(repaired["continuation_required"])
         unknown = sentinel.reconcile_supervisor(
             FakeRuntime({"outcome": "provider_outcome_unknown",
                          "assessment": {"overall": "MISSING"}}),
