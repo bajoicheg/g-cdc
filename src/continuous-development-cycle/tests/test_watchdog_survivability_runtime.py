@@ -225,6 +225,38 @@ class WatchdogSurvivabilityRuntimeTests(unittest.TestCase):
         self.assertTrue(result["continuation_required"])
         self.assertEqual(result["results"][0]["assessment"]["overall"], "EXECUTION_BROKEN")
 
+    def test_registered_reconciliation_assesses_all_but_bounds_scheduler_effects(self):
+        store = MemoryStore()
+        runtime = runtime_mod.WatchdogSurvivabilityRuntime(
+            store, RecordingBackend(inventory([])), clock=lambda: NOW)
+        alpha = desired(canonical_object_id=None)
+        beta = desired(
+            binding={"project_id": "beta", "source_ref": "refs/heads/main", "role": "project-watchdog"},
+            canonical_object_id=None,
+        )
+        runtime.register(alpha)
+        runtime.register(beta)
+        result = runtime.reconcile_registered(max_effects=1)
+        self.assertEqual(result["registered_count"], 2)
+        self.assertEqual(result["effects_attempted"], 1)
+        self.assertEqual(len(result["results"]), 2)
+        self.assertTrue(result["continuation_required"])
+        self.assertIn("effect_budget_deferred", {item["outcome"] for item in result["results"]})
+
+    def test_duplicate_quiescence_consumes_one_effect_per_reconcile(self):
+        store = MemoryStore()
+        backend = RecordingBackend(inventory([obj(), obj("wd-old-1", generation=6), obj("wd-old-2", generation=5)]))
+        runtime = runtime_mod.WatchdogSurvivabilityRuntime(store, backend, clock=lambda: NOW)
+        runtime.register(desired())
+        first = runtime.reconcile_registered(max_effects=1)
+        self.assertEqual(first["effects_attempted"], 1)
+        self.assertTrue(first["continuation_required"])
+        self.assertEqual(len([e for e in backend.effects if e[0] == "disable"]), 1)
+        second = runtime.reconcile_registered(max_effects=1)
+        self.assertEqual(second["effects_attempted"], 1)
+        self.assertFalse(second["continuation_required"])
+        self.assertEqual(len([e for e in backend.effects if e[0] == "disable"]), 2)
+
     def test_stale_registered_generation_cannot_overwrite_newer_runtime_generation(self):
         self.runtime.reconcile(desired()["binding"])
         with self.assertRaisesRegex(ValueError, "generation"):
