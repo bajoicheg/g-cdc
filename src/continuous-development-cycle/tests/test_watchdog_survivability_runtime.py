@@ -145,7 +145,10 @@ class WatchdogSurvivabilityRuntimeTests(unittest.TestCase):
         self.runtime.register(d)
         result = self.runtime.reconcile(d["binding"])
         self.assertEqual(result["outcome"], "duplicates_quiesced")
-        self.assertEqual([(e[0], e[1]) for e in self.backend.effects], [("disable", "wd-old")])\n        second = self.runtime.reconcile(d["binding"])\n        self.assertEqual(second["outcome"], "no_effect")\n        self.assertEqual([(e[0], e[1]) for e in self.backend.effects], [("disable", "wd-old")])
+        self.assertEqual([(e[0], e[1]) for e in self.backend.effects], [("disable", "wd-old")])
+        second = self.runtime.reconcile(d["binding"])
+        self.assertEqual(second["outcome"], "no_effect")
+        self.assertEqual([(e[0], e[1]) for e in self.backend.effects], [("disable", "wd-old")])
 
     def test_disabled_and_overdue_use_enable_and_run_without_generation_bump(self):
         for current, effect in ((obj(enabled=False), "enable"),
