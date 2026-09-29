@@ -8,7 +8,7 @@ CDC 2.11.2 extends the released managed executor pool and watchdog liveness cont
 - Non-overlapping writers may coexist. Portable case/Unicode/ancestor overlap serializes before effects.
 - Read-only/review lanes may coexist with writers on pinned snapshots.
 - Exactly one integrator may own the shared-branch integration lane.
-- Real worker launch uses `scripts/project_lane_executor.py`: first commit a one-shot start claim in the durable lane registry, re-read the lane, then invoke an explicit backend. Unknown starts retain the pending-effect claim and are observed, never replayed. A compatible local backend prepares the isolated Git worktree after admission, not before it.
+- Real worker launch uses `scripts/project_lane_executor.py`: first commit a one-shot start claim in the durable lane registry, re-read the lane, then invoke an explicit backend. Unknown starts retain the pending-effect claim and are observed, never replayed. The caller supplies an authorized worktree root isolated from both the product worktree and durable journal; every claimed worktree must resolve beneath that root. A compatible local backend prepares the isolated Git worktree after admission, not before it.
 - Foreground work does not pause the watchdog. A blocked watchdog chooses non-conflicting runnable or observational work.
 - Claims are not stolen for urgency. Handoff/recovery requires checkpointed independently verified quiescence; TTL/silence is insufficient.
 - Heartbeat requires a new activity reference plus independent observable-activity evidence; caller-generated labels alone are not heartbeat proof.
