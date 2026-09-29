@@ -132,7 +132,7 @@ def _claim_from(value):
 
 class ProjectLaneCoordinator:
     def __init__(self, store, config, *, result_verifier=None, quiescence_verifier=None,
-                 integration_verifier=None):
+                 integration_verifier=None, activity_verifier=None):
         if not isinstance(config, LaneRegistryConfig):
             raise ValueError("project lane registry configuration is required")
         if config.coordination_ref != store.ref or config.coordination_store_id != store.store_id:
@@ -142,6 +142,7 @@ class ProjectLaneCoordinator:
         self.result_verifier = result_verifier
         self.quiescence_verifier = quiescence_verifier
         self.integration_verifier = integration_verifier
+        self.activity_verifier = activity_verifier
         self._ensure_initialized()
 
     def _ensure_initialized(self):
@@ -166,6 +167,7 @@ class ProjectLaneCoordinator:
             "config_digest": self.config.digest(),
             "lanes": {},
             "integration_queue": [],
+            "integrated_results": [],
         }
 
     def _read(self):
@@ -178,7 +180,8 @@ class ProjectLaneCoordinator:
             raise ValueError("project lane registry identity mismatch")
         if state["config"] != self.config.to_dict() or state["config_digest"] != self.config.digest():
             raise ValueError("project lane registry configuration drift")
-        if not isinstance(state["lanes"], dict) or not isinstance(state["integration_queue"], list):
+        if (not isinstance(state["lanes"], dict) or not isinstance(state["integration_queue"], list)
+                or not isinstance(state["integrated_results"], list)):
             raise ValueError("project lane registry collections invalid")
         return revision, state
 
@@ -235,6 +238,7 @@ class ProjectLaneCoordinator:
                 "generation": generation,
                 "state": "running",
                 "last_activity_ref": None,
+                "last_activity_evidence": None,
                 "pending_effects": False,
                 "checkpoint_ref": None,
                 "quiescence_evidence": None,
@@ -245,36 +249,47 @@ class ProjectLaneCoordinator:
         self._change(transform)
         return decision
 
-    def _bound(self, state, lane_id, invocation_id, generation):
+    def _bound(self, state, lane_id, invocation_id, generation, executor_id=None):
         lane = state["lanes"].get(lane_id)
         if lane is None:
             raise ValueError("unknown lane")
         claim = lane["claim"]
         if claim["invocation_id"] != invocation_id or lane["generation"] != generation:
             raise ValueError("lane identity/generation mismatch")
+        if executor_id is not None and claim["executor_id"] != executor_id:
+            raise ValueError("lane executor identity mismatch")
         return lane
 
-    def heartbeat(self, lane_id, *, invocation_id, generation, activity_ref):
+    def heartbeat(self, lane_id, *, invocation_id, generation, executor_id, activity_ref):
         if not isinstance(activity_ref, str) or not activity_ref.strip():
             raise ValueError("activity_ref required")
+        if self.activity_verifier is None:
+            raise ValueError("heartbeat requires independent activity verifier")
 
         def transform(state):
-            lane = self._bound(state, lane_id, invocation_id, generation)
+            lane = self._bound(state, lane_id, invocation_id, generation, executor_id)
             if lane["state"] != "running" or lane["last_activity_ref"] == activity_ref:
                 raise ValueError("heartbeat requires new activity on running lane")
+            evidence = self.activity_verifier(copy.deepcopy(lane), activity_ref)
+            if (not isinstance(evidence, dict) or evidence.get("observed") is not True
+                    or evidence.get("activity_ref") != activity_ref
+                    or not isinstance(evidence.get("evidence_ref"), str)
+                    or not evidence["evidence_ref"].strip()):
+                raise ValueError("heartbeat activity is not independently observed")
             lane["last_activity_ref"] = activity_ref
+            lane["last_activity_evidence"] = copy.deepcopy(evidence)
             return True
 
         self._change(transform)
 
-    def handoff(self, lane_id, *, invocation_id, generation, checkpoint_ref):
+    def handoff(self, lane_id, *, invocation_id, generation, executor_id, checkpoint_ref):
         if not isinstance(checkpoint_ref, str) or not checkpoint_ref.strip():
             raise ValueError("handoff requires checkpoint_ref")
         if self.quiescence_verifier is None:
             raise ValueError("handoff requires independent quiescence verifier")
 
         def transform(state):
-            lane = self._bound(state, lane_id, invocation_id, generation)
+            lane = self._bound(state, lane_id, invocation_id, generation, executor_id)
             if lane["state"] != "running" or lane["pending_effects"]:
                 raise ValueError("lane is not handoff-safe")
             evidence = self.quiescence_verifier(copy.deepcopy(lane), checkpoint_ref)
@@ -290,17 +305,17 @@ class ProjectLaneCoordinator:
 
         self._change(transform)
 
-    def set_pending_effects(self, lane_id, *, invocation_id, generation, pending):
+    def set_pending_effects(self, lane_id, *, invocation_id, generation, executor_id, pending):
         if type(pending) is not bool:
             raise ValueError("pending must be bool")
 
         def transform(state):
-            self._bound(state, lane_id, invocation_id, generation)["pending_effects"] = pending
+            self._bound(state, lane_id, invocation_id, generation, executor_id)["pending_effects"] = pending
             return True
 
         self._change(transform)
 
-    def record_result(self, lane_id, *, invocation_id, generation, result_commit, evidence_refs):
+    def record_result(self, lane_id, *, invocation_id, generation, executor_id, result_commit, evidence_refs):
         if self.result_verifier is None:
             raise ValueError("writer result requires independent verifier")
         if not isinstance(result_commit, str) or len(result_commit) not in {40, 64}:
@@ -310,7 +325,7 @@ class ProjectLaneCoordinator:
             raise ValueError("evidence_refs invalid")
 
         def transform(state):
-            lane = self._bound(state, lane_id, invocation_id, generation)
+            lane = self._bound(state, lane_id, invocation_id, generation, executor_id)
             claim = _claim_from(lane["claim"])
             if lane["state"] != "running" or not claim.is_writer or claim.kind == LaneKind.INTEGRATOR:
                 raise ValueError("lane cannot submit writer result")
@@ -334,23 +349,33 @@ class ProjectLaneCoordinator:
 
         self._change(transform)
 
-    def release(self, lane_id, *, invocation_id, generation):
+    def release(self, lane_id, *, invocation_id, generation, executor_id, checkpoint_ref):
+        if not isinstance(checkpoint_ref, str) or not checkpoint_ref.strip():
+            raise ValueError("lane release requires checkpoint_ref")
+
         def transform(state):
-            lane = self._bound(state, lane_id, invocation_id, generation)
+            lane = self._bound(state, lane_id, invocation_id, generation, executor_id)
             if lane["pending_effects"]:
                 raise ValueError("lane release requires drained effects")
             if lane["state"] not in {"running", "handoff_ready"}:
                 raise ValueError("lane not releasable")
+            if lane["checkpoint_ref"] is not None and lane["checkpoint_ref"] != checkpoint_ref:
+                raise ValueError("lane release checkpoint disagrees with handoff checkpoint")
+            lane["checkpoint_ref"] = checkpoint_ref
             lane["state"] = "released"
             return True
 
         self._change(transform)
 
     def mark_integrated(self, lane_id, *, result_commit, integrator_lane_id,
-                        integrator_invocation_id, integrator_generation):
+                        integrator_invocation_id, integrator_generation, integrator_executor_id):
+        if self.integration_verifier is None:
+            raise ValueError("integration requires fresh independent verifier")
+
         def transform(state):
             integrator = self._bound(
-                state, integrator_lane_id, integrator_invocation_id, integrator_generation)
+                state, integrator_lane_id, integrator_invocation_id,
+                integrator_generation, integrator_executor_id)
             if (integrator["state"] != "running"
                     or integrator["claim"]["kind"] != LaneKind.INTEGRATOR.value):
                 raise ValueError("active integrator lane required")
@@ -360,7 +385,27 @@ class ProjectLaneCoordinator:
             ]
             if len(matches) != 1:
                 raise ValueError("pending integration result not found")
+            evidence = self.integration_verifier(
+                copy.deepcopy(matches[0]), _claim_from(integrator["claim"]))
+            expected = {"integrated", "result_commit", "observed_shared_head",
+                        "integrated_head", "force_push", "evidence_ref"}
+            if (not isinstance(evidence, dict) or set(evidence) != expected
+                    or evidence["integrated"] is not True
+                    or evidence["result_commit"] != result_commit
+                    or not isinstance(evidence["observed_shared_head"], str)
+                    or not SHA.fullmatch(evidence["observed_shared_head"])
+                    or not isinstance(evidence["integrated_head"], str)
+                    or not SHA.fullmatch(evidence["integrated_head"])
+                    or evidence["force_push"] is not False
+                    or not isinstance(evidence["evidence_ref"], str)
+                    or not evidence["evidence_ref"].strip()):
+                raise ValueError("integration verifier did not prove fresh conditional integration")
             state["integration_queue"].remove(matches[0])
+            state["integrated_results"].append({
+                **copy.deepcopy(matches[0]),
+                "integrator_lane_id": integrator_lane_id,
+                "integration_evidence": copy.deepcopy(evidence),
+            })
             return True
 
         self._change(transform)
