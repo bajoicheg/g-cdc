@@ -32,6 +32,18 @@ class CooperativeLaneTests(unittest.TestCase):
     def test_read_only_lane_does_not_block_writer(self):
         self.assertTrue(admit_writer([self.claim("review", set(), LaneKind.REVIEW)], self.claim("worker", {"src/a"})))
 
+    def test_unsafe_git_branch_names_are_rejected(self):
+        for branch_name in ("--force", "refs/tags/not-a-lane", "refs/heads/bad ref",
+                            "refs/heads/a..b", "refs/heads/.hidden"):
+            value = self.claim("unsafe", {"src/a"})
+            value = LaneClaim(
+                lane_id=value.lane_id, invocation_id=value.invocation_id,
+                kind=value.kind, source_head=value.source_head,
+                worktree=value.worktree, branch=branch_name,
+                write_paths=value.write_paths)
+            with self.subTest(branch=branch_name), self.assertRaises(ValueError):
+                admit_writer([], value)
+
     def test_integrator_is_singleton(self):
         existing = self.claim("i1", set(), LaneKind.INTEGRATOR)
         candidate = self.claim("i2", set(), LaneKind.INTEGRATOR)
