@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+import os
 import re
 from typing import FrozenSet
 
@@ -79,8 +80,13 @@ def paths_overlap(left, right):
     return any(overlaps(a, b) for a in left.write_paths for b in right.write_paths)
 
 
+def _worktree_key(path):
+    return os.path.normcase(os.path.realpath(os.path.abspath(path)))
+
+
 def _same_isolation(left, right):
-    return portable_path_key(left.branch) == portable_path_key(right.branch) or left.worktree == right.worktree
+    return (portable_path_key(left.branch) == portable_path_key(right.branch)
+            or _worktree_key(left.worktree) == _worktree_key(right.worktree))
 
 
 def admit_writer(existing, candidate):
@@ -91,12 +97,15 @@ def admit_writer(existing, candidate):
         return False
     if not candidate.is_writer:
         return True
+    writers = [item for item in existing if item.is_writer]
+    if any(_same_isolation(item, candidate) for item in writers):
+        return False
     if candidate.kind == LaneKind.INTEGRATOR:
-        return not any(item.kind == LaneKind.INTEGRATOR for item in existing)
-    for item in existing:
-        if not item.is_writer or item.kind == LaneKind.INTEGRATOR:
+        return not any(item.kind == LaneKind.INTEGRATOR for item in writers)
+    for item in writers:
+        if item.kind == LaneKind.INTEGRATOR:
             continue
-        if _same_isolation(item, candidate) or paths_overlap(item, candidate):
+        if paths_overlap(item, candidate):
             return False
     return True
 
