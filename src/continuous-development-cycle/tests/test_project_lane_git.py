@@ -95,9 +95,12 @@ class GitLaneResultVerifierTests(unittest.TestCase):
             {"lane_id": "lane", "result_commit": result_commit},
             integrator,
             {"lane_id": "lane", "result_commit": result_commit,
-             "observed_shared_head": self.base, "operation_id": "op-1"})
+             "observed_shared_head": self.base,
+             "intended_integrated_head": result_commit,
+             "operation_id": "op-1"})
         self.assertTrue(evidence["integrated"])
         self.assertEqual(evidence["integrated_head"], result_commit)
+        self.assertFalse(evidence["conditional_update"])
         self.assertFalse(evidence["force_push"])
 
     def test_integration_verifier_rejects_result_not_present_on_shared_head(self):
@@ -114,7 +117,74 @@ class GitLaneResultVerifierTests(unittest.TestCase):
                 {"lane_id": "lane", "result_commit": result_commit},
                 integrator,
                 {"lane_id": "lane", "result_commit": result_commit,
-                 "observed_shared_head": self.base, "operation_id": "op-1"})
+                 "observed_shared_head": self.base,
+                 "intended_integrated_head": result_commit,
+                 "operation_id": "op-1"})
+
+    def test_integration_publisher_performs_exact_head_conditional_fast_forward(self):
+        remote = self.repo / "remote.git"
+        subprocess.run(["git", "init", "--bare", "-q", str(remote)], check=True)
+        git(self.repo, "remote", "add", "origin", str(remote))
+        git(self.repo, "push", "-q", "origin", self.base + ":refs/heads/integration")
+
+        git(self.repo, "checkout", "-qb", "worker-publish", self.base)
+        result_commit = self.commit(Path("src/a/published.py"), "ok\n", "published result")
+        git(self.repo, "checkout", "-q", self.primary)
+        integrator = LaneClaim(
+            "integrator", "integrator-inv", LaneKind.INTEGRATOR, self.base,
+            str(self.repo), self.primary, executor_id="integrator", role="integrator")
+        remote_id = project_lane_git.remote_identity(self.repo, "origin")
+        publisher = project_lane_git.GitLaneIntegrationPublisher(
+            self.repo, "origin", "refs/heads/integration", remote_id)
+        item = {"lane_id": "lane", "result_commit": result_commit}
+        intent = {
+            "lane_id": "lane", "result_commit": result_commit,
+            "observed_shared_head": self.base,
+            "intended_integrated_head": result_commit,
+            "operation_id": "op-cas",
+        }
+        evidence = publisher(item, integrator, intent)
+        self.assertTrue(evidence["conditional_update"])
+        self.assertFalse(evidence["force_push"])
+        self.assertEqual(evidence["integrated_head"], result_commit)
+        remote_head = subprocess.check_output(
+            ["git", "--git-dir", str(remote), "rev-parse", "refs/heads/integration"],
+            text=True).strip()
+        self.assertEqual(remote_head, result_commit)
+        # Lost-reply/retry reconciliation is idempotent once exact readback matches.
+        self.assertEqual(publisher(item, integrator, intent), evidence)
+
+    def test_integration_publisher_rejects_remote_head_movement_without_overwrite(self):
+        remote = self.repo / "remote-race.git"
+        subprocess.run(["git", "init", "--bare", "-q", str(remote)], check=True)
+        git(self.repo, "remote", "add", "race", str(remote))
+        git(self.repo, "push", "-q", "race", self.base + ":refs/heads/integration")
+
+        git(self.repo, "checkout", "-qb", "worker-race", self.base)
+        result_commit = self.commit(Path("src/a/race.py"), "worker\n", "worker result")
+        git(self.repo, "checkout", "-qb", "concurrent", self.base)
+        concurrent = self.commit(Path("src/b/concurrent.py"), "other\n", "concurrent")
+        git(self.repo, "push", "-q", "race", concurrent + ":refs/heads/integration")
+        git(self.repo, "checkout", "-q", self.primary)
+
+        integrator = LaneClaim(
+            "integrator", "integrator-inv", LaneKind.INTEGRATOR, self.base,
+            str(self.repo), self.primary, executor_id="integrator", role="integrator")
+        publisher = project_lane_git.GitLaneIntegrationPublisher(
+            self.repo, "race", "refs/heads/integration",
+            project_lane_git.remote_identity(self.repo, "race"))
+        with self.assertRaisesRegex(ValueError, "moved"):
+            publisher(
+                {"lane_id": "lane", "result_commit": result_commit},
+                integrator,
+                {"lane_id": "lane", "result_commit": result_commit,
+                 "observed_shared_head": self.base,
+                 "intended_integrated_head": result_commit,
+                 "operation_id": "op-race"})
+        remote_head = subprocess.check_output(
+            ["git", "--git-dir", str(remote), "rev-parse", "refs/heads/integration"],
+            text=True).strip()
+        self.assertEqual(remote_head, concurrent)
 
     def test_invalid_or_missing_commit_fails_closed(self):
         for value in ("main", "f" * 40):
