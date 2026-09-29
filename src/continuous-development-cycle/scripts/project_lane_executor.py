@@ -48,18 +48,25 @@ def _write_request(path, value):
 
 
 class ProjectLaneExecutionAdapter:
-    def __init__(self, coordinator, repo_root, backend, *, journal_root=None):
+    def __init__(self, coordinator, repo_root, backend, *, worktree_root, journal_root=None):
         self.coordinator = coordinator
         self.backend = backend
         self.repo_root = Path(repo_root).resolve()
         if not (self.repo_root / ".git").exists():
             # Worktree roots have a .git file; a bare/non-worktree root is not valid.
             raise ValueError("project lane execution requires a Git worktree root")
+        self.worktree_root = Path(worktree_root).resolve()
+        self.worktree_root.mkdir(parents=True, exist_ok=True)
+        if self.worktree_root == self.repo_root or self.repo_root in self.worktree_root.parents:
+            raise ValueError("worktree_root must be isolated from the product worktree")
         root = journal_root if journal_root is not None else getattr(backend, "journal_root", None)
         if root is None:
             raise ValueError("project lane execution requires a durable journal_root")
         self.journal_root = Path(root).resolve()
         self.journal_root.mkdir(parents=True, exist_ok=True)
+        if (self.journal_root == self.repo_root or self.repo_root in self.journal_root.parents
+                or self.journal_root == self.worktree_root):
+            raise ValueError("journal_root must be isolated from product and worktree roots")
 
     def _lane(self, lane_id):
         state = self.coordinator.snapshot()
@@ -97,6 +104,13 @@ class ProjectLaneExecutionAdapter:
             raise ValueError("timeout_seconds must be a positive integer")
         identity = self._identity(lane)
         directory = self._directory(identity)
+        raw_worktree = Path(claim["worktree"])
+        cwd = (raw_worktree if raw_worktree.is_absolute()
+               else self.worktree_root / raw_worktree).resolve()
+        if cwd == self.worktree_root or self.worktree_root not in cwd.parents:
+            raise ValueError("lane worktree escapes authorized worktree_root")
+        if cwd == self.repo_root or self.repo_root in cwd.parents:
+            raise ValueError("lane worktree overlaps the product worktree")
         return {
             "schema": "project-lane-start/v1",
             "identity": identity,
@@ -110,7 +124,7 @@ class ProjectLaneExecutionAdapter:
             },
             "argv": list(argv),
             "repo_root": str(self.repo_root),
-            "cwd": claim["worktree"],
+            "cwd": str(cwd),
             "timeout_seconds": timeout_seconds,
             "journal_directory": str(directory),
         }
