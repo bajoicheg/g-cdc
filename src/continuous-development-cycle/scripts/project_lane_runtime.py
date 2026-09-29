@@ -142,6 +142,20 @@ class ProjectLaneCoordinator:
         self.result_verifier = result_verifier
         self.quiescence_verifier = quiescence_verifier
         self.integration_verifier = integration_verifier
+        self._ensure_initialized()
+
+    def _ensure_initialized(self):
+        for _ in range(6):
+            revision, state = self.store.read()
+            if state is not None:
+                self._read()
+                return
+            try:
+                self.store.compare_and_swap(revision, self._initial())
+                return
+            except ValueError:
+                continue
+        raise ValueError("project lane registry initialization CAS contention")
 
     def _initial(self):
         return {
