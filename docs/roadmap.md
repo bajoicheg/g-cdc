@@ -78,6 +78,7 @@ Required controls:
 - non-overlapping writer lanes may coexist; read-only/review lanes may coexist with writers;
 - overlapping portable write claims serialize; a reserved shared-branch/integration lane remains exclusive;
 - user chat and watchdog remain independently alive: starting foreground work does not disable/pause the watchdog, and a watchdog encountering an occupied lane chooses another runnable non-conflicting task or observer/review work;
+- actual worker launch is bound to lane admission: a one-shot durable start claim is committed and re-read before any isolated-worktree/process backend effect; unknown starts retain the claim and are observed rather than replayed;
 - existing valid claims are never stolen merely because foreground work has higher urgency; handoff/preemption requires a safe checkpoint plus explicit quiescence of the relinquished lane;
 - every lane heartbeat requires a new activity reference plus independent observable-activity evidence; TTL/staleness or a caller-generated token alone never proves the executor is alive;
 - normal lane release is executor/invocation/generation-bound, drains pending effects and persists an exact checkpoint reference;
@@ -93,6 +94,7 @@ Required controls:
 
 Acceptance:
 - foreground chat + watchdog can both be `running` on one project with disjoint write claims and no ownership contradiction;
+- the real-process concurrency demonstration proves durable lane admission and start claim precede both worker launches; lost/unknown worker start cannot produce a duplicate launch;
 - overlapping claims deterministically block/serialize before either writer mutates the same portable path;
 - one executor can finish/release its lane without releasing or invalidating other active lanes;
 - watchdog stays scheduled while foreground execution is active;
