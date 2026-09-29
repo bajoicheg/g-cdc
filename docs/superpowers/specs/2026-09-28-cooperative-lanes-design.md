@@ -35,4 +35,6 @@ Every scheduler effect uses a durable one-shot operation claim plus a post-claim
 
 The scheduler backend remains an explicit capability boundary. This release can reconcile only through a backend the host actually provides and authorizes; it does not fabricate automation APIs. Fleet supervision may compose survivability reconciliation with ordinary liveness recovery: every registered desired watchdog is assessed, scheduler mutations share a bounded fleet effect budget, and deferred/broken repairs remain continuation work. Existing owner-paused schedulers remain paused.
 
+The Fleet Supervisor itself has one minimal sentinel role. When an independent scheduler backend exists, that sentinel reconciles only the `fleet-supervisor` desired-state materialization using the same generation fencing and owner-pause gates. Recreate/adopt/enable remains nonterminal for the sentinel until a real supervisor wake is requested or fresh healthy/paused/terminal evidence is observed. The sentinel never develops projects or becomes a super-writer. Diverse-provider HA for the sentinel is explicitly deferred.
+
 Verification includes deletion/recreation, disabled recovery, overdue kick, configuration drift, duplicate materialization, flapping, lost create reply, unknown effect without materialization, post-claim owner stop, generation fencing and terminal/owner-pause suppression.
