@@ -24,6 +24,7 @@ SCHEMA = "project-lane-registry/v1"
 DIGEST = re.compile(r"sha256:[0-9a-f]{64}$")
 REPOSITORY = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 INVALID_REF = re.compile(r"[\x00-\x20\x7f~^:?*\[\\]")
+SHA = re.compile(r"(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 
 
 def _branch_ref(value, label, prefix="refs/heads/"):
