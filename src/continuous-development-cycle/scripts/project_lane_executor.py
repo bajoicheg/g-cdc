@@ -186,7 +186,22 @@ class ProjectLaneExecutionAdapter:
         if not decision["claimed"]:
             return self.observe(lane_id)
 
-        request = self._request(lane, operation, argv, timeout_seconds)
+        try:
+            request = self._request(lane, operation, argv, timeout_seconds)
+        except (OSError, ValueError):
+            identity = self._identity(lane)
+            evidence_ref = _digest({
+                "identity": identity,
+                "operation_id": operation["operation_id"],
+                "state": "preflight_failed_before_backend_effect",
+            })
+            self.coordinator.reconcile_start(
+                identity["lane_id"], invocation_id=identity["invocation_id"],
+                generation=identity["generation"], executor_id=identity["executor_id"],
+                operation_id=operation["operation_id"], status="failed",
+                evidence_ref=evidence_ref,
+            )
+            raise
         directory = Path(request["journal_directory"])
         request_path = directory / "request.json"
 
