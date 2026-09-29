@@ -104,7 +104,8 @@ class ProjectLaneExecutionAdapterTests(unittest.TestCase):
         self.coordinator.admit(self.claim, generation=1)
         self.backend = FakeBackend(self.root / "journal")
         self.adapter = executor.ProjectLaneExecutionAdapter(
-            self.coordinator, self.repo, self.backend, journal_root=self.root / "journal")
+            self.coordinator, self.repo, self.backend, worktree_root=self.root,
+            journal_root=self.root / "journal")
 
     def test_backend_start_observes_durable_claim_before_effect(self):
         observed = {}
@@ -147,6 +148,18 @@ class ProjectLaneExecutionAdapterTests(unittest.TestCase):
         self.assertEqual(self.backend.starts, 0)
         self.assertTrue(self.coordinator.snapshot()["lanes"]["lane-a"]["pending_effects"])
 
+    def test_worktree_escape_is_rejected_before_backend_start(self):
+        bad = LaneClaim(
+            "escape", "escape-inv", LaneKind.WORKER, self.base,
+            str(self.root.parent / "outside-lane"), "refs/heads/escape",
+            write_paths=frozenset({"src/x"}), executor_id="escape", role="writer")
+        self.coordinator.admit(bad, generation=1)
+        with self.assertRaisesRegex(ValueError, "worktree"):
+            self.adapter.start(
+                "escape", invocation_id="escape-inv", generation=1, executor_id="escape",
+                argv=[sys.executable, "-c", "pass"], timeout_seconds=10)
+        self.assertEqual(self.backend.starts, 0)
+
     def test_integrator_lane_cannot_launch_worker_backend(self):
         store = MemoryStore()
         config = LaneRegistryConfig(
@@ -163,7 +176,8 @@ class ProjectLaneExecutionAdapterTests(unittest.TestCase):
             executor_id="integrator", role="integrator")
         coord.admit(claim, generation=1)
         adapter = executor.ProjectLaneExecutionAdapter(
-            coord, self.repo, self.backend, journal_root=self.root / "journal-int")
+            coord, self.repo, self.backend, worktree_root=self.root,
+            journal_root=self.root / "journal-int")
         with self.assertRaisesRegex(ValueError, "integrator"):
             adapter.start(
                 "integrator", invocation_id="int-inv", generation=1,
