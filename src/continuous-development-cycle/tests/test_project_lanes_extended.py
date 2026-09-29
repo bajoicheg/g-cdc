@@ -68,11 +68,12 @@ def activity_verifier(lane, activity_ref):
             "evidence_ref": "process:activity:" + activity_ref}
 
 
-def integration_verifier(item, integrator):
+def integration_verifier(item, integrator, intent):
     return {
         "integrated": True,
+        "operation_id": intent["operation_id"],
         "result_commit": item["result_commit"],
-        "observed_shared_head": "c" * 40,
+        "observed_shared_head": intent["observed_shared_head"],
         "integrated_head": "d" * 40,
         "force_push": False,
         "evidence_ref": "git:conditional-integration",
@@ -172,11 +173,40 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
         self.assertEqual(len(coord.snapshot()["integration_queue"]), 1)
         self.assertFalse(coord.can_finalize(runnable_task_count=0, unknown_effect_count=0))
         coord.admit(claim("integrator", (), lanes.LaneKind.INTEGRATOR), generation=1)
-        coord.mark_integrated(
+        intent = coord.claim_integration(
             "a", result_commit="b" * 40, integrator_lane_id="integrator",
-            integrator_invocation_id="integrator", integrator_generation=1, integrator_executor_id="integrator")
+            integrator_invocation_id="integrator", integrator_generation=1,
+            integrator_executor_id="integrator", observed_shared_head="c" * 40)
+        self.assertTrue(intent["claimed"])
+        coord.mark_integrated(
+            "a", result_commit="b" * 40, operation_id=intent["operation_id"],
+            integrator_lane_id="integrator", integrator_invocation_id="integrator",
+            integrator_generation=1, integrator_executor_id="integrator")
         coord.release("integrator", invocation_id="integrator", generation=1, executor_id="integrator", checkpoint_ref="cp-integrator")
         self.assertTrue(coord.can_finalize(runnable_task_count=0, unknown_effect_count=0))
+
+    def test_integration_requires_durable_one_shot_intent_before_reconciliation(self):
+        coord = coordinator(result_verifier=verifier(), integration_verifier=integration_verifier)
+        coord.admit(claim("a", {"src/a"}), generation=1)
+        coord.record_result("a", invocation_id="a", generation=1, executor_id="a",
+                            result_commit="b" * 40, evidence_refs=["test:green"])
+        coord.admit(claim("integrator", (), lanes.LaneKind.INTEGRATOR), generation=1)
+        with self.assertRaisesRegex(ValueError, "intent"):
+            coord.mark_integrated(
+                "a", result_commit="b" * 40, operation_id="missing",
+                integrator_lane_id="integrator", integrator_invocation_id="integrator",
+                integrator_generation=1, integrator_executor_id="integrator")
+        first = coord.claim_integration(
+            "a", result_commit="b" * 40, integrator_lane_id="integrator",
+            integrator_invocation_id="integrator", integrator_generation=1,
+            integrator_executor_id="integrator", observed_shared_head="c" * 40)
+        second = coord.claim_integration(
+            "a", result_commit="b" * 40, integrator_lane_id="integrator",
+            integrator_invocation_id="integrator", integrator_generation=1,
+            integrator_executor_id="integrator", observed_shared_head="c" * 40)
+        self.assertTrue(first["claimed"])
+        self.assertFalse(second["claimed"])
+        self.assertEqual(first["operation_id"], second["operation_id"])
 
     def test_result_rejects_stale_base_unverified_ancestry_or_path_escape(self):
         for check in (
