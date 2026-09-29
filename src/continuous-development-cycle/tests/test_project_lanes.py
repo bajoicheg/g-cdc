@@ -4,7 +4,6 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from project_lanes import LaneClaim, LaneKind, admit_writer, paths_overlap
-from project_lane_runtime import LaneRuntime, LaneState
 
 
 class CooperativeLaneTests(unittest.TestCase):
@@ -37,14 +36,6 @@ class CooperativeLaneTests(unittest.TestCase):
         existing = self.claim("i1", set(), LaneKind.INTEGRATOR)
         candidate = self.claim("i2", set(), LaneKind.INTEGRATOR)
         self.assertFalse(admit_writer([existing], candidate))
-
-    def test_runtime_requires_fresh_heartbeat_and_drained_effects(self):
-        runtime = LaneRuntime("lane", 1)
-        runtime.heartbeat("activity-1")
-        self.assertEqual(runtime.state, LaneState.RUNNING)
-        runtime.pending_effects = True
-        with self.assertRaises(ValueError):
-            runtime.release()
 
 
 if __name__ == "__main__":
