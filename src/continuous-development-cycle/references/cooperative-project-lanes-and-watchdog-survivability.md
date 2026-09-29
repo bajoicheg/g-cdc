@@ -10,10 +10,12 @@ CDC 2.11.2 extends the released managed executor pool and watchdog liveness cont
 - Exactly one integrator may own the shared-branch integration lane.
 - Foreground work does not pause the watchdog. A blocked watchdog chooses non-conflicting runnable or observational work.
 - Claims are not stolen for urgency. Handoff/recovery requires checkpointed independently verified quiescence; TTL/silence is insufficient.
-- Heartbeat requires new observable activity.
+- Heartbeat requires a new activity reference plus independent observable-activity evidence; caller-generated labels alone are not heartbeat proof.
 - Writer acceptance validates base ancestry and every touched path in every introduced commit, including touched-and-restored paths.
+- Normal release is executor/invocation/generation-bound, drains pending effects and persists an exact checkpoint reference.
 - Computed/accepted work remains nonterminal until required integration is complete.
-- Fresh shared-HEAD movement is reconciled before publication; force-push is forbidden.
+- Before any shared-ref publication, the integrator persists a one-shot durable integration intent. Unknown publication outcomes retain that intent for readback/reconciliation rather than creating a new effect grant.
+- Fresh shared-HEAD movement is reconciled before publication; force-push is forbidden. Integration is removed from the queue only after an independent verifier proves the claimed operation and records durable integration evidence.
 
 ## Watchdog survivability invariants
 
@@ -23,7 +25,11 @@ A recovery effect is legal only when desired state requires an enabled watchdog,
 
 Missing/configuration-drift/flapping recreation advances desired generation before scheduler I/O. Any old generation is then fenced by `execution_is_current`. Lost/unknown provider outcomes retain their durable operation claim and require inventory reconciliation rather than replay.
 
-Duplicate materializations are disabled only after the canonical object is known. A post-claim owner stop is re-read before I/O and blocks the effect. A scheduler backend must be genuinely available and authorized; CDC cannot manufacture one.
+Duplicate materializations are disabled only after the canonical object is known, and at most one duplicate scheduler effect is consumed per project reconciliation step. A post-claim owner stop is re-read before I/O and blocks the effect. A currently running watchdog is never kicked a second time merely because its last-run timestamp is old. Unknown run replies reconcile only from a run timestamp observed at or after the durable operation claim.
+
+Fleet recovery may compose `WatchdogSurvivabilityRuntime` with `FleetRuntime`. Every registered desired watchdog is assessed, while scheduler mutations share a bounded fleet effect budget; exhausted repairs remain continuation work. An unresolved scheduler effect prevents desired-generation replacement, so missing/lost replies cannot be erased by configuration churn.
+
+A scheduler backend must be genuinely available and authorized; CDC cannot manufacture one.
 
 ## Terminal aggregation
 
