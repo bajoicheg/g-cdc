@@ -201,6 +201,49 @@ class WatchdogSurvivabilityTests(unittest.TestCase):
         self.assertEqual((result["overall"], result["action"]), ("EXECUTION_BROKEN", "OBSERVE"))
         self.assertFalse(result["recovery_eligible"])
 
+    def test_invocation_fence_allows_only_exact_current_running_materialization(self):
+        current = survivability.invocation_fence(
+            desired(), inventory([obj(execution_state="running")]),
+            object_id="wd-current", generation=7, now=NOW)
+        self.assertTrue(current["may_enter_cdc"])
+        self.assertFalse(current["authorizes_product_write"])
+        self.assertFalse(current["authorizes_external_start"])
+        self.assertFalse(current["authorizes_lease_acquire"])
+
+        for object_id, generation in (
+            ("wd-old", 6),
+            ("wd-current", 6),
+            (None, None),
+        ):
+            with self.subTest(object_id=object_id, generation=generation):
+                result = survivability.invocation_fence(
+                    desired(), inventory([
+                        obj(execution_state="running"),
+                        obj("wd-old", generation=6, execution_state="running"),
+                    ]),
+                    object_id=object_id, generation=generation, now=NOW)
+                self.assertFalse(result["may_enter_cdc"])
+
+    def test_invocation_fence_fails_closed_on_pause_terminal_or_stale_inventory(self):
+        paused = inventory([obj(execution_state="running")],
+                           safety={**inventory()["safety"], "pause": "paused",
+                                   "owner_pause_evidence": "owner:pause"})
+        terminal = inventory(
+            [obj(execution_state="running")],
+            project={"state": "terminal", "source_revision": SHA,
+                     "terminal_proof": {"project_id": "alpha",
+                                        "source_ref": "refs/heads/main",
+                                        "source_revision": SHA,
+                                        "evidence_ref": "git:terminal"}})
+        stale = inventory([obj(execution_state="running")],
+                          observed_at_utc="2026-09-29T12:00:00Z")
+        for inv in (paused, terminal, stale):
+            with self.subTest(inv=inv):
+                result = survivability.invocation_fence(
+                    desired(), inv, object_id="wd-current", generation=7,
+                    now=NOW, max_age_seconds=120)
+                self.assertFalse(result["may_enter_cdc"])
+
     def test_malformed_binding_or_duplicate_object_id_fails_closed(self):
         bad = inventory([obj(), obj()])
         with self.assertRaises(ValueError):
