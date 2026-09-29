@@ -37,15 +37,15 @@ def reconcile_supervisor(runtime, binding):
     result = runtime.reconcile(binding)
     if not isinstance(result, dict) or not isinstance(result.get("outcome"), str):
         raise ValueError("survivability runtime result invalid")
-    settled = {"no_effect", "adopted", "enabled", "run_requested",
-               "recreated", "duplicates_quiesced"}
     assessment = result.get("assessment", {})
-    continuation = result["outcome"] not in settled
+    continuation = True
     if result["outcome"] == "no_effect":
         continuation = assessment.get("overall") not in {
             "HEALTHY", "OWNER_PAUSED", "PROJECT_TERMINAL"
         }
-    if result["outcome"] == "duplicates_quiesced":
+    elif result["outcome"] == "run_requested":
+        continuation = False
+    elif result["outcome"] == "duplicates_quiesced":
         continuation = assessment.get("action") == "QUIESCE_DUPLICATES"
     return {
         "schema": SCHEMA,
