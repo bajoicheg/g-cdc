@@ -111,6 +111,11 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
         self.assertTrue(lanes.admit_writer(
             [integrator], claim("w3", {"src/a"}, branch="cdc/w3", worktree="/tmp/w3")))
 
+    def test_short_and_full_ref_branch_aliases_cannot_share_writer_branch(self):
+        a = claim("a", {"src/a"}, branch="refs/heads/cdc/shared", worktree="/tmp/a")
+        b = claim("b", {"src/b"}, branch="cdc/shared", worktree="/tmp/b")
+        self.assertFalse(lanes.admit_writer([a], b))
+
     def test_duplicate_branch_or_worktree_blocks_writer_even_when_paths_are_disjoint(self):
         a = claim("a", {"src/a"}, branch="cdc/shared", worktree="/tmp/a")
         self.assertFalse(lanes.admit_writer([a], claim("b", {"src/b"}, branch="cdc/shared", worktree="/tmp/b")))
