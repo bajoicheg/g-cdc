@@ -186,6 +186,34 @@ class WatchdogSurvivabilityRuntimeTests(unittest.TestCase):
                 self.assertEqual(backend.effects[0][0], effect)
                 self.assertEqual(runtime.snapshot()["entries"][runtime_mod.binding_key(desired()["binding"])]["desired"]["generation"], 7)
 
+    def test_same_generation_can_repair_a_new_later_disable_incident(self):
+        store = MemoryStore()
+        backend = RecordingBackend(inventory([obj(enabled=False)]))
+        instant = [NOW]
+        runtime = runtime_mod.WatchdogSurvivabilityRuntime(store, backend, clock=lambda: instant[0])
+        runtime.register(desired())
+        self.assertEqual(runtime.reconcile(desired()["binding"])["outcome"], "enabled")
+        backend.inventory["objects"][0]["enabled"] = False
+        instant[0] = "2026-09-29T12:31:00Z"
+        backend.inventory["observed_at_utc"] = instant[0]
+        backend.inventory["safety"]["observed_at_utc"] = instant[0]
+        self.assertEqual(runtime.reconcile(desired()["binding"])["outcome"], "enabled")
+        self.assertEqual([e[0] for e in backend.effects], ["enable", "enable"])
+
+    def test_same_generation_can_request_a_new_later_periodic_run(self):
+        store = MemoryStore()
+        backend = RecordingBackend(inventory([obj(last_run_at_utc="2026-09-29T09:00:00Z")]))
+        instant = [NOW]
+        runtime = runtime_mod.WatchdogSurvivabilityRuntime(store, backend, clock=lambda: instant[0])
+        runtime.register(desired())
+        self.assertEqual(runtime.reconcile(desired()["binding"])["outcome"], "run_requested")
+        backend.inventory["objects"][0]["execution_state"] = "idle"
+        instant[0] = "2026-09-29T15:00:00Z"
+        backend.inventory["observed_at_utc"] = instant[0]
+        backend.inventory["safety"]["observed_at_utc"] = instant[0]
+        self.assertEqual(runtime.reconcile(desired()["binding"])["outcome"], "run_requested")
+        self.assertEqual([e[0] for e in backend.effects], ["run", "run"])
+
     def test_owner_paused_or_terminal_state_produces_no_scheduler_effect(self):
         for d, inv in (
             (desired(canonical_object_id=None, owner_stop_evidence="owner:stop"), inventory([])),
