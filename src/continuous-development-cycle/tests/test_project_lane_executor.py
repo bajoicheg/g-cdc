@@ -97,14 +97,15 @@ class ProjectLaneExecutionAdapterTests(unittest.TestCase):
             policy_authority="sha256:" + "b" * 64,
         )
         self.coordinator = ProjectLaneCoordinator(self.store, config)
+        self.worktrees = self.root / "worktrees"
         self.claim = LaneClaim(
             "lane-a", "inv-a", LaneKind.WORKER, self.base,
-            str(self.root / "lane-a"), "refs/heads/lane-a",
+            str(self.worktrees / "lane-a"), "refs/heads/lane-a",
             write_paths=frozenset({"src/a"}), executor_id="exec-a", role="writer")
         self.coordinator.admit(self.claim, generation=1)
         self.backend = FakeBackend(self.root / "journal")
         self.adapter = executor.ProjectLaneExecutionAdapter(
-            self.coordinator, self.repo, self.backend, worktree_root=self.root,
+            self.coordinator, self.repo, self.backend, worktree_root=self.worktrees,
             journal_root=self.root / "journal")
 
     def test_backend_start_observes_durable_claim_before_effect(self):
@@ -172,11 +173,11 @@ class ProjectLaneExecutionAdapterTests(unittest.TestCase):
         coord = ProjectLaneCoordinator(store, config)
         claim = LaneClaim(
             "integrator", "int-inv", LaneKind.INTEGRATOR, self.base,
-            str(self.root / "integrator"), "refs/heads/integration",
+            str(self.worktrees / "integrator"), "refs/heads/integration",
             executor_id="integrator", role="integrator")
         coord.admit(claim, generation=1)
         adapter = executor.ProjectLaneExecutionAdapter(
-            coord, self.repo, self.backend, worktree_root=self.root,
+            coord, self.repo, self.backend, worktree_root=self.worktrees,
             journal_root=self.root / "journal-int")
         with self.assertRaisesRegex(ValueError, "integrator"):
             adapter.start(
