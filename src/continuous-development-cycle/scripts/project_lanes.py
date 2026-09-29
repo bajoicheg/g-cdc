@@ -14,6 +14,7 @@ except ModuleNotFoundError:
     from scripts.parallel_task_planner import overlaps, portable_path_key, validate_write_path
 
 SHA = re.compile(r"(?:[0-9a-f]{40}|[0-9a-f]{64})$")
+INVALID_REF = re.compile(r"[\x00-\x20\x7f~^:?*\[\\]")
 
 
 class LaneKind(str, Enum):
@@ -55,6 +56,16 @@ def validate_claim(claim):
         raise ValueError("lane claim type invalid")
     for name in ("lane_id", "invocation_id", "worktree", "branch", "executor_id", "role"):
         _text(getattr(claim, name), name)
+    branch = claim.branch.removeprefix("refs/heads/")
+    parts = branch.split("/")
+    if (claim.branch.startswith("-") or not branch or claim.branch.startswith("refs/")
+            and not claim.branch.startswith("refs/heads/")
+            or claim.branch.endswith(("/", ".", ".lock"))
+            or ".." in claim.branch or "@{" in claim.branch or "//" in claim.branch
+            or INVALID_REF.search(claim.branch)
+            or any(part in {"", ".", ".."} or part.startswith(".") or part.endswith(".lock")
+                   for part in parts)):
+        raise ValueError("branch must be a safe Git heads ref/name")
     if not isinstance(claim.kind, LaneKind):
         raise ValueError("lane kind invalid")
     if not isinstance(claim.source_head, str) or not SHA.fullmatch(claim.source_head):
