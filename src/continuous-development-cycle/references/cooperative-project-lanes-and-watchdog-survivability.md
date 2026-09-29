@@ -27,7 +27,7 @@ The durable desired-state record, not a scheduler object ID, defines whether a w
 
 A recovery effect is legal only when desired state requires an enabled watchdog, no fresh owner pause supersedes it, project state is freshly runnable, owner/guard are released, external work is absent or reconciled, scheduler pause state permits recovery, and the durable recovery policy contains explicit owner authorization.
 
-Missing/configuration-drift/flapping recreation advances desired generation before scheduler I/O. Any old generation is then fenced by `execution_is_current`. Lost/unknown provider outcomes retain their durable operation claim and require inventory reconciliation rather than replay.
+Missing/configuration-drift/flapping recreation advances desired generation before scheduler I/O only after the current materialization is non-running. An active materialization is never destructively replaced for configuration drift or flapping; it is observed until quiescent. A disabled schedule may be enabled while its invocation is running because that does not create a second run. Any old generation is fenced by `execution_is_current` once replacement is legal. Lost/unknown provider outcomes retain their durable operation claim and require inventory reconciliation rather than replay.
 
 Duplicate materializations are disabled only after the canonical object is known, and at most one duplicate scheduler effect is consumed per project reconciliation step. A post-claim owner stop is re-read before I/O and blocks the effect. A currently running watchdog is never kicked a second time merely because its last-run timestamp is old. Unknown run replies reconcile only from a run timestamp observed at or after the durable operation claim.
 
