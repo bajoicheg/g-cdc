@@ -331,4 +331,6 @@ Missing or configuration-drifted watchdogs are recreated with a newer generation
 
 When Fleet supervision has an authorized survivability runtime, compose it with `scripts/fleet_watchdog_runtime.py`: assess every registered desired watchdog, share one bounded effect budget across survivability and ordinary wake recovery, and retain any deferred/broken repair as continuation work. An unresolved scheduler effect blocks desired-generation replacement. A fresh explicit owner pause/stop or exact project-terminal proof suppresses self-heal. The current owner-paused scheduler policy remains authoritative.
 
+Protect the Fleet Supervisor itself with `scripts/watchdog_sentinel.py` when an independent scheduler capability exists. The sentinel targets only the durable `fleet-supervisor` desired-state role and may recreate/enable/wake that materialization through the same authorized survivability runtime; it is not a second Fleet controller and has no product-write authority. Keep the sentinel on an execution plane independent from the Fleet Supervisor when the host supports one. Cross-provider HA for the sentinel is deferred beyond 2.11.2.
+
 Read `references/cooperative-project-lanes-and-watchdog-survivability.md` before project-lane admission or survivability recovery.
