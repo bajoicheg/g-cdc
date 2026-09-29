@@ -219,31 +219,54 @@ class WatchdogSurvivabilityRuntime:
         _, assessment = self._observe(desired)
         return assessment["overall"] not in {"OWNER_PAUSED", "PROJECT_TERMINAL", "EXECUTION_BROKEN"}
 
-    def reconcile_registered(self):
-        """Reconcile every registered watchdog once; one failure must not skip siblings."""
+    def reconcile_registered(self, *, max_effects=100):
+        """Assess every registered watchdog and apply a bounded number of scheduler effects."""
+        if type(max_effects) is not int or not 0 <= max_effects <= 2000:
+            raise ValueError("watchdog survivability max_effects must be 0..2000")
         _, state = self._read()
         results = []
+        effects_attempted = 0
+        effect_actions = {"RECREATE", "ENABLE", "RUN", "QUIESCE_DUPLICATES"}
+        effect_outcomes = {"recreated", "enabled", "run_requested", "duplicates_quiesced",
+                           "provider_outcome_unknown"}
         for key in sorted(state["entries"]):
             binding = copy.deepcopy(state["entries"][key]["desired"]["binding"])
             try:
-                result = self.reconcile(binding)
+                entry = self._entry_by_key(key)
+                unresolved = any(op["status"] in {"claimed", "unknown"} for op in entry["operations"].values())
+                if unresolved:
+                    result = self.reconcile(binding)
+                else:
+                    _, assessment = self._observe(entry["desired"])
+                    if assessment["action"] in effect_actions and effects_attempted >= max_effects:
+                        result = {"outcome": "effect_budget_deferred", "assessment": assessment}
+                    else:
+                        result = self.reconcile(binding)
+                        if result["outcome"] in effect_outcomes:
+                            effects_attempted += 1
             except Exception as exc:
                 result = {
                     "outcome": "coordination_or_observation_unavailable",
                     "error_class": type(exc).__name__,
                 }
             results.append({"binding": binding, **result})
+
         def needs_continuation(item):
             if item["outcome"] == "no_effect":
                 overall = item.get("assessment", {}).get("overall")
                 return overall not in {"HEALTHY", "OWNER_PAUSED", "PROJECT_TERMINAL"}
-            return item["outcome"] not in {"adopted", "enabled", "run_requested",
-                                           "recreated", "duplicates_quiesced"}
+            if item["outcome"] in {"adopted", "enabled", "run_requested", "recreated"}:
+                return False
+            if item["outcome"] == "duplicates_quiesced":
+                return item.get("assessment", {}).get("action") == "QUIESCE_DUPLICATES"
+            return True
 
         return {
             "schema": "watchdog-survivability-batch/v1",
             "registered_count": len(state["entries"]),
             "results": results,
+            "effects_attempted": effects_attempted,
+            "max_effects": max_effects,
             "continuation_required": any(needs_continuation(item) for item in results),
             "authorizes_scheduler_mutation": False,
         }
@@ -323,24 +346,25 @@ class WatchdogSurvivabilityRuntime:
             self._finish(key, op_key, operation_id, "succeeded", "exact scheduler readback confirmed")
             return {"outcome": "enabled" if verb == "enable" else "run_requested", "assessment": readback}
         if action == "QUIESCE_DUPLICATES":
-            for object_id in assessment["stale_object_ids"]:
-                operation_id, op_key = self._set_operation(key, "disable", desired["generation"], object_id)
-                if operation_id is None:
-                    return {"outcome": "unreconciled_operation", "assessment": assessment}
-                current = self._entry_by_key(key)["desired"]
-                if not self._post_claim_allowed(current):
-                    self._finish(key, op_key, operation_id, "blocked", "post-claim safety gate denied")
-                    return {"outcome": "post_claim_gate_denied", "assessment": assessment}
-                try:
-                    reply = self.backend.disable(copy.deepcopy(binding), object_id=object_id, operation_id=operation_id)
-                    inv, _ = self._observe(current)
-                    item = next((x for x in inv["objects"] if x["object_id"] == object_id), None)
-                    if not (isinstance(reply, dict) and reply.get("status") == "accepted" and reply.get("operation_id") == operation_id
-                            and (item is None or not item["enabled"])):
-                        raise ValueError("disable exact readback disagrees")
-                except Exception:
-                    self._finish(key, op_key, operation_id, "unknown", "provider disable outcome unconfirmed")
-                    return {"outcome": "provider_outcome_unknown", "assessment": assessment}
-                self._finish(key, op_key, operation_id, "succeeded", "stale watchdog quiesced")
-            return {"outcome": "duplicates_quiesced", "assessment": assessment}
+            object_id = assessment["stale_object_ids"][0]
+            operation_id, op_key = self._set_operation(key, "disable", desired["generation"], object_id)
+            if operation_id is None:
+                return {"outcome": "unreconciled_operation", "assessment": assessment}
+            current = self._entry_by_key(key)["desired"]
+            if not self._post_claim_allowed(current):
+                self._finish(key, op_key, operation_id, "blocked", "post-claim safety gate denied")
+                return {"outcome": "post_claim_gate_denied", "assessment": assessment}
+            try:
+                reply = self.backend.disable(copy.deepcopy(binding), object_id=object_id, operation_id=operation_id)
+                inv, readback = self._observe(current)
+                item = next((x for x in inv["objects"] if x["object_id"] == object_id), None)
+                if not (isinstance(reply, dict) and reply.get("status") == "accepted"
+                        and reply.get("operation_id") == operation_id
+                        and (item is None or not item["enabled"])):
+                    raise ValueError("disable exact readback disagrees")
+            except Exception:
+                self._finish(key, op_key, operation_id, "unknown", "provider disable outcome unconfirmed")
+                return {"outcome": "provider_outcome_unknown", "assessment": assessment}
+            self._finish(key, op_key, operation_id, "succeeded", "stale watchdog quiesced")
+            return {"outcome": "duplicates_quiesced", "assessment": readback}
         raise ValueError("unsupported survivability action")
