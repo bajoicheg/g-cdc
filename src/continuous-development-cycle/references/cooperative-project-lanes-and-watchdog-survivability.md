@@ -31,6 +31,10 @@ Fleet recovery may compose `WatchdogSurvivabilityRuntime` with `FleetRuntime`. E
 
 A scheduler backend must be genuinely available and authorized; CDC cannot manufacture one.
 
+## Fleet Supervisor sentinel
+
+The Fleet Supervisor is itself replaceable. An independent host scheduler may run `scripts/watchdog_sentinel.py` against a desired-state entry whose role is exactly `fleet-supervisor`. The sentinel is intentionally not a second Fleet controller: it reconciles only the Fleet Supervisor materialization through the same generation-fenced survivability runtime, requests continuation after recreate/adopt/enable until a real wake is requested, and carries no product-write authority. Run it from an execution plane independent of the Fleet Supervisor when the platform provides one. Multi-backend HA for the sentinel itself is outside 2.11.2.
+
 ## Terminal aggregation
 
 Project completion is project-wide. Runnable or active lanes, unknown/pending effects, queued runnable work and unintegrated required results all keep the project nonterminal. Watchdog survivability state contributes evidence but never replaces execution-continuity/finalizer evidence.
