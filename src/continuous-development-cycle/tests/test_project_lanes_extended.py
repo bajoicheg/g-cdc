@@ -272,6 +272,12 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
         self.assertTrue(first["claimed"])
         self.assertFalse(second["claimed"])
         self.assertEqual(first["operation_id"], second["operation_id"])
+        with self.assertRaisesRegex(ValueError, "durable intent"):
+            coord.claim_integration(
+                "a", result_commit="b" * 40, integrator_lane_id="integrator",
+                integrator_invocation_id="integrator", integrator_generation=1,
+                integrator_executor_id="integrator", observed_shared_head="c" * 40,
+                intended_integrated_head="e" * 40)
 
     def test_lane_cannot_publish_multiple_accepted_results(self):
         coord = coordinator(result_verifier=verifier())
