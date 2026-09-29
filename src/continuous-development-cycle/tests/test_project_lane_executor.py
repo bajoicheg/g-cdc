@@ -164,6 +164,9 @@ class ProjectLaneExecutionAdapterTests(unittest.TestCase):
                 "escape", invocation_id="escape-inv", generation=1, executor_id="escape",
                 argv=[sys.executable, "-c", "pass"], timeout_seconds=10)
         self.assertEqual(self.backend.starts, 0)
+        state = self.coordinator.snapshot()
+        self.assertFalse(state["lanes"]["escape"]["pending_effects"])
+        self.assertEqual(state["start_operations"]["escape"]["status"], "failed")
 
     def test_integrator_lane_cannot_launch_worker_backend(self):
         store = MemoryStore()
