@@ -98,6 +98,19 @@ def _claim_from(value):
     )
 
 
+def _validate_migration_evidence(evidence):
+    expected = {"safe", "legacy_lease", "external_guard", "legacy_mode_disabled", "evidence_ref"}
+    if (not isinstance(evidence, dict) or set(evidence) != expected
+            or evidence["safe"] is not True
+            or evidence["legacy_lease"] not in {"absent", "released", "quiescent"}
+            or evidence["external_guard"] not in {"none", "reconciled"}
+            or evidence["legacy_mode_disabled"] is not True
+            or not isinstance(evidence["evidence_ref"], str)
+            or not evidence["evidence_ref"].strip()):
+        raise ValueError("legacy lease/guard safe boundary is not independently proven")
+    return evidence
+
+
 class ProjectLaneCoordinator:
     def __init__(self, store, config, *, result_verifier=None, quiescence_verifier=None,
                  integration_verifier=None, activity_verifier=None, migration_verifier=None):
@@ -152,8 +165,8 @@ class ProjectLaneCoordinator:
             raise ValueError("project lane registry identity mismatch")
         if state["config"] != self.config.to_dict() or state["config_digest"] != self.config.digest():
             raise ValueError("project lane registry configuration drift")
-        if state["migration_gate"] is not None and not isinstance(state["migration_gate"], dict):
-            raise ValueError("project lane migration gate invalid")
+        if state["migration_gate"] is not None:
+            _validate_migration_evidence(state["migration_gate"])
         if (not isinstance(state["lanes"], dict) or not isinstance(state["start_operations"], dict)
                 or not isinstance(state["integration_queue"], list)
                 or not isinstance(state["integration_intents"], dict)
@@ -181,16 +194,8 @@ class ProjectLaneCoordinator:
     def establish_migration_gate(self, observation):
         if self.migration_verifier is None:
             raise ValueError("lane mode requires an independent legacy migration verifier")
-        evidence = self.migration_verifier(copy.deepcopy(observation))
-        expected = {"safe", "legacy_lease", "external_guard", "legacy_mode_disabled", "evidence_ref"}
-        if (not isinstance(evidence, dict) or set(evidence) != expected
-                or evidence["safe"] is not True
-                or evidence["legacy_lease"] not in {"absent", "released", "quiescent"}
-                or evidence["external_guard"] not in {"none", "reconciled"}
-                or evidence["legacy_mode_disabled"] is not True
-                or not isinstance(evidence["evidence_ref"], str)
-                or not evidence["evidence_ref"].strip()):
-            raise ValueError("legacy lease/guard safe boundary is not independently proven")
+        evidence = _validate_migration_evidence(
+            self.migration_verifier(copy.deepcopy(observation)))
 
         def transform(state):
             current = state["migration_gate"]
