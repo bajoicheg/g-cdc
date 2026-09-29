@@ -4,7 +4,9 @@ CDC 2.11.2 extends the released managed executor pool and watchdog liveness cont
 
 ## Cooperative lane invariants
 
-- Each lane binds executor + invocation + generation + exact source HEAD + surface/role + portable read/write claims + isolated branch/worktree.
+- Lane mode cannot begin merely because the new registry exists. Call `ProjectLaneCoordinator.establish_migration_gate()` first with independently verified evidence that the legacy project-wide lease is absent/released/quiescent, external guards are none/reconciled, and legacy acquisition is disabled. The proof is immutable and revalidated on every registry read; without it all lane admission fails closed.
+
+Each lane binds executor + invocation + generation + exact source HEAD + surface/role + portable read/write claims + isolated branch/worktree.
 - Non-overlapping writers may coexist. Portable case/Unicode/ancestor overlap serializes before effects.
 - Read-only/review lanes may coexist with writers on pinned snapshots.
 - Exactly one integrator may own the shared-branch integration lane.
