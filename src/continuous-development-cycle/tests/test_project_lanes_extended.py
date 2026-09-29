@@ -36,6 +36,21 @@ class MemoryStore:
         return str(self.rev)
 
 
+def registry_config(store):
+    return runtime.LaneRegistryConfig(
+        canonical_repository="bajoicheg/g-cdc",
+        product_source_ref="refs/heads/main",
+        coordination_ref=store.ref,
+        coordination_store_id=store.store_id,
+        policy_authority="sha256:" + "d" * 64,
+    )
+
+
+def coordinator(store=None, **kwargs):
+    store = store or MemoryStore()
+    return runtime.ProjectLaneCoordinator(store, registry_config(store), **kwargs)
+
+
 def quiescent(lane, checkpoint):
     return {"quiescent": True, "evidence_ref": "process:stopped:" + checkpoint}
 
@@ -82,7 +97,7 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
                 self.assertFalse(lanes.project_can_finalize(**kwargs))
 
     def test_durable_coordinator_admits_disjoint_foreground_and_watchdog_lanes(self):
-        coordinator = runtime.ProjectLaneCoordinator(MemoryStore())
+        coordinator = coordinator()
         self.assertTrue(coordinator.admit(
             claim("fg", {"src/ui"}, lanes.LaneKind.FOREGROUND), generation=1)["admitted"])
         self.assertTrue(coordinator.admit(
@@ -90,7 +105,7 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
         self.assertEqual(len(coordinator.snapshot()["lanes"]), 2)
 
     def test_coordinator_blocks_overlap_before_mutation_and_release_is_identity_bound(self):
-        coordinator = runtime.ProjectLaneCoordinator(MemoryStore())
+        coordinator = coordinator()
         coordinator.admit(claim("a", {"src"}), generation=1)
         blocked = coordinator.admit(claim("b", {"src/b"}), generation=1)
         self.assertFalse(blocked["admitted"])
@@ -102,18 +117,18 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
 
     def test_handoff_requires_checkpoint_and_independent_quiescence(self):
         store = MemoryStore()
-        coordinator = runtime.ProjectLaneCoordinator(store)
+        coordinator = globals()["coordinator"](store)
         coordinator.admit(claim("a", {"src/a"}), generation=1)
         with self.assertRaises(ValueError):
             coordinator.handoff("a", invocation_id="a", generation=1, checkpoint_ref=None)
         with self.assertRaises(ValueError):
             coordinator.handoff("a", invocation_id="a", generation=1, checkpoint_ref="cp-1")
-        coordinator = runtime.ProjectLaneCoordinator(store, quiescence_verifier=quiescent)
+        coordinator = globals()["coordinator"](store, quiescence_verifier=quiescent)
         coordinator.handoff("a", invocation_id="a", generation=1, checkpoint_ref="cp-1")
         self.assertEqual(coordinator.snapshot()["lanes"]["a"]["state"], "handoff_ready")
 
     def test_successful_writer_result_survives_lane_release_until_integrated(self):
-        coordinator = runtime.ProjectLaneCoordinator(MemoryStore(), result_verifier=verifier())
+        coordinator = coordinator(result_verifier=verifier())
         coordinator.admit(claim("a", {"src/a"}), generation=1)
         coordinator.record_result(
             "a", invocation_id="a", generation=1, result_commit="b" * 40,
@@ -134,7 +149,7 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
             verifier(SHA, False, {"src/a/x.py"}),
             verifier(SHA, True, {"src/b/x.py"}),
         ):
-            coordinator = runtime.ProjectLaneCoordinator(MemoryStore(), result_verifier=check)
+            coordinator = coordinator(result_verifier=check)
             coordinator.admit(claim("a", {"src/a"}), generation=1)
             with self.assertRaises(ValueError):
                 coordinator.record_result(
