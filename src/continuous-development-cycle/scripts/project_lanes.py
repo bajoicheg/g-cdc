@@ -91,12 +91,16 @@ def paths_overlap(left, right):
     return any(overlaps(a, b) for a in left.write_paths for b in right.write_paths)
 
 
+def _branch_key(branch):
+    return portable_path_key(branch.removeprefix("refs/heads/"))
+
+
 def _worktree_key(path):
     return os.path.normcase(os.path.realpath(os.path.abspath(path)))
 
 
 def _same_isolation(left, right):
-    return (portable_path_key(left.branch) == portable_path_key(right.branch)
+    return (_branch_key(left.branch) == _branch_key(right.branch)
             or _worktree_key(left.worktree) == _worktree_key(right.worktree))
 
 
