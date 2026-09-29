@@ -55,8 +55,9 @@ class CooperativeLaneProcessDemoTests(unittest.TestCase):
             subprocess.run(["git", "-C", str(repo), "commit", "-qm", "base"], check=True)
             base = git(repo, "rev-parse", "HEAD")
 
-            fg = root / "fg"
-            wd = root / "wd"
+            worktrees = root / "worktrees"
+            fg = worktrees / "fg"
+            wd = worktrees / "wd"
             store = MemoryStore()
             config = LaneRegistryConfig(
                 canonical_repository="example/g-cdc", product_source_ref="refs/heads/main",
@@ -86,7 +87,7 @@ class CooperativeLaneProcessDemoTests(unittest.TestCase):
 
             backend = LocalCommandBackend(root / "lane-journal")
             adapter = ProjectLaneExecutionAdapter(
-                coordinator, repo, backend, worktree_root=root,
+                coordinator, repo, backend, worktree_root=worktrees,
                 journal_root=root / "lane-journal")
             adapter.start(
                 "foreground", invocation_id="fg-inv", generation=1, executor_id="fg",
