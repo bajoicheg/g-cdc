@@ -204,6 +204,30 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
         coord.release("integrator", invocation_id="integrator", generation=1, executor_id="integrator", checkpoint_ref="cp-integrator")
         self.assertTrue(coord.can_finalize(runnable_task_count=0, unknown_effect_count=0))
 
+    def test_integration_intent_keeps_integrator_lane_nonreleasable_until_reconciled(self):
+        coord = coordinator(result_verifier=verifier(), integration_verifier=integration_verifier)
+        coord.admit(claim("a", {"src/a"}), generation=1)
+        coord.record_result("a", invocation_id="a", generation=1, executor_id="a",
+                            result_commit="b" * 40, evidence_refs=["test:green"])
+        coord.admit(claim("integrator", (), lanes.LaneKind.INTEGRATOR), generation=1)
+        intent = coord.claim_integration(
+            "a", result_commit="b" * 40, integrator_lane_id="integrator",
+            integrator_invocation_id="integrator", integrator_generation=1,
+            integrator_executor_id="integrator", observed_shared_head="c" * 40)
+        self.assertTrue(coord.snapshot()["lanes"]["integrator"]["pending_effects"])
+        with self.assertRaisesRegex(ValueError, "drained effects"):
+            coord.release(
+                "integrator", invocation_id="integrator", generation=1,
+                executor_id="integrator", checkpoint_ref="cp:int")
+        coord.mark_integrated(
+            "a", result_commit="b" * 40, operation_id=intent["operation_id"],
+            integrator_lane_id="integrator", integrator_invocation_id="integrator",
+            integrator_generation=1, integrator_executor_id="integrator")
+        self.assertFalse(coord.snapshot()["lanes"]["integrator"]["pending_effects"])
+        coord.release(
+            "integrator", invocation_id="integrator", generation=1,
+            executor_id="integrator", checkpoint_ref="cp:int")
+
     def test_integration_requires_durable_one_shot_intent_before_reconciliation(self):
         coord = coordinator(result_verifier=verifier(), integration_verifier=integration_verifier)
         coord.admit(claim("a", {"src/a"}), generation=1)
