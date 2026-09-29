@@ -86,6 +86,17 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
         self.assertTrue(lanes.admit_writer([integrator], claim("w", {"src/a"})))
         self.assertFalse(lanes.admit_writer([integrator], claim("i2", (), lanes.LaneKind.INTEGRATOR)))
 
+    def test_integrator_and_writer_may_coexist_only_with_distinct_branch_and_worktree(self):
+        integrator = claim("i", (), lanes.LaneKind.INTEGRATOR,
+                           branch="cdc/integration", worktree="/tmp/integration")
+        self.assertFalse(lanes.admit_writer(
+            [integrator], claim("w1", {"src/a"}, branch="cdc/integration", worktree="/tmp/w1")))
+        self.assertFalse(lanes.admit_writer(
+            [integrator], claim("w2", {"src/a"}, branch="cdc/w2",
+                                worktree="/tmp/integration/../integration")))
+        self.assertTrue(lanes.admit_writer(
+            [integrator], claim("w3", {"src/a"}, branch="cdc/w3", worktree="/tmp/w3")))
+
     def test_duplicate_branch_or_worktree_blocks_writer_even_when_paths_are_disjoint(self):
         a = claim("a", {"src/a"}, branch="cdc/shared", worktree="/tmp/a")
         self.assertFalse(lanes.admit_writer([a], claim("b", {"src/b"}, branch="cdc/shared", worktree="/tmp/b")))
