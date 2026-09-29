@@ -23,3 +23,16 @@ Project completion aggregates fresh lane state and the authoritative remaining q
 ## Verification
 
 Retain RED→GREEN for disjoint concurrency, portable overlap, duplicate admission/CAS contenders, isolation collisions, stale-owner theft, fake heartbeat, release of another invocation, independent release, unknown start, result containment, moved shared HEAD and premature project completion. Use real local Git/process integration for the principal lifecycle. Run prior continuity, pool and liveness regressions, independent spec/quality review, bootstrap, archived three-consumer compatibility and exact-head CI before release. Record cooperative control limits: no OS sandbox, no arbitrary writer fencing and no fabricated scheduler/host API.
+
+
+## Watchdog survivability and desired-state reconciliation
+
+Scheduler objects are disposable materializations, not the source of watchdog identity. Durable desired state binds project identity, source ref, watchdog role, required/enabled-or-paused state, expected schedule/template digest, canonical object ID when known, generation, explicit owner-stop evidence and bounded recovery policy.
+
+A fresh runtime inventory distinguishes `HEALTHY`, `OVERDUE`, `DISABLED_DRIFT`, `MISSING`, `CONFIG_DRIFT`, `DUPLICATE`, `FLAPPING`, `EXECUTION_BROKEN`, `OWNER_PAUSED` and `PROJECT_TERMINAL`. Missing/configuration-drift/flapping recovery advances the desired generation before scheduler I/O so an old object that wakes later is fenced. Disabled and overdue current objects may be enabled/kicked without a generation bump when every fresh safety gate permits it.
+
+Every scheduler effect uses a durable one-shot operation claim plus a post-claim fresh desired/safety observation. Unknown provider outcomes retain the claim and are reconciled by exact inventory readback; create/run/enable/disable are never blindly replayed. Duplicate objects are quiesced only after the canonical materialization is established. Explicit owner stop/pause and exact fresh project-terminal proof suppress all self-heal.
+
+The scheduler backend remains an explicit capability boundary. This release can reconcile only through a backend the host actually provides and authorizes; it does not fabricate automation APIs. Existing owner-paused schedulers remain paused.
+
+Verification includes deletion/recreation, disabled recovery, overdue kick, configuration drift, duplicate materialization, flapping, lost create reply, unknown effect without materialization, post-claim owner stop, generation fencing and terminal/owner-pause suppression.

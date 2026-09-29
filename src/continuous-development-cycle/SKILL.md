@@ -3,7 +3,7 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.11.1
+# Continuous Development Cycle v2.11.2
 
 ## Active execution contract — apply before recovery detail
 
@@ -315,3 +315,18 @@ Use `scripts/watchdog_liveness.py` to distinguish critical nonterminal inactivit
 Use `scripts/fleet_watchdog_runtime.py` for a bounded all-project recovery pass with an actual authorized scheduler adapter and durable conditional journal. Refresh the latest owner pause and other gates before every effect, including between enable and run. Persist one-shot effect claims before submission; lost/unknown results retain their claim across controller restart and require reconciliation. Preserve every deferred project for continuation. An enabled scheduler or accepted run request is not observed execution or meaningful product progress.
 
 An explicit current owner pause wins over enabled-until-terminal policy. Never enable, run, rebind or reschedule paused automations. Foreground eligible work continues. Cooperative validation cannot intercept an agent's final channel, manufacture unavailable host capabilities or fence arbitrary downstream writes. Read `references/watchdog-liveness-runtime.md` and `references/live-target-resolution.md` for exact contracts and capability boundaries.
+
+
+## CDC 2.11.2 Cooperative project lanes and watchdog survivability
+
+Use `scripts/project_lanes.py` and `scripts/project_lane_runtime.py` to coordinate concurrent foreground, watchdog, Work and Codex execution on one project. Every lane binds exact executor/invocation identity, source HEAD, role, portable read/write claims, isolated branch/worktree and generation. Disjoint writers may coexist; portable path overlap, branch/worktree reuse and multiple integrators fail closed before effects. Read-only/review lanes may coexist with writers on pinned source snapshots.
+
+A foreground lane never implicitly pauses the project watchdog. When a watchdog encounters an occupied write claim, select another runnable non-conflicting task or observation/review work. Existing claims are not stolen for urgency. Handoff/recovery requires a durable checkpoint plus independently verified quiescence; TTL or silence alone never frees a lane. Heartbeats require a new observable activity reference.
+
+Before accepting a writer result, verify base ancestry and every path touched by every introduced commit against the original portable claim. Successful computation is not integration: accepted results remain in the durable integration queue until the single integrator reconciles them against fresh shared HEAD and conditionally publishes. Any active/runnable lane, unknown effect or unintegrated required result keeps project completion nonterminal.
+
+Treat scheduler watchdog objects as replaceable materializations of durable desired state. Use `scripts/watchdog_survivability.py` for evidence-only health classification and `scripts/watchdog_survivability_runtime.py` only with an actually authorized scheduler backend and durable CAS store. Missing, disabled, overdue, configuration-drifted, duplicate and flapping watchdogs are explicitly classified. Recovery is gated by fresh owner/guard/external/pause evidence and explicit owner authorization.
+
+Missing or configuration-drifted watchdogs are recreated with a newer generation before scheduler I/O; old generations are fenced. Lost/unknown create outcomes are observed and reconciled, never blindly replayed. Duplicate materializations are quiesced only after the canonical generation is known. A fresh explicit owner pause/stop or exact project-terminal proof suppresses self-heal. The current owner-paused scheduler policy remains authoritative.
+
+Read `references/cooperative-project-lanes-and-watchdog-survivability.md` before project-lane admission or survivability recovery.

@@ -81,14 +81,21 @@ Required controls:
 - existing valid claims are never stolen merely because foreground work has higher urgency; handoff/preemption requires a safe checkpoint plus explicit quiescence of the relinquished lane;
 - every lane heartbeat requires new observable activity; TTL/staleness alone never proves the executor stopped;
 - shared HEAD movement is reconciled before integration; no executor force-pushes around another;
-- terminal evaluation is project-scope aware: one idle lane cannot make the project terminal while runnable work exists in another lane/queue.
+- terminal evaluation is project-scope aware: one idle lane cannot make the project terminal while runnable work exists in another lane/queue;
+- watchdog runtime objects are replaceable materializations of durable desired state: missing, disabled, overdue, configuration-drifted, duplicate and flapping watchdogs are explicitly classified;
+- a required missing watchdog on a nonterminal project may be recreated only after fresh owner/guard/external/pause gates and durable owner-authorized recovery policy; recreation advances generation before scheduler I/O so late old instances are fenced;
+- lost/unknown scheduler effects are reconciled by exact readback and are never blindly replayed; duplicates are quiesced only after a canonical generation is established;
+- fresh explicit owner pause/stop and exact project-terminal proof suppress watchdog self-heal; owner-paused schedulers remain paused unless that owner state changes.
 
 Acceptance:
 - foreground chat + watchdog can both be `running` on one project with disjoint write claims and no ownership contradiction;
 - overlapping claims deterministically block/serialize before either writer mutates the same portable path;
 - one executor can finish/release its lane without releasing or invalidating other active lanes;
 - watchdog stays scheduled while foreground execution is active;
-- integrator remains the only shared-branch writer and validates all accepted lane results against fresh HEAD.
+- integrator remains the only shared-branch writer and validates all accepted lane results against fresh HEAD;
+- deleting a required nonterminal watchdog is detected as `MISSING` and, when recovery is authorized and safe, results in one fenced-generation recreation plus exact readback;
+- an old watchdog generation that later wakes cannot become current execution authority; duplicate recovery never produces two authoritative watchdogs;
+- explicit owner pause is stable under reconciliation and cannot be undone by survivability repair.
 
 Expected benefit: CDC moves from “safe parallel tasks” to a resilient multi-executor development system: useful work continues concurrently, foreground and watchdog execution cooperate instead of excluding each other, and fleet supervision actively restores projects that are idle for the wrong reason.
 
