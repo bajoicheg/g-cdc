@@ -1,7 +1,10 @@
+from pathlib import Path
+import sys
 import unittest
 
-from scripts.project_lanes import LaneClaim, LaneKind, admit_writer, paths_overlap
-from scripts.project_lane_runtime import LaneRuntime, LaneState
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from project_lanes import LaneClaim, LaneKind, admit_writer, paths_overlap
+from project_lane_runtime import LaneRuntime, LaneState
 
 
 class CooperativeLaneTests(unittest.TestCase):
