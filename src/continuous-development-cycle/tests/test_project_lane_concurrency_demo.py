@@ -108,9 +108,9 @@ class CooperativeLaneProcessDemoTests(unittest.TestCase):
                 for process in processes:
                     process.wait(timeout=5)
 
-            coordinator.release("foreground", invocation_id="fg-inv", generation=1)
+            coordinator.release("foreground", invocation_id="fg-inv", generation=1, executor_id="fg", checkpoint_ref="cp-fg")
             self.assertEqual(coordinator.snapshot()["lanes"]["watchdog"]["state"], "running")
-            coordinator.release("watchdog", invocation_id="wd-inv", generation=1)
+            coordinator.release("watchdog", invocation_id="wd-inv", generation=1, executor_id="wd", checkpoint_ref="cp-wd")
 
 
 if __name__ == "__main__":
