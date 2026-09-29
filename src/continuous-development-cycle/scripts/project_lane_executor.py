@@ -16,7 +16,7 @@ import json
 import os
 from pathlib import Path
 
-from project_lanes import LaneKind, validate_claim
+from project_lanes import LaneKind
 
 
 TERMINAL = {"succeeded", "failed", "cancelled", "timed_out"}
@@ -91,7 +91,6 @@ class ProjectLaneExecutionAdapter:
 
     def _request(self, lane, operation, argv, timeout_seconds):
         claim = lane["claim"]
-        validate_claim(__import__("project_lane_runtime")._claim_from(claim))
         if claim["kind"] == LaneKind.INTEGRATOR.value:
             raise ValueError("integrator lane cannot launch a worker backend")
         if type(timeout_seconds) is not int or timeout_seconds < 1:
@@ -163,22 +162,12 @@ class ProjectLaneExecutionAdapter:
         operation = self.coordinator.start_operation(lane_id)
         if operation is None:
             raise ValueError("durable lane start claim missing after admission")
+        if not decision["claimed"]:
+            return self.observe(lane_id)
+
         request = self._request(lane, operation, argv, timeout_seconds)
         directory = Path(request["journal_directory"])
         request_path = directory / "request.json"
-
-        if not decision["claimed"]:
-            if not request_path.exists():
-                return {
-                    "schema": "project-lane-observation/v1",
-                    "identity": request["identity"],
-                    "status": "unknown", "quiescent": False,
-                    "reason": "start already claimed but durable local request is unavailable; never replay",
-                }
-            saved = json.loads(request_path.read_text(encoding="utf-8"))
-            if saved != request:
-                raise ValueError("existing lane start request disagrees with durable claim")
-            return self.observe(lane_id)
 
         # The durable claim exists before any journal/worktree/process side effect.
         latest = self._lane(lane_id)
@@ -191,6 +180,10 @@ class ProjectLaneExecutionAdapter:
         _write_request(request_path, request)
         try:
             receipt = self.backend.start(request)
+            self._validate_receipt(request, receipt)
+            if receipt["status"] != "unknown":
+                (directory / "backend-receipt.json").write_text(
+                    json.dumps(receipt, sort_keys=True), encoding="utf-8")
             return self._record(request, receipt)
         except Exception:
             unknown = {
@@ -207,23 +200,32 @@ class ProjectLaneExecutionAdapter:
         operation = self.coordinator.start_operation(lane_id)
         if operation is None:
             raise ValueError("lane has no durable start operation")
-        request = self._request(
-            lane, operation,
-            argv=json.loads((self._directory(self._identity(lane)) / "request.json").read_text())["argv"],
-            timeout_seconds=json.loads((self._directory(self._identity(lane)) / "request.json").read_text())["timeout_seconds"],
-        )
-        path = Path(request["journal_directory"]) / "request.json"
+        identity = self._identity(lane)
+        directory = self._directory(identity)
+        path = directory / "request.json"
         if not path.exists():
-            unknown = {
+            evidence_ref = _digest({
+                "identity": identity,
+                "operation_id": operation["operation_id"],
+                "state": "request_absent",
+            })
+            self.coordinator.reconcile_start(
+                identity["lane_id"], invocation_id=identity["invocation_id"],
+                generation=identity["generation"], executor_id=identity["executor_id"],
+                operation_id=operation["operation_id"], status="unknown",
+                evidence_ref=evidence_ref,
+            )
+            return {
                 "schema": "project-lane-observation/v1",
-                "identity": request["identity"], "status": "unknown",
-                "quiescent": False, "reason": "durable request absent; start outcome remains unknown",
+                "identity": identity, "status": "unknown",
+                "quiescent": False,
+                "reason": "durable request absent; start claim retained and never replayed",
             }
-            return self._record(request, unknown)
-        saved = json.loads(path.read_text(encoding="utf-8"))
-        if saved != request:
+        request = json.loads(path.read_text(encoding="utf-8"))
+        if (request.get("identity") != identity
+                or request.get("claim", {}).get("operation_id") != operation["operation_id"]):
             raise ValueError("lane request journal identity mismatch")
-        receipt_path = Path(request["journal_directory"]) / "backend-receipt.json"
+        receipt_path = directory / "backend-receipt.json"
         saved_receipt = json.loads(receipt_path.read_text()) if receipt_path.exists() else None
         receipt = self.backend.observe(request, saved_receipt)
         self._validate_receipt(request, receipt)
