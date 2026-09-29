@@ -152,6 +152,28 @@ class WatchdogSurvivabilityTests(unittest.TestCase):
                 self.assertFalse(result["recovery_eligible"])
                 self.assertEqual(result["action"], "OBSERVE")
 
+    def test_fresh_owner_pause_evidence_blocks_recovery_even_if_scheduler_reports_running(self):
+        inv = inventory([], safety={**inventory()["safety"], "pause": "running",
+                                    "owner_pause_evidence": "owner:pause"})
+        result = survivability.assess(desired(canonical_object_id=None), inv, now=NOW)
+        self.assertEqual((result["overall"], result["action"]), ("OWNER_PAUSED", "NONE"))
+        self.assertFalse(result["recovery_eligible"])
+
+    def test_running_watchdog_is_never_kicked_again_even_when_last_run_is_old(self):
+        running = obj(last_run_at_utc="2026-09-29T09:00:00Z", execution_state="running")
+        result = survivability.assess(desired(), inventory([running]), now=NOW)
+        self.assertEqual((result["overall"], result["action"]), ("HEALTHY", "NONE"))
+
+    def test_recent_failed_watchdog_gets_bounded_retry_before_flap_threshold(self):
+        failed = obj(execution_state="failed", consecutive_failures=1)
+        result = survivability.assess(desired(), inventory([failed]), now=NOW)
+        self.assertEqual((result["overall"], result["action"]), ("OVERDUE", "RUN"))
+
+    def test_current_execution_requires_enabled_exact_materialization(self):
+        self.assertFalse(survivability.execution_is_current(desired(), obj(enabled=False)))
+        self.assertFalse(survivability.execution_is_current(desired(), obj(schedule="RRULE:FREQ=DAILY")))
+        self.assertFalse(survivability.execution_is_current(desired(required=False), obj()))
+
     def test_unknown_execution_is_not_assumed_dead(self):
         result = survivability.assess(desired(), inventory([obj(execution_state="unknown")]), now=NOW)
         self.assertEqual((result["overall"], result["action"]), ("EXECUTION_BROKEN", "OBSERVE"))
