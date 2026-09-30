@@ -34,29 +34,29 @@ class T(unittest.TestCase):
   r=leasev2.mark_ready(r,OWNER,1,INV_ID,"2026-01-01T10:01:03Z",continuity_state=continuity(False))
   return leasev2.release(r,OWNER,1,INV_ID,"2026-01-01T10:01:04Z")
  def test_owned_invocation_cannot_final_respond(self):
-  r=evaluate(INV_ID,self.owned(),continuity(False),{"owner_id":OWNER,"generation":1},None,"2026-01-01T10:02:00Z")
+  r=evaluate(INV_ID,self.owned(),continuity(False),{"owner_id":OWNER,"generation":1},None,None,"2026-01-01T10:02:00Z")
   self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"invocation_still_owns_exact_generation")
  def test_exact_released_generation_can_final_respond(self):
-  lease=self.released();r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},receipt(lease),"2026-01-01T10:02:00Z")
+  lease=self.released();r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},receipt(lease),lease,"2026-01-01T10:02:00Z")
   self.assertTrue(r["allowed"]);self.assertTrue(r["final_response_allowed"])
  def test_different_release_does_not_satisfy_owned_generation(self):
   lease=self.released();bad_receipt=receipt(lease);bad_receipt["release"]["generation"]=0
-  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},bad_receipt,"2026-01-01T10:02:00Z")
+  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},bad_receipt,lease,"2026-01-01T10:02:00Z")
   self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"exact_owned_generation_release_not_proven")
  def test_pre_release_continuity_never_substitutes_for_release(self):
   lease=self.released()
-  r=evaluate(INV_ID,lease,continuity(False),{"owner_id":OWNER,"generation":1},receipt(lease),"2026-01-01T10:02:00Z")
+  r=evaluate(INV_ID,lease,continuity(False),{"owner_id":OWNER,"generation":1},receipt(lease),lease,"2026-01-01T10:02:00Z")
   self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"continuity_does_not_record_post_release_state")
  def test_successor_owner_does_not_reopen_released_invocation(self):
   lease=self.released()
   other="55555555-5555-4555-8555-555555555555"
   inv2={"invocation_id":"chat-next","automation_id":None,"conversation_id":None,"execution_surface":"chat","started_at_utc":"2026-01-01T10:02:00Z"}
-  first_receipt=receipt(lease)
+  first_record=copy.deepcopy(lease);first_receipt=receipt(first_record)
   lease=leasev2.acquire(lease,other,"2026-01-01T10:02:00Z",invocation=inv2,ttl=1200)
-  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},first_receipt,"2026-01-01T10:03:00Z")
+  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},first_receipt,first_record,"2026-01-01T10:03:00Z")
   self.assertTrue(r["allowed"])
  def test_successor_release_cannot_erase_prior_release_proof(self):
-  lease=self.released();first_receipt=receipt(lease)
+  lease=self.released();first_record=copy.deepcopy(lease);first_receipt=receipt(first_record)
   other="55555555-5555-4555-8555-555555555555"
   inv2={"invocation_id":"chat-next","automation_id":None,"conversation_id":None,"execution_surface":"chat","started_at_utc":"2026-01-01T10:02:00Z"}
   lease=leasev2.acquire(lease,other,"2026-01-01T10:02:00Z",invocation=inv2,ttl=1200)
@@ -67,11 +67,18 @@ class T(unittest.TestCase):
   lease=leasev2.mark_ready(lease,other,2,"chat-next","2026-01-01T10:03:03Z",continuity_state=c2)
   lease=leasev2.release(lease,other,2,"chat-next","2026-01-01T10:03:04Z")
   self.assertEqual(lease["last_release"]["generation"],2)
-  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},first_receipt,"2026-01-01T10:04:00Z")
+  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},first_receipt,first_record,"2026-01-01T10:04:00Z")
   self.assertTrue(r["allowed"])
+ def test_receipt_requires_authoritative_revision_record(self):
+  lease=self.released();proof=receipt(lease)
+  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},proof,None,"2026-01-01T10:02:00Z")
+  self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"authoritative_release_revision_readback_required")
+  forged=copy.deepcopy(lease);forged["last_release"]["invocation_id"]="other"
+  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},proof,forged,"2026-01-01T10:02:00Z")
+  self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"release_receipt_revision_mismatch")
  def test_owned_generation_requires_durable_release_receipt(self):
   lease=self.released()
-  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},None,"2026-01-01T10:02:00Z")
+  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},None,None,"2026-01-01T10:02:00Z")
   self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"durable_release_receipt_required")
 
 if __name__=="__main__":unittest.main()

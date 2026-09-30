@@ -102,6 +102,25 @@ class GitLeaseStore:
             raise ValueError('coordination ref moved during read; refetch before acting')
         return revision, record
 
+    def read_revision(self, revision):
+        """Read an immutable record from this coordination ref's authoritative history."""
+        if not isinstance(revision, str) or not re.fullmatch(r'(?:[0-9a-f]{40}|[0-9a-f]{64})', revision):
+            raise ValueError('invalid historical coordination revision')
+        current, _ = self.read()
+        if current is None:
+            raise ValueError('coordination history is absent')
+        if self._git('cat-file', '-t', revision) != 'commit':
+            raise ValueError('historical coordination revision must be a commit')
+        if self._git('merge-base', revision, current) != revision:
+            raise ValueError('historical revision is not in authoritative coordination ancestry')
+        if self._git('ls-tree', '--name-only', revision).splitlines() != ['lease.json']:
+            raise ValueError('historical coordination tree must contain only lease.json')
+        record = json.loads(self._git('show', revision + ':lease.json'), object_pairs_hook=op._unique_object)
+        validate_coordination_record(record)
+        if record['source_ref'] == self.ref:
+            raise ValueError('coordination ref must differ from product source ref')
+        return record
+
     def compare_and_swap(self, expected_revision, record):
         validate_coordination_record(record)
         if record['source_ref'] == self.ref:

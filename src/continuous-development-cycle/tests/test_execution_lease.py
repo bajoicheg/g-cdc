@@ -162,6 +162,17 @@ class GitStoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             store.compare_and_swap(newer, {**changed, 'source_ref':COORD})
 
+    def test_read_revision_accepts_only_authoritative_coordination_ancestry(self):
+        store=self.stores[0]
+        first=store.compare_and_swap(None,self.record)
+        changed=self.lease.renew(self.record,self.owner,1,AT,activity_ref='log:history')
+        second=store.compare_and_swap(first,changed)
+        self.assertEqual(store.read_revision(first),self.record)
+        self.assertEqual(store.read_revision(second),changed)
+        unrelated=self.git(self.checkouts[0],'commit-tree',self.git(self.checkouts[0],'rev-parse',second+'^{tree}'),input='unrelated\n')
+        with self.assertRaisesRegex(ValueError,'authoritative coordination ancestry'):
+            store.read_revision(unrelated)
+
     def test_two_simultaneous_claimants_have_exactly_one_winner(self):
         initial = self.lease.initialize(REPO, SOURCE)
         revision = self.stores[0].compare_and_swap(None, initial)

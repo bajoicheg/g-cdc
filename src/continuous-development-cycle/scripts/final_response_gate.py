@@ -19,7 +19,7 @@ def _release_receipt(value):
         raise ValueError("release receipt payload invalid")
     return release
 
-def evaluate(invocation_id,lease,continuity,owned_lease=None,release_receipt=None,now_utc=None):
+def evaluate(invocation_id,lease,continuity,owned_lease=None,release_receipt=None,release_record=None,now_utc=None):
     if not isinstance(invocation_id,str) or not invocation_id.strip():raise ValueError("invocation_id invalid")
     validate_lease(lease)
     if not isinstance(continuity,dict) or continuity.get("invocation_id")!=invocation_id:
@@ -35,6 +35,12 @@ def evaluate(invocation_id,lease,continuity,owned_lease=None,release_receipt=Non
         if release_receipt is None:
             return {**common,"allowed":False,"final_response_allowed":False,"reason":"durable_release_receipt_required"}
         rel=_release_receipt(release_receipt)
+        if release_record is None:
+            return {**common,"allowed":False,"final_response_allowed":False,"reason":"authoritative_release_revision_readback_required"}
+        validate_lease(release_record)
+        if (release_record.get("owner_id") is not None or release_record.get("generation")!=rel.get("generation")
+                or release_record.get("last_release")!=rel):
+            return {**common,"allowed":False,"final_response_allowed":False,"reason":"release_receipt_revision_mismatch"}
         exact=bool(rel.get("owner_id")==owned_lease["owner_id"] and rel.get("generation")==owned_lease["generation"]
                    and rel.get("invocation_id")==invocation_id)
         if not exact:
@@ -49,12 +55,23 @@ def evaluate(invocation_id,lease,continuity,owned_lease=None,release_receipt=Non
     return {**common,"allowed":True,"final_response_allowed":True,"reason":"verified_terminal_and_release_boundary"}
 
 def main(argv=None):
-    p=argparse.ArgumentParser();p.add_argument("request");p.add_argument("--now");a=p.parse_args(argv)
+    p=argparse.ArgumentParser();p.add_argument("request");p.add_argument("--now")
+    p.add_argument("--repo");p.add_argument("--remote");p.add_argument("--coordination-ref");a=p.parse_args(argv)
     try:
         d=json.loads(Path(a.request).read_text(encoding="utf-8"))
         fields={"schema","invocation_id","owned_lease","release_receipt","lease","continuity"}
         if not isinstance(d,dict) or set(d)!=fields or d.get("schema")!="final-response-gate/v1":raise ValueError("request invalid")
-        r=evaluate(d["invocation_id"],d["lease"],d["continuity"],d["owned_lease"],d["release_receipt"],a.now)
+        release_record=None
+        if d["owned_lease"] is not None:
+            if not (a.repo and a.remote and a.coordination_ref):
+                raise ValueError("owned final-response gate requires coordination store for release readback")
+            if d["release_receipt"] is None:
+                raise ValueError("owned final-response gate requires release receipt")
+            from git_lease_store import GitLeaseStore
+            store=GitLeaseStore(a.repo,a.remote,a.coordination_ref)
+            release_record=store.read_revision(d["release_receipt"]["lease_revision"])
+        r=evaluate(d["invocation_id"],d["lease"],d["continuity"],d["owned_lease"],
+                   d["release_receipt"],release_record,a.now)
     except (OSError,ValueError,json.JSONDecodeError) as e:print("FAIL:",e,file=sys.stderr);return 2
     print(json.dumps(r,sort_keys=True));return 0 if r["allowed"] else 1
 if __name__=="__main__":raise SystemExit(main())
