@@ -201,6 +201,24 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
                 self.assertFalse(decision["admitted"])
                 self.assertEqual(decision["reason"], "shared_product_ref_reserved")
 
+    def test_shared_product_branch_unicode_normalization_alias_is_rejected(self):
+        store = MemoryStore()
+        config = runtime.LaneRegistryConfig(
+            canonical_repository="example/g-cdc",
+            product_source_ref="refs/heads/caf\u00e9",
+            coordination_ref=store.ref,
+            coordination_store_id=store.store_id,
+            policy_authority="sha256:" + "d" * 64,
+        )
+        coord = runtime.ProjectLaneCoordinator(
+            store, config, migration_verifier=migration_verifier)
+        coord.establish_migration_gate({"legacy": "observed"})
+        decision = coord.admit(
+            claim("unicode-writer", {"src/a"}, lanes.LaneKind.WORKER,
+                  branch="refs/heads/cafe\u0301"), generation=1)
+        self.assertFalse(decision["admitted"])
+        self.assertEqual(decision["reason"], "shared_product_ref_reserved")
+
     def test_coordinator_blocks_overlap_before_mutation_and_release_is_identity_bound(self):
         coord = coordinator()
         coord.admit(claim("a", {"src"}), generation=1)
