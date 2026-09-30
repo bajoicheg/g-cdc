@@ -54,7 +54,8 @@ class T(unittest.TestCase):
   self.assertEqual(m.assess_takeover(s)["action"],"BLOCK_PENDING_EFFECTS")
   q={"owner_id":A,"generation":1,"repository":"o/fleet","source_ref":"refs/heads/cdc/fleet","invocation_id":"a","kind":"executor_stopped","reference":"runtime:a:stopped","pending_shared_writes":False,"external_effects_state":"preserved_unknown"}
   with self.assertRaisesRegex(ValueError,"unresolved side effects"):m.acquire_record(s,B,"2026-01-01T10:03:00Z",inv("b"),quiescence=q)
- def observation(self,s,eid=self.effect_id(s),state="terminal",receipt="scheduler:run-1",outcome="success",lookup=True):
+ def observation(self,s,eid=None,state="terminal",receipt="scheduler:run-1",outcome="success",lookup=True):
+  if eid is None:eid=self.effect_id(s)
   e=next(x for x in s["effects"] if x["effect_id"]==eid)
   return {"schema":"fleet-effect-observation/v1","effect_id":eid,"intent_digest":e["intent_digest"],"lookup_complete":lookup,
           "observed_at_utc":"2026-01-01T10:03:00Z","state":state,"receipt_ref":receipt,"outcome":outcome,"evidence_ref":"provider:lookup-1"}
