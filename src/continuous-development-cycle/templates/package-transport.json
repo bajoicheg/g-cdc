@@ -4,7 +4,7 @@
   "canonical_repository": "owner/canonical-cdc",
   "release_ref": "refs/heads/release/v2.11.3",
   "release_commit": "0000000000000000000000000000000000000000",
-  "package_tree": "a3312a7260024df05aa7c46c838a952f5788c4f0",
+  "package_tree": "27a9dec2b28408d19f4a37caa3f16a4a26531585",
   "hash_algorithm": "git-sha1",
   "entries": [
     {
