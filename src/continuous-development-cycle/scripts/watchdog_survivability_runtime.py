@@ -134,7 +134,7 @@ class WatchdogSurvivabilityRuntime:
         result = assess(desired, inventory, now=self.clock(), max_age_seconds=self.max_age_seconds)
         return inventory, result
 
-    def _set_operation(self, key, action, generation, object_id=None, *, basis=None, fence_generation=None):
+    def _set_operation(self, key, action, generation, object_id=None, *, basis=None):
         op_key = operation_key(self._entry_by_key(key)["desired"]["binding"],
                                action, generation, object_id, basis)
         operation_id = "watchdog-operation-" + secrets.token_hex(24)
@@ -145,11 +145,6 @@ class WatchdogSurvivabilityRuntime:
                 return False
             if any(op["status"] in {"claimed", "unknown"} for op in entry["operations"].values()):
                 return False
-            if fence_generation is not None:
-                if entry["desired"]["generation"] >= fence_generation:
-                    return False
-                entry["desired"]["generation"] = fence_generation
-                entry["desired"]["canonical_object_id"] = None
             entry["operations"][op_key] = {
                 "action": action, "generation": generation, "object_id": object_id,
                 "basis": basis, "operation_id": operation_id,
@@ -164,6 +159,19 @@ class WatchdogSurvivabilityRuntime:
     def _entry_by_key(self, key):
         _, state = self._read()
         return state["entries"][key]
+
+    def _fence_replacement(self, key, op_key, operation_id, expected_desired, target_generation):
+        def transform(state):
+            entry = state["entries"][key]
+            op = entry["operations"].get(op_key)
+            if (op is None or op["operation_id"] != operation_id or op["status"] != "claimed"
+                    or entry["desired"] != expected_desired
+                    or entry["desired"]["generation"] >= target_generation):
+                return False
+            entry["desired"]["generation"] = target_generation
+            entry["desired"]["canonical_object_id"] = None
+            return True
+        return bool(self._change(transform))
 
     def _finish(self, key, op_key, operation_id, status, detail):
         def transform(state):
@@ -318,18 +326,44 @@ class WatchdogSurvivabilityRuntime:
             target_generation = assessment["next_generation"]
             operation_id, op_key = self._set_operation(
                 key, "create", target_generation,
-                basis="generation:" + str(target_generation), fence_generation=target_generation)
+                basis="generation:" + str(target_generation))
             if operation_id is None:
                 return {"outcome": "unreconciled_operation", "assessment": assessment}
+
+            # Claim first, but do not advance the generation fence until a fresh
+            # execution-safety observation still proves replacement is allowed.
+            pre_fence_desired = copy.deepcopy(self._entry_by_key(key)["desired"])
+            _, after_claim = self._observe(pre_fence_desired)
+            if after_claim["action"] == "ADOPT":
+                self._finish(key, op_key, operation_id, "blocked",
+                             "current generation materialization appeared before replacement fence")
+                self._adopt(key, after_claim["canonical_object_id"])
+                return {"outcome": "adopted", "assessment": after_claim}
+            if (after_claim["action"] != "RECREATE"
+                    or not after_claim["recovery_eligible"]
+                    or after_claim["next_generation"] != target_generation):
+                self._finish(key, op_key, operation_id, "blocked",
+                             "post-claim replacement safety changed")
+                return {"outcome": "post_claim_gate_denied", "assessment": after_claim}
+
+            if not self._fence_replacement(
+                    key, op_key, operation_id, pre_fence_desired, target_generation):
+                self._finish(key, op_key, operation_id, "blocked",
+                             "desired state changed before replacement fence")
+                return {"outcome": "post_claim_gate_denied", "assessment": after_claim}
+
+            # Re-observe after the durable generation fence and immediately
+            # before scheduler I/O. The fence alone never proves quiescence.
             desired = self._entry_by_key(key)["desired"]
-            after_fence = self._post_claim_assessment(desired)
-            if (after_fence["action"] not in {"RECREATE", "ADOPT"}
-                    or (after_fence["action"] == "RECREATE" and not after_fence["recovery_eligible"])):
-                self._finish(key, op_key, operation_id, "blocked", "post-claim recovery action changed")
-                return {"outcome": "post_claim_gate_denied", "assessment": after_fence}
-            if after_fence["action"] == "ADOPT":
-                self._adopt(key, after_fence["canonical_object_id"], op_key=op_key, operation_id=operation_id)
-                return {"outcome": "adopted", "assessment": after_fence}
+            _, before_io = self._observe(desired)
+            if before_io["action"] == "ADOPT":
+                self._adopt(key, before_io["canonical_object_id"],
+                            op_key=op_key, operation_id=operation_id)
+                return {"outcome": "adopted", "assessment": before_io}
+            if before_io["action"] != "RECREATE" or not before_io["recovery_eligible"]:
+                self._finish(key, op_key, operation_id, "blocked",
+                             "pre-I/O replacement safety changed")
+                return {"outcome": "post_claim_gate_denied", "assessment": before_io}
             try:
                 reply = self.backend.create(copy.deepcopy(binding), generation=target_generation,
                                             schedule=desired["schedule"], template_digest=desired["template_digest"],

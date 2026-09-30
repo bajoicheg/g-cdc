@@ -10,7 +10,7 @@ if importlib.util.find_spec("watchdog_survivability_runtime"):
 else:
     runtime_mod = None
 
-from test_watchdog_survivability import NOW, desired, inventory, obj
+from test_watchdog_survivability import NOW, desired, inventory, obj, quiescence
 
 
 class MemoryStore:
@@ -131,6 +131,21 @@ class WatchdogSurvivabilityRuntimeTests(unittest.TestCase):
         self.assertEqual(result["outcome"], "post_claim_gate_denied")
         self.assertEqual(current["generation"], 7)
         self.assertEqual(backend.effects, [])
+
+    def test_bound_quiescent_stale_object_is_recreated_after_two_fresh_safety_gates(self):
+        store = MemoryStore()
+        backend = RecordingBackend(inventory([
+            obj("wd-old", generation=6, execution_state="idle",
+                quiescence_evidence=quiescence("wd-old", 6))
+        ]))
+        runtime = runtime_mod.WatchdogSurvivabilityRuntime(store, backend, clock=lambda: NOW)
+        runtime.register(desired())
+        result = runtime.reconcile(desired()["binding"])
+        self.assertEqual(result["outcome"], "recreated")
+        current = runtime.snapshot()["entries"][runtime_mod.binding_key(desired()["binding"])]["desired"]
+        self.assertEqual(current["generation"], 8)
+        self.assertEqual(current["canonical_object_id"], "wd-created-1")
+        self.assertEqual([e[0] for e in backend.effects], ["create"])
 
     def test_lost_create_reply_retains_generation_and_never_replays_create(self):
         self.backend.lose_create_reply = True

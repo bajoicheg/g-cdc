@@ -46,9 +46,19 @@ def obj(object_id="wd-current", **patch):
         "last_run_at_utc": "2026-09-29T12:00:00Z",
         "consecutive_failures": 0,
         "execution_state": "idle",
+        "quiescence_evidence": None,
     }
     value.update(patch)
     return value
+
+
+def quiescence(object_id="wd-current", generation=7, evidence_ref=None):
+    return {
+        "object_id": object_id,
+        "generation": generation,
+        "quiescent": True,
+        "evidence_ref": evidence_ref or f"process:quiescent:{object_id}:{generation}",
+    }
 
 
 def inventory(objects=None, **patch):
@@ -89,6 +99,30 @@ class WatchdogSurvivabilityTests(unittest.TestCase):
         self.assertFalse(result["recovery_eligible"])
         self.assertEqual(result["next_generation"], 7)
 
+    def test_bound_quiescence_proof_allows_stale_object_replacement(self):
+        idle_old = obj(
+            "wd-old", generation=6, execution_state="idle",
+            quiescence_evidence=quiescence("wd-old", 6))
+        result = survivability.assess(desired(), inventory([idle_old]), now=NOW)
+        self.assertEqual((result["overall"], result["action"]), ("MISSING", "RECREATE"))
+        self.assertTrue(result["recovery_eligible"])
+        self.assertEqual(result["next_generation"], 8)
+
+    def test_missing_stale_unknown_object_blocks_replacement(self):
+        unknown_old = obj("wd-old", generation=6, execution_state="unknown")
+        result = survivability.assess(desired(), inventory([unknown_old]), now=NOW)
+        self.assertEqual(result["action"], "OBSERVE")
+        self.assertFalse(result["recovery_eligible"])
+
+    def test_quiescence_proof_must_bind_exact_object_and_generation(self):
+        with self.assertRaisesRegex(ValueError, "quiescence"):
+            survivability.assess(
+                desired(),
+                inventory([obj(
+                    "wd-old", generation=6,
+                    quiescence_evidence=quiescence("wd-old", 5))]),
+                now=NOW)
+
     def test_missing_required_watchdog_requests_recreation_with_new_generation(self):
         result = survivability.assess(desired(canonical_object_id=None), inventory([]), now=NOW)
         self.assertEqual(result["overall"], "MISSING")
@@ -117,7 +151,11 @@ class WatchdogSurvivabilityTests(unittest.TestCase):
                          ("DISABLED_DRIFT", "ENABLE", 7))
 
     def test_configuration_drift_requires_recreation_and_fences_old_generation(self):
-        result = survivability.assess(desired(), inventory([obj(schedule="RRULE:FREQ=DAILY")]), now=NOW)
+        result = survivability.assess(
+            desired(),
+            inventory([obj(schedule="RRULE:FREQ=DAILY",
+                           quiescence_evidence=quiescence())]),
+            now=NOW)
         self.assertEqual((result["overall"], result["action"], result["next_generation"]),
                          ("CONFIG_DRIFT", "RECREATE", 8))
 
@@ -145,7 +183,9 @@ class WatchdogSurvivabilityTests(unittest.TestCase):
         self.assertEqual(result["next_generation"], 7)
 
     def test_flapping_object_recreates_only_when_owner_authorized(self):
-        flapping = obj(consecutive_failures=3, execution_state="failed")
+        flapping = obj(
+            consecutive_failures=3, execution_state="failed",
+            quiescence_evidence=quiescence())
         result = survivability.assess(desired(), inventory([flapping]), now=NOW)
         self.assertEqual((result["overall"], result["action"], result["next_generation"]),
                          ("FLAPPING", "RECREATE", 8))
