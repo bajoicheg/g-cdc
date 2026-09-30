@@ -1,0 +1,77 @@
+{
+  "schema": "cdc-consumer-rollout-observation/v1",
+  "observed_from": "fresh GitHub readback during the 2026-09-30 CDC 2.11.2 foreground rollout invocation",
+  "target_version": "2.11.2",
+  "target_package_tree": "7a7a7faa75b7fc9160d912d8fb507c6b9573d17f",
+  "canonical_release_ref": "refs/heads/release/v2.11.2",
+  "canonical_release_commit": "48e637b230e7640d0dcd13da60d712f38f59a2b6",
+  "scheduler_state": "explicit owner pause; zero scheduler enable/run/rebind/recreate mutations",
+  "consumers": [
+    {
+      "repository": "bajoicheg-private/g-ad-control",
+      "state": "adopted_and_released",
+      "source_ref": "refs/heads/codex/build-0.2.0-engineer-attribute-workflow",
+      "source_head": "df2eaa9e16aa1c526f89aab244a08b2b9a19895a",
+      "coordination_head": "4ec4ea00e1425a06c726de561346edaed69ae7b9",
+      "generation": 54,
+      "owner": null,
+      "external_guard": null,
+      "package_tree": "7a7a7faa75b7fc9160d912d8fb507c6b9573d17f",
+      "policy_digest": "3c228ef39ccf0095033cfc74f96b1e1cfc61b8bc6b4edd34df5a375288582893",
+      "evidence": "refs/heads/cdc/coordination:adoptions/cdc-2.11.2.json",
+      "validation": "36763362845 GREEN: package validator 316 files/templates, 866/866 tests, adapter PASS, checkpoint v4 PASS",
+      "rollout_note": "A canonical repo-root fault fixture was required by one retained package test under vendoring; fixture stayed outside the immutable package and the systemic distribution defect is recorded under fix key vendored-package-self-contained-regressions.",
+      "incidental_product_ci": "36760045846 executed all product gates successfully and failed only at artifact upload quota; it is not adoption/release authority.",
+      "product_state": "Product candidate 4b6f07fee49d22b9bae1691306e138c5e1efc17a unchanged. Later quota failure at 2026-09-30T18:49:39Z supersedes the older checkpoint timing for future recovery decisions; next product owner must freshly reconcile provider availability."
+    },
+    {
+      "repository": "bajoicheg/g-pc-health-check",
+      "state": "blocked_by_existing_owner",
+      "source_ref": "refs/heads/design/0.17.0-security-posture",
+      "source_head": "f86cdd5a68b99df08d1907c68a1216bfd9dc3bbf",
+      "coordination_head": "c7e05e13843ec740e80c84c4c13f6ccc8c572a26",
+      "generation": 15,
+      "owner": "6af4443b-1afa-4608-9622-5bee9b62a045",
+      "external_guard": null,
+      "finalization_state": "checkpointed",
+      "vendored_lock_version": "2.11.2",
+      "adoption_evidence_present": false,
+      "reason": "The owner lease is still materialized and finalization is incomplete. TTL/heartbeat age alone does not prove executor quiescence.",
+      "next_action": "Current owner completes ready/release, or a future recovery independently proves exact invocation quiescence and drained pending effects before any takeover."
+    },
+    {
+      "repository": "bajoicheg/g-switcher",
+      "state": "blocked_by_existing_owner",
+      "source_ref": "refs/heads/release/2.0.1",
+      "source_head": "938a98957e44e0d4a8ebce735486e140ca1922fc",
+      "coordination_head": "64bec0f6a383845e219c1215c13b21bd16ce4c7c",
+      "generation": 8,
+      "owner": "ed6d8f5f-f6fb-5c95-91b7-ea64f50f4a57",
+      "external_guard": null,
+      "finalization_state": "active",
+      "vendored_lock_version": "2.11.1",
+      "adoption_evidence_present": false,
+      "reason": "A 2.11.2 adoption invocation owns generation 8 but has not moved the source or released. TTL/heartbeat age alone is not stop proof.",
+      "next_action": "Current owner completes adoption/release, or future recovery independently proves the exact invocation stopped with no pending writes/effects."
+    },
+    {
+      "repository": "bajoicheg-private/g-supervisor",
+      "state": "unobservable_in_current_connection",
+      "reason": "The current GitHub connection exposes no g-supervisor repository, so live fleet registry/target, source HEAD and coordination ownership cannot be freshly read or mutated.",
+      "next_action": "Use an authorized connection/runtime that can read the canonical supervisor repository, then reconcile live fleet registry/target and ownership before any migration."
+    }
+  ],
+  "personal_activation": {
+    "state": "blocked_by_runtime_capability",
+    "last_retained_acceptance": "release/active-package-acceptance-2.11.0.json",
+    "reason": "The current runtime exposes skill list/read only and no personal-skill install/write operation. Source release cannot be relabeled as active installed-byte acceptance.",
+    "next_action": "When an authorized personal-skill installation surface is available, install release/v2.11.2 and run active_package.py runtime-byte readback against package tree 7a7a7faa75b7fc9160d912d8fb507c6b9573d17f."
+  },
+  "rollout_terminal_state": "BLOCKED",
+  "blockers": [
+    "g-pc-health-check existing owner generation 15",
+    "g-switcher existing owner generation 8",
+    "g-supervisor unavailable in current GitHub connection",
+    "personal-skill installation/write surface unavailable in current runtime"
+  ]
+}
