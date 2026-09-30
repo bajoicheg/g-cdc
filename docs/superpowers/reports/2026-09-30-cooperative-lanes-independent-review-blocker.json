@@ -1,0 +1,17 @@
+{
+  "schema": "blocked-state-proof/v1",
+  "dependency_id": "fresh-independent-reviewer-identity",
+  "category": "execution_channel",
+  "observed_at_utc": "2026-09-30T17:25:32Z",
+  "max_age_seconds": 86400,
+  "evidence_refs": [
+    "github:pr-77:requested_reviewers-empty",
+    "github:pr-77:reviews-threads-comments-empty",
+    "github:pr-69:issuecomment-5895465125",
+    "git:190083a370ddc6692414d9bf922ecf7bea765c17:formal-review-pipeline-not-run",
+    "git:a1efc001917b7bb458ee5aeb8bc0c1db7ec0fe55:independent-review-backend-fallback"
+  ],
+  "next_action": "Obtain a fresh independent SPEC reviewer for exact source 6af4443b1afa86085622625bee9b62a045a08a07, package tree 7a7a7faa75b7fc9160d912d8fb507c6b9573d17f and metadata ddb8503b3b8f2ff18009a90f4adc370965d38872; only after SPEC GREEN obtain a different independent code-quality reviewer.",
+  "recheck_trigger": "A new authorized independent reviewer/subagent backend becomes available, or PR #77 materializes a concrete reviewer identity and durable review artifact.",
+  "same_invocation_work_exhausted": true
+}
