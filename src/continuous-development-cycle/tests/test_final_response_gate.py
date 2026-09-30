@@ -19,6 +19,9 @@ def continuity(released):
     "completion_evidence_refs":["evidence:scope-complete"],"checkpoint_ref":CP,"lease_released":released}
  }
 
+def receipt(lease,revision="b"*40):
+ return {"schema":"execution-release-receipt/v1","lease_revision":revision,"release":copy.deepcopy(lease["last_release"])}
+
 class T(unittest.TestCase):
  def owned(self):
   r=leasev2.initialize("o/r","refs/heads/main")
@@ -31,25 +34,44 @@ class T(unittest.TestCase):
   r=leasev2.mark_ready(r,OWNER,1,INV_ID,"2026-01-01T10:01:03Z",continuity_state=continuity(False))
   return leasev2.release(r,OWNER,1,INV_ID,"2026-01-01T10:01:04Z")
  def test_owned_invocation_cannot_final_respond(self):
-  r=evaluate(INV_ID,self.owned(),continuity(False),{"owner_id":OWNER,"generation":1},"2026-01-01T10:02:00Z")
+  r=evaluate(INV_ID,self.owned(),continuity(False),{"owner_id":OWNER,"generation":1},None,"2026-01-01T10:02:00Z")
   self.assertFalse(r["allowed"]);self.assertIn("lease",r["reason"])
  def test_exact_released_generation_can_final_respond(self):
-  r=evaluate(INV_ID,self.released(),continuity(True),{"owner_id":OWNER,"generation":1},"2026-01-01T10:02:00Z")
+  lease=self.released();r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},receipt(lease),"2026-01-01T10:02:00Z")
   self.assertTrue(r["allowed"]);self.assertTrue(r["final_response_allowed"])
  def test_different_release_does_not_satisfy_owned_generation(self):
   lease=self.released();bad=copy.deepcopy(lease);bad["last_release"]["generation"]=0
-  r=evaluate(INV_ID,bad,continuity(True),{"owner_id":OWNER,"generation":1},"2026-01-01T10:02:00Z")
+  r=evaluate(INV_ID,bad,continuity(True),{"owner_id":OWNER,"generation":1},receipt(bad),"2026-01-01T10:02:00Z")
   self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"exact_owned_generation_release_not_proven")
  def test_pre_release_continuity_never_substitutes_for_release(self):
   lease=self.released()
-  r=evaluate(INV_ID,lease,continuity(False),{"owner_id":OWNER,"generation":1},"2026-01-01T10:02:00Z")
+  r=evaluate(INV_ID,lease,continuity(False),{"owner_id":OWNER,"generation":1},receipt(lease),"2026-01-01T10:02:00Z")
   self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"continuity_does_not_record_post_release_state")
  def test_successor_owner_does_not_reopen_released_invocation(self):
   lease=self.released()
   other="55555555-5555-4555-8555-555555555555"
   inv2={"invocation_id":"chat-next","automation_id":None,"conversation_id":None,"execution_surface":"chat","started_at_utc":"2026-01-01T10:02:00Z"}
+  first_receipt=receipt(lease)
   lease=leasev2.acquire(lease,other,"2026-01-01T10:02:00Z",invocation=inv2,ttl=1200)
-  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},"2026-01-01T10:03:00Z")
+  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},first_receipt,"2026-01-01T10:03:00Z")
   self.assertTrue(r["allowed"])
+ def test_successor_release_cannot_erase_prior_release_proof(self):
+  lease=self.released();first_receipt=receipt(lease)
+  other="55555555-5555-4555-8555-555555555555"
+  inv2={"invocation_id":"chat-next","automation_id":None,"conversation_id":None,"execution_surface":"chat","started_at_utc":"2026-01-01T10:02:00Z"}
+  lease=leasev2.acquire(lease,other,"2026-01-01T10:02:00Z",invocation=inv2,ttl=1200)
+  lease=leasev2.begin_finalization(lease,other,2,"chat-next","2026-01-01T10:03:00Z",pending_shared_writes=False)
+  lease=leasev2.record_checkpoint(lease,other,2,"chat-next","2026-01-01T10:03:01Z",checkpoint_ref=CP,pending_shared_writes=False)
+  lease=leasev2.reconcile_finalization(lease,other,2,"chat-next","2026-01-01T10:03:02Z",external_reconciliation="none")
+  c2=copy.deepcopy(continuity(False));c2["invocation_id"]="chat-next";c2["terminal_state"]["invocation_id"]="chat-next"
+  lease=leasev2.mark_ready(lease,other,2,"chat-next","2026-01-01T10:03:03Z",continuity_state=c2)
+  lease=leasev2.release(lease,other,2,"chat-next","2026-01-01T10:03:04Z")
+  self.assertEqual(lease["last_release"]["generation"],2)
+  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},first_receipt,"2026-01-01T10:04:00Z")
+  self.assertTrue(r["allowed"])
+ def test_owned_generation_requires_durable_release_receipt(self):
+  lease=self.released()
+  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},None,"2026-01-01T10:02:00Z")
+  self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"durable_release_receipt_required")
 
 if __name__=="__main__":unittest.main()
