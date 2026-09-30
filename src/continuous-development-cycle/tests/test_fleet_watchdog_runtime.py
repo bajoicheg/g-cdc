@@ -16,9 +16,11 @@ from git_remote_identity import endpoint_identity
 
 if importlib.util.find_spec("fleet_watchdog_runtime"):
     import fleet_watchdog_runtime as fleet
+    import fleet_supervisor_control as fleet_control
     from git_document_store import GitDocumentStore
 else:
     fleet = None
+    fleet_control = None
     GitDocumentStore = None
 
 
@@ -140,6 +142,34 @@ class FleetTests(unittest.TestCase):
 
     def batch(self, runtime=None, budget=20, invocation="controller-invocation-1"):
         return (runtime or self.runtime()).run_batch(self.projects, max_effects=budget, invocation_id=invocation)
+
+    def test_git_leader_guard_binds_authoritative_remote_fleet_head(self):
+        source=self.root/"fleet-source"
+        source.mkdir();self.git("init","-q",str(source))
+        self.git("config","user.email","cdc@example.invalid",cwd=source)
+        self.git("config","user.name","CDC test",cwd=source)
+        (source/"fleet.txt").write_text("fleet\n")
+        self.git("add","fleet.txt",cwd=source);self.git("commit","-qm","fleet",cwd=source)
+        head=self.git("rev-parse","HEAD",cwd=source)
+        self.git("remote","add","origin",str(self.remote),cwd=source)
+        self.git("push","-q","origin","HEAD:refs/heads/cdc/fleet",cwd=source)
+
+        leader_repo=self.root/"leader-controller";leader_repo.mkdir()
+        self.git("init","-q",str(leader_repo));self.git("remote","add","origin",str(self.remote),cwd=leader_repo)
+        leader_store=GitDocumentStore(leader_repo,"origin","refs/heads/cdc/fleet-supervisor",self.store_id,
+                                      protected_refs=["refs/heads/cdc/fleet"])
+        state=fleet_control.initialize("owner/fleet","refs/heads/cdc/fleet")
+        state=fleet_control.acquire_record(
+            state,"77777777-7777-4777-8777-777777777777",NOW,
+            {"invocation_id":"leader-live","automation_id":None,"conversation_id":None,
+             "execution_surface":"chat","started_at_utc":NOW})
+        leader_store.compare_and_swap(None,state)
+        guard=fleet.GitFleetLeaderGuard(
+            leader_store,owner_id="77777777-7777-4777-8777-777777777777",generation=1,
+            invocation_id="leader-live",clock=lambda: NOW)
+        binding=guard.binding("leader-live")
+        self.assertEqual(binding["observed_fleet_head"],head)
+        self.assertEqual(binding["generation"],1)
 
     def test_positive_effect_budget_requires_fleet_leader_guard(self):
         runtime=fleet.FleetRuntime(self.store,self.backend,clock=lambda: NOW)
