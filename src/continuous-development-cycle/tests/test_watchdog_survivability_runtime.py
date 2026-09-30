@@ -363,6 +363,33 @@ class WatchdogSurvivabilityRuntimeTests(unittest.TestCase):
         self.assertEqual(result["results"][0]["outcome"], "recreated")
         self.assertTrue(result["continuation_required"])
 
+    def test_reconciled_unknown_does_not_consume_current_batch_effect_budget(self):
+        store = MemoryStore()
+        backend = RecordingBackend(inventory([obj(enabled=False)]))
+        runtime = runtime_mod.WatchdogSurvivabilityRuntime(store, backend, clock=lambda: NOW)
+        runtime.register(desired())
+
+        def lost_enable_reply(binding, *, object_id, operation_id):
+            backend.effects.append(("enable", object_id, operation_id))
+            for item in backend.inventory["objects"]:
+                if item["object_id"] == object_id:
+                    item["enabled"] = True
+            raise TimeoutError("enable reply lost after provider effect")
+
+        backend.enable = lost_enable_reply
+        first = runtime.reconcile_registered(max_effects=1)
+        self.assertEqual(first["effects_attempted"], 1)
+        self.assertEqual(first["results"][0]["outcome"], "provider_outcome_unknown")
+        self.assertTrue(first["continuation_required"])
+        self.assertEqual([effect[0] for effect in backend.effects], ["enable"])
+
+        second = runtime.reconcile_registered(max_effects=0)
+        self.assertEqual(second["results"][0]["outcome"], "enabled")
+        self.assertEqual(second["effects_attempted"], 0)
+        self.assertEqual(second["max_effects"], 0)
+        self.assertFalse(second["continuation_required"])
+        self.assertEqual([effect[0] for effect in backend.effects], ["enable"])
+
     def test_registered_reconciliation_assesses_all_but_bounds_scheduler_effects(self):
         store = MemoryStore()
         runtime = runtime_mod.WatchdogSurvivabilityRuntime(
