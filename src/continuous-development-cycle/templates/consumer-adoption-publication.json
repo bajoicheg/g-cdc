@@ -1,0 +1,22 @@
+{
+  "schema": "consumer-adoption-publication/v1",
+  "source_head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "target_ref": "refs/heads/main",
+  "target_version": "2.11.3",
+  "target_package_tree": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "required_paths": [
+    ".agents/skills/continuous-development-cycle",
+    "docs/cdc-consumer-lock.json",
+    "docs/development-cycle.yaml",
+    "docs/work-status/current.md",
+    "docs/cdc-adoption-2.11.3.md"
+  ],
+  "prepared_paths": [],
+  "final_tree_sha": null,
+  "observed_package_tree": null,
+  "candidate_commit": null,
+  "live_source_head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "publication_claim": null,
+  "published_head": null,
+  "readback_package_tree": null
+}
