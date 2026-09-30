@@ -198,6 +198,86 @@ def _validate_start_operation(lane_id, operation, lane):
     return operation
 
 
+def _validate_result_record(value, lanes, *, integrated=False):
+    base = {"lane_id", "result_commit", "source_head", "touched_paths", "evidence_refs"}
+    expected = base | ({"integrator_lane_id", "integration_evidence"} if integrated else set())
+    try:
+        if not isinstance(value, dict) or set(value) != expected:
+            raise ValueError
+        lane_id = value["lane_id"]
+        lane = lanes.get(lane_id)
+        if lane is None:
+            raise ValueError
+        claim = _claim_from(lane["claim"])
+        validate_claim(claim)
+        if not claim.is_writer or claim.kind == LaneKind.INTEGRATOR:
+            raise ValueError
+        if value["source_head"] != claim.source_head:
+            raise ValueError
+        if not isinstance(value["result_commit"], str) or not SHA.fullmatch(value["result_commit"]):
+            raise ValueError
+        touched = value["touched_paths"]
+        if (not isinstance(touched, list)
+                or any(not isinstance(item, str) for item in touched)
+                or len(touched) != len(set(touched))
+                or not result_within_claim(claim, touched)):
+            raise ValueError
+        evidence_refs = value["evidence_refs"]
+        if (not isinstance(evidence_refs, list) or not evidence_refs
+                or any(not isinstance(item, str) or not item.strip() for item in evidence_refs)
+                or len(evidence_refs) != len(set(evidence_refs))):
+            raise ValueError
+        if integrated and (
+                not isinstance(value["integrator_lane_id"], str)
+                or not value["integrator_lane_id"].strip()
+                or not isinstance(value["integration_evidence"], dict)):
+            raise ValueError
+    except (KeyError, TypeError, ValueError):
+        raise ValueError(
+            "lane registry integrated result invalid"
+            if integrated else "lane registry integration queue invalid"
+        ) from None
+    return value
+
+
+def _validate_integration_evidence(evidence, intent, config):
+    expected = {
+        "integrated", "operation_id", "result_commit", "observed_shared_head",
+        "integrated_head", "conditional_update", "force_push",
+        "publication_attempt_id", "publication_attempt_state",
+        "publication_remote_id", "publication_shared_ref",
+        "publication_attempt_store_ref", "evidence_ref",
+    }
+    try:
+        if not isinstance(evidence, dict) or set(evidence) != expected:
+            raise ValueError
+        if (evidence["integrated"] is not True
+                or evidence["operation_id"] != intent["operation_id"]
+                or evidence["result_commit"] != intent["result_commit"]
+                or evidence["observed_shared_head"] != intent["observed_shared_head"]
+                or evidence["integrated_head"] != intent["intended_integrated_head"]
+                or not isinstance(evidence["integrated_head"], str)
+                or not SHA.fullmatch(evidence["integrated_head"])
+                or evidence["conditional_update"] is not True
+                or evidence["force_push"] is not False
+                or not isinstance(evidence["publication_attempt_id"], str)
+                or not evidence["publication_attempt_id"].strip()
+                or evidence["publication_attempt_state"] != "confirmed"
+                or not isinstance(evidence["publication_remote_id"], str)
+                or not DIGEST.fullmatch(evidence["publication_remote_id"])
+                or evidence["publication_shared_ref"] != config.product_source_ref
+                or not isinstance(evidence["publication_attempt_store_ref"], str)
+                or not evidence["publication_attempt_store_ref"].startswith("refs/heads/cdc/")
+                or branch_key(evidence["publication_attempt_store_ref"])
+                    == branch_key(config.product_source_ref)
+                or not isinstance(evidence["evidence_ref"], str)
+                or not evidence["evidence_ref"].strip()):
+            raise ValueError
+    except (KeyError, TypeError, ValueError):
+        raise ValueError("lane registry integration evidence invalid") from None
+    return evidence
+
+
 class ProjectLaneCoordinator:
     def __init__(self, store, config, *, result_verifier=None, quiescence_verifier=None,
                  integration_verifier=None, activity_verifier=None, migration_verifier=None):
@@ -274,6 +354,86 @@ class ProjectLaneCoordinator:
             if lane_id not in state["lanes"]:
                 raise ValueError("lane registry start operation invalid")
             _validate_start_operation(lane_id, operation, state["lanes"][lane_id])
+
+        queue_by_key = {}
+        queue_lanes = set()
+        for item in state["integration_queue"]:
+            _validate_result_record(item, state["lanes"])
+            key = self._integration_key(item["lane_id"], item["result_commit"])
+            if key in queue_by_key or item["lane_id"] in queue_lanes:
+                raise ValueError("lane registry integration queue contains duplicates")
+            queue_by_key[key] = item
+            queue_lanes.add(item["lane_id"])
+
+        integrated_by_key = {}
+        integrated_lanes = set()
+        for item in state["integrated_results"]:
+            _validate_result_record(item, state["lanes"], integrated=True)
+            key = self._integration_key(item["lane_id"], item["result_commit"])
+            if (key in integrated_by_key or item["lane_id"] in integrated_lanes
+                    or item["lane_id"] in queue_lanes):
+                raise ValueError("lane registry integrated results contain duplicates")
+            integrated_by_key[key] = item
+            integrated_lanes.add(item["lane_id"])
+
+        claimed_integrators = set()
+        for key, intent in state["integration_intents"].items():
+            base_fields = {
+                "operation_id", "status", "lane_id", "result_commit",
+                "integrator_lane_id", "integrator_invocation_id",
+                "integrator_generation", "integrator_executor_id",
+                "observed_shared_head", "intended_integrated_head",
+            }
+            try:
+                if not isinstance(intent, dict) or intent.get("status") not in {"claimed", "integrated"}:
+                    raise ValueError
+                expected = base_fields | ({"integration_evidence"} if intent["status"] == "integrated" else set())
+                if set(intent) != expected:
+                    raise ValueError
+                if key != self._integration_key(intent["lane_id"], intent["result_commit"]):
+                    raise ValueError
+                if (not isinstance(intent["operation_id"], str) or not intent["operation_id"].strip()
+                        or not isinstance(intent["lane_id"], str) or not intent["lane_id"].strip()
+                        or not isinstance(intent["result_commit"], str) or not SHA.fullmatch(intent["result_commit"])
+                        or not isinstance(intent["observed_shared_head"], str)
+                        or not SHA.fullmatch(intent["observed_shared_head"])
+                        or not isinstance(intent["intended_integrated_head"], str)
+                        or not SHA.fullmatch(intent["intended_integrated_head"])
+                        or type(intent["integrator_generation"]) is not int
+                        or intent["integrator_generation"] < 1):
+                    raise ValueError
+                integrator = state["lanes"].get(intent["integrator_lane_id"])
+                if integrator is None:
+                    raise ValueError
+                claim = _claim_from(integrator["claim"])
+                validate_claim(claim)
+                if (claim.kind != LaneKind.INTEGRATOR
+                        or claim.invocation_id != intent["integrator_invocation_id"]
+                        or integrator["generation"] != intent["integrator_generation"]
+                        or claim.executor_id != intent["integrator_executor_id"]):
+                    raise ValueError
+                if intent["status"] == "claimed":
+                    if key not in queue_by_key or not integrator["pending_effects"]:
+                        raise ValueError
+                    if intent["integrator_lane_id"] in claimed_integrators:
+                        raise ValueError
+                    claimed_integrators.add(intent["integrator_lane_id"])
+                else:
+                    result = integrated_by_key.get(key)
+                    if result is None or result["integrator_lane_id"] != intent["integrator_lane_id"]:
+                        raise ValueError
+                    _validate_integration_evidence(intent["integration_evidence"], intent, self.config)
+                    if result["integration_evidence"] != intent["integration_evidence"]:
+                        raise ValueError
+            except (KeyError, TypeError, ValueError):
+                raise ValueError("lane registry integration intent invalid") from None
+
+        for key, item in integrated_by_key.items():
+            intent = state["integration_intents"].get(key)
+            if intent is None or intent.get("status") != "integrated":
+                raise ValueError("lane registry integrated result lacks durable intent")
+            _validate_integration_evidence(item["integration_evidence"], intent, self.config)
+
         return revision, state
 
     def _change(self, transform):
