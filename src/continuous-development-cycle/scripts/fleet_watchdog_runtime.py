@@ -40,15 +40,26 @@ def legacy_operation_key(binding, effect):
 class GitFleetLeaderGuard:
     """Read-only verifier for an already-acquired Fleet Supervisor leader lease."""
 
-    def __init__(self, store, *, owner_id, generation, invocation_id, observed_fleet_head, clock=now_utc):
+    def __init__(self, store, *, owner_id, generation, invocation_id, clock=now_utc):
         if not isinstance(store, GitDocumentStore):
             raise ValueError("Fleet leader state requires GitDocumentStore")
         self.store=store
         self.owner_id=owner_id
         self.generation=generation
         self.invocation_id=invocation_id
-        self.observed_fleet_head=observed_fleet_head
         self.clock=clock
+
+    def _live_fleet_head(self,state):
+        # Reuse the coordination store's isolated, authenticated remote transport,
+        # but read the authoritative Fleet ref rather than trusting config bytes.
+        output=self.store._git("ls-remote","--refs",self.store.remote,state["fleet_ref"])
+        rows=[line for line in output.splitlines() if line.strip()]
+        if len(rows)!=1:
+            raise ValueError("authoritative Fleet ref must resolve exactly once")
+        parts=rows[0].split("\t")
+        if len(parts)!=2 or parts[1]!=state["fleet_ref"] or len(parts[0])!=40 or any(ch not in "0123456789abcdef" for ch in parts[0]):
+            raise ValueError("authoritative Fleet ref response invalid")
+        return parts[0]
 
     def binding(self, invocation_id):
         if invocation_id!=self.invocation_id:
@@ -56,8 +67,9 @@ class GitFleetLeaderGuard:
         _,state=self.store.read()
         if state is None:
             raise ValueError("Fleet leader state is absent")
+        live_head=self._live_fleet_head(state)
         return fleet_control.leader_binding(
-            state,self.owner_id,self.generation,self.invocation_id,self.clock(),self.observed_fleet_head)
+            state,self.owner_id,self.generation,self.invocation_id,self.clock(),live_head)
 
 class FleetRuntime:
     """backend.observe(project), enable(...), and run(...) are real capabilities.
