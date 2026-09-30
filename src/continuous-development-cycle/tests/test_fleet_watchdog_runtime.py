@@ -41,6 +41,23 @@ class RecordingSurvivability:
         }
 
 
+class RecordingLeaderGuard:
+    def __init__(self):
+        self.calls=[]
+
+    def binding(self, invocation_id):
+        self.calls.append(invocation_id)
+        return {
+            "schema":"fleet-leader-binding/v1",
+            "fleet_repository":"owner/fleet",
+            "fleet_ref":"refs/heads/cdc/fleet",
+            "owner_id":"66666666-6666-4666-8666-666666666666",
+            "generation":7,
+            "invocation_id":invocation_id,
+            "observed_fleet_head":"f"*40,
+        }
+
+
 class RecordingScheduler:
     """Instrumented local scheduler: mutation changes live state and writes a receipt."""
     def __init__(self, root, projects):
@@ -104,6 +121,7 @@ class FleetTests(unittest.TestCase):
         self.projects = [copy.deepcopy(PROJECT)]
         self.store = self.make_store("controller-a")
         self.backend = RecordingScheduler(self.root, self.projects)
+        self.leader_guard = RecordingLeaderGuard()
 
     def git(self, *args, cwd=None, input=None):
         r = subprocess.run(["git", *args], cwd=cwd, input=input, text=True, capture_output=True, check=True)
@@ -118,10 +136,28 @@ class FleetTests(unittest.TestCase):
 
     def runtime(self, store=None, survivability=None):
         return fleet.FleetRuntime(store or self.store, self.backend, clock=lambda: NOW,
-                                  survivability_runtime=survivability)
+                                  survivability_runtime=survivability, leader_guard=self.leader_guard)
 
     def batch(self, runtime=None, budget=20, invocation="controller-invocation-1"):
         return (runtime or self.runtime()).run_batch(self.projects, max_effects=budget, invocation_id=invocation)
+
+    def test_positive_effect_budget_requires_fleet_leader_guard(self):
+        runtime=fleet.FleetRuntime(self.store,self.backend,clock=lambda: NOW)
+        with self.assertRaisesRegex(ValueError,"leader guard"):
+            runtime.run_batch(self.projects,max_effects=1,invocation_id="unfenced")
+        self.assertEqual(self.backend.effects, [])
+
+    def test_zero_effect_observation_does_not_require_leader(self):
+        runtime=fleet.FleetRuntime(self.store,self.backend,clock=lambda: NOW)
+        result=runtime.run_batch(self.projects,max_effects=0,invocation_id="observer")
+        self.assertEqual(result["effects_attempted"],0)
+        self.assertEqual(self.backend.effects, [])
+
+    def test_operation_key_ignores_incident_label(self):
+        first=probe(self.projects[0])["binding"]
+        second=copy.deepcopy(first);second["incident_id"]="renamed-incident"
+        self.assertEqual(fleet.operation_key(first,"run"),fleet.operation_key(second,"run"))
+        self.assertNotEqual(fleet.legacy_operation_key(first,"run"),fleet.legacy_operation_key(second,"run"))
 
     def test_survivability_repairs_share_the_same_bounded_fleet_effect_budget(self):
         survivability = RecordingSurvivability(effects_attempted=1)
@@ -188,7 +224,7 @@ class FleetTests(unittest.TestCase):
         self.backend.live["alpha"]["signals"]["invocation"].update(state="idle", invocation_id=None)
         instant = [NOW]
         self.backend.after_enable = lambda backend, project: instant.__setitem__(0, "2026-09-28T12:00:02Z")
-        runtime = fleet.FleetRuntime(self.store, self.backend, clock=lambda: instant[0])
+        runtime = fleet.FleetRuntime(self.store, self.backend, clock=lambda: instant[0], leader_guard=self.leader_guard)
         result = runtime.run_batch(self.projects, max_effects=2, invocation_id="deadline-wake", deadline_utc="2026-09-28T12:00:01Z")
         self.assertEqual(self.backend.effects, [("alpha", "enable")])
         self.assertTrue(result["continuation_required"])
