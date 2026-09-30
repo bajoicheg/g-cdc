@@ -154,6 +154,55 @@ class GitLaneResultVerifierTests(unittest.TestCase):
         # Lost-reply/retry reconciliation is idempotent once exact readback matches.
         self.assertEqual(publisher(item, integrator, intent), evidence)
 
+    def test_preexisting_intended_remote_head_is_readback_only_without_this_intents_cas(self):
+        remote = self.repo / "remote-preexisting.git"
+        subprocess.run(["git", "init", "--bare", "-q", str(remote)], check=True)
+        git(self.repo, "remote", "add", "preexisting", str(remote))
+        git(self.repo, "push", "-q", "preexisting", self.base + ":refs/heads/integration")
+
+        git(self.repo, "checkout", "-qb", "worker-preexisting", self.base)
+        result_commit = self.commit(Path("src/a/preexisting.py"), "ok\n", "worker result")
+        git(self.repo, "push", "-q", "preexisting", result_commit + ":refs/heads/integration")
+        git(self.repo, "checkout", "-q", self.primary)
+
+        integrator = LaneClaim(
+            "integrator", "integrator-inv", LaneKind.INTEGRATOR, self.base,
+            str(self.repo), self.primary, executor_id="integrator", role="integrator")
+        publisher = project_lane_git.GitLaneIntegrationPublisher(
+            self.repo, "preexisting", "refs/heads/integration",
+            project_lane_git.remote_identity(self.repo, "preexisting"))
+        evidence = publisher(
+            {"lane_id": "lane", "result_commit": result_commit},
+            integrator,
+            {"lane_id": "lane", "result_commit": result_commit,
+             "observed_shared_head": self.base,
+             "intended_integrated_head": result_commit,
+             "operation_id": "op-preexisting"})
+        self.assertFalse(evidence["conditional_update"])
+
+    def test_integration_publisher_requires_durable_attempt_state_before_push(self):
+        remote = self.repo / "remote-no-attempt.git"
+        subprocess.run(["git", "init", "--bare", "-q", str(remote)], check=True)
+        git(self.repo, "remote", "add", "noattempt", str(remote))
+        git(self.repo, "push", "-q", "noattempt", self.base + ":refs/heads/integration")
+        git(self.repo, "checkout", "-qb", "worker-no-attempt", self.base)
+        result_commit = self.commit(Path("src/a/noattempt.py"), "ok\n", "worker result")
+        git(self.repo, "checkout", "-q", self.primary)
+        integrator = LaneClaim(
+            "integrator", "integrator-inv", LaneKind.INTEGRATOR, self.base,
+            str(self.repo), self.primary, executor_id="integrator", role="integrator")
+        publisher = project_lane_git.GitLaneIntegrationPublisher(
+            self.repo, "noattempt", "refs/heads/integration",
+            project_lane_git.remote_identity(self.repo, "noattempt"))
+        with self.assertRaisesRegex(ValueError, "attempt|durable"):
+            publisher(
+                {"lane_id": "lane", "result_commit": result_commit},
+                integrator,
+                {"lane_id": "lane", "result_commit": result_commit,
+                 "observed_shared_head": self.base,
+                 "intended_integrated_head": result_commit,
+                 "operation_id": "op-no-attempt"})
+
     def test_integration_publisher_rejects_remote_head_movement_without_overwrite(self):
         remote = self.repo / "remote-race.git"
         subprocess.run(["git", "init", "--bare", "-q", str(remote)], check=True)
