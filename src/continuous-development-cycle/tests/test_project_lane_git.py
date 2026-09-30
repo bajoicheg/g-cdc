@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from git_document_store import GitDocumentStore
 from project_lanes import LaneClaim, LaneKind
 
 if importlib.util.find_spec("project_lane_git"):
@@ -134,8 +135,12 @@ class GitLaneResultVerifierTests(unittest.TestCase):
             "integrator", "integrator-inv", LaneKind.INTEGRATOR, self.base,
             str(self.repo), self.primary, executor_id="integrator", role="integrator")
         remote_id = project_lane_git.remote_identity(self.repo, "origin")
+        attempt_store = GitDocumentStore(
+            self.repo, "origin", "refs/heads/cdc/publication-attempts",
+            remote_id, protected_refs=("refs/heads/integration",))
         publisher = project_lane_git.GitLaneIntegrationPublisher(
-            self.repo, "origin", "refs/heads/integration", remote_id)
+            self.repo, "origin", "refs/heads/integration", remote_id,
+            attempt_store=attempt_store)
         item = {"lane_id": "lane", "result_commit": result_commit}
         intent = {
             "lane_id": "lane", "result_commit": result_commit,
@@ -168,9 +173,13 @@ class GitLaneResultVerifierTests(unittest.TestCase):
         integrator = LaneClaim(
             "integrator", "integrator-inv", LaneKind.INTEGRATOR, self.base,
             str(self.repo), self.primary, executor_id="integrator", role="integrator")
+        remote_id = project_lane_git.remote_identity(self.repo, "preexisting")
+        attempt_store = GitDocumentStore(
+            self.repo, "preexisting", "refs/heads/cdc/preexisting-attempts",
+            remote_id, protected_refs=("refs/heads/integration",))
         publisher = project_lane_git.GitLaneIntegrationPublisher(
-            self.repo, "preexisting", "refs/heads/integration",
-            project_lane_git.remote_identity(self.repo, "preexisting"))
+            self.repo, "preexisting", "refs/heads/integration", remote_id,
+            attempt_store=attempt_store)
         evidence = publisher(
             {"lane_id": "lane", "result_commit": result_commit},
             integrator,
@@ -202,6 +211,168 @@ class GitLaneResultVerifierTests(unittest.TestCase):
                  "observed_shared_head": self.base,
                  "intended_integrated_head": result_commit,
                  "operation_id": "op-no-attempt"})
+
+    def test_lost_push_reply_reconciles_from_durable_attempt_after_restart_without_replay(self):
+        remote = self.repo / "remote-lost.git"
+        subprocess.run(["git", "init", "--bare", "-q", str(remote)], check=True)
+        git(self.repo, "remote", "add", "lost", str(remote))
+        git(self.repo, "push", "-q", "lost", self.base + ":refs/heads/integration")
+        git(self.repo, "checkout", "-qb", "worker-lost", self.base)
+        result_commit = self.commit(Path("src/a/lost.py"), "ok\n", "worker result")
+        git(self.repo, "checkout", "-q", self.primary)
+        integrator = LaneClaim(
+            "integrator", "integrator-inv", LaneKind.INTEGRATOR, self.base,
+            str(self.repo), self.primary, executor_id="integrator", role="integrator")
+        remote_id = project_lane_git.remote_identity(self.repo, "lost")
+        attempt_store = GitDocumentStore(
+            self.repo, "lost", "refs/heads/cdc/lost-attempts", remote_id,
+            protected_refs=("refs/heads/integration",))
+        item = {"lane_id": "lane", "result_commit": result_commit}
+        intent = {
+            "lane_id": "lane", "result_commit": result_commit,
+            "observed_shared_head": self.base,
+            "intended_integrated_head": result_commit,
+            "operation_id": "op-lost",
+        }
+
+        class LostReply(project_lane_git.GitLaneIntegrationPublisher):
+            def _push_cas(self, observed, intended):
+                super()._push_cas(observed, intended)
+                raise project_lane_git._PublicationUnknown("lost reply")
+
+        first = LostReply(
+            self.repo, "lost", "refs/heads/integration", remote_id,
+            attempt_store=attempt_store)
+        with self.assertRaisesRegex(ValueError, "unknown"):
+            first(item, integrator, intent)
+        self.assertEqual(
+            subprocess.check_output(
+                ["git", "--git-dir", str(remote), "rev-parse", "refs/heads/integration"],
+                text=True).strip(),
+            result_commit)
+
+        class NoReplay(project_lane_git.GitLaneIntegrationPublisher):
+            def _push_cas(self, observed, intended):
+                raise AssertionError("publication push replayed")
+
+        restarted = NoReplay(
+            self.repo, "lost", "refs/heads/integration", remote_id,
+            attempt_store=attempt_store)
+        evidence = restarted(item, integrator, intent)
+        self.assertTrue(evidence["conditional_update"])
+        self.assertEqual(evidence["publication_attempt_state"], "confirmed")
+
+    def test_prepared_but_unsent_attempt_does_not_become_proof_from_matching_head(self):
+        remote = self.repo / "remote-unsent.git"
+        subprocess.run(["git", "init", "--bare", "-q", str(remote)], check=True)
+        git(self.repo, "remote", "add", "unsent", str(remote))
+        git(self.repo, "push", "-q", "unsent", self.base + ":refs/heads/integration")
+        git(self.repo, "checkout", "-qb", "worker-unsent", self.base)
+        result_commit = self.commit(Path("src/a/unsent.py"), "ok\n", "worker result")
+        git(self.repo, "checkout", "-q", self.primary)
+        integrator = LaneClaim(
+            "integrator", "integrator-inv", LaneKind.INTEGRATOR, self.base,
+            str(self.repo), self.primary, executor_id="integrator", role="integrator")
+        remote_id = project_lane_git.remote_identity(self.repo, "unsent")
+        attempt_store = GitDocumentStore(
+            self.repo, "unsent", "refs/heads/cdc/unsent-attempts", remote_id,
+            protected_refs=("refs/heads/integration",))
+        publisher = project_lane_git.GitLaneIntegrationPublisher(
+            self.repo, "unsent", "refs/heads/integration", remote_id,
+            attempt_store=attempt_store)
+        item = {"lane_id": "lane", "result_commit": result_commit}
+        intent = {
+            "lane_id": "lane", "result_commit": result_commit,
+            "observed_shared_head": self.base,
+            "intended_integrated_head": result_commit,
+            "operation_id": "op-unsent",
+        }
+        attempt = publisher._prepare_attempt(item, intent)
+        self.assertEqual(attempt["status"], "prepared")
+        git(self.repo, "push", "-q", "unsent", result_commit + ":refs/heads/integration")
+        evidence = publisher(item, integrator, intent)
+        self.assertFalse(evidence["conditional_update"])
+        self.assertEqual(evidence["publication_attempt_state"], "prepared")
+
+    def test_attempt_from_other_operation_or_result_is_not_reused(self):
+        remote = self.repo / "remote-mismatch.git"
+        subprocess.run(["git", "init", "--bare", "-q", str(remote)], check=True)
+        git(self.repo, "remote", "add", "mismatch", str(remote))
+        git(self.repo, "push", "-q", "mismatch", self.base + ":refs/heads/integration")
+        git(self.repo, "checkout", "-qb", "worker-mismatch", self.base)
+        result_commit = self.commit(Path("src/a/mismatch.py"), "ok\n", "worker result")
+        git(self.repo, "checkout", "-q", self.primary)
+        integrator = LaneClaim(
+            "integrator", "integrator-inv", LaneKind.INTEGRATOR, self.base,
+            str(self.repo), self.primary, executor_id="integrator", role="integrator")
+        remote_id = project_lane_git.remote_identity(self.repo, "mismatch")
+        attempt_store = GitDocumentStore(
+            self.repo, "mismatch", "refs/heads/cdc/mismatch-attempts", remote_id,
+            protected_refs=("refs/heads/integration",))
+        publisher = project_lane_git.GitLaneIntegrationPublisher(
+            self.repo, "mismatch", "refs/heads/integration", remote_id,
+            attempt_store=attempt_store)
+        item = {"lane_id": "lane", "result_commit": result_commit}
+        other_intent = {
+            "lane_id": "lane", "result_commit": result_commit,
+            "observed_shared_head": self.base,
+            "intended_integrated_head": result_commit,
+            "operation_id": "op-other",
+        }
+        publisher._prepare_attempt(item, other_intent)
+        git(self.repo, "push", "-q", "mismatch", result_commit + ":refs/heads/integration")
+        current_intent = dict(other_intent, operation_id="op-current")
+        self.assertFalse(publisher(item, integrator, current_intent)["conditional_update"])
+
+        mismatched_item = {"lane_id": "lane", "result_commit": self.base}
+        mismatched_intent = {
+            "lane_id": "lane", "result_commit": self.base,
+            "observed_shared_head": self.base,
+            "intended_integrated_head": result_commit,
+            "operation_id": "op-other",
+        }
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            publisher(mismatched_item, integrator, mismatched_intent)
+
+    def test_concurrent_remote_move_during_cas_is_rejected_without_overwrite(self):
+        remote = self.repo / "remote-cas-race.git"
+        subprocess.run(["git", "init", "--bare", "-q", str(remote)], check=True)
+        git(self.repo, "remote", "add", "casrace", str(remote))
+        git(self.repo, "push", "-q", "casrace", self.base + ":refs/heads/integration")
+        git(self.repo, "checkout", "-qb", "worker-casrace", self.base)
+        result_commit = self.commit(Path("src/a/casrace.py"), "worker\n", "worker result")
+        git(self.repo, "checkout", "-qb", "concurrent-casrace", self.base)
+        concurrent = self.commit(Path("src/b/casrace.py"), "other\n", "concurrent")
+        git(self.repo, "checkout", "-q", self.primary)
+        integrator = LaneClaim(
+            "integrator", "integrator-inv", LaneKind.INTEGRATOR, self.base,
+            str(self.repo), self.primary, executor_id="integrator", role="integrator")
+        remote_id = project_lane_git.remote_identity(self.repo, "casrace")
+        attempt_store = GitDocumentStore(
+            self.repo, "casrace", "refs/heads/cdc/casrace-attempts", remote_id,
+            protected_refs=("refs/heads/integration",))
+
+        class RacingPublisher(project_lane_git.GitLaneIntegrationPublisher):
+            def _push_cas(inner_self, observed, intended):
+                git(self.repo, "push", "-q", "casrace", concurrent + ":refs/heads/integration")
+                return super(RacingPublisher, inner_self)._push_cas(observed, intended)
+
+        publisher = RacingPublisher(
+            self.repo, "casrace", "refs/heads/integration", remote_id,
+            attempt_store=attempt_store)
+        with self.assertRaisesRegex(ValueError, "rejected"):
+            publisher(
+                {"lane_id": "lane", "result_commit": result_commit},
+                integrator,
+                {"lane_id": "lane", "result_commit": result_commit,
+                 "observed_shared_head": self.base,
+                 "intended_integrated_head": result_commit,
+                 "operation_id": "op-casrace"})
+        self.assertEqual(
+            subprocess.check_output(
+                ["git", "--git-dir", str(remote), "rev-parse", "refs/heads/integration"],
+                text=True).strip(),
+            concurrent)
 
     def test_integration_publisher_rejects_remote_head_movement_without_overwrite(self):
         remote = self.repo / "remote-race.git"

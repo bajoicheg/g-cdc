@@ -83,17 +83,38 @@ def activity_verifier(lane, activity_ref):
             "evidence_ref": "process:activity:" + activity_ref}
 
 
-def integration_verifier(item, integrator, intent):
-    return {
-        "integrated": True,
-        "operation_id": intent["operation_id"],
-        "result_commit": item["result_commit"],
-        "observed_shared_head": intent["observed_shared_head"],
-        "integrated_head": intent["intended_integrated_head"],
-        "conditional_update": True,
-        "force_push": False,
-        "evidence_ref": "git:conditional-integration",
-    }
+class IntegrationVerifier:
+    remote_id = "sha256:" + "e" * 64
+    attempt_ref = "refs/heads/cdc/test-publication-attempts"
+
+    def publication_binding(self):
+        return {
+            "shared_ref": "refs/heads/main",
+            "remote_id": self.remote_id,
+            "durable_attempts": True,
+            "attempt_store_ref": self.attempt_ref,
+            "attempt_store_id": self.remote_id,
+        }
+
+    def __call__(self, item, integrator, intent):
+        return {
+            "integrated": True,
+            "operation_id": intent["operation_id"],
+            "result_commit": item["result_commit"],
+            "observed_shared_head": intent["observed_shared_head"],
+            "integrated_head": intent["intended_integrated_head"],
+            "conditional_update": True,
+            "force_push": False,
+            "publication_attempt_id": "attempt:test",
+            "publication_attempt_state": "confirmed",
+            "publication_remote_id": self.remote_id,
+            "publication_shared_ref": "refs/heads/main",
+            "publication_attempt_store_ref": self.attempt_ref,
+            "evidence_ref": "git:conditional-integration",
+        }
+
+
+integration_verifier = IntegrationVerifier()
 
 
 class CooperativeLaneExtendedTests(unittest.TestCase):
@@ -312,6 +333,38 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
                 integrator_invocation_id="integrator", integrator_generation=1,
                 integrator_executor_id="integrator", observed_shared_head="c" * 40,
                 intended_integrated_head="e" * 40)
+
+    def test_readonly_integration_verifier_cannot_close_queue(self):
+        class ReadOnly:
+            def publication_binding(self):
+                return {
+                    "shared_ref": "refs/heads/main",
+                    "remote_id": None,
+                    "durable_attempts": False,
+                    "attempt_store_ref": None,
+                    "attempt_store_id": None,
+                }
+
+            def __call__(self, item, integrator, intent):
+                raise AssertionError("read-only verifier must not receive publication authority")
+
+        coord = coordinator(result_verifier=verifier(), integration_verifier=ReadOnly())
+        coord.admit(claim("a", {"src/a"}), generation=1)
+        coord.record_result(
+            "a", invocation_id="a", generation=1, executor_id="a",
+            result_commit="b" * 40, evidence_refs=["test:green"])
+        coord.admit(claim("integrator", (), lanes.LaneKind.INTEGRATOR), generation=1)
+        intent = coord.claim_integration(
+            "a", result_commit="b" * 40, integrator_lane_id="integrator",
+            integrator_invocation_id="integrator", integrator_generation=1,
+            integrator_executor_id="integrator", observed_shared_head="c" * 40,
+            intended_integrated_head="d" * 40)
+        with self.assertRaisesRegex(ValueError, "durable publication"):
+            coord.mark_integrated(
+                "a", result_commit="b" * 40, operation_id=intent["operation_id"],
+                integrator_lane_id="integrator", integrator_invocation_id="integrator",
+                integrator_generation=1, integrator_executor_id="integrator")
+        self.assertEqual(len(coord.snapshot()["integration_queue"]), 1)
 
     def test_lane_cannot_publish_multiple_accepted_results(self):
         coord = coordinator(result_verifier=verifier())
