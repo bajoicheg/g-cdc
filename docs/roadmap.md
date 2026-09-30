@@ -69,7 +69,7 @@ Acceptance:
 
 Release: `refs/heads/release/v2.11.1`, integration PR #68, frozen source `a29fb4221b63bff9ecac4e1b8c821f6c25ca7c0c`, package tree `6ffacd32cce74c3537150778d9b37cfeb361a621`. Full validation: 740 package tests, 18 independent bootstrap tests, 299 required files/templates and three archived consumers PASS. Ordered spec and quality reviews closed durable wake, transport isolation and raw Git object/ancestry findings. Candidate CI `36394984137` GREEN; final metadata head has a separate required CI gate. See `release/evidence-2.11.1.json`. Owner pause remains authoritative; this release starts no scheduler. Authorized cooperative lanes remain the next stage.
 
-### 2.11.2 — Cooperative Project Lanes — P2 / NOT RELEASED
+### 2.11.2 — Cooperative Project Lanes — P2 / RELEASED
 
 Goal: allow the foreground user chat and one or more watchdog/Work/Codex executors to make useful progress on the same repository at the same time without reverting to split-brain shared writers.
 
@@ -104,6 +104,8 @@ Acceptance:
 - all registered desired watchdogs are assessed even when the repair budget is exhausted, while actual scheduler effects stay bounded and unfinished repair remains continuation work;
 - when an independent scheduler backend is available, deleting the Fleet Supervisor materialization can be recovered by the Sentinel without granting project-development or product-write authority;
 - explicit owner pause is stable under reconciliation and cannot be undone by survivability repair.
+
+Release: `refs/heads/release/v2.11.2`, frozen source `6af4443b1afa86085622625bee9b62a045a08a07`, package tree `7a7a7faa75b7fc9160d912d8fb507c6b9573d17f`. Final technical SPEC recheck and internal quality hardening found no remaining material technical defect; exact-head hosted validation runs `36749087759` and `36750000629` are GREEN with 866/866 candidate tests, 37/37 independent bootstrap tests, package validator 316 files/templates, full bootstrap binding, and 3/3 archived consumers. The owner explicitly authorized a one-time exception for the unavailable fresh independent-reviewer identity requirement on this exact candidate; the waiver is recorded in `release/owner-review-waiver-2.11.2.json` and does not relabel the skipped independent stages as GREEN or weaken future review policy. Schedulers remain owner-paused and this release performs no live consumer deployment.
 
 Expected benefit: CDC moves from “safe parallel tasks” to a resilient multi-executor development system: useful work continues concurrently, foreground and watchdog execution cooperate instead of excluding each other, and fleet supervision actively restores projects that are idle for the wrong reason.
 
@@ -383,7 +385,9 @@ Remaining feature: **registry-driven watchdog target resolution**, included in 2
 Active recovery work:
 - 2.11.0: released with real execution, exact parent finalization and independently verified corrections. Active installation passed runtime-byte readback; see release/active-package-acceptance-2.11.0.json.
 - 2.11.1: combine target resolution, persistent liveness and bounded Fleet recovery; fresh explicit owner pause takes precedence.
-- 2.11.2: cooperative lanes with portable conflict exclusion and one integrator.
+- 2.11.2: released cooperative lanes with portable conflict exclusion, one integrator, durable integration provenance and watchdog survivability.
+- Chat command timestamping dogfood defect — RCA reinforcement 2026-09-30: a live CDC-managed chat emitted zero per-command timestamps even though the rule was present. Reinforce existing fix key `chat-command-timestamping` with a missing-timestamp RED→GREEN pressure scenario and fail-closed first-response timestamp cardinality preflight/ledger; see the retained RCA/feedback reports.
+- Independent review backend resilience — RCA 2026-09-30: a documented Copilot review request on a non-draft exact-head PR produced no reviewer/review/thread/comment, repeating an earlier no-op. Add fix key `independent-review-backend-fallback`: request acceptance is submission evidence only; require concrete reviewer identity + durable review artifact, classify non-materializing backends unavailable, suppress unchanged retries, and route to an alternate authorized reviewer or exact blocker.
 - Consumer adoption: g-ad-control adopted2.10.3 and released generation42 at verified coordination794e152; g-supervisor, g-pc-health-check and g-switcher require current-owner release or independently established quiescence. Re-read live refs before every mutation.
 - PR consolidation: #20/#61/#62/#63/#64 preserve one historical pool implementation and its review/consumer attempts. All five PRs were closed as superseded after #67 merge and release readback; historical branches and review evidence remain retained.
 
