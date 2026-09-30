@@ -10,11 +10,13 @@ import project_lane_runtime as runtime
 SHA = "a" * 40
 
 
-def claim(name, writes=(), kind=lanes.LaneKind.WORKER, branch=None, worktree=None, invocation=None):
+def claim(name, writes=(), kind=lanes.LaneKind.WORKER, branch=None, worktree=None, invocation=None, role=None):
+    if role is None:
+        role = "review" if kind == lanes.LaneKind.REVIEW else ("integrator" if kind == lanes.LaneKind.INTEGRATOR else "writer")
     return lanes.LaneClaim(
         lane_id=name, invocation_id=invocation or name, kind=kind, source_head=SHA,
         worktree=worktree or f"/tmp/{name}", branch=branch or f"cdc/{name}",
-        write_paths=frozenset(writes), executor_id=name, role="writer")
+        write_paths=frozenset(writes), executor_id=name, role=role)
 
 
 class MemoryStore:
@@ -150,6 +152,33 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
         self.assertTrue(coord.admit(
             claim("wd", {"src/backend"}, lanes.LaneKind.WATCHDOG), generation=1)["admitted"])
         self.assertEqual(len(coord.snapshot()["lanes"]), 2)
+
+    def test_shared_product_branch_is_reserved_for_integrator(self):
+        for kind in (lanes.LaneKind.WORKER, lanes.LaneKind.FOREGROUND, lanes.LaneKind.WATCHDOG):
+            with self.subTest(kind=kind):
+                coord = coordinator()
+                decision = coord.admit(
+                    claim("ordinary-" + kind.value, {"src/" + kind.value}, kind,
+                          branch="refs/heads/main"), generation=1)
+                self.assertFalse(decision["admitted"])
+                self.assertEqual(decision["reason"], "shared_product_ref_reserved")
+                self.assertEqual(coord.snapshot()["lanes"], {})
+
+        coord = coordinator()
+        decision = coord.admit(
+            claim("integrator-shared", (), lanes.LaneKind.INTEGRATOR,
+                  branch="refs/heads/main"), generation=1)
+        self.assertTrue(decision["admitted"])
+
+    def test_shared_product_branch_aliases_are_portably_equivalent(self):
+        for branch in ("main", "refs/heads/MAIN", "MaIn"):
+            with self.subTest(branch=branch):
+                coord = coordinator()
+                decision = coord.admit(
+                    claim("writer-" + branch.replace("/", "-"), {"src/a"},
+                          lanes.LaneKind.WORKER, branch=branch), generation=1)
+                self.assertFalse(decision["admitted"])
+                self.assertEqual(decision["reason"], "shared_product_ref_reserved")
 
     def test_coordinator_blocks_overlap_before_mutation_and_release_is_identity_bound(self):
         coord = coordinator()
