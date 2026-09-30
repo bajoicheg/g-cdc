@@ -371,6 +371,52 @@ class GitLaneResultVerifierTests(unittest.TestCase):
         self.assertFalse(evidence["conditional_update"])
         self.assertEqual(evidence["publication_attempt_state"], "prepared")
 
+    def test_submitted_marker_without_push_outcome_does_not_become_conditional_proof(self):
+        remote = self.repo / "remote-submitted-unsent.git"
+        subprocess.run(["git", "init", "--bare", "-q", str(remote)], check=True)
+        git(self.repo, "remote", "add", "submittedunsent", str(remote))
+        git(self.repo, "push", "-q", "submittedunsent", self.base + ":refs/heads/integration")
+        git(self.repo, "checkout", "-qb", "worker-submitted-unsent", self.base)
+        result_commit = self.commit(
+            Path("src/a/submitted_unsent.py"), "ok\n", "worker result")
+        git(self.repo, "checkout", "-q", self.primary)
+        integrator = LaneClaim(
+            "integrator", "integrator-inv", LaneKind.INTEGRATOR, self.base,
+            str(self.repo), self.primary, executor_id="integrator", role="integrator")
+        remote_id = project_lane_git.remote_identity(self.repo, "submittedunsent")
+        attempt_store = GitDocumentStore(
+            self.repo, "submittedunsent",
+            "refs/heads/cdc/submitted-unsent-attempts", remote_id,
+            protected_refs=("refs/heads/integration",))
+        publisher = project_lane_git.GitLaneIntegrationPublisher(
+            self.repo, "submittedunsent", "refs/heads/integration", remote_id,
+            attempt_store=attempt_store)
+        item = {"lane_id": "lane", "result_commit": result_commit}
+        intent = {
+            "lane_id": "lane", "result_commit": result_commit,
+            "observed_shared_head": self.base,
+            "intended_integrated_head": result_commit,
+            "operation_id": "op-submitted-unsent",
+        }
+
+        attempt = publisher._prepare_attempt(item, intent)
+        attempt = publisher._transition_attempt(
+            item, intent, "submitted", {"prepared"})
+        self.assertEqual(attempt["status"], "submitted")
+
+        # Model a controller crash after the durable submitted marker but before
+        # _push_cas() is invoked. Another actor then moves the authoritative ref
+        # to the same intended bytes. The marker alone is not transport proof.
+        git(self.repo, "push", "-q", "submittedunsent",
+            result_commit + ":refs/heads/integration")
+
+        evidence = publisher(item, integrator, intent)
+        self.assertFalse(evidence["conditional_update"])
+        self.assertEqual(evidence["publication_attempt_state"], "submitted")
+        self.assertEqual(
+            attempt_store.read()[1]["attempts"]["op-submitted-unsent"]["status"],
+            "submitted")
+
     def test_attempt_from_other_operation_or_result_is_not_reused(self):
         remote = self.repo / "remote-mismatch.git"
         subprocess.run(["git", "init", "--bare", "-q", str(remote)], check=True)
