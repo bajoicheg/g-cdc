@@ -1,0 +1,45 @@
+{
+  "schema": "systematic-rca/v1",
+  "anomaly_id": "checkpoint-frontmatter-direct-edit-2026-09-30",
+  "material": true,
+  "anomaly_class": "execution_channel",
+  "fix_key": "checkpoint-builder-precommit-validation",
+  "problem": "During live CDC 2.11.2 consumer adoption, a direct text edit inserted a Markdown status section immediately after the opening frontmatter delimiter in docs/work-status/current.md. The full package suite still passed, but validate_checkpoint_24.py correctly rejected the checkpoint as invalid YAML before lease release.",
+  "evidence_refs": [
+    "github:bajoicheg-private/g-ad-control:actions:36762878730",
+    "github:bajoicheg-private/g-ad-control:source:cf72b4e4b80d3cecf7b26066f71054acdb56a8b1",
+    "github:bajoicheg-private/g-ad-control:source:df2eaa9e16aa1c526f89aab244a08b2b9a19895a",
+    "docs/roadmap.md#2.9.1-transactional-migration-provider-reconciliation"
+  ],
+  "hypotheses": [
+    {
+      "id": "checkpoint-parser-regression",
+      "statement": "The released checkpoint parser or YAML loader regressed on a previously valid document.",
+      "discriminating_test": "Inspect the exact validator failure and compare the pre-edit and corrected checkpoint layout.",
+      "observed_result": "The validator reported invalid YAML at the inserted prose before the schema key; after relocating the prose below the closing delimiter, the same validator passed.",
+      "supported": false
+    },
+    {
+      "id": "consumer-policy-schema-incompatibility",
+      "statement": "The 2.11.2 adapter/checkpoint schema combination is incompatible with the consumer.",
+      "discriminating_test": "Run the final corrected adapter/checkpoint validation with unchanged 2.11.2 policy and checkpoint semantics.",
+      "observed_result": "Run 36763362845 passed strict adapter validation and checkpoint v4 validation without changing the schema or policy contract.",
+      "supported": false
+    },
+    {
+      "id": "direct-checkpoint-text-splice-bypassed-builder",
+      "statement": "The executor bypassed the existing schema-typed checkpoint builder/pre-commit validation discipline and performed a fragile textual splice at the first frontmatter delimiter.",
+      "discriminating_test": "Trace the write that introduced the failure and compare it with the released checkpoint-builder/pre-commit validation contract.",
+      "observed_result": "The write inserted prose immediately after the first delimiter; no checkpoint builder or pre-write validation was used. The existing validator then caught the malformed state before authority release.",
+      "supported": true
+    }
+  ],
+  "selected_hypothesis_id": "direct-checkpoint-text-splice-bypassed-builder",
+  "correction": "Reinforce the existing checkpoint-builder/pre-commit-validation control: CDC-authored checkpoint mutations must use the schema-aware builder or an equivalent parsed-structure update, and must validate the exact bytes before committing. Body prose insertion must target the closing frontmatter delimiter, never the first delimiter by string position.",
+  "defense_in_depth": "Retain a regression covering Markdown-body insertion around frontmatter boundaries and require consumer-adoption finalization to validate the exact final checkpoint bytes after all status prose edits and before lease ready/release.",
+  "invariant": "CDC never releases ownership from a checkpoint write that has not been parsed and validated in its exact final byte form; direct textual splicing cannot bypass the schema-aware checkpoint write path.",
+  "existing_fix_keys": [
+    "checkpoint-builder-precommit-validation"
+  ],
+  "sensitive_context_detected": false
+}
