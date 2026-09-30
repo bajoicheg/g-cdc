@@ -15,11 +15,13 @@ class Store:
   self.n+=1;self.rev="r"+str(self.n);self.doc=copy.deepcopy(doc);return self.rev
 
 class T(unittest.TestCase):
+ def effect_id(self,s):
+  self.assertEqual(len(s["effects"]),1);return s["effects"][0]["effect_id"]
  def leader(self):
   s=m.initialize("o/fleet","refs/heads/cdc/fleet")
   return m.acquire_record(s,A,"2026-01-01T10:00:00Z",inv("a"))
- def req(self,eid="wake:x",intent=None):
-  return {"effect_id":eid,"kind":"project_wake","target":"o/project","observed_fleet_head":HEAD,"intent":intent or {"reason":"stalled"}}
+ def req(self,intent=None):
+  return {"kind":"project_wake","target":"o/project","observed_fleet_head":HEAD,"intent":intent or {"reason":"stalled"}}
  def test_cas_allows_only_one_subscription_to_become_leader(self):
   store=Store()
   a=m.acquire_cas(store,None,"o/fleet","refs/heads/cdc/fleet",A,"2026-01-01T10:00:00Z",inv("a"))
@@ -33,26 +35,33 @@ class T(unittest.TestCase):
   self.assertTrue(d["authorizes_effect"]);self.assertEqual(len(s["effects"]),1)
   s2,d2=m.claim_effect_record(s,A,1,"a","2026-01-01T10:02:00Z",HEAD,self.req())
   self.assertFalse(d2["authorizes_effect"]);self.assertEqual(d2["action"],"OBSERVE_EXISTING");self.assertEqual(len(s2["effects"]),1)
- def test_effect_id_collision_fails(self):
-  s,_=m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z",HEAD,self.req())
-  with self.assertRaisesRegex(ValueError,"collision"):m.claim_effect_record(s,A,1,"a","2026-01-01T10:02:00Z",HEAD,self.req(intent={"reason":"different"}))
+ def test_same_semantic_effect_derives_same_id_independent_of_caller(self):
+  s,d=m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z",HEAD,self.req())
+  eid=d["effect"]["effect_id"]
+  self.assertTrue(eid.startswith("sha256:"))
+  s2,d2=m.claim_effect_record(s,A,1,"a","2026-01-01T10:02:00Z",HEAD,self.req())
+  self.assertEqual(d2["effect"]["effect_id"],eid);self.assertEqual(d2["action"],"OBSERVE_EXISTING")
+ def test_caller_cannot_supply_alternate_effect_id(self):
+  bad=self.req();bad["effect_id"]="caller-chosen"
+  with self.assertRaisesRegex(ValueError,"effect request invalid"):
+   m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z",HEAD,bad)
  def test_changed_fleet_head_replans_before_claim(self):
   s,d=m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z","b"*40,self.req())
   self.assertEqual(d["action"],"REPLAN_FLEET_HEAD");self.assertFalse(d["authorizes_effect"]);self.assertEqual(s["effects"],[])
  def test_unknown_effect_blocks_leader_replacement(self):
   s,_=m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z",HEAD,self.req())
-  s=m.update_effect_record(s,A,1,"a","2026-01-01T10:02:00Z","wake:x","unknown","scheduler:request-1")
+  s=m.update_effect_record(s,A,1,"a","2026-01-01T10:02:00Z",self.effect_id(s),"unknown","scheduler:request-1")
   self.assertEqual(m.assess_takeover(s)["action"],"BLOCK_PENDING_EFFECTS")
   q={"owner_id":A,"generation":1,"repository":"o/fleet","source_ref":"refs/heads/cdc/fleet","invocation_id":"a","kind":"executor_stopped","reference":"runtime:a:stopped","pending_shared_writes":False,"external_effects_state":"preserved_unknown"}
   with self.assertRaisesRegex(ValueError,"unresolved side effects"):m.acquire_record(s,B,"2026-01-01T10:03:00Z",inv("b"),quiescence=q)
- def observation(self,s,eid="wake:x",state="terminal",receipt="scheduler:run-1",outcome="success",lookup=True):
+ def observation(self,s,eid=self.effect_id(s),state="terminal",receipt="scheduler:run-1",outcome="success",lookup=True):
   e=next(x for x in s["effects"] if x["effect_id"]==eid)
   return {"schema":"fleet-effect-observation/v1","effect_id":eid,"intent_digest":e["intent_digest"],"lookup_complete":lookup,
           "observed_at_utc":"2026-01-01T10:03:00Z","state":state,"receipt_ref":receipt,"outcome":outcome,"evidence_ref":"provider:lookup-1"}
  def test_standby_can_reconcile_unknown_effect_without_replay_authority(self):
   s,_=m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z",HEAD,self.req())
-  s=m.update_effect_record(s,A,1,"a","2026-01-01T10:02:00Z","wake:x","unknown","scheduler:request-1")
-  s,d=m.reconcile_effect_record(s,"wake:x",self.observation(s))
+  s=m.update_effect_record(s,A,1,"a","2026-01-01T10:02:00Z",self.effect_id(s),"unknown","scheduler:request-1")
+  s,d=m.reconcile_effect_record(s,self.effect_id(s),self.observation(s))
   self.assertEqual(d["action"],"TERMINAL_RECONCILED");self.assertTrue(d["resolved"]);self.assertFalse(d["authorizes_effect"])
   self.assertEqual(m.assess_takeover(s)["action"],"REQUIRE_EXECUTOR_STOPPED_EVIDENCE")
   q={"owner_id":A,"generation":1,"repository":"o/fleet","source_ref":"refs/heads/cdc/fleet","invocation_id":"a","kind":"executor_stopped","reference":"runtime:a:stopped","pending_shared_writes":False,"external_effects_state":"reconciled"}
@@ -60,23 +69,23 @@ class T(unittest.TestCase):
   self.assertEqual(s["lease"]["owner_id"],B);self.assertEqual(s["lease"]["generation"],2)
  def test_running_reconciliation_keeps_takeover_blocked(self):
   s,_=m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z",HEAD,self.req())
-  s,d=m.reconcile_effect_record(s,"wake:x",self.observation(s,state="running",outcome=None))
+  s,d=m.reconcile_effect_record(s,self.effect_id(s),self.observation(s,state="running",outcome=None))
   self.assertEqual(d["action"],"WAIT_EFFECT");self.assertFalse(d["authorizes_effect"])
   self.assertEqual(m.assess_takeover(s)["action"],"BLOCK_PENDING_EFFECTS")
  def test_complete_not_found_lookup_can_close_pre_submit_claim(self):
   s,_=m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z",HEAD,self.req())
   o=self.observation(s,state="not_found",receipt=None,outcome=None,lookup=True)
-  s,d=m.reconcile_effect_record(s,"wake:x",o)
+  s,d=m.reconcile_effect_record(s,self.effect_id(s),o)
   self.assertTrue(d["resolved"]);self.assertEqual(s["effects"][0]["outcome"],"not_submitted_observed")
  def test_incomplete_or_mismatched_observation_cannot_clear_effect(self):
   s,_=m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z",HEAD,self.req())
   o=self.observation(s,state="unknown",receipt=None,outcome=None,lookup=False)
-  s2,d=m.reconcile_effect_record(s,"wake:x",o);self.assertEqual(s2,s);self.assertFalse(d["resolved"])
+  s2,d=m.reconcile_effect_record(s,self.effect_id(s),o);self.assertEqual(s2,s);self.assertFalse(d["resolved"])
   o=self.observation(s);o["intent_digest"]="sha256:"+"0"*64
-  with self.assertRaisesRegex(ValueError,"intent mismatch"):m.reconcile_effect_record(s,"wake:x",o)
+  with self.assertRaisesRegex(ValueError,"intent mismatch"):m.reconcile_effect_record(s,self.effect_id(s),o)
  def test_terminal_effect_allows_quiescence_based_replacement(self):
   s,_=m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z",HEAD,self.req())
-  s=m.update_effect_record(s,A,1,"a","2026-01-01T10:02:00Z","wake:x","terminal","scheduler:run-1","success")
+  s=m.update_effect_record(s,A,1,"a","2026-01-01T10:02:00Z",self.effect_id(s),"terminal","scheduler:run-1","success")
   q={"owner_id":A,"generation":1,"repository":"o/fleet","source_ref":"refs/heads/cdc/fleet","invocation_id":"a","kind":"executor_stopped","reference":"runtime:a:stopped","pending_shared_writes":False,"external_effects_state":"reconciled"}
   s=m.acquire_record(s,B,"2026-01-01T10:03:00Z",inv("b"),quiescence=q)
   self.assertEqual(s["lease"]["owner_id"],B);self.assertEqual(s["lease"]["generation"],2)
