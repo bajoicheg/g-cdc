@@ -12,7 +12,19 @@ class Store:
  def read(self):return self.rev,copy.deepcopy(self.doc)
  def compare_and_swap(self,expected,doc):
   if self.rev!=expected:raise ValueError("stale expected document revision")
-  self.n+=1;self.rev="r"+str(self.n);self.doc=copy.deepcopy(doc);return self.rev
+  self.n+=1;self.rev=f"{self.n:040x}";self.doc=copy.deepcopy(doc);return self.rev
+
+def continuity(invocation_id,checkpoint):
+ return {
+  "schema":"execution-continuity/v1","invocation_id":invocation_id,"current_state":"COMPLETE",
+  "requested_terminal_outcome":"scope_complete","runnable_next_action":False,
+  "meaningful_progress_refs":["fleet:done"],"primitive_steps":[],"external_binding":None,"blocker":None,
+  "checkpoint_ref":checkpoint,"next_action":None,"lease_release_required":False,"lease_released":False,
+  "terminal_state":{"schema":"terminal-state/v2","invocation_id":invocation_id,"scope_id":"fleet",
+   "observed_head":"a"*40,"decision":"COMPLETE","runnable_actions":[],"pending_external":None,"blocker":None,
+   "meaningful_progress_refs":["fleet:done"],"completion_evidence_refs":["fleet:verified"],
+   "checkpoint_ref":checkpoint,"lease_released":False}
+ }
 
 class T(unittest.TestCase):
  def effect_id(self,s):
@@ -22,6 +34,27 @@ class T(unittest.TestCase):
   return m.acquire_record(s,A,"2026-01-01T10:00:00Z",inv("a"))
  def req(self,intent=None):
   return {"kind":"project_wake","target":"o/project","observed_fleet_head":HEAD,"intent":intent or {"reason":"stalled"}}
+ def test_leader_transactional_release_returns_revision_receipt(self):
+  store=Store()
+  acq=m.acquire_cas(store,None,"o/fleet","refs/heads/cdc/fleet",A,"2026-01-01T10:00:00Z",inv("a"))
+  r=m.begin_finalization_cas(store,acq["revision"],A,1,"a","2026-01-01T10:01:00Z")
+  r=m.record_checkpoint_cas(store,r["revision"],A,1,"a","2026-01-01T10:01:01Z",checkpoint_ref="fleet:checkpoint")
+  r=m.reconcile_finalization_cas(store,r["revision"],A,1,"a","2026-01-01T10:01:02Z")
+  r=m.mark_ready_cas(store,r["revision"],A,1,"a","2026-01-01T10:01:03Z",continuity_state=continuity("a","fleet:checkpoint"))
+  r=m.release_leader_cas(store,r["revision"],A,1,"a","2026-01-01T10:01:04Z")
+  self.assertIsNone(r["state"]["lease"]["owner_id"])
+  self.assertEqual(r["release_receipt"]["lease_revision"],r["revision"])
+  self.assertEqual(r["release_receipt"]["release"]["generation"],1)
+ def test_unresolved_effect_blocks_leader_reconcile_and_release(self):
+  store=Store()
+  acq=m.acquire_cas(store,None,"o/fleet","refs/heads/cdc/fleet",A,"2026-01-01T10:00:00Z",inv("a"))
+  s,d=m.claim_effect_record(acq["state"],A,1,"a","2026-01-01T10:00:30Z",HEAD,self.req())
+  rev=store.compare_and_swap(acq["revision"],s)
+  r=m.begin_finalization_cas(store,rev,A,1,"a","2026-01-01T10:01:00Z")
+  r=m.record_checkpoint_cas(store,r["revision"],A,1,"a","2026-01-01T10:01:01Z",checkpoint_ref="fleet:checkpoint")
+  with self.assertRaisesRegex(ValueError,"unresolved side effects"):
+   m.reconcile_finalization_cas(store,r["revision"],A,1,"a","2026-01-01T10:01:02Z")
+
  def test_cas_allows_only_one_subscription_to_become_leader(self):
   store=Store()
   a=m.acquire_cas(store,None,"o/fleet","refs/heads/cdc/fleet",A,"2026-01-01T10:00:00Z",inv("a"))

@@ -224,6 +224,78 @@ def update_effect_cas(store,expected_revision,owner_id,generation,invocation_id,
     new_revision=store.compare_and_swap(expected_revision,result)
     return {"revision":new_revision,"state":result,"effect":next(copy.deepcopy(e) for e in result["effects"] if e["effect_id"]==effect_id)}
 
+def _mutate_leader_lease_cas(store,expected_revision,owner_id,generation,invocation_id,action,*,
+                             at,checkpoint_ref=None,pending_shared_writes=None,
+                             external_reconciliation=None,continuity_state=None):
+    revision,state=store.read()
+    if revision!=expected_revision or state is None:raise ValueError("stale fleet supervisor revision")
+    validate(state)
+    if state["lease"]["owner_id"]!=owner_id or state["lease"]["generation"]!=generation:
+        raise ValueError("not fleet leader")
+    result=copy.deepcopy(state)
+    if action=="begin":
+        result["lease"]=leasev2.begin_finalization(
+            state["lease"],owner_id,generation,invocation_id,at,
+            pending_shared_writes=pending_shared_writes)
+    elif action=="checkpoint":
+        result["lease"]=leasev2.record_checkpoint(
+            state["lease"],owner_id,generation,invocation_id,at,
+            checkpoint_ref=checkpoint_ref,pending_shared_writes=pending_shared_writes)
+    elif action=="reconcile":
+        pending=_unresolved_effects(state,generation)
+        if pending:raise ValueError("Fleet leader finalization has unresolved side effects")
+        result["lease"]=leasev2.reconcile_finalization(
+            state["lease"],owner_id,generation,invocation_id,at,
+            external_reconciliation=external_reconciliation)
+    elif action=="ready":
+        if _unresolved_effects(state,generation):raise ValueError("Fleet leader finalization has unresolved side effects")
+        result["lease"]=leasev2.mark_ready(
+            state["lease"],owner_id,generation,invocation_id,at,
+            continuity_state=continuity_state)
+    else:raise ValueError("unsupported Fleet leader finalization action")
+    validate(result)
+    new_revision=store.compare_and_swap(expected_revision,result)
+    return {"revision":new_revision,"state":result}
+
+def begin_finalization_cas(store,expected_revision,owner_id,generation,invocation_id,at,*,pending_shared_writes=False):
+    return _mutate_leader_lease_cas(
+        store,expected_revision,owner_id,generation,invocation_id,"begin",
+        at=at,pending_shared_writes=pending_shared_writes)
+
+def record_checkpoint_cas(store,expected_revision,owner_id,generation,invocation_id,at,*,checkpoint_ref):
+    return _mutate_leader_lease_cas(
+        store,expected_revision,owner_id,generation,invocation_id,"checkpoint",
+        at=at,checkpoint_ref=checkpoint_ref,pending_shared_writes=False)
+
+def reconcile_finalization_cas(store,expected_revision,owner_id,generation,invocation_id,at,*,external_reconciliation="none"):
+    return _mutate_leader_lease_cas(
+        store,expected_revision,owner_id,generation,invocation_id,"reconcile",
+        at=at,external_reconciliation=external_reconciliation)
+
+def mark_ready_cas(store,expected_revision,owner_id,generation,invocation_id,at,*,continuity_state):
+    return _mutate_leader_lease_cas(
+        store,expected_revision,owner_id,generation,invocation_id,"ready",
+        at=at,continuity_state=continuity_state)
+
+def release_leader_cas(store,expected_revision,owner_id,generation,invocation_id,at):
+    revision,state=store.read()
+    if revision!=expected_revision or state is None:raise ValueError("stale fleet supervisor revision")
+    validate(state)
+    if _unresolved_effects(state,generation):raise ValueError("Fleet leader release has unresolved side effects")
+    result=copy.deepcopy(state)
+    result["lease"]=leasev2.release(state["lease"],owner_id,generation,invocation_id,at)
+    validate(result)
+    new_revision=store.compare_and_swap(expected_revision,result)
+    return {
+        "revision":new_revision,
+        "state":result,
+        "release_receipt":{
+            "schema":"execution-release-receipt/v1",
+            "lease_revision":new_revision,
+            "release":copy.deepcopy(result["lease"]["last_release"]),
+        },
+    }
+
 def assess_takeover(state):
     validate(state);lease=state["lease"]
     if lease["owner_id"] is None:return {"action":"ACQUIRE_FREE","pending_effects":[],"authorizes_takeover":False}
