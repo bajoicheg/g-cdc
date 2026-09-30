@@ -44,5 +44,12 @@ class T(unittest.TestCase):
   lease=self.released()
   r=evaluate(INV_ID,lease,continuity(False),{"owner_id":OWNER,"generation":1},"2026-01-01T10:02:00Z")
   self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"continuity_does_not_record_post_release_state")
+ def test_successor_owner_does_not_reopen_released_invocation(self):
+  lease=self.released()
+  other="55555555-5555-4555-8555-555555555555"
+  inv2={"invocation_id":"chat-next","automation_id":None,"conversation_id":None,"execution_surface":"chat","started_at_utc":"2026-01-01T10:02:00Z"}
+  lease=leasev2.acquire(lease,other,"2026-01-01T10:02:00Z",invocation=inv2,ttl=1200)
+  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},"2026-01-01T10:03:00Z")
+  self.assertTrue(r["allowed"])
 
 if __name__=="__main__":unittest.main()
