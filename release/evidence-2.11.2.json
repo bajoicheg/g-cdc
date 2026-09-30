@@ -1,0 +1,90 @@
+{
+  "schema": "cdc-release-evidence/v1",
+  "version": "2.11.2",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "candidate_source_commit": "6af4443b1afa86085622625bee9b62a045a08a07",
+  "package_tree": "7a7a7faa75b7fc9160d912d8fb507c6b9573d17f",
+  "status": "released",
+  "development_driver": {
+    "version": "2.11.1",
+    "commit": "a262f78b82cd9e8eba9bc3b6108e0b52a17c33b0",
+    "package_tree": "6ffacd32cce74c3537150778d9b37cfeb361a621",
+    "validation_run_id": 36394984137
+  },
+  "release_validation": {
+    "package": "866/866 PASS",
+    "package_validator": "316 required files and parsed templates PASS",
+    "bootstrap": "37/37; bootstrap/full GREEN",
+    "consumers": "3/3 archived snapshots PASS; not live adoption",
+    "local_record": "release/validation-2.11.2.json",
+    "candidate_ci": [
+      {
+        "run_id": 36749087759,
+        "head_sha": "ddb8503b3b8f2ff18009a90f4adc370965d38872",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 36750000629,
+        "head_sha": "ddb8503b3b8f2ff18009a90f4adc370965d38872",
+        "conclusion": "success"
+      }
+    ],
+    "final_metadata_ci": {
+      "state": "pending exact GitHub head"
+    },
+    "binding_note": "Package/source/tree are frozen. The metadata-only release head must pass its own exact-head workflow before merge and immutable release-ref creation; that run is observed externally to avoid self-reference."
+  },
+  "reviews": {
+    "technical_spec_recheck": {
+      "result": "PASS_TECHNICAL",
+      "report": "docs/superpowers/reports/2026-09-30-cooperative-lanes-spec-rereview-6af4443.md",
+      "open_material_findings": 0
+    },
+    "technical_quality_precheck": {
+      "result": "PASS_TECHNICAL",
+      "report": "docs/superpowers/reports/2026-09-30-cooperative-lanes-internal-quality-precheck-6af4443.md",
+      "open_material_findings": 0
+    },
+    "independent_identity_requirement": {
+      "result": "WAIVED_ONCE_BY_OWNER",
+      "waiver": "release/owner-review-waiver-2.11.2.json",
+      "note": "One-time exact-candidate process exception. It does not claim an independent reviewer ran or relabel skipped stages as GREEN."
+    }
+  },
+  "corrections": [
+    "S1 watchdog replacement requires exact independently proven quiescence",
+    "S2 explicit lane role/capability schema prevents review/read-only write authority",
+    "S3 shared product ref is reserved to the integrator under portable normalization",
+    "S4 durable publication attempts bind exact expected-head CAS provenance and unknown-outcome recovery",
+    "S5 migration authority is freshly revalidated on authoritative reads",
+    "R1 machine-readable Git porcelain distinguishes explicit rejection from ambiguous remote failure",
+    "durable integration queue/intents/results fail closed on malformed persisted state",
+    "raw submitted marker alone cannot become conditional-publication proof"
+  ],
+  "scheduler_state": "Owner-paused; zero scheduler mutations",
+  "release_ref": "refs/heads/release/v2.11.2",
+  "runtime_acceptance": {
+    "backend": "real local Git/process fixtures plus hosted GitHub Actions; scheduler effects only through recording/test backends",
+    "observed": [
+      "disjoint foreground/watchdog lanes and portable overlap exclusion",
+      "durable one-shot worker start and no unknown-start replay",
+      "single-integrator durable intent and expected-head conditional Git publication",
+      "project-wide terminal aggregation",
+      "watchdog replacement quiescence and generation fencing",
+      "bounded Fleet survivability and owner-pause suppression",
+      "Fleet Supervisor Sentinel remains non-product-writing"
+    ],
+    "limits": [
+      "No live scheduler mutation; owner pause remains authoritative",
+      "No live consumer deployment is implied",
+      "Personal activation requires separate installed-byte readback",
+      "Independent reviewer identity was unavailable and explicitly waived once by the owner for this exact release"
+    ]
+  },
+  "remaining_authorized_stages": [
+    "personal skill activation/readback",
+    "live Fleet authority migration and safe consumer rollout"
+  ],
+  "prior_active_installation": "release/active-package-acceptance-2.11.0.json",
+  "live_consumer_adoption": "release/consumer-live-rollout-2.10.3.json"
+}
