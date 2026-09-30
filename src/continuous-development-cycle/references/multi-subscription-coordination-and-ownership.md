@@ -40,3 +40,8 @@ The shared source ref has exactly one publication boundary: an exact expected-he
 ## Multi-subscription pressure invariants
 
 Release evidence must cover two supervisor identities racing from one initial coordination revision, duplicate effect claims, stopped leaders with both clean and unknown-effect states, final-response attempts while a lease remains owned, and interrupted consumer adoption before publication. At most one leader/effect CAS may win, no force update is allowed, and no partial target version may appear on a shared consumer ref.
+
+
+## Real Fleet scheduler path
+
+The real `fleet_watchdog_runtime.FleetRuntime` is fenced too, not just the standalone leader contract. Any positive effect budget requires a fresh Fleet leader guard. Each new scheduler operation persists the exact leader owner/generation/invocation and observed live Fleet HEAD, and the binding is rechecked immediately before provider I/O. One batch is pinned to one observed Fleet HEAD; if the leader or HEAD changes, remaining effects stop and replan. Read-only `max_effects=0` assessment remains available to standby supervisors. Scheduler operation identity ignores diagnostic incident labels, so renaming an incident cannot create a duplicate wake.
