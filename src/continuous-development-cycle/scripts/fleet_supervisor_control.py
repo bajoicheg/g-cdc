@@ -139,6 +139,69 @@ def update_effect_record(state,owner_id,generation,invocation_id,at,effect_id,ne
     match["state"]=new_state;match["receipt_ref"]=receipt_ref;match["outcome"]=outcome
     validate(result);return result
 
+def validate_effect_observation(o):
+    fields={"schema","effect_id","intent_digest","lookup_complete","observed_at_utc","state","receipt_ref","outcome","evidence_ref"}
+    if not isinstance(o,dict) or set(o)!=fields or o.get("schema")!="fleet-effect-observation/v1":raise ValueError("effect observation invalid")
+    for n in ("effect_id","intent_digest","evidence_ref"):_text(o[n],n)
+    if type(o["lookup_complete"]) is not bool:raise ValueError("effect lookup_complete invalid")
+    _time(o["observed_at_utc"],"effect observation time")
+    if o["state"] not in {"running","terminal","not_found","unknown"}:raise ValueError("effect observation state invalid")
+    if o["receipt_ref"] is not None:_text(o["receipt_ref"],"effect observation receipt_ref")
+    if o["outcome"] is not None:_text(o["outcome"],"effect observation outcome")
+    if o["state"]=="running" and o["receipt_ref"] is None:raise ValueError("running observation requires receipt")
+    if o["state"]=="terminal" and (o["receipt_ref"] is None or o["outcome"] is None):raise ValueError("terminal observation requires receipt/outcome")
+    if o["state"]=="not_found" and (not o["lookup_complete"] or o["receipt_ref"] is not None or o["outcome"] is not None):
+        raise ValueError("not_found requires complete lookup with no receipt/outcome")
+    return o
+
+def reconcile_effect_record(state,effect_id,observation):
+    """Evidence-only reconciliation for an effect owned by a stopped/absent leader.
+
+    This function can never create or replay an effect. It only records an
+    authoritative provider observation against the original durable effect ID
+    and intent digest so a standby can eventually distinguish pending work from
+    terminal/no-effect state before leader replacement.
+    """
+    validate(state);validate_effect_observation(observation)
+    if observation["effect_id"]!=effect_id:raise ValueError("effect observation id mismatch")
+    result=copy.deepcopy(state);match=None
+    for e in result["effects"]:
+        if e["effect_id"]==effect_id:match=e;break
+    if match is None:raise ValueError("effect not found")
+    if match["intent_digest"]!=observation["intent_digest"]:raise ValueError("effect observation intent mismatch")
+    decision={"schema":"fleet-effect-reconciliation-result/v1","authorizes_effect":False,"authorizes_takeover":False,
+              "effect_id":effect_id,"evidence_ref":observation["evidence_ref"]}
+    state_name=observation["state"]
+    if not observation["lookup_complete"] or state_name=="unknown":
+        return copy.deepcopy(state),{**decision,"action":"OBSERVE_AGAIN","resolved":False}
+    if state_name=="running":
+        if match["state"]=="terminal":raise ValueError("terminal effect immutable")
+        match["state"]="submitted";match["receipt_ref"]=observation["receipt_ref"];match["outcome"]=None
+        validate(result)
+        return result,{**decision,"action":"WAIT_EFFECT","resolved":False}
+    if match["state"]=="terminal":
+        expected_receipt=match["receipt_ref"]
+        expected_outcome=match["outcome"]
+        observed_receipt=observation["receipt_ref"] if state_name=="terminal" else expected_receipt
+        observed_outcome=observation["outcome"] if state_name=="terminal" else expected_outcome
+        if observed_receipt!=expected_receipt or observed_outcome!=expected_outcome:
+            raise ValueError("terminal effect observation conflict")
+        return copy.deepcopy(state),{**decision,"action":"TERMINAL_CONFIRMED","resolved":True}
+    if state_name=="terminal":
+        match["state"]="terminal";match["receipt_ref"]=observation["receipt_ref"];match["outcome"]=observation["outcome"]
+    elif state_name=="not_found":
+        match["state"]="terminal";match["receipt_ref"]="observation:"+observation["evidence_ref"];match["outcome"]="not_submitted_observed"
+    validate(result)
+    return result,{**decision,"action":"TERMINAL_RECONCILED","resolved":True}
+
+def reconcile_effect_cas(store,expected_revision,effect_id,observation):
+    revision,state=store.read()
+    if revision!=expected_revision or state is None:raise ValueError("stale fleet supervisor revision")
+    result,decision=reconcile_effect_record(state,effect_id,observation)
+    if result==state:return {"revision":revision,"state":state,**decision}
+    new_revision=store.compare_and_swap(expected_revision,result)
+    return {"revision":new_revision,"state":result,**decision}
+
 def assess_takeover(state):
     validate(state);lease=state["lease"]
     if lease["owner_id"] is None:return {"action":"ACQUIRE_FREE","pending_effects":[],"authorizes_takeover":False}
