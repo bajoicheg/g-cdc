@@ -1,0 +1,44 @@
+{
+  "schema": "systematic-rca/v1",
+  "anomaly_id": "fleet-continuity-blocker-binding-mismatch-2026-10-01",
+  "material": true,
+  "anomaly_class": "stale_state",
+  "fix_key": "schema-typed-checkpoint-migration",
+  "problem": "A durable fleet execution-continuity artifact declared BLOCKED but its terminal_state.blocker code/evidence did not match the embedded blocker_proof, so execution_continuity.py would reject the claimed terminal boundary despite the prose appearing plausible.",
+  "evidence_refs": [
+    "bajoicheg-private/g-supervisor:cdc/fleet:fleet/continuity-2.11.2.json:pre-fix",
+    "src/continuous-development-cycle/scripts/execution_continuity.py:blocker_proof_binding_mismatch",
+    "docs/backlog-history-through-2.10.3.md#RCA-derived-fix-schema-typed-checkpoint-migration"
+  ],
+  "hypotheses": [
+    {
+      "id": "validator-semantics-missing",
+      "statement": "CDC lacked a rule binding BLOCKED terminal_state to blocker_proof.",
+      "discriminating_test": "Inspect released execution_continuity.py.",
+      "observed_result": "Released 2.11.2 explicitly requires exact dependency/evidence/next-action/recheck-trigger equality.",
+      "supported": false
+    },
+    {
+      "id": "proof-missing",
+      "statement": "The continuity artifact failed because no fresh blocker proof existed.",
+      "discriminating_test": "Inspect the stored continuity payload.",
+      "observed_result": "A blocker_proof existed, but terminal_state.blocker carried a different code and different evidence refs.",
+      "supported": false
+    },
+    {
+      "id": "manual-coupled-evidence-not-validated",
+      "statement": "The durable continuity payload was assembled from human-readable status facts without running the released execution_continuity validator before persistence.",
+      "discriminating_test": "Compare coupled fields inside the stored artifact against the validator contract and rebuild them from one proof object.",
+      "observed_result": "The stored artifact had internally inconsistent coupled fields; rebuilding terminal_state.blocker directly from the single blocker_proof produced an exact binding.",
+      "supported": true
+    }
+  ],
+  "selected_hypothesis_id": "manual-coupled-evidence-not-validated",
+  "correction": "Construct terminal continuity artifacts from one schema-typed blocker proof object and run the released execution_continuity/Terminal-State v2 checks before durable write. Coupled code/evidence/next-action/recheck-trigger fields must be generated from the same source object, not independently copied from prose/status summaries.",
+  "defense_in_depth": "Retain a regression case where blocker_proof and terminal_state.blocker differ by code or evidence and require persistence/finalization to fail closed; dogfood control-plane writers must validate their artifact before commit.",
+  "invariant": "Every durable BLOCKED continuity artifact is schema-valid and internally bound at commit time: terminal_state.blocker exactly matches blocker_proof, and no unvalidated free-form terminal payload is persisted.",
+  "existing_fix_keys": [
+    "schema-typed-checkpoint-migration"
+  ],
+  "sensitive_context_detected": false
+}
