@@ -24,9 +24,10 @@ def validate_runtime(r):
     if not isinstance(r["evidence_ref"],str) or not r["evidence_ref"].strip():raise ValueError("runtime evidence_ref invalid")
     return r
 
-def classify(lease,runtime,now_utc,heartbeat_freshness_seconds=600):
+def classify(lease,runtime,now_utc,heartbeat_freshness_seconds=600,runtime_max_age_seconds=300):
     validate_lease(lease);validate_runtime(runtime)
     if type(heartbeat_freshness_seconds) is not int or heartbeat_freshness_seconds<=0:raise ValueError("heartbeat freshness invalid")
+    if type(runtime_max_age_seconds) is not int or runtime_max_age_seconds<=0:raise ValueError("runtime max age invalid")
     now=_time(now_utc,"now")
     common={"schema":"execution-liveness-assessment/v1","authorizes_takeover":False,"authorizes_product_write":False}
     if lease["owner_id"] is None:
@@ -36,6 +37,10 @@ def classify(lease,runtime,now_utc,heartbeat_freshness_seconds=600):
         return {**common,"state":"unknown","reason":"exact_runtime_state_not_proven","quiescence_candidate":False,
                 "runtime_evidence_ref":None if runtime is None else runtime["evidence_ref"]}
     if runtime["state"]=="running":
+        observed=_time(runtime["observed_at_utc"],"runtime observed_at_utc")
+        if observed>now or (now-observed).total_seconds()>runtime_max_age_seconds:
+            return {**common,"state":"unknown","reason":"runtime_running_observation_stale","quiescence_candidate":False,
+                    "runtime_evidence_ref":runtime["evidence_ref"]}
         heartbeat=_time(lease["heartbeat_at_utc"],"heartbeat")
         expiry=_time(lease["expires_at_utc"],"expiry")
         if now>=expiry or (now-heartbeat).total_seconds()>=heartbeat_freshness_seconds:
