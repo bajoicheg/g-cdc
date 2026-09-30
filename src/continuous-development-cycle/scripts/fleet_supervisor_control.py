@@ -96,20 +96,22 @@ def acquire_cas(store,expected_revision,fleet_repository,fleet_ref,owner_id,at,i
 def claim_effect_record(state,owner_id,generation,invocation_id,at,live_fleet_head,request):
     _leader(state,owner_id,generation,invocation_id,at)
     if not SHA.fullmatch(live_fleet_head):raise ValueError("live fleet head invalid")
-    fields={"effect_id","kind","target","observed_fleet_head","intent"}
+    fields={"kind","target","observed_fleet_head","intent"}
     if not isinstance(request,dict) or set(request)!=fields:raise ValueError("effect request invalid")
-    for n in ("effect_id","target"):_text(request[n],n)
+    _text(request["target"],"target")
     if request["kind"] not in KINDS:raise ValueError("effect kind invalid")
     if not SHA.fullmatch(request["observed_fleet_head"]):raise ValueError("request fleet head invalid")
-    intent_digest=_digest(request)
+    canonical_effect={"kind":request["kind"],"target":request["target"],"observed_fleet_head":request["observed_fleet_head"],"intent":request["intent"]}
+    effect_id=_digest(canonical_effect)
+    intent_digest=_digest(request["intent"])
     for e in state["effects"]:
-        if e["effect_id"]==request["effect_id"]:
-            if e["intent_digest"]!=intent_digest:raise ValueError("fleet effect id collision")
+        if e["effect_id"]==effect_id:
+            if e["intent_digest"]!=intent_digest:raise ValueError("derived fleet effect identity collision")
             return copy.deepcopy(state),{"action":"OBSERVE_EXISTING","authorizes_effect":False,"effect":copy.deepcopy(e)}
     if request["observed_fleet_head"]!=live_fleet_head:
         return copy.deepcopy(state),{"action":"REPLAN_FLEET_HEAD","authorizes_effect":False,"effect":None}
     result=copy.deepcopy(state)
-    effect={"schema":EFFECT_SCHEMA,"effect_id":request["effect_id"],"kind":request["kind"],"target":request["target"],
+    effect={"schema":EFFECT_SCHEMA,"effect_id":effect_id,"kind":request["kind"],"target":request["target"],
             "intent_digest":intent_digest,"owner_id":owner_id,"generation":generation,"invocation_id":invocation_id,
             "observed_fleet_head":live_fleet_head,"state":"claimed","claimed_at_utc":at,"receipt_ref":None,"outcome":None}
     result["effects"].append(effect);validate(result)
