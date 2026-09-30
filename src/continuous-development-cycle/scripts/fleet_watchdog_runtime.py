@@ -16,6 +16,7 @@ import secrets
 import sys
 
 from git_document_store import GitDocumentStore
+import fleet_supervisor_control as fleet_control
 from parallel_task_planner import portable_path_key
 from watchdog_liveness import assess, binding_key, now_utc, text, utc, validate_binding
 
@@ -28,8 +29,35 @@ def project_of(binding):
 
 
 def operation_key(binding, effect):
+    # Incident IDs are diagnostic labels, not idempotency identity. Renaming an
+    # incident must never create a second scheduler effect for the same project.
+    return binding_key(project_of(binding)) + ":" + effect
+
+def legacy_operation_key(binding, effect):
     return binding_key(binding) + ":" + effect
 
+
+class GitFleetLeaderGuard:
+    """Read-only verifier for an already-acquired Fleet Supervisor leader lease."""
+
+    def __init__(self, store, *, owner_id, generation, invocation_id, observed_fleet_head, clock=now_utc):
+        if not isinstance(store, GitDocumentStore):
+            raise ValueError("Fleet leader state requires GitDocumentStore")
+        self.store=store
+        self.owner_id=owner_id
+        self.generation=generation
+        self.invocation_id=invocation_id
+        self.observed_fleet_head=observed_fleet_head
+        self.clock=clock
+
+    def binding(self, invocation_id):
+        if invocation_id!=self.invocation_id:
+            raise ValueError("Fleet runtime invocation does not match leader invocation")
+        _,state=self.store.read()
+        if state is None:
+            raise ValueError("Fleet leader state is absent")
+        return fleet_control.leader_binding(
+            state,self.owner_id,self.generation,self.invocation_id,self.clock(),self.observed_fleet_head)
 
 class FleetRuntime:
     """backend.observe(project), enable(...), and run(...) are real capabilities.
@@ -40,12 +68,13 @@ class FleetRuntime:
     """
 
     def __init__(self, store, backend, *, clock=now_utc, max_age_seconds=120,
-                 survivability_runtime=None):
+                 survivability_runtime=None, leader_guard=None):
         self.store = store
         self.backend = backend
         self.clock = clock
         self.max_age_seconds = max_age_seconds
         self.survivability_runtime = survivability_runtime
+        self.leader_guard = leader_guard
 
     def _initial_state(self):
         return {"schema": SCHEMA, "coordination_ref": self.store.ref,
@@ -74,9 +103,17 @@ class FleetRuntime:
             raise ValueError("Fleet pending continuation invalid")
         for key, op in state["operations"].items():
             validate_binding(op["binding"])
-            if (op.get("effect") not in {"enable", "run"} or key != operation_key(op["binding"], op["effect"])
+            valid_keys={operation_key(op["binding"],op["effect"]),legacy_operation_key(op["binding"],op["effect"])}
+            if (op.get("effect") not in {"enable", "run"} or key not in valid_keys
                     or op.get("status") not in {"claimed", "succeeded", "blocked", "unknown"}):
                 raise ValueError("Fleet operation identity or status invalid")
+            leader=op.get("leader")
+            if leader is not None:
+                expected={"schema","fleet_repository","fleet_ref","owner_id","generation","invocation_id","observed_fleet_head"}
+                if not isinstance(leader,dict) or set(leader)!=expected or leader.get("schema")!="fleet-leader-binding/v1":
+                    raise ValueError("Fleet operation leader binding invalid")
+                if leader["invocation_id"]!=op.get("controller_invocation_id"):
+                    raise ValueError("Fleet operation leader/controller mismatch")
             text(op.get("operation_id"), "operation_id")
             text(op.get("controller_invocation_id"), "controller_invocation_id")
             if op["controller_invocation_id"] not in state["wake_budgets"]:
@@ -129,6 +166,25 @@ class FleetRuntime:
         result = assess(value, now=self.clock(), max_age_seconds=self.max_age_seconds, expected_binding=binding)
         return value, result
 
+    def _leader_binding(self, invocation_id):
+        if self.leader_guard is None:
+            raise ValueError("Fleet leader guard required for side effects")
+        value=self.leader_guard.binding(invocation_id)
+        expected={"schema","fleet_repository","fleet_ref","owner_id","generation","invocation_id","observed_fleet_head"}
+        if not isinstance(value,dict) or set(value)!=expected or value.get("schema")!="fleet-leader-binding/v1":
+            raise ValueError("Fleet leader binding invalid")
+        if value["invocation_id"]!=invocation_id:
+            raise ValueError("Fleet leader binding invocation mismatch")
+        return copy.deepcopy(value)
+
+    @staticmethod
+    def _operation_for(state,binding,effect):
+        matches=[op for op in state["operations"].values()
+                 if op.get("effect")==effect and project_of(op.get("binding",{}))==project_of(binding)]
+        if len(matches)>1:
+            raise ValueError("duplicate semantic Fleet operations require reconciliation")
+        return matches[0] if matches else None
+
     def _uncertain(self, state, project):
         return any(op["binding"]["watchdog_id"] == project["watchdog_id"]
                    and (op["status"] in {"claimed", "unknown"}
@@ -142,7 +198,7 @@ class FleetRuntime:
             return False
         unfinished = any(
             project_of(recovery["binding"]) == project
-            and any(state["operations"].get(operation_key(recovery["binding"], step), {}).get("status") != "succeeded"
+            and any((self._operation_for(state,recovery["binding"],step) or {}).get("status") != "succeeded"
                     for step in recovery["steps"])
             for recovery in state["recoveries"].values()
         )
@@ -204,7 +260,7 @@ class FleetRuntime:
         for effect in recovery["steps"]:
             key = operation_key(binding, effect)
             _, state = self._read()
-            previous = state["operations"].get(key)
+            previous = self._operation_for(state,binding,effect)
             if previous:
                 if previous["status"] == "succeeded":
                     continue
@@ -215,8 +271,9 @@ class FleetRuntime:
             if not self._effect_gate(value, assessment, recovery, effect):
                 return attempted, "fresh_gate_denied"
             operation_id = "operation-" + secrets.token_hex(24)
+            leader_binding=self._leader_binding(invocation_id)
             def claim(state):
-                if key in state["operations"] or self._uncertain(state, project):
+                if self._operation_for(state,binding,effect) is not None or self._uncertain(state, project):
                     return False
                 reserved = sum(op["controller_invocation_id"] == invocation_id for op in state["operations"].values())
                 if reserved >= state["wake_budgets"][invocation_id]["max_effects"]:
@@ -225,6 +282,7 @@ class FleetRuntime:
                     "binding": binding, "effect": effect, "status": "claimed", "operation_id": operation_id,
                     "controller_invocation_id": invocation_id, "claimed_at_utc": self.clock(),
                     "policy_revision": value["signals"]["policy"]["revision"],
+                    "leader": copy.deepcopy(leader_binding),
                 }
                 return True
             if not self._change(claim):
@@ -233,7 +291,9 @@ class FleetRuntime:
             # budget are reread AFTER the durable claim and immediately before IO.
             try:
                 live, gate = self._observe(project, binding)
-                allowed = self._effect_gate(live, gate, recovery, effect) and self._time_available(batch_budget)
+                current_leader=self._leader_binding(invocation_id)
+                allowed = (current_leader==leader_binding and self._effect_gate(live, gate, recovery, effect)
+                           and self._time_available(batch_budget))
             except Exception:
                 allowed = False
             if not allowed:
@@ -292,6 +352,8 @@ class FleetRuntime:
             raise ValueError("batch effect budget must be an integer from 0 to 2000")
         if not isinstance(projects, list) or not 0 < len(projects) <= MAX_PROJECTS:
             raise ValueError("registry must contain 1 to 1000 projects")
+        if max_effects>0:
+            self._leader_binding(invocation_id)
         projects = copy.deepcopy(projects)
         for project in projects:
             validate_binding(project, incident=False)
@@ -306,6 +368,8 @@ class FleetRuntime:
         survivability_effects = 0
         if self.survivability_runtime is not None:
             try:
+                if max_effects>0:
+                    self._leader_binding(invocation_id)
                 survivability = self.survivability_runtime.reconcile_registered(max_effects=max_effects)
                 if (not isinstance(survivability, dict)
                         or type(survivability.get("effects_attempted")) is not int
@@ -399,7 +463,14 @@ def main(argv=None):
             raise ValueError("backend must be an explicit module:factory")
         backend = getattr(importlib.import_module(module), factory)(config.get("backend_config", {}))
         store = GitDocumentStore(**config["store"])
-        result = FleetRuntime(store, backend).run_batch(config["projects"], max_effects=config["max_effects"], invocation_id=config["invocation_id"], deadline_utc=config.get("deadline_utc"))
+        leader_guard=None
+        if config["max_effects"]>0:
+            leader_store=GitDocumentStore(**config["leader_store"])
+            leader=copy.deepcopy(config["leader"])
+            leader_guard=GitFleetLeaderGuard(leader_store,clock=now_utc,**leader)
+        result = FleetRuntime(store, backend, leader_guard=leader_guard).run_batch(
+            config["projects"], max_effects=config["max_effects"], invocation_id=config["invocation_id"],
+            deadline_utc=config.get("deadline_utc"))
         print(json.dumps(result, sort_keys=True))
         return 0
     except (OSError, ValueError, KeyError, TypeError, ImportError, AttributeError) as exc:
