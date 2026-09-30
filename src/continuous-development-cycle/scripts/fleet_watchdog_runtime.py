@@ -50,6 +50,7 @@ class GitFleetLeaderGuard:
         self.clock=clock
 
     def _live_fleet_head(self,state):
+        self.store._assert_remote_identity()
         # Reuse the coordination store's isolated, authenticated remote transport,
         # but read the authoritative Fleet ref rather than trusting config bytes.
         output=self.store._git("ls-remote","--refs",self.store.remote,state["fleet_ref"])
