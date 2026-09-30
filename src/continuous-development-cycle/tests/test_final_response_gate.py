@@ -1,0 +1,48 @@
+from pathlib import Path
+import copy,sys,unittest
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
+import execution_lease_v2 as leasev2
+from final_response_gate import evaluate
+
+OWNER="22222222-2222-4222-8222-222222222222";INV_ID="chat-final"
+INV={"invocation_id":INV_ID,"automation_id":None,"conversation_id":None,"execution_surface":"chat","started_at_utc":"2026-01-01T10:00:00Z"}
+CP="https://example.test/checkpoint"
+HEAD="a"*40
+
+def continuity(released):
+ return {
+  "schema":"execution-continuity/v1","invocation_id":INV_ID,"current_state":"COMPLETE","requested_terminal_outcome":"scope_complete",
+  "runnable_next_action":False,"meaningful_progress_refs":["git:"+HEAD],"primitive_steps":[],"external_binding":None,"blocker":None,
+  "checkpoint_ref":CP,"next_action":None,"lease_release_required":released,"lease_released":released,
+  "terminal_state":{"schema":"terminal-state/v2","invocation_id":INV_ID,"scope_id":"scope","observed_head":HEAD,"decision":"COMPLETE",
+    "runnable_actions":[],"pending_external":None,"blocker":None,"meaningful_progress_refs":["git:"+HEAD],
+    "completion_evidence_refs":["evidence:scope-complete"],"checkpoint_ref":CP,"lease_released":released}
+ }
+
+class T(unittest.TestCase):
+ def owned(self):
+  r=leasev2.initialize("o/r","refs/heads/main")
+  return leasev2.acquire(r,OWNER,"2026-01-01T10:00:00Z",invocation=INV,ttl=1200)
+ def released(self):
+  r=self.owned()
+  r=leasev2.begin_finalization(r,OWNER,1,INV_ID,"2026-01-01T10:01:00Z",pending_shared_writes=False)
+  r=leasev2.record_checkpoint(r,OWNER,1,INV_ID,"2026-01-01T10:01:01Z",checkpoint_ref=CP,pending_shared_writes=False)
+  r=leasev2.reconcile_finalization(r,OWNER,1,INV_ID,"2026-01-01T10:01:02Z",external_reconciliation="none")
+  r=leasev2.mark_ready(r,OWNER,1,INV_ID,"2026-01-01T10:01:03Z",continuity_state=continuity(False))
+  return leasev2.release(r,OWNER,1,INV_ID,"2026-01-01T10:01:04Z")
+ def test_owned_invocation_cannot_final_respond(self):
+  r=evaluate(INV_ID,self.owned(),continuity(False),{"owner_id":OWNER,"generation":1},"2026-01-01T10:02:00Z")
+  self.assertFalse(r["allowed"]);self.assertIn("lease",r["reason"])
+ def test_exact_released_generation_can_final_respond(self):
+  r=evaluate(INV_ID,self.released(),continuity(True),{"owner_id":OWNER,"generation":1},"2026-01-01T10:02:00Z")
+  self.assertTrue(r["allowed"]);self.assertTrue(r["final_response_allowed"])
+ def test_different_release_does_not_satisfy_owned_generation(self):
+  lease=self.released();bad=copy.deepcopy(lease);bad["last_release"]["generation"]=0
+  r=evaluate(INV_ID,bad,continuity(True),{"owner_id":OWNER,"generation":1},"2026-01-01T10:02:00Z")
+  self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"exact_owned_generation_release_not_proven")
+ def test_pre_release_continuity_never_substitutes_for_release(self):
+  lease=self.released()
+  r=evaluate(INV_ID,lease,continuity(False),{"owner_id":OWNER,"generation":1},"2026-01-01T10:02:00Z")
+  self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"continuity_does_not_record_post_release_state")
+
+if __name__=="__main__":unittest.main()
