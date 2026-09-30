@@ -11,12 +11,12 @@ import secrets
 
 try:
     from project_lanes import (
-        LaneClaim, LaneKind, admit_writer, paths_overlap, project_can_finalize,
+        LaneClaim, LaneKind, admit_writer, branch_key, paths_overlap, project_can_finalize,
         result_within_claim, validate_claim,
     )
 except ModuleNotFoundError:
     from scripts.project_lanes import (
-        LaneClaim, LaneKind, admit_writer, paths_overlap, project_can_finalize,
+        LaneClaim, LaneKind, admit_writer, branch_key, paths_overlap, project_can_finalize,
         result_within_claim, validate_claim,
     )
 
@@ -253,7 +253,16 @@ class ProjectLaneCoordinator:
         if state["config"] != self.config.to_dict() or state["config_digest"] != self.config.digest():
             raise ValueError("project lane registry configuration drift")
         if state["migration_gate"] is not None:
-            _validate_migration_evidence(state["migration_gate"])
+            stored_gate = copy.deepcopy(_validate_migration_evidence(state["migration_gate"]))
+            if self.migration_verifier is None:
+                raise ValueError("lane authority requires fresh migration revalidation capability")
+            fresh_gate = _validate_migration_evidence(self.migration_verifier({
+                "phase": "authority_revalidation",
+                "stored_evidence": copy.deepcopy(stored_gate),
+                "config_digest": self.config.digest(),
+            }))
+            if fresh_gate != stored_gate:
+                raise ValueError("lane migration authority revalidation binding changed")
         if (not isinstance(state["lanes"], dict) or not isinstance(state["start_operations"], dict)
                 or not isinstance(state["integration_queue"], list)
                 or not isinstance(state["integration_intents"], dict)
@@ -324,6 +333,10 @@ class ProjectLaneCoordinator:
                 raise ValueError("project lane mode is not activated at a safe legacy boundary")
             if claim.lane_id in state["lanes"]:
                 decision.update(reason="duplicate_lane")
+                return False
+            if (claim.is_writer and claim.kind != LaneKind.INTEGRATOR
+                    and branch_key(claim.branch) == branch_key(self.config.product_source_ref)):
+                decision.update(reason="shared_product_ref_reserved")
                 return False
             existing = self._active_claims(state)
             if not admit_writer(existing, claim):
