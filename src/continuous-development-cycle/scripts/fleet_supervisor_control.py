@@ -217,6 +217,13 @@ def reconcile_effect_cas(store,expected_revision,effect_id,observation):
     new_revision=store.compare_and_swap(expected_revision,result)
     return {"revision":new_revision,"state":result,**decision}
 
+def update_effect_cas(store,expected_revision,owner_id,generation,invocation_id,at,effect_id,new_state,receipt_ref,outcome=None):
+    revision,state=store.read()
+    if revision!=expected_revision or state is None:raise ValueError("stale fleet supervisor revision")
+    result=update_effect_record(state,owner_id,generation,invocation_id,at,effect_id,new_state,receipt_ref,outcome)
+    new_revision=store.compare_and_swap(expected_revision,result)
+    return {"revision":new_revision,"state":result,"effect":next(copy.deepcopy(e) for e in result["effects"] if e["effect_id"]==effect_id)}
+
 def assess_takeover(state):
     validate(state);lease=state["lease"]
     if lease["owner_id"] is None:return {"action":"ACQUIRE_FREE","pending_effects":[],"authorizes_takeover":False}
