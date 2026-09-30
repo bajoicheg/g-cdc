@@ -1,0 +1,19 @@
+{
+  "schema": "rca-feedback-disposition/v1",
+  "anomaly_id": "chat-command-timestamp-missing-2026-09-30",
+  "fix_key": "chat-command-timestamping",
+  "authorizes_roadmap_write": false,
+  "authorizes_product_write": false,
+  "action": "REINFORCE_EXISTING",
+  "roadmap_payload": {
+    "problem": "A live CDC-managed chat emitted substantive responses for user commands without the required fresh Moscow timestamp, even though the active CDC package already specified exactly one timestamp per user command.",
+    "fix": "Reinforce the existing chat-command-timestamping control with a retained zero-timestamp RED-to-GREEN behavioral scenario and an explicit response-boundary preflight/ledger requirement: before the first substantive CDC-managed response for each user command, acquire a fresh clock observation and require exactly one emitted timestamp; missing or duplicate cardinality must fail closed. Defense-in-depth: Track command_timestamp_accuracy and feedback_loop_closure as dogfood evidence, keep duplicate suppression, and make the missing-zero case part of release regression evidence so prose compliance cannot be mistaken for actual chat-surface compliance.",
+    "invariant": "Every CDC-managed user command emits exactly one fresh [HH:MM DD.MM] timestamp before or with its first substantive response; zero or more than one timestamp for that command is a behavioral regression and creates no authority.",
+    "evidence_refs": [
+      "chat:2026-09-30:missing-command-timestamps",
+      "src/continuous-development-cycle/SKILL.md#per-command-timestamps",
+      "src/continuous-development-cycle/references/command-evidence.md#fresh-user-visible-command-timestamps",
+      "src/continuous-development-cycle/scripts/behavioral_eval.py#duplicate_command_timestamp"
+    ]
+  }
+}
