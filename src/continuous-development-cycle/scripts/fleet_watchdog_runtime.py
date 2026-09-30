@@ -29,11 +29,6 @@ def project_of(binding):
 
 
 def operation_key(binding, effect):
-    # Incident IDs are diagnostic labels, not idempotency identity. Renaming an
-    # incident must never create a second scheduler effect for the same project.
-    return binding_key(project_of(binding)) + ":" + effect
-
-def legacy_operation_key(binding, effect):
     return binding_key(binding) + ":" + effect
 
 
@@ -71,6 +66,58 @@ class GitFleetLeaderGuard:
         live_head=self._live_fleet_head(state)
         return fleet_control.leader_binding(
             state,self.owner_id,self.generation,self.invocation_id,self.clock(),live_head)
+
+    def claim_scheduler_effect(self, invocation_id, project, effect, recovery, policy_revision):
+        if invocation_id!=self.invocation_id:
+            raise ValueError("Fleet runtime invocation does not match leader invocation")
+        target="watchdog:"+binding_key(project)
+        intent={
+            "effect":effect,
+            "schedule":recovery["schedule"],
+            "prompt":recovery["prompt"],
+            "expected_invocation":copy.deepcopy(recovery["expected_invocation"]),
+            "policy_revision":policy_revision,
+            "leader_generation":self.generation,
+            "leader_invocation_id":self.invocation_id,
+        }
+        for _ in range(6):
+            revision,state=self.store.read()
+            if state is None:
+                raise ValueError("Fleet leader state is absent")
+            live_head=self._live_fleet_head(state)
+            leader=fleet_control.leader_binding(
+                state,self.owner_id,self.generation,self.invocation_id,self.clock(),live_head)
+            request={"kind":"scheduler_repair","target":target,"observed_fleet_head":live_head,"intent":intent}
+            changed,decision=fleet_control.claim_effect_record(
+                state,self.owner_id,self.generation,self.invocation_id,self.clock(),live_head,request)
+            if decision["action"]!="SUBMIT_ONCE":
+                return {**decision,"leader":leader}
+            try:
+                self.store.compare_and_swap(revision,changed)
+                return {**decision,"leader":leader}
+            except ValueError:
+                continue
+        raise ValueError("Fleet effect journal contention or unavailable CAS")
+
+    def finish_scheduler_effect(self, invocation_id, effect_id, state_name, receipt_ref, outcome=None):
+        if invocation_id!=self.invocation_id:
+            raise ValueError("Fleet runtime invocation does not match leader invocation")
+        for _ in range(6):
+            revision,state=self.store.read()
+            if state is None:
+                raise ValueError("Fleet leader state is absent")
+            try:
+                changed=fleet_control.update_effect_record(
+                    state,self.owner_id,self.generation,self.invocation_id,self.clock(),
+                    effect_id,state_name,receipt_ref,outcome)
+            except ValueError:
+                raise
+            try:
+                self.store.compare_and_swap(revision,changed)
+                return next(copy.deepcopy(e) for e in changed["effects"] if e["effect_id"]==effect_id)
+            except ValueError:
+                continue
+        raise ValueError("Fleet effect completion contention or unavailable CAS")
 
 class FleetRuntime:
     """backend.observe(project), enable(...), and run(...) are real capabilities.
@@ -116,8 +163,7 @@ class FleetRuntime:
             raise ValueError("Fleet pending continuation invalid")
         for key, op in state["operations"].items():
             validate_binding(op["binding"])
-            valid_keys={operation_key(op["binding"],op["effect"]),legacy_operation_key(op["binding"],op["effect"])}
-            if (op.get("effect") not in {"enable", "run"} or key not in valid_keys
+            if (op.get("effect") not in {"enable", "run"} or key != operation_key(op["binding"],op["effect"])
                     or op.get("status") not in {"claimed", "succeeded", "blocked", "unknown"}):
                 raise ValueError("Fleet operation identity or status invalid")
             leader=op.get("leader")
@@ -190,14 +236,6 @@ class FleetRuntime:
             raise ValueError("Fleet leader binding invocation mismatch")
         return copy.deepcopy(value)
 
-    @staticmethod
-    def _operation_for(state,binding,effect):
-        matches=[op for op in state["operations"].values()
-                 if op.get("effect")==effect and project_of(op.get("binding",{}))==project_of(binding)]
-        if len(matches)>1:
-            raise ValueError("duplicate semantic Fleet operations require reconciliation")
-        return matches[0] if matches else None
-
     def _uncertain(self, state, project):
         return any(op["binding"]["watchdog_id"] == project["watchdog_id"]
                    and (op["status"] in {"claimed", "unknown"}
@@ -211,7 +249,7 @@ class FleetRuntime:
             return False
         unfinished = any(
             project_of(recovery["binding"]) == project
-            and any((self._operation_for(state,recovery["binding"],step) or {}).get("status") != "succeeded"
+            and any(state["operations"].get(operation_key(recovery["binding"], step), {}).get("status") != "succeeded"
                     for step in recovery["steps"])
             for recovery in state["recoveries"].values()
         )
@@ -273,7 +311,7 @@ class FleetRuntime:
         for effect in recovery["steps"]:
             key = operation_key(binding, effect)
             _, state = self._read()
-            previous = self._operation_for(state,binding,effect)
+            previous = state["operations"].get(key)
             if previous:
                 if previous["status"] == "succeeded":
                     continue
@@ -283,12 +321,26 @@ class FleetRuntime:
             value, assessment = self._observe(project, binding)
             if not self._effect_gate(value, assessment, recovery, effect):
                 return attempted, "fresh_gate_denied"
-            operation_id = "operation-" + secrets.token_hex(24)
             if batch_leader is None or self._leader_binding(invocation_id)!=batch_leader:
                 return attempted, "fleet_head_or_leader_changed"
+            if self.leader_guard is None or not hasattr(self.leader_guard,"claim_scheduler_effect"):
+                raise ValueError("Fleet leader guard lacks scheduler effect journal")
+            outer=self.leader_guard.claim_scheduler_effect(
+                invocation_id,project,effect,recovery,value["signals"]["policy"]["revision"])
+            if outer["action"]!="SUBMIT_ONCE":
+                return attempted, "fleet_effect_already_claimed"
+            if outer["leader"]!=batch_leader:
+                try:
+                    self.leader_guard.finish_scheduler_effect(
+                        invocation_id,outer["effect"]["effect_id"],"terminal","control:leader-binding-changed","not_submitted")
+                except Exception:
+                    pass
+                return attempted, "fleet_head_or_leader_changed"
             leader_binding=copy.deepcopy(batch_leader)
+            fleet_effect_id=outer["effect"]["effect_id"]
+            operation_id = "operation-" + secrets.token_hex(24)
             def claim(state):
-                if self._operation_for(state,binding,effect) is not None or self._uncertain(state, project):
+                if key in state["operations"] or self._uncertain(state, project):
                     return False
                 reserved = sum(op["controller_invocation_id"] == invocation_id for op in state["operations"].values())
                 if reserved >= state["wake_budgets"][invocation_id]["max_effects"]:
@@ -298,9 +350,15 @@ class FleetRuntime:
                     "controller_invocation_id": invocation_id, "claimed_at_utc": self.clock(),
                     "policy_revision": value["signals"]["policy"]["revision"],
                     "leader": copy.deepcopy(leader_binding),
+                    "fleet_effect_id": fleet_effect_id,
                 }
                 return True
             if not self._change(claim):
+                try:
+                    self.leader_guard.finish_scheduler_effect(
+                        invocation_id,fleet_effect_id,"terminal","control:internal-claim-denied","not_submitted")
+                except Exception:
+                    pass
                 return attempted, "claim_not_granted"
             # Pause, policy, owner, guard, external, exact invocation, and provider
             # budget are reread AFTER the durable claim and immediately before IO.
@@ -312,6 +370,11 @@ class FleetRuntime:
             except Exception:
                 allowed = False
             if not allowed:
+                try:
+                    self.leader_guard.finish_scheduler_effect(
+                        invocation_id,fleet_effect_id,"terminal","control:post-claim-gate-denied","not_submitted")
+                except Exception:
+                    pass
                 self._finish(key, operation_id, "blocked", "post_claim_gate_denied")
                 return attempted, "post_claim_gate_denied"
             attempted += 1
@@ -339,11 +402,24 @@ class FleetRuntime:
                 if not valid:
                     raise ValueError("scheduler exact readback disagrees")
             except Exception:
+                try:
+                    self.leader_guard.finish_scheduler_effect(
+                        invocation_id,fleet_effect_id,"unknown","scheduler-attempt:"+operation_id)
+                except Exception:
+                    pass
                 self._finish(key, operation_id, "unknown", "provider_reply_or_exact_readback_unconfirmed")
                 return attempted, "provider_outcome_unknown"
             receipt = ({"provider_invocation_id": reply["invocation_id"],
                         "invocation_terminal": readback["signals"]["invocation"]["state"] == "completed"}
                        if effect == "run" else None)
+            outer_receipt=("provider-invocation:"+reply["invocation_id"] if effect=="run"
+                           else "scheduler-operation:"+operation_id)
+            try:
+                self.leader_guard.finish_scheduler_effect(
+                    invocation_id,fleet_effect_id,"terminal",outer_receipt,"success")
+            except Exception:
+                self._finish(key, operation_id, "unknown", "fleet_effect_completion_unconfirmed")
+                return attempted, "provider_outcome_unknown"
             if not self._finish(key, operation_id, "succeeded", "exact_readback_confirmed", receipt):
                 return attempted, "claim_completion_unconfirmed"
         return attempted, "recovery_steps_consumed"
