@@ -1,0 +1,19 @@
+{
+  "schema": "rca-feedback-disposition/v1",
+  "anomaly_id": "vendored-package-external-fault-fixture-2026-09-30",
+  "fix_key": "vendored-package-self-contained-regressions",
+  "authorizes_roadmap_write": false,
+  "authorizes_product_write": false,
+  "action": "ADD_FIX_FORMULATION",
+  "roadmap_payload": {
+    "problem": "A released CDC package can pass exact-tree and package validation while a retained package test still depends on a canonical repository fixture outside the package.",
+    "fix": "Make retained package regressions self-contained and add a clean vendored-layout full-suite gate with no canonical repo-root fixtures available.",
+    "invariant": "Every fixture required by retained package tests is inside the released package tree, and the full package suite passes from a real vendored consumer layout without repository-external canonical files.",
+    "evidence_refs": [
+      "github:bajoicheg-private/g-ad-control:actions:36760046039",
+      "git-tree:7a7a7faa75b7fc9160d912d8fb507c6b9573d17f",
+      "src/continuous-development-cycle/tests/test_v2110_guidance.py",
+      "fault-injection/scenarios.json"
+    ]
+  }
+}
