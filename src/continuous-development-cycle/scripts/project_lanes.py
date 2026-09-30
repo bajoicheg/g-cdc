@@ -16,6 +16,7 @@ except ModuleNotFoundError:
 SHA = re.compile(r"(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 INVALID_REF = re.compile(r"[\x00-\x20\x7f~^:?*\[\\]")
 READ_ONLY_ROLES = frozenset({"read_only", "read-only", "review", "observer"})
+LANE_ROLES = READ_ONLY_ROLES | frozenset({"worker", "writer", "integrator"})
 
 
 class LaneKind(str, Enum):
@@ -73,6 +74,8 @@ def validate_claim(claim):
         raise ValueError("branch must be a safe Git heads ref/name")
     if not isinstance(claim.kind, LaneKind):
         raise ValueError("lane kind invalid")
+    if claim.role not in LANE_ROLES:
+        raise ValueError("lane role is not in the explicit capability schema")
     if claim.kind == LaneKind.REVIEW:
         if claim.write_paths:
             raise ValueError("review lane cannot declare write_paths")
