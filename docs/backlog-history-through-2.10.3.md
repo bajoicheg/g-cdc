@@ -67,6 +67,8 @@ These items are explicit future CDC roadmap candidates. They do not reopen the c
 
 **Expected invariant:** every consumer that claims CDC version X has vendored subtree SHA exactly equal to the canonical package tree for X.
 
+**Evidence reinforcement — 2026-09-30 rollout:** one safe-boundary consumer could verify the released identity but the available execution channel could not complete exact package transfer for a required vendored file. The partial attempt was restored to the prior exact package tree. Strengthen the existing distribution/tree-fidelity fix: preflight carrier capability before the first source-ref package mutation, stage/verify the complete package, and update lock/policy only after exact canonical subtree readback. Carrier failure must leave or restore the prior exact package tree rather than a mixed version.
+
 ### RCA-derived fix — pre-run CI failure classification
 
 **Observed failure class:** several GitHub Actions runs failed at `Set up job` / zero executable steps; treating those as product RED would trigger wrong remediation.
