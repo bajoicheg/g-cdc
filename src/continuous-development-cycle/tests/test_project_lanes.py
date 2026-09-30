@@ -7,7 +7,9 @@ from project_lanes import LaneClaim, LaneKind, admit_writer, paths_overlap
 
 
 class CooperativeLaneTests(unittest.TestCase):
-    def claim(self, name, writes, kind=LaneKind.WORKER):
+    def claim(self, name, writes, kind=LaneKind.WORKER, role=None):
+        if role is None:
+            role = "review" if kind == LaneKind.REVIEW else ("integrator" if kind == LaneKind.INTEGRATOR else "writer")
         return LaneClaim(
             lane_id=name,
             invocation_id=name,
@@ -16,6 +18,7 @@ class CooperativeLaneTests(unittest.TestCase):
             worktree=name,
             branch=name,
             write_paths=frozenset(writes),
+            role=role,
         )
 
     def test_disjoint_writers_can_coexist(self):
@@ -31,6 +34,23 @@ class CooperativeLaneTests(unittest.TestCase):
 
     def test_read_only_lane_does_not_block_writer(self):
         self.assertTrue(admit_writer([self.claim("review", set(), LaneKind.REVIEW)], self.claim("worker", {"src/a"})))
+
+    def test_review_kind_cannot_gain_write_authority_from_write_paths(self):
+        with self.assertRaisesRegex(ValueError, "review|write"):
+            admit_writer([], self.claim("review-writer", {"src/a"}, LaneKind.REVIEW, role="review"))
+
+    def test_review_kind_rejects_writer_role_even_without_write_paths(self):
+        with self.assertRaisesRegex(ValueError, "review|role"):
+            admit_writer([], self.claim("review-role", set(), LaneKind.REVIEW, role="writer"))
+
+    def test_read_only_role_cannot_carry_write_paths(self):
+        with self.assertRaisesRegex(ValueError, "read|write|role"):
+            admit_writer([], self.claim("observer-writer", {"src/a"}, LaneKind.WORKER, role="observer"))
+
+    def test_ordinary_writer_authority_is_preserved(self):
+        writer = self.claim("writer", {"src/a"}, LaneKind.WORKER, role="writer")
+        self.assertTrue(writer.is_writer)
+        self.assertTrue(admit_writer([], writer))
 
     def test_unsafe_git_branch_names_are_rejected(self):
         for branch_name in ("--force", "refs/tags/not-a-lane", "refs/heads/bad ref",
