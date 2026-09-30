@@ -244,7 +244,7 @@ class FleetRuntime:
             return changed
         self._change(transform)
 
-    def _recover(self, project, initial, remaining, invocation_id, batch_budget):
+    def _recover(self, project, initial, remaining, invocation_id, batch_budget, batch_leader):
         binding = initial["binding"]
         recovery_key = binding_key(binding)
         value, assessment = self._observe(project, binding)
@@ -284,7 +284,9 @@ class FleetRuntime:
             if not self._effect_gate(value, assessment, recovery, effect):
                 return attempted, "fresh_gate_denied"
             operation_id = "operation-" + secrets.token_hex(24)
-            leader_binding=self._leader_binding(invocation_id)
+            if batch_leader is None or self._leader_binding(invocation_id)!=batch_leader:
+                return attempted, "fleet_head_or_leader_changed"
+            leader_binding=copy.deepcopy(batch_leader)
             def claim(state):
                 if self._operation_for(state,binding,effect) is not None or self._uncertain(state, project):
                     return False
@@ -365,8 +367,7 @@ class FleetRuntime:
             raise ValueError("batch effect budget must be an integer from 0 to 2000")
         if not isinstance(projects, list) or not 0 < len(projects) <= MAX_PROJECTS:
             raise ValueError("registry must contain 1 to 1000 projects")
-        if max_effects>0:
-            self._leader_binding(invocation_id)
+        batch_leader=self._leader_binding(invocation_id) if max_effects>0 else None
         projects = copy.deepcopy(projects)
         for project in projects:
             validate_binding(project, incident=False)
@@ -381,8 +382,8 @@ class FleetRuntime:
         survivability_effects = 0
         if self.survivability_runtime is not None:
             try:
-                if max_effects>0:
-                    self._leader_binding(invocation_id)
+                if max_effects>0 and self._leader_binding(invocation_id)!=batch_leader:
+                    raise ValueError("Fleet head or leader changed before survivability effects")
                 survivability = self.survivability_runtime.reconcile_registered(max_effects=max_effects)
                 if (not isinstance(survivability, dict)
                         or type(survivability.get("effects_attempted")) is not int
@@ -425,7 +426,8 @@ class FleetRuntime:
                     pending.discard(key)
             state["pending"] = sorted(pending)
             state["last_batch"] = {"invocation_id": invocation_id, "max_effects": max_effects,
-                                   "assessed_projects": keys, "checkpoint_at_utc": self.clock()}
+                                   "assessed_projects": keys, "checkpoint_at_utc": self.clock(),
+                                   "leader": copy.deepcopy(batch_leader)}
             return True
         self._change(checkpoint)
         batch_budget, outcomes = {"attempted": survivability_effects, "deadline_utc": deadline_utc}, {}
@@ -437,7 +439,7 @@ class FleetRuntime:
                 outcomes[key] = "batch_budget_exhausted"
                 continue
             try:
-                _, outcome = self._recover(project, observations[key], max_effects - batch_budget["attempted"], invocation_id, batch_budget)
+                _, outcome = self._recover(project, observations[key], max_effects - batch_budget["attempted"], invocation_id, batch_budget, batch_leader)
                 outcomes[key] = outcome
             except Exception:
                 # A claim may already be durable. Preserve it and report uncertainty.
