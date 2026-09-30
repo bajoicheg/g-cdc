@@ -40,5 +40,9 @@
     }
   ],
   "scheduler_state": "Owner-paused; zero scheduler mutations",
-  "final_metadata_ci": "pending exact-head hosted validation after release-metadata commit"
+  "final_metadata_ci": {
+    "state": "requested",
+    "pull_request": 78,
+    "note": "Run ID is observed externally after this non-skip metadata commit to avoid self-reference."
+  }
 }
