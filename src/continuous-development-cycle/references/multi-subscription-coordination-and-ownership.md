@@ -8,13 +8,13 @@ Use a dedicated `fleet-supervisor-state/v1` document on an isolated Git CAS ref 
 
 Exactly one owner/generation/invocation may be the Fleet side-effect leader. Other subscriptions remain observers/standby Fleet supervisors or ordinary project executors. A Fleet leader never receives project product-write, project takeover, merge, release, scope-expansion, or implicit scheduler authority.
 
-Every Fleet-wide effect is a one-shot durable claim identified by `effect_id`, exact leader generation/invocation, and the observed Fleet HEAD. Supported effect classes include Fleet-ref publication, project wake, scheduler repair, and continuation enqueue. Reusing the same effect ID with the same intent observes/reconciles the original claim; reusing it with different intent is a collision. A moved Fleet HEAD requires replanning before a claim. Unknown/submitted effects block leader replacement until reconciled.
+Every Fleet-wide effect is a one-shot durable claim identified by `effect_id`, exact leader generation/invocation, and the observed Fleet HEAD. Supported effect classes include Fleet-ref publication, project wake, scheduler repair, and continuation enqueue. Reusing the same effect ID with the same intent observes/reconciles the original claim; reusing it with different intent is a collision. A moved Fleet HEAD requires replanning before a claim. Unknown/submitted effects block leader replacement until reconciled. A standby may perform only evidence-only provider reconciliation against the original effect ID + intent digest: complete terminal/not-found lookup may close the effect, running/unknown observation keeps it pending, and reconciliation never grants submit/replay authority.
 
 Leader replacement never follows TTL alone. Use exact `executor_stopped` evidence plus no unresolved leader effects. The ordinary execution-lease transactional finalization/release contract remains authoritative.
 
 ## Truthful liveness
 
-Use `scripts/execution_liveness.py` with independent runtime evidence. Lease presence, owner ID, heartbeat age, scheduler timestamps, or TTL do not by themselves prove an executor is active or stopped.
+Use `scripts/execution_liveness.py` with independent **fresh** runtime evidence. A historical running observation that exceeds the runtime-observation freshness bound degrades to `unknown` even if the lease was renewed. Lease presence, owner ID, heartbeat age, scheduler timestamps, or TTL do not by themselves prove an executor is active or stopped.
 
 The normalized states are:
 - `active`: exact invocation is independently observed running and the lease is fresh;
