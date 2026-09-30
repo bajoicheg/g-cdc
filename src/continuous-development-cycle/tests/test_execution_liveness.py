@@ -33,5 +33,9 @@ class T(unittest.TestCase):
  def test_released_is_released_without_runtime(self):
   r=leasev2.initialize("o/r","refs/heads/main")
   self.assertEqual(classify(r,None,"2026-01-01T10:05:00Z")["state"],"released")
+ def test_old_running_observation_is_unknown_even_when_lease_was_renewed(self):
+  r=self.owned()
+  r=leasev2.renew(r,OWNER,1,"chat-a","2026-01-01T10:09:00Z",activity_ref="git:new",ttl=1200)
+  self.assertEqual(classify(r,self.runtime("running"),"2026-01-01T10:09:30Z")["state"],"unknown")
 
 if __name__=="__main__":unittest.main()
