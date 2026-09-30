@@ -1,0 +1,48 @@
+{
+  "schema": "cdc-release-validation/v1",
+  "version": "2.11.2",
+  "source_commit": "6af4443b1afa86085622625bee9b62a045a08a07",
+  "candidate_metadata_head": "ddb8503b3b8f2ff18009a90f4adc370965d38872",
+  "package_tree": "7a7a7faa75b7fc9160d912d8fb507c6b9573d17f",
+  "bootstrap": "37/37 PASS; bootstrap/full GREEN",
+  "package_validator": "316 files and parsed templates PASS",
+  "package_tests": "866/866 PASS",
+  "consumers": "3/3 archived snapshots GREEN; compatibility only",
+  "hosted_runs": [
+    {
+      "run_id": 36749087759,
+      "head_sha": "ddb8503b3b8f2ff18009a90f4adc370965d38872",
+      "conclusion": "success",
+      "purpose": "exact final candidate validation"
+    },
+    {
+      "run_id": 36750000629,
+      "head_sha": "ddb8503b3b8f2ff18009a90f4adc370965d38872",
+      "conclusion": "success",
+      "purpose": "repeated exact-head full-diff review-PR validation"
+    }
+  ],
+  "retained_red_green": [
+    {
+      "finding": "R1 remote failure classification",
+      "red_run": 36743680697,
+      "green_run": 36744212026
+    },
+    {
+      "finding": "malformed durable integration state",
+      "red_run": 36747351190,
+      "green_run": 36747915923
+    },
+    {
+      "finding": "raw submitted marker false CAS proof",
+      "red_run": 36748380426,
+      "green_run": 36749087759
+    }
+  ],
+  "scheduler_state": "Owner-paused; zero scheduler mutations",
+  "final_metadata_ci": {
+    "state": "requested",
+    "pull_request": 78,
+    "note": "Run ID is observed externally after this non-skip metadata commit to avoid self-reference."
+  }
+}
