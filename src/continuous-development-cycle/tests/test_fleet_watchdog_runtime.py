@@ -311,7 +311,7 @@ class FleetTests(unittest.TestCase):
     def test_wake_deadline_exhaustion_between_enable_and_run_preserves_schedule_and_remainder(self):
         instant = [NOW]
         self.backend.after_enable = lambda backend, project: instant.__setitem__(0, "2026-09-28T12:00:02Z")
-        runtime = fleet.FleetRuntime(self.store, self.backend, clock=lambda: instant[0])
+        runtime = fleet.FleetRuntime(self.store, self.backend, clock=lambda: instant[0], leader_guard=self.leader_guard)
         result = runtime.run_batch(self.projects, max_effects=20, invocation_id="deadline-wake", deadline_utc="2026-09-28T12:00:01Z")
         self.assertEqual(self.backend.effects, [("alpha", "enable")])
         self.assertTrue(result["continuation_required"])
@@ -351,6 +351,7 @@ class FleetTests(unittest.TestCase):
                 store = self.make_store("gate-" + str(index))
                 store.ref = "refs/heads/cdc/gate-" + str(index)
                 self.backend = RecordingScheduler(self.root, self.projects)
+                self.leader_guard = RecordingLeaderGuard()
                 def change(backend, project):
                     backend.live[project["project_id"]]["signals"][signal].update(patch)
                 self.backend.after_enable = change
@@ -622,11 +623,44 @@ def build(config):
         backend.enable = lambda *args, **kwargs: os._exit(19)
     return backend
 ''')
+        # Production CLI requires a real Fleet Supervisor leader state and a
+        # distinct authoritative Fleet ref on the same immutable remote identity.
+        fleet_blob = self.git("hash-object", "-w", "--stdin", cwd=self.store.repo, input="fleet\n")
+        fleet_tree = self.git("mktree", cwd=self.store.repo, input=f"100644 blob {fleet_blob}\tfleet.txt\n")
+        fleet_commit = self.store._git("commit-tree", fleet_tree, input_text="fleet head\n")
+        self.git("push", "-q", "origin", fleet_commit + ":refs/heads/cdc/fleet", cwd=self.store.repo)
+
+        leader_repo = self.root / "cli-leader"
+        leader_repo.mkdir(exist_ok=True)
+        if not (leader_repo / ".git").exists():
+            self.git("init", "-q", str(leader_repo))
+            self.git("remote", "add", "origin", str(self.remote), cwd=leader_repo)
+        leader_ref = "refs/heads/cdc/fleet-supervisor"
+        leader_store = GitDocumentStore(
+            leader_repo, "origin", leader_ref, self.store_id,
+            protected_refs=["refs/heads/cdc/fleet"])
+        owner_id = "88888888-8888-4888-8888-888888888888"
+        at = fleet.now_utc()
+        leader_state = fleet_control.initialize("owner/fleet", "refs/heads/cdc/fleet")
+        leader_state = fleet_control.acquire_record(
+            leader_state, owner_id, at,
+            {"invocation_id":"cli-invocation","automation_id":None,"conversation_id":None,
+             "execution_surface":"chat","started_at_utc":at},
+            ttl=3600)
+        leader_revision, existing_leader = leader_store.read()
+        if existing_leader is None:
+            leader_store.compare_and_swap(leader_revision, leader_state)
+
         config = self.root / "fleet.json"
-        config.write_text(json.dumps({"store": {"repo": str(self.store.repo), "remote": "origin", "coordination_ref": self.ref,
-                                                "coordination_store_id": self.store_id, "protected_refs": ["refs/heads/main"]},
-                                      "projects": self.projects, "max_effects": 2, "invocation_id": "cli-invocation",
-                                      "backend_config": {"root": str(self.root), "projects": self.projects, "crash": crash}}))
+        config.write_text(json.dumps({
+          "store": {"repo": str(self.store.repo), "remote": "origin", "coordination_ref": self.ref,
+                    "coordination_store_id": self.store_id, "protected_refs": ["refs/heads/main"]},
+          "leader_store": {"repo": str(leader_repo), "remote": "origin", "coordination_ref": leader_ref,
+                           "coordination_store_id": self.store_id, "protected_refs": ["refs/heads/cdc/fleet"]},
+          "leader": {"owner_id": owner_id, "generation": 1, "invocation_id": "cli-invocation"},
+          "projects": self.projects, "max_effects": 2, "invocation_id": "cli-invocation",
+          "backend_config": {"root": str(self.root), "projects": self.projects, "crash": crash}
+        }))
         scripts = Path(__file__).resolve().parents[1] / "scripts"
         env = dict(os.environ, PYTHONPATH=os.pathsep.join([str(self.root), str(Path(__file__).parent), str(scripts)]))
         command = [sys.executable, "-B", str(scripts / "fleet_watchdog_runtime.py"), str(config), "--backend", "local_scheduler_adapter:build"]

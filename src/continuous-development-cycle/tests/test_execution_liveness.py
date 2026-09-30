@@ -36,6 +36,6 @@ class T(unittest.TestCase):
  def test_old_running_observation_is_unknown_even_when_lease_was_renewed(self):
   r=self.owned()
   r=leasev2.renew(r,OWNER,1,"chat-a","2026-01-01T10:09:00Z",activity_ref="git:new",ttl=1200)
-  self.assertEqual(classify(r,self.runtime("running"),"2026-01-01T10:09:30Z")["state"],"unknown")
+  self.assertEqual(classify(r,self.runtime("running"),"2026-01-01T10:10:30Z")["state"],"unknown")
 
 if __name__=="__main__":unittest.main()

@@ -35,13 +35,13 @@ class T(unittest.TestCase):
   return leasev2.release(r,OWNER,1,INV_ID,"2026-01-01T10:01:04Z")
  def test_owned_invocation_cannot_final_respond(self):
   r=evaluate(INV_ID,self.owned(),continuity(False),{"owner_id":OWNER,"generation":1},None,"2026-01-01T10:02:00Z")
-  self.assertFalse(r["allowed"]);self.assertIn("lease",r["reason"])
+  self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"invocation_still_owns_exact_generation")
  def test_exact_released_generation_can_final_respond(self):
   lease=self.released();r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},receipt(lease),"2026-01-01T10:02:00Z")
   self.assertTrue(r["allowed"]);self.assertTrue(r["final_response_allowed"])
  def test_different_release_does_not_satisfy_owned_generation(self):
-  lease=self.released();bad=copy.deepcopy(lease);bad["last_release"]["generation"]=0
-  r=evaluate(INV_ID,bad,continuity(True),{"owner_id":OWNER,"generation":1},receipt(bad),"2026-01-01T10:02:00Z")
+  lease=self.released();bad_receipt=receipt(lease);bad_receipt["release"]["generation"]=0
+  r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},bad_receipt,"2026-01-01T10:02:00Z")
   self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"exact_owned_generation_release_not_proven")
  def test_pre_release_continuity_never_substitutes_for_release(self):
   lease=self.released()
