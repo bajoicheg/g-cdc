@@ -5,16 +5,16 @@
   "canonical_repository": "bajoicheg/g-cdc",
   "source_commit": "6af4443b1afa86085622625bee9b62a045a08a07",
   "package_tree": "7a7a7faa75b7fc9160d912d8fb507c6b9573d17f",
-  "status": "candidate",
+  "status": "released",
   "evidence": {
     "bootstrap": [
-      "release/evidence-2.11.1.json#bootstrap"
+      "release/evidence-2.11.2.json#release_validation.bootstrap"
     ],
     "package": [
-      "release/evidence-2.11.1.json#package"
+      "release/evidence-2.11.2.json#release_validation.package"
     ],
     "compatibility": [
-      "release/consumer-compatibility-2.11.1.json"
+      "release/consumer-compatibility-2.11.2.json"
     ],
     "fault_injection": [
       "fault-injection/scenarios.json"
