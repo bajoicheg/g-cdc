@@ -291,7 +291,17 @@ class GitLaneResultVerifierTests(unittest.TestCase):
 
         real_run = subprocess.run
         def remote_failure(args, *positional, **kwargs):
-            if isinstance(args, list) and "push" in args and "--porcelain" in args:
+            is_publication_push = (
+                isinstance(args, list)
+                and "push" in args
+                and "--porcelain" in args
+                and any(
+                    isinstance(arg, str)
+                    and arg.startswith("--force-with-lease=refs/heads/integration:")
+                    for arg in args
+                )
+            )
+            if is_publication_push:
                 return subprocess.CompletedProcess(
                     args, 1,
                     stdout=(
