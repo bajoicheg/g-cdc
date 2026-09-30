@@ -71,5 +71,6 @@
       "checkpoint_ref": "docs/work-status/current.md",
       "lease_released": true
     }
-  }
+  },
+  "release_receipt": null
 }
