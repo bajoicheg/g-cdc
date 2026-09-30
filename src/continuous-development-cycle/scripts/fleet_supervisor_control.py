@@ -72,6 +72,14 @@ def _leader(state,owner_id,generation,invocation_id,at,freshness_seconds=600):
     if now>=expiry or (now-heartbeat).total_seconds()>=freshness_seconds:raise ValueError("fleet leader lease not fresh")
     return lease
 
+def leader_binding(state,owner_id,generation,invocation_id,at,observed_fleet_head):
+    _leader(state,owner_id,generation,invocation_id,at)
+    if not isinstance(observed_fleet_head,str) or not SHA.fullmatch(observed_fleet_head):
+        raise ValueError("observed fleet head invalid")
+    return {"schema":"fleet-leader-binding/v1","fleet_repository":state["fleet_repository"],"fleet_ref":state["fleet_ref"],
+            "owner_id":owner_id,"generation":generation,"invocation_id":invocation_id,
+            "observed_fleet_head":observed_fleet_head}
+
 def _unresolved_effects(state,generation):
     return [e for e in state["effects"] if e["generation"]==generation and e["state"]!="terminal"]
 
