@@ -3,7 +3,7 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.11.2
+# Continuous Development Cycle v2.11.3
 
 ## Active execution contract — apply before recovery detail
 
@@ -336,3 +336,14 @@ When Fleet supervision has an authorized survivability runtime, compose it with 
 Protect the Fleet Supervisor itself with `scripts/watchdog_sentinel.py` when an independent scheduler capability exists. The sentinel targets only the durable `fleet-supervisor` desired-state role and may recreate/enable/wake that materialization through the same authorized survivability runtime; it is not a second Fleet controller and has no product-write authority. Keep the sentinel on an execution plane independent from the Fleet Supervisor when the host supports one. Cross-provider HA for the sentinel is deferred beyond 2.11.2.
 
 Read `references/cooperative-project-lanes-and-watchdog-survivability.md` before project-lane admission or survivability recovery.
+
+
+## CDC 2.11.3 multi-subscription ownership integrity
+
+Multiple ChatGPT subscriptions may execute the same Fleet, but Fleet-wide side effects are single-leader. Use `scripts/fleet_supervisor_control.py` on a dedicated CAS document to elect exactly one **Fleet Supervisor leader** bound to `execution-lease/v2`, the authoritative Fleet ref, generation and invocation. Standby supervisors may observe/plan or act as ordinary project executors, but they cannot emit Fleet writes, wake/repair requests or continuation-enqueue effects without the leader claim. Every Fleet effect has a one-shot durable `effect_id` and exact observed Fleet HEAD; duplicate intent is observed/reconciled, intent collision is rejected, and moved HEAD replans. Unknown/submitted effects block leader replacement. TTL alone never grants leadership takeover.
+
+For truthful status use `scripts/execution_liveness.py`. A lease owner is **not** automatically active: `active` requires exact independent runtime-running evidence plus lease freshness. Exact stopped runtime with no pending effects is `orphaned_recoverable`; stopped runtime with pending writes/guard/current-generation effects is `blocked_unknown_effects`; unproven runtime is `unknown`; no owner is `released`. Classification is evidence only and never grants takeover.
+
+Immediately before any terminal/final response use `scripts/final_response_gate.py`. If this invocation acquired a lease, the gate requires durable `last_release` for the exact owner/generation/invocation plus post-release execution-continuity evidence. A pre-release `ready` state is insufficient. This makes an orphaned owned lease a failed executable terminal check rather than a prose warning.
+
+Consumer CDC adoption is atomic. Use `scripts/consumer_adoption.py` with detached migration assembly: prepare the immutable package, lock, adapter, checkpoint and adoption/provenance paths off the shared source ref; verify the exact target package subtree; bind an exact candidate commit and fresh expected source HEAD; then perform one conditional fast-forward and exact readback. VERSION-only or metadata-only shared-ref exposure is not a valid adoption state. Read `references/multi-subscription-coordination-and-ownership.md`.
