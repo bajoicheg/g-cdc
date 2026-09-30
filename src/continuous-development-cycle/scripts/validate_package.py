@@ -305,7 +305,7 @@ def validate():
     final_gate_template = json.loads((ROOT / 'templates/final-response-gate.json').read_text())
     final_gate = evaluate_final_response_gate(final_gate_template['invocation_id'], final_gate_template['lease'],
                                               final_gate_template['continuity'], final_gate_template['owned_lease'],
-                                              final_gate_template['release_receipt'], '2026-01-01T00:00:00Z')
+                                              final_gate_template['release_receipt'], None, '2026-01-01T00:00:00Z')
     if not final_gate['allowed'] or not final_gate['final_response_allowed']:
         raise ContractError('invalid CDC 2.11.3 final-response gate template')
     validate_fleet_supervisor_control(json.loads((ROOT / 'templates/fleet-supervisor-state.json').read_text()))

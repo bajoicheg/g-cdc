@@ -111,7 +111,11 @@ class GitLeaseStore:
             raise ValueError('coordination history is absent')
         if self._git('cat-file', '-t', revision) != 'commit':
             raise ValueError('historical coordination revision must be a commit')
-        if self._git('merge-base', revision, current) != revision:
+        try:
+            base = self._git('merge-base', revision, current)
+        except ValueError:
+            raise ValueError('historical revision is not in authoritative coordination ancestry') from None
+        if base != revision:
             raise ValueError('historical revision is not in authoritative coordination ancestry')
         if self._git('ls-tree', '--name-only', revision).splitlines() != ['lease.json']:
             raise ValueError('historical coordination tree must contain only lease.json')

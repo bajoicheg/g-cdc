@@ -169,7 +169,8 @@ class GitStoreTests(unittest.TestCase):
         second=store.compare_and_swap(first,changed)
         self.assertEqual(store.read_revision(first),self.record)
         self.assertEqual(store.read_revision(second),changed)
-        unrelated=self.git(self.checkouts[0],'commit-tree',self.git(self.checkouts[0],'rev-parse',second+'^{tree}'),input='unrelated\n')
+        tree=self.git(self.checkouts[0],'rev-parse',second+'^{tree}')
+        unrelated=store._git('commit-tree',tree,input='unrelated\n')
         with self.assertRaisesRegex(ValueError,'authoritative coordination ancestry'):
             store.read_revision(unrelated)
 
