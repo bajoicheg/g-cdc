@@ -1,0 +1,44 @@
+{
+  "schema": "systematic-rca/v1",
+  "anomaly_id": "vendored-package-external-fault-fixture-2026-09-30",
+  "material": true,
+  "anomaly_class": "distribution_contract",
+  "fix_key": "vendored-package-self-contained-regressions",
+  "problem": "An exact CDC 2.11.2 package subtree passed validate_package.py in a real consumer, but its full 866-test vendored suite failed because test_v2110_guidance.py reads fault-injection/scenarios.json outside the package using ROOT.parent.parent. In canonical g-cdc that path reaches the repository root; under .agents/skills/continuous-development-cycle it reaches .agents/, where the fixture is not part of the released package.",
+  "evidence_refs": [
+    "github:bajoicheg-private/g-ad-control:actions:36760046039",
+    "github:bajoicheg-private/g-ad-control:source:733ce9a299a7ee7ff32854467bf5a102cf2c317f",
+    "git-tree:7a7a7faa75b7fc9160d912d8fb507c6b9573d17f",
+    "src/continuous-development-cycle/tests/test_v2110_guidance.py#test_managed_pool_fault_regressions_are_retained",
+    "fault-injection/scenarios.json"
+  ],
+  "hypotheses": [
+    {
+      "id": "consumer-package-drift",
+      "statement": "The consumer copied an incomplete or modified CDC package.",
+      "discriminating_test": "Compute the vendored .agents/skills/continuous-development-cycle subtree and compare it with the released 2.11.2 package tree; run the package validator.",
+      "observed_result": "The subtree was exactly 7a7a7faa75b7fc9160d912d8fb507c6b9573d17f and validate_package.py passed: continuous-development-cycle 2.11.2, 316 files and parsed templates.",
+      "supported": false
+    },
+    {
+      "id": "consumer-runtime-environment",
+      "statement": "The failure is caused by a consumer-specific Python/runtime difference.",
+      "discriminating_test": "Inspect the failing traceback and the test's fixture resolution expression rather than the Python runtime.",
+      "observed_result": "The sole error is deterministic FileNotFoundError for .agents/fault-injection/scenarios.json, produced by ROOT.parent.parent from the vendored package path; 865 other tests passed under the same runtime.",
+      "supported": false
+    },
+    {
+      "id": "repo-external-test-fixture-leak",
+      "statement": "A released package test depends on a canonical-repository fixture that is outside the package transport boundary, so the test suite is not self-contained under vendoring.",
+      "discriminating_test": "Evaluate ROOT.parent.parent in canonical and vendored layouts and compare the release package inventory with fault-injection/scenarios.json.",
+      "observed_result": "Canonical layout resolves to the repository root containing fault-injection/scenarios.json; consumer layout resolves to .agents/. The fixture is not in the 2.11.2 package tree, yet the retained package test requires it.",
+      "supported": true
+    }
+  ],
+  "selected_hypothesis_id": "repo-external-test-fixture-leak",
+  "correction": "Make all released package regressions self-contained: package any fixture required by package tests and resolve it from the package root, or replace the test dependency with a package-contained equivalent. Add a clean vendored-layout regression that runs the complete package test suite without canonical-repository files outside the package.",
+  "defense_in_depth": "Extend release/consumer validation so at least one archived consumer executes the full vendored package suite in a layout containing no canonical repo-root fixtures; fail release validation on any package test that reaches outside the package boundary for required data.",
+  "invariant": "A released CDC package that passes its package validator must carry every non-generated fixture required to execute its retained package test suite in a consumer vendored layout; package tests must not require canonical-repository files outside the released package tree.",
+  "existing_fix_keys": [],
+  "sensitive_context_detected": false
+}
