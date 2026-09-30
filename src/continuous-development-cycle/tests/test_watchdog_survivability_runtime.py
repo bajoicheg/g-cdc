@@ -106,6 +106,32 @@ class WatchdogSurvivabilityRuntimeTests(unittest.TestCase):
         self.assertEqual(current["canonical_object_id"], "wd-created-1")
         self.assertEqual([e[0] for e in self.backend.effects], ["create"])
 
+    def test_stale_idle_object_without_quiescence_proof_does_not_bump_generation_or_create(self):
+        store = MemoryStore()
+        backend = RecordingBackend(inventory([obj("wd-old", generation=6, execution_state="idle")]))
+        runtime = runtime_mod.WatchdogSurvivabilityRuntime(store, backend, clock=lambda: NOW)
+        runtime.register(desired())
+        result = runtime.reconcile(desired()["binding"])
+        current = runtime.snapshot()["entries"][runtime_mod.binding_key(desired()["binding"])]["desired"]
+        self.assertEqual(result["outcome"], "no_effect")
+        self.assertEqual(current["generation"], 7)
+        self.assertEqual(backend.effects, [])
+
+    def test_recreate_race_does_not_bump_generation_before_fresh_execution_safety_recheck(self):
+        store = MemoryStore()
+        backend = RecordingBackend(inventory([]))
+        def race(other, reads):
+            if reads == 2:
+                other.inventory["objects"] = [obj("wd-old", generation=6, execution_state="running")]
+        backend.before_observe = race
+        runtime = runtime_mod.WatchdogSurvivabilityRuntime(store, backend, clock=lambda: NOW)
+        runtime.register(desired(canonical_object_id=None))
+        result = runtime.reconcile(desired()["binding"])
+        current = runtime.snapshot()["entries"][runtime_mod.binding_key(desired()["binding"])]["desired"]
+        self.assertEqual(result["outcome"], "post_claim_gate_denied")
+        self.assertEqual(current["generation"], 7)
+        self.assertEqual(backend.effects, [])
+
     def test_lost_create_reply_retains_generation_and_never_replays_create(self):
         self.backend.lose_create_reply = True
         first = self.runtime.reconcile(desired()["binding"])
