@@ -1,0 +1,17 @@
+{
+  "schema": "rca-feedback-disposition/v1",
+  "anomaly_id": "fleet-continuity-blocker-binding-mismatch-2026-10-01",
+  "fix_key": "schema-typed-checkpoint-migration",
+  "authorizes_roadmap_write": false,
+  "authorizes_product_write": false,
+  "action": "REINFORCE_EXISTING",
+  "roadmap_payload": {
+    "problem": "A durable BLOCKED continuity artifact carried terminal_state.blocker fields that did not match its blocker_proof, so the released execution_continuity validator would reject the terminal boundary.",
+    "fix": "Reinforce schema-typed checkpoint/finalization construction: derive all coupled BLOCKED terminal fields from one blocker_proof object and validate execution_continuity/Terminal-State v2 before persisting the artifact. Add a regression for code/evidence mismatch.",
+    "invariant": "Durable terminal continuity is internally bound and validator-valid at commit time; free-form or independently copied blocker fields cannot be persisted as terminal evidence.",
+    "evidence_refs": [
+      "bajoicheg-private/g-supervisor:cdc/fleet:fleet/continuity-2.11.2.json:pre-fix",
+      "src/continuous-development-cycle/scripts/execution_continuity.py:blocker_proof_binding_mismatch"
+    ]
+  }
+}
