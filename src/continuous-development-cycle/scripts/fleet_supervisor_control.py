@@ -10,6 +10,7 @@ EFFECT_SCHEMA="fleet-side-effect/v1"
 KINDS={"fleet_write","project_wake","scheduler_repair","continuation_enqueue"}
 EFFECT_STATES={"claimed","submitted","unknown","terminal"}
 SHA=re.compile(r"^[0-9a-f]{40}$")
+DIGEST=re.compile(r"^sha256:[0-9a-f]{64}$")
 
 def _time(v,n):
     if not isinstance(v,str) or not v.endswith("Z"):raise ValueError(n+" must be UTC Z timestamp")
@@ -33,7 +34,9 @@ def validate_effect(e):
     fields={"schema","effect_id","kind","target","intent_digest","owner_id","generation","invocation_id",
             "observed_fleet_head","state","claimed_at_utc","receipt_ref","outcome"}
     if not isinstance(e,dict) or set(e)!=fields or e.get("schema")!=EFFECT_SCHEMA:raise ValueError("fleet effect invalid")
-    for n in ("effect_id","target","owner_id","invocation_id","intent_digest"):_text(e[n],n)
+    for n in ("target","owner_id","invocation_id"):_text(e[n],n)
+    if not isinstance(e["effect_id"],str) or not DIGEST.fullmatch(e["effect_id"]):raise ValueError("effect_id must be sha256")
+    if not isinstance(e["intent_digest"],str) or not DIGEST.fullmatch(e["intent_digest"]):raise ValueError("intent_digest must be sha256")
     if e["kind"] not in KINDS:raise ValueError("effect kind invalid")
     if e["state"] not in EFFECT_STATES:raise ValueError("effect state invalid")
     if type(e["generation"]) is not int or e["generation"]<1:raise ValueError("effect generation invalid")
@@ -152,7 +155,9 @@ def update_effect_record(state,owner_id,generation,invocation_id,at,effect_id,ne
 def validate_effect_observation(o):
     fields={"schema","effect_id","intent_digest","lookup_complete","observed_at_utc","state","receipt_ref","outcome","evidence_ref"}
     if not isinstance(o,dict) or set(o)!=fields or o.get("schema")!="fleet-effect-observation/v1":raise ValueError("effect observation invalid")
-    for n in ("effect_id","intent_digest","evidence_ref"):_text(o[n],n)
+    _text(o["evidence_ref"],"evidence_ref")
+    if not isinstance(o["effect_id"],str) or not DIGEST.fullmatch(o["effect_id"]):raise ValueError("effect observation id invalid")
+    if not isinstance(o["intent_digest"],str) or not DIGEST.fullmatch(o["intent_digest"]):raise ValueError("effect observation intent digest invalid")
     if type(o["lookup_complete"]) is not bool:raise ValueError("effect lookup_complete invalid")
     _time(o["observed_at_utc"],"effect observation time")
     if o["state"] not in {"running","terminal","not_found","unknown"}:raise ValueError("effect observation state invalid")
