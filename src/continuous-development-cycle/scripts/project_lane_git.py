@@ -384,6 +384,24 @@ class GitLaneIntegrationPublisher(GitLaneResultVerifier):
                 continue
         raise ValueError("publication attempt journal CAS contention")
 
+    def _porcelain_proves_explicit_rejection(self, output):
+        if not isinstance(output, str):
+            return False
+        target_suffix = ":" + self.source_ref
+        for line in output.splitlines():
+            parts = line.split("\t", 2)
+            if len(parts) != 3:
+                continue
+            flag, refspec, summary = parts
+            if flag != "!" or not refspec.endswith(target_suffix):
+                continue
+            status = summary.strip().casefold()
+            return (
+                status.startswith("[rejected]")
+                or status.startswith("[remote rejected]")
+            )
+        return False
+
     def _push_cas(self, observed, intended):
         config, alias = isolated_remote_args(self.repo, self.remote, self.remote_id)
         env = git_object_environment(GIT_TERMINAL_PROMPT="0")
@@ -398,12 +416,7 @@ class GitLaneIntegrationPublisher(GitLaneResultVerifier):
         except (OSError, subprocess.SubprocessError):
             raise _PublicationUnknown("conditional publication outcome unknown") from None
         if result.returncode:
-            diagnostic = (result.stdout + "\n" + result.stderr).casefold()
-            explicit_rejection = any(marker in diagnostic for marker in (
-                "[rejected]", "stale info", "non-fast-forward", "fetch first",
-                "remote rejected", "failed to push some refs",
-            ))
-            if explicit_rejection:
+            if self._porcelain_proves_explicit_rejection(result.stdout):
                 raise _PublicationRejected("conditional publication was explicitly rejected")
             raise _PublicationUnknown("conditional publication outcome unknown")
         return True
