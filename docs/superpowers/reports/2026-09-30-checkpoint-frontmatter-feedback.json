@@ -1,0 +1,17 @@
+{
+  "schema": "rca-feedback-disposition/v1",
+  "anomaly_id": "checkpoint-frontmatter-direct-edit-2026-09-30",
+  "fix_key": "checkpoint-builder-precommit-validation",
+  "authorizes_roadmap_write": false,
+  "authorizes_product_write": false,
+  "action": "REINFORCE_EXISTING",
+  "roadmap_payload": {
+    "problem": "A live CDC checkpoint was made invalid by a direct Markdown splice inside YAML frontmatter.",
+    "fix": "Use the schema-aware checkpoint builder or equivalent parsed update, and validate exact final checkpoint bytes after all prose edits before lease release.",
+    "invariant": "CDC never releases ownership from checkpoint bytes that have not been parsed and validated in their exact final form.",
+    "evidence_refs": [
+      "github:bajoicheg-private/g-ad-control:actions:36762878730",
+      "github:bajoicheg-private/g-ad-control:actions:36763362845"
+    ]
+  }
+}
