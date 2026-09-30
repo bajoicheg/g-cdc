@@ -185,6 +185,48 @@ class ProjectLaneRegistryBindingTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "lane registry lane"):
             coordinator.snapshot()
 
+    def test_malformed_integration_queue_fails_before_claim_mutation(self):
+        from project_lanes import LaneClaim, LaneKind
+
+        store = MemoryStore()
+        safe_evidence = {
+            "safe": True, "legacy_lease": "released", "external_guard": "none",
+            "legacy_mode_disabled": True, "evidence_ref": "legacy:safe"}
+        coordinator = runtime.ProjectLaneCoordinator(
+            store, config(), migration_verifier=lambda observation: dict(safe_evidence))
+        coordinator.establish_migration_gate({"legacy": "observed"})
+
+        worker = LaneClaim(
+            "worker", "worker-inv", LaneKind.WORKER, "a" * 40,
+            "/tmp/worker", "cdc/worker", write_paths=frozenset({"src/a"}),
+            executor_id="worker-executor", role="writer")
+        integrator = LaneClaim(
+            "integrator", "integrator-inv", LaneKind.INTEGRATOR, "a" * 40,
+            "/tmp/integrator", "main", executor_id="integrator-executor",
+            role="integrator")
+        self.assertTrue(coordinator.admit(worker, generation=1)["admitted"])
+        self.assertTrue(coordinator.admit(integrator, generation=1)["admitted"])
+
+        # A durable queue item that could never be produced by record_result()
+        # must be rejected at the read boundary, before claim_integration() can
+        # turn malformed persisted state into a new authoritative mutation.
+        store.value["integration_queue"] = [{
+            "lane_id": "worker",
+            "result_commit": "b" * 40,
+        }]
+        with self.assertRaisesRegex(ValueError, "integration|queue|registry"):
+            coordinator.claim_integration(
+                "worker", result_commit="b" * 40,
+                integrator_lane_id="integrator",
+                integrator_invocation_id="integrator-inv",
+                integrator_generation=1,
+                integrator_executor_id="integrator-executor",
+                observed_shared_head="a" * 40,
+                intended_integrated_head="b" * 40,
+            )
+        self.assertEqual(store.value["integration_intents"], {})
+        self.assertFalse(store.value["lanes"]["integrator"]["pending_effects"])
+
     def test_configuration_digest_is_deterministic(self):
         left = config()
         right = config()
