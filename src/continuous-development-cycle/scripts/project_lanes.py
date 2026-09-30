@@ -15,6 +15,7 @@ except ModuleNotFoundError:
 
 SHA = re.compile(r"(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 INVALID_REF = re.compile(r"[\x00-\x20\x7f~^:?*\[\\]")
+READ_ONLY_ROLES = frozenset({"read_only", "read-only", "review", "observer"})
 
 
 class LaneKind(str, Enum):
@@ -43,7 +44,11 @@ class LaneClaim:
 
     @property
     def is_writer(self):
-        return bool(self.write_paths) or self.kind == LaneKind.INTEGRATOR
+        if self.kind == LaneKind.INTEGRATOR:
+            return True
+        if self.kind == LaneKind.REVIEW or self.role in READ_ONLY_ROLES:
+            return False
+        return bool(self.write_paths)
 
 
 def _text(value, name):
@@ -68,6 +73,17 @@ def validate_claim(claim):
         raise ValueError("branch must be a safe Git heads ref/name")
     if not isinstance(claim.kind, LaneKind):
         raise ValueError("lane kind invalid")
+    if claim.kind == LaneKind.REVIEW:
+        if claim.write_paths:
+            raise ValueError("review lane cannot declare write_paths")
+        if claim.role not in READ_ONLY_ROLES:
+            raise ValueError("review lane requires a read-only review/observer role")
+    if claim.role in READ_ONLY_ROLES and claim.write_paths:
+        raise ValueError("read-only role cannot declare write_paths")
+    if claim.kind == LaneKind.INTEGRATOR and claim.role != "integrator":
+        raise ValueError("integrator lane requires integrator role")
+    if claim.role == "integrator" and claim.kind != LaneKind.INTEGRATOR:
+        raise ValueError("integrator role requires integrator lane kind")
     if not isinstance(claim.source_head, str) or not SHA.fullmatch(claim.source_head):
         raise ValueError("source_head must be an exact Git commit")
     for collection, name in ((claim.read_paths, "read_paths"), (claim.write_paths, "write_paths")):
@@ -91,8 +107,14 @@ def paths_overlap(left, right):
     return any(overlaps(a, b) for a in left.write_paths for b in right.write_paths)
 
 
-def _branch_key(branch):
+def branch_key(branch):
+    if not isinstance(branch, str):
+        raise ValueError("branch must be text")
     return portable_path_key(branch.removeprefix("refs/heads/"))
+
+
+def _branch_key(branch):
+    return branch_key(branch)
 
 
 def _worktree_key(path):
