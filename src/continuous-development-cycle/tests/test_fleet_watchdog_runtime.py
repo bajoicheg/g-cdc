@@ -46,6 +46,7 @@ class RecordingSurvivability:
 class RecordingLeaderGuard:
     def __init__(self):
         self.calls=[]
+        self.head="f"*40
 
     def binding(self, invocation_id):
         self.calls.append(invocation_id)
@@ -56,7 +57,7 @@ class RecordingLeaderGuard:
             "owner_id":"66666666-6666-4666-8666-666666666666",
             "generation":7,
             "invocation_id":invocation_id,
-            "observed_fleet_head":"f"*40,
+            "observed_fleet_head":self.head,
         }
 
 
@@ -278,6 +279,14 @@ class FleetTests(unittest.TestCase):
         result = self.runtime().run_batch(self.projects, max_effects=20, invocation_id="deadline-wake", deadline_utc="2026-09-28T11:59:59Z")
         self.assertEqual(len(result["assessments"]), 1)
         self.assertEqual(self.backend.effects, [])
+        self.assertTrue(result["continuation_required"])
+
+    def test_fleet_head_change_between_effects_stops_old_batch(self):
+        self.backend.live["alpha"]["signals"]["invocation"].update(state="idle", invocation_id=None)
+        self.backend.after_enable=lambda backend,project:setattr(self.leader_guard,"head","e"*40)
+        result=self.batch(budget=2,invocation="head-change-wake")
+        self.assertEqual(self.backend.effects,[("alpha","enable")])
+        self.assertEqual(result["outcomes"][fleet.binding_key(self.projects[0])],"fleet_head_or_leader_changed")
         self.assertTrue(result["continuation_required"])
 
     def test_wake_deadline_exhaustion_between_enable_and_run_preserves_schedule_and_remainder(self):
