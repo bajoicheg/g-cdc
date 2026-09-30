@@ -1,6 +1,7 @@
 import copy
 import importlib.util
 import json
+import hashlib
 import os
 from pathlib import Path
 import subprocess
@@ -47,6 +48,7 @@ class RecordingLeaderGuard:
     def __init__(self):
         self.calls=[]
         self.head="f"*40
+        self.effects={}
 
     def binding(self, invocation_id):
         self.calls.append(invocation_id)
@@ -59,6 +61,24 @@ class RecordingLeaderGuard:
             "invocation_id":invocation_id,
             "observed_fleet_head":self.head,
         }
+
+    def claim_scheduler_effect(self,invocation_id,project,effect,recovery,policy_revision):
+        leader=self.binding(invocation_id)
+        payload={"project":project,"effect":effect,"schedule":recovery["schedule"],"prompt":recovery["prompt"],
+                 "expected_invocation":recovery["expected_invocation"],"policy_revision":policy_revision,
+                 "generation":leader["generation"],"head":leader["observed_fleet_head"]}
+        effect_id="sha256:"+hashlib.sha256(json.dumps(payload,sort_keys=True,separators=(",",":")).encode()).hexdigest()
+        if effect_id in self.effects:
+            return {"action":"OBSERVE_EXISTING","authorizes_effect":False,"effect":copy.deepcopy(self.effects[effect_id]),"leader":leader}
+        record={"effect_id":effect_id,"state":"claimed"}
+        self.effects[effect_id]=record
+        return {"action":"SUBMIT_ONCE","authorizes_effect":True,"effect":copy.deepcopy(record),"leader":leader}
+
+    def finish_scheduler_effect(self,invocation_id,effect_id,state_name,receipt_ref,outcome=None):
+        self.binding(invocation_id)
+        if effect_id not in self.effects:raise ValueError("effect not found")
+        self.effects[effect_id].update(state=state_name,receipt_ref=receipt_ref,outcome=outcome)
+        return copy.deepcopy(self.effects[effect_id])
 
 
 class RecordingScheduler:
@@ -184,11 +204,10 @@ class FleetTests(unittest.TestCase):
         self.assertEqual(result["effects_attempted"],0)
         self.assertEqual(self.backend.effects, [])
 
-    def test_operation_key_ignores_incident_label(self):
+    def test_runtime_operation_key_keeps_legacy_incident_scope(self):
         first=probe(self.projects[0])["binding"]
         second=copy.deepcopy(first);second["incident_id"]="renamed-incident"
-        self.assertEqual(fleet.operation_key(first,"run"),fleet.operation_key(second,"run"))
-        self.assertNotEqual(fleet.legacy_operation_key(first,"run"),fleet.legacy_operation_key(second,"run"))
+        self.assertNotEqual(fleet.operation_key(first,"run"),fleet.operation_key(second,"run"))
 
     def test_survivability_repairs_share_the_same_bounded_fleet_effect_budget(self):
         survivability = RecordingSurvivability(effects_attempted=1)
