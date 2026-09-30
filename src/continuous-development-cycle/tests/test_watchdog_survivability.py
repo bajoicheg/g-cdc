@@ -82,6 +82,13 @@ class WatchdogSurvivabilityTests(unittest.TestCase):
         self.assertFalse(result["recovery_eligible"])
         self.assertEqual(result["stale_object_ids"], ["wd-old"])
 
+    def test_missing_canonical_idle_label_without_quiescence_proof_blocks_replacement(self):
+        idle_old = obj("wd-old", generation=6, execution_state="idle")
+        result = survivability.assess(desired(), inventory([idle_old]), now=NOW)
+        self.assertEqual(result["action"], "OBSERVE")
+        self.assertFalse(result["recovery_eligible"])
+        self.assertEqual(result["next_generation"], 7)
+
     def test_missing_required_watchdog_requests_recreation_with_new_generation(self):
         result = survivability.assess(desired(canonical_object_id=None), inventory([]), now=NOW)
         self.assertEqual(result["overall"], "MISSING")
