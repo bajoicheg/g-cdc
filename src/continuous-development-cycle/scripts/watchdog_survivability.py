@@ -78,7 +78,7 @@ def validate_desired(value):
 
 def _validate_object(value):
     expected = {"object_id", "generation", "enabled", "schedule", "template_digest", "last_run_at_utc",
-                "consecutive_failures", "execution_state"}
+                "consecutive_failures", "execution_state", "quiescence_evidence"}
     if not isinstance(value, dict) or set(value) != expected:
         raise ValueError("invalid watchdog runtime object")
     _text(value["object_id"], "object_id")
@@ -93,6 +93,15 @@ def _validate_object(value):
         raise ValueError("consecutive_failures must be nonnegative")
     if value["execution_state"] not in {"idle", "running", "failed", "unknown"}:
         raise ValueError("unsupported watchdog execution_state")
+    proof = value["quiescence_evidence"]
+    if proof is not None:
+        if (not isinstance(proof, dict)
+                or set(proof) != {"object_id", "generation", "quiescent", "evidence_ref"}
+                or proof["object_id"] != value["object_id"]
+                or proof["generation"] != value["generation"]
+                or proof["quiescent"] is not True):
+            raise ValueError("watchdog quiescence evidence must bind exact object/generation")
+        _text(proof["evidence_ref"], "quiescence_evidence.evidence_ref")
     return value
 
 
@@ -147,6 +156,18 @@ def _terminal(desired, inventory, fresh):
             and isinstance(proof["evidence_ref"], str) and bool(proof["evidence_ref"].strip()))
 
 
+def replacement_quiescence_proven(inventory):
+    validate_inventory(inventory)
+    return all(
+        item["execution_state"] in {"idle", "failed"}
+        and isinstance(item["quiescence_evidence"], dict)
+        and item["quiescence_evidence"]["quiescent"] is True
+        and item["quiescence_evidence"]["object_id"] == item["object_id"]
+        and item["quiescence_evidence"]["generation"] == item["generation"]
+        for item in inventory["objects"]
+    )
+
+
 def execution_is_current(desired, runtime_object):
     validate_desired(desired)
     _validate_object(runtime_object)
@@ -156,6 +177,51 @@ def execution_is_current(desired, runtime_object):
             and desired["generation"] == runtime_object["generation"]
             and desired["schedule"] == runtime_object["schedule"]
             and desired["template_digest"] == runtime_object["template_digest"])
+
+
+def invocation_fence(desired, inventory, *, object_id, generation, now=None, max_age_seconds=120):
+    validate_desired(desired)
+    validate_inventory(inventory)
+    if desired["binding"] != inventory["binding"]:
+        raise ValueError("desired state and runtime inventory binding disagree")
+    if type(max_age_seconds) is not int or max_age_seconds < 0:
+        raise ValueError("max_age_seconds must be nonnegative")
+    instant = _utc(now or now_utc(), "now")
+    fresh = (_fresh(inventory["observed_at_utc"], instant, max_age_seconds)
+             and _fresh(inventory["safety"]["observed_at_utc"], instant, max_age_seconds))
+    safety = inventory["safety"]
+    allowed = (
+        fresh
+        and isinstance(object_id, str)
+        and type(generation) is int
+        and desired["canonical_object_id"] == object_id
+        and desired["generation"] == generation
+        and desired["required"]
+        and desired["desired_state"] == "enabled"
+        and desired["owner_stop_evidence"] is None
+        and inventory["project"]["state"] == "runnable"
+        and safety["owner"] == "released"
+        and safety["guard"] == "released"
+        and safety["external"] in {"none", "terminal_reconciled"}
+        and safety["pause"] == "running"
+        and safety["owner_pause_evidence"] is None
+    )
+    runtime_object = next((item for item in inventory["objects"]
+                           if item["object_id"] == object_id), None)
+    if (not allowed or runtime_object is None
+            or runtime_object["generation"] != generation
+            or runtime_object["execution_state"] != "running"
+            or not execution_is_current(desired, runtime_object)):
+        allowed = False
+    return {
+        "binding": dict(desired["binding"]),
+        "object_id": object_id,
+        "generation": generation,
+        "may_enter_cdc": bool(allowed),
+        "authorizes_product_write": False,
+        "authorizes_external_start": False,
+        "authorizes_lease_acquire": False,
+    }
 
 
 def _result(desired, overall, action, *, eligible=False, next_generation=None, canonical_object_id=None,
@@ -213,15 +279,11 @@ def assess(desired, inventory, *, now=None, max_age_seconds=120):
     if desired["canonical_object_id"] is None and len(matching) > 1:
         return _result(desired, "DUPLICATE", "OBSERVE", reasons=["multiple current materializations prevent canonical adoption"])
     if canonical is None:
-        active_noncanonical = [
-            item["object_id"] for item in objects
-            if item["execution_state"] in {"running", "unknown"}
-        ]
-        if active_noncanonical:
+        if objects and not replacement_quiescence_proven(inventory):
             return _result(
                 desired, "DUPLICATE", "OBSERVE",
                 stale_object_ids=[item["object_id"] for item in objects],
-                reasons=["canonical watchdog is missing but another materialization may still execute"])
+                reasons=["canonical watchdog is missing but replacement lacks exact independently observed quiescence evidence"])
         return _result(desired, "MISSING", "RECREATE", eligible=True, next_generation=desired["generation"] + 1,
                        stale_object_ids=[item["object_id"] for item in objects], reasons=["required canonical watchdog object is missing"])
     extras = [item["object_id"] for item in objects
@@ -253,9 +315,17 @@ def assess(desired, inventory, *, now=None, max_age_seconds=120):
         return _result(desired, "HEALTHY", "NONE", canonical_object_id=canonical["object_id"],
                        reasons=["watchdog invocation is already running; duplicate wake suppressed"])
     if config_drift:
+        if not replacement_quiescence_proven(inventory):
+            return _result(desired, "CONFIG_DRIFT", "OBSERVE",
+                           canonical_object_id=canonical["object_id"],
+                           reasons=["configuration replacement waits for exact independently observed quiescence evidence"])
         return _result(desired, "CONFIG_DRIFT", "RECREATE", eligible=True, next_generation=desired["generation"] + 1,
                        canonical_object_id=canonical["object_id"], reasons=["canonical watchdog configuration disagrees with desired state"])
     if canonical["consecutive_failures"] >= policy["flap_threshold"]:
+        if not replacement_quiescence_proven(inventory):
+            return _result(desired, "FLAPPING", "OBSERVE",
+                           canonical_object_id=canonical["object_id"],
+                           reasons=["flapping replacement waits for exact independently observed quiescence evidence"])
         return _result(desired, "FLAPPING", "RECREATE", eligible=True, next_generation=desired["generation"] + 1,
                        canonical_object_id=canonical["object_id"], reasons=["watchdog reached configured failure threshold"])
     if not canonical["enabled"]:
