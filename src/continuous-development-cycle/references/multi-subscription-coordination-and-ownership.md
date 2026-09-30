@@ -27,7 +27,7 @@ Liveness classification is evidence only and never authorizes takeover.
 
 ## Final-response boundary
 
-Use `scripts/final_response_gate.py` immediately before a CDC terminal/final response. An invocation that acquired a lease must prove that the exact owner/generation/invocation appears in `last_release`, and execution continuity must be in post-release terminal state. Pre-release `ready` evidence is insufficient.
+Use `scripts/final_response_gate.py` immediately before a CDC terminal/final response. An invocation that acquired a lease must retain an immutable `execution-release-receipt/v1` from the exact release revision, binding owner/generation/invocation and checkpoint. The current lease's mutable `last_release` is insufficient because a successor generation may overwrite it before the prior chat emits its final response. Execution continuity must be in post-release terminal state. Pre-release `ready` evidence is insufficient.
 
 This gate makes the orphan-lease defect a failed executable check instead of a prose-only instruction. Host runtimes that cannot intercept a final channel must still run/persist this gate as the required terminal evidence; inability to enforce a host channel is a capability boundary, not permission to report a released state.
 
