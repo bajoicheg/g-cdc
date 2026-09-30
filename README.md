@@ -2,8 +2,8 @@
 
 `bajoicheg/g-cdc` is the canonical source for CDC.
 
-CDC **2.11.2** releases cooperative project lanes and watchdog survivability on the released 2.11.1 liveness foundation. Disjoint writers can coexist under portable claims, one integrator owns shared-ref publication, durable publication attempts preserve CAS provenance, and watchdog materializations are generation-fenced and owner-pause aware. See [release evidence](release/evidence-2.11.2.json).
+CDC **2.11.3** is an owner-authorized candidate developed under released CDC 2.11.2. It adds multi-subscription Fleet Supervisor leader fencing, one-shot Fleet effects, truthful execution liveness, fail-closed final-response ownership checks, and atomic consumer adoption publication. See issue #82 and the 2.11.3 design/plan under `docs/superpowers`.
 
-The 2.11 code release line is complete. Live Fleet authority convergence and safe consumer adoption remain separate rollout work; owner-paused schedulers remain paused.
+CDC 2.11.2 remains the current immutable released development authority until 2.11.3 independently passes bootstrap, package, fault, review and consumer gates and receives its own release identity. Owner-paused schedulers remain paused.
 
-Source release does not deploy a package. Personal activation requires runtime-byte readback after release; the currently retained verified installation is recorded in `release/active-package-acceptance-2.11.0.json`. Consumer compatibility snapshots are evidence only and do not update consumers' vendored packages.
+Source release does not deploy a package. Consumer compatibility snapshots are evidence only and do not update consumers' vendored packages.
