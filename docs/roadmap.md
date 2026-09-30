@@ -380,6 +380,8 @@ The former 13 future candidates contained 12 implemented capabilities and one re
 | Convergence vector | 2.9.0 | `convergence_vector.py` |
 | Terminal-provider reconciliation | 2.9.1; operational liveness integration in 2.11.1 | `provider_reconciliation.py` |
 
+Evidence reinforcement — 2026-10-01: a live Fleet `execution-continuity/v1` BLOCKED artifact carried a `terminal_state.blocker` code/evidence set that differed from its embedded `blocker_proof`, so released `execution_continuity.py` would reject the terminal boundary. Reinforce the existing schema-typed checkpoint migration control: derive all coupled terminal fields from one typed proof object and run execution-continuity/Terminal-State validation before durable commit; retain a mismatch regression.
+
 Remaining feature: **registry-driven watchdog target resolution**, included in 2.11.1. Resolve the live `cdc/fleet` registry and target; project prompts load current repository policy, lock, checkpoint and coordination. Historical prompt targets never override live provenance.
 
 Active recovery work:
