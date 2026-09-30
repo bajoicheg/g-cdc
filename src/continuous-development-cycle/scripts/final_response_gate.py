@@ -17,8 +17,8 @@ def evaluate(invocation_id,lease,continuity,owned_lease=None,now_utc=None):
         if not isinstance(owned_lease,dict) or set(owned_lease)!={"owner_id","generation"}:
             raise ValueError("owned_lease invalid")
         if type(owned_lease["generation"]) is not int or owned_lease["generation"]<0:raise ValueError("owned generation invalid")
-        if lease["owner_id"] is not None:
-            return {**common,"allowed":False,"final_response_allowed":False,"reason":"invocation_still_owns_or_lease_still_owned"}
+        if lease["owner_id"]==owned_lease["owner_id"] and lease["generation"]==owned_lease["generation"]:
+            return {**common,"allowed":False,"final_response_allowed":False,"reason":"invocation_still_owns_exact_generation"}
         rel=lease.get("last_release")
         exact=bool(rel and rel.get("owner_id")==owned_lease["owner_id"] and rel.get("generation")==owned_lease["generation"]
                    and rel.get("invocation_id")==invocation_id)
