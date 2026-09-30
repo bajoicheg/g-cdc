@@ -891,6 +891,22 @@
         "partial_migration_ref_move",
         "version_only_integration"
       ]
+    },
+    {
+      "id": "fleet-runtime-unfenced-effect",
+      "fault": "scheduler_effect_budget_positive_without_exact_fleet_supervisor_leader_binding",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "duplicate_scheduler_effect"
+      ]
+    },
+    {
+      "id": "fleet-incident-rename-replay",
+      "fault": "same_project_watchdog_effect_is_reissued_under_a_new_incident_label",
+      "expected": "OBSERVE_EXISTING",
+      "forbidden_authorities": [
+        "duplicate_scheduler_effect"
+      ]
     }
   ]
 }
