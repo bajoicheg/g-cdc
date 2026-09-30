@@ -855,6 +855,42 @@
         "product_write",
         "release"
       ]
+    },
+    {
+      "id": "fleet-supervisor-active-active-split-brain",
+      "fault": "two_subscriptions_attempt_fleet_side_effect_leadership_from_same_coordination_revision",
+      "expected": "SINGLE_CAS_LEADER",
+      "forbidden_authorities": [
+        "dual_fleet_leader",
+        "duplicate_scheduler_effect"
+      ]
+    },
+    {
+      "id": "fleet-side-effect-replay",
+      "fault": "same_fleet_effect_id_is_requested_again_after_durable_claim",
+      "expected": "OBSERVE_EXISTING",
+      "forbidden_authorities": [
+        "duplicate_external_start",
+        "duplicate_scheduler_effect"
+      ]
+    },
+    {
+      "id": "orphan-lease-owner-only-liveness",
+      "fault": "lease_owner_exists_but_exact_runtime_state_is_not_independently_proven",
+      "expected": "UNKNOWN_NOT_ACTIVE",
+      "forbidden_authorities": [
+        "ghost_active_worker",
+        "takeover_by_ttl"
+      ]
+    },
+    {
+      "id": "consumer-adoption-partial-shared-ref",
+      "fault": "target_version_metadata_is_prepared_before_full_package_policy_checkpoint_provenance_convergence",
+      "expected": "KEEP_SHARED_REF_UNCHANGED",
+      "forbidden_authorities": [
+        "partial_migration_ref_move",
+        "version_only_integration"
+      ]
     }
   ]
 }
