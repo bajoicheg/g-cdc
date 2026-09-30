@@ -34,6 +34,26 @@ class Tests(unittest.TestCase):
         r=m.mark_ready(r,OWNER,1,"wake-1","2026-01-01T10:00:05Z",continuity_state=boundary())
         r=m.release(r,OWNER,1,"wake-1","2026-01-01T10:00:06Z")
         self.assertIsNone(r["owner_id"]); self.assertEqual(r["last_release"]["invocation_id"],"wake-1")
+    def test_release_cas_returns_revision_bound_receipt(self):
+        class Store:
+            def __init__(self,record): self.revision="a"*40; self.record=record
+            def read(self): return self.revision, json.loads(json.dumps(self.record))
+            def compare_and_swap(self,expected,record):
+                if expected!=self.revision: raise ValueError("stale")
+                self.record=json.loads(json.dumps(record)); self.revision="b"*40; return self.revision
+        r=self.owned()
+        r=m.begin_finalization(r,OWNER,1,"wake-1","2026-01-01T10:00:02Z",pending_shared_writes=False)
+        r=m.record_checkpoint(r,OWNER,1,"wake-1","2026-01-01T10:00:03Z",checkpoint_ref="checkpoint:1",pending_shared_writes=False)
+        r=m.reconcile_finalization(r,OWNER,1,"wake-1","2026-01-01T10:00:04Z",external_reconciliation="none")
+        r=m.mark_ready(r,OWNER,1,"wake-1","2026-01-01T10:00:05Z",continuity_state=boundary())
+        store=Store(r)
+        out=m.release_cas(store,"a"*40,"example/project","refs/heads/main",OWNER,1,"wake-1","2026-01-01T10:00:06Z")
+        self.assertEqual(out["revision"],"b"*40)
+        self.assertEqual(out["release_receipt"]["schema"],"execution-release-receipt/v1")
+        self.assertEqual(out["release_receipt"]["lease_revision"],"b"*40)
+        self.assertEqual(out["release_receipt"]["release"]["generation"],1)
+        self.assertEqual(out["release_receipt"]["release"]["invocation_id"],"wake-1")
+        self.assertIsNone(out["record"]["owner_id"])
     def test_primitive_boundary_cannot_mark_ready(self):
         r=self.owned()
         r=m.begin_finalization(r,OWNER,1,"wake-1","2026-01-01T10:00:02Z",pending_shared_writes=False)

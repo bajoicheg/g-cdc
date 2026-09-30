@@ -393,6 +393,22 @@ def release(record, owner_id, generation, invocation_id, at):
                   expires_at_utc=None, invocation=None, finalization=None)
     return validate(result)
 
+def release_cas(store, expected_revision, repository, source_ref, owner_id, generation, invocation_id, at):
+    """Release through authoritative CAS and return immutable revision-bound proof."""
+    revision, record = store.read()
+    if revision != expected_revision or record is None:
+        raise ValueError("stale coordination store revision")
+    if record["repository"] != repository or record["source_ref"] != source_ref:
+        raise ValueError("exact repository/source-ref binding mismatch")
+    result = release(record, owner_id, generation, invocation_id, at)
+    new_revision = store.compare_and_swap(expected_revision, result)
+    receipt = {
+        "schema": "execution-release-receipt/v1",
+        "lease_revision": new_revision,
+        "release": copy.deepcopy(result["last_release"]),
+    }
+    return {"revision": new_revision, "record": result, "release_receipt": receipt}
+
 def set_guard(record, owner_id, generation, invocation_id, at, intent, intent_reference):
     _owner(record, owner_id, generation, invocation_id, at)
     if record["finalization"]["state"] != "active":
@@ -527,6 +543,9 @@ def main(argv=None):
             if args.command in {"check", "claim-submission"}:
                 fn = check if args.command == "check" else claim_submission
                 print(json.dumps(fn(store, expected, repository, source_ref, **request), sort_keys=True))
+                return 0
+            if args.command == "release":
+                print(json.dumps(release_cas(store, expected, repository, source_ref, **request), sort_keys=True))
                 return 0
             revision, record = _mutate(store, expected, repository, source_ref, args.command, request)
         print(json.dumps({"revision": revision, "record": record}, sort_keys=True))
