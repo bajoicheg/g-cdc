@@ -662,10 +662,40 @@ class ProjectLaneCoordinator:
         ]
         if len(matches) != 1:
             raise ValueError("pending integration result not found")
+        binding_reader = getattr(self.integration_verifier, "publication_binding", None)
+        if not callable(binding_reader):
+            raise ValueError("integration requires a trusted durable publication binding")
+        publication_binding = binding_reader()
+        binding_expected = {
+            "shared_ref", "remote_id", "durable_attempts",
+            "attempt_store_ref", "attempt_store_id",
+        }
+        if (not isinstance(publication_binding, dict)
+                or set(publication_binding) != binding_expected
+                or publication_binding["shared_ref"] != self.config.product_source_ref
+                or publication_binding["durable_attempts"] is not True
+                or not isinstance(publication_binding["remote_id"], str)
+                or not DIGEST.fullmatch(publication_binding["remote_id"])
+                or publication_binding["attempt_store_id"] != publication_binding["remote_id"]
+                or not isinstance(publication_binding["attempt_store_ref"], str)
+                or not publication_binding["attempt_store_ref"].startswith("refs/heads/cdc/")
+                or branch_key(publication_binding["attempt_store_ref"])
+                    == branch_key(self.config.product_source_ref)):
+            raise ValueError("integration requires a trusted durable publication binding")
+
+        attempt_reader = getattr(self.integration_verifier, "publication_attempt", None)
+        if not callable(attempt_reader):
+            raise ValueError("integration requires trusted durable publication attempt readback")
+
         evidence = self.integration_verifier(
             copy.deepcopy(matches[0]), _claim_from(integrator["claim"]), copy.deepcopy(intent))
-        expected = {"integrated", "operation_id", "result_commit", "observed_shared_head",
-                    "integrated_head", "conditional_update", "force_push", "evidence_ref"}
+        expected = {
+            "integrated", "operation_id", "result_commit", "observed_shared_head",
+            "integrated_head", "conditional_update", "force_push",
+            "publication_attempt_id", "publication_attempt_state",
+            "publication_remote_id", "publication_shared_ref",
+            "publication_attempt_store_ref", "evidence_ref",
+        }
         if (not isinstance(evidence, dict) or set(evidence) != expected
                 or evidence["integrated"] is not True
                 or evidence["operation_id"] != operation_id
@@ -676,9 +706,41 @@ class ProjectLaneCoordinator:
                 or not SHA.fullmatch(evidence["integrated_head"])
                 or evidence["conditional_update"] is not True
                 or evidence["force_push"] is not False
+                or not isinstance(evidence["publication_attempt_id"], str)
+                or not evidence["publication_attempt_id"].strip()
+                or evidence["publication_attempt_state"] != "confirmed"
+                or evidence["publication_remote_id"] != publication_binding["remote_id"]
+                or evidence["publication_shared_ref"] != self.config.product_source_ref
+                or evidence["publication_attempt_store_ref"]
+                    != publication_binding["attempt_store_ref"]
                 or not isinstance(evidence["evidence_ref"], str)
                 or not evidence["evidence_ref"].strip()):
             raise ValueError("integration verifier did not prove claimed conditional integration")
+
+        attempt = attempt_reader(operation_id)
+        attempt_expected = {
+            "attempt_id", "operation_id", "lane_id", "result_commit",
+            "observed_shared_head", "intended_integrated_head",
+            "remote_id", "shared_ref", "status",
+            "prepared_at_utc", "submitted_at_utc", "resolved_at_utc",
+        }
+        if (not isinstance(attempt, dict) or set(attempt) != attempt_expected
+                or attempt["attempt_id"] != evidence["publication_attempt_id"]
+                or attempt["operation_id"] != operation_id
+                or attempt["lane_id"] != lane_id
+                or attempt["result_commit"] != result_commit
+                or attempt["observed_shared_head"] != intent["observed_shared_head"]
+                or attempt["intended_integrated_head"] != intent["intended_integrated_head"]
+                or attempt["remote_id"] != publication_binding["remote_id"]
+                or attempt["shared_ref"] != self.config.product_source_ref
+                or attempt["status"] != "confirmed"
+                or not isinstance(attempt["prepared_at_utc"], str)
+                or not attempt["prepared_at_utc"].strip()
+                or not isinstance(attempt["submitted_at_utc"], str)
+                or not attempt["submitted_at_utc"].strip()
+                or not isinstance(attempt["resolved_at_utc"], str)
+                or not attempt["resolved_at_utc"].strip()):
+            raise ValueError("trusted publication attempt does not bind the integration intent")
 
         def transform(state):
             current = state["integration_intents"].get(key)

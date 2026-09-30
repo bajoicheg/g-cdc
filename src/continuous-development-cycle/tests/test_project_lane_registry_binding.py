@@ -97,11 +97,10 @@ class ProjectLaneRegistryBindingTests(unittest.TestCase):
         self.assertEqual(coordinator.establish_migration_gate({"legacy": "observed"}), safe_evidence)
         self.assertEqual(coordinator.establish_migration_gate({"legacy": "observed"}), safe_evidence)
 
-        different = runtime.ProjectLaneCoordinator(
-            store, config(), migration_verifier=lambda observation: {
-                **safe_evidence, "evidence_ref": "legacy:different"})
-        with self.assertRaisesRegex(ValueError, "immutable"):
-            different.establish_migration_gate({"legacy": "new"})
+        with self.assertRaisesRegex(ValueError, "migration|revalidation|binding"):
+            runtime.ProjectLaneCoordinator(
+                store, config(), migration_verifier=lambda observation: {
+                    **safe_evidence, "evidence_ref": "legacy:different"})
 
     def test_new_coordinator_without_migration_verifier_fails_closed_after_gate(self):
         store = MemoryStore()
@@ -133,6 +132,27 @@ class ProjectLaneRegistryBindingTests(unittest.TestCase):
             "lane", "inv", LaneKind.WORKER, "a" * 40, "/tmp/lane", "cdc/lane",
             write_paths=frozenset({"src/a"}), executor_id="e", role="writer")
         with self.assertRaisesRegex(ValueError, "legacy|migration|revalid"):
+            coordinator.admit(claim, generation=1)
+
+    def test_live_legacy_acquisition_reenabled_blocks_authority(self):
+        from project_lanes import LaneClaim, LaneKind
+        store = MemoryStore()
+        authority = {"enabled": False}
+        def verify(_observation):
+            return {
+                "safe": authority["enabled"] is False,
+                "legacy_lease": "released",
+                "external_guard": "none",
+                "legacy_mode_disabled": authority["enabled"] is False,
+                "evidence_ref": "legacy:epoch-1",
+            }
+        coordinator = runtime.ProjectLaneCoordinator(store, config(), migration_verifier=verify)
+        coordinator.establish_migration_gate({"legacy": "observed"})
+        authority["enabled"] = True
+        claim = LaneClaim(
+            "lane", "inv", LaneKind.WORKER, "a" * 40, "/tmp/lane", "cdc/lane",
+            write_paths=frozenset({"src/a"}), executor_id="e", role="writer")
+        with self.assertRaisesRegex(ValueError, "legacy|migration|proven"):
             coordinator.admit(claim, generation=1)
 
     def test_live_migration_evidence_epoch_mismatch_blocks_authority(self):

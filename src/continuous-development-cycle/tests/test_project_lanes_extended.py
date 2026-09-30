@@ -83,49 +83,59 @@ def activity_verifier(lane, activity_ref):
             "evidence_ref": "process:activity:" + activity_ref}
 
 
-_INTEGRATION_ATTEMPTS = {}
-_INTEGRATION_REMOTE_ID = "sha256:" + "e" * 64
-_INTEGRATION_ATTEMPT_REF = "refs/heads/cdc/integration-attempts"
+class IntegrationVerifier:
+    remote_id = "sha256:" + "e" * 64
+    attempt_ref = "refs/heads/cdc/test-publication-attempts"
 
-def integration_verifier(item, integrator, intent):
-    attempt = {
-        "attempt_id": "fake-attempt-" + intent["operation_id"],
-        "operation_id": intent["operation_id"],
-        "result_commit": item["result_commit"],
-        "observed_shared_head": intent["observed_shared_head"],
-        "intended_integrated_head": intent["intended_integrated_head"],
-        "remote_id": _INTEGRATION_REMOTE_ID,
-        "source_ref": "refs/heads/main",
-        "status": "confirmed",
-        "created_at_utc": "2026-09-30T15:00:00Z",
-        "updated_at_utc": "2026-09-30T15:00:00Z",
-        "detail": "fake durable publication",
-    }
-    _INTEGRATION_ATTEMPTS[intent["operation_id"]] = copy.deepcopy(attempt)
-    return {
-        "integrated": True,
-        "operation_id": intent["operation_id"],
-        "result_commit": item["result_commit"],
-        "observed_shared_head": intent["observed_shared_head"],
-        "integrated_head": intent["intended_integrated_head"],
-        "conditional_update": True,
-        "force_push": False,
-        "evidence_ref": "git:conditional-integration",
-        "attempt_id": attempt["attempt_id"],
-        "publication_attempt_state": "confirmed",
-        "remote_id": _INTEGRATION_REMOTE_ID,
-        "source_ref": "refs/heads/main",
-        "attempt_store_ref": _INTEGRATION_ATTEMPT_REF,
-    }
+    def __init__(self):
+        self.attempts = {}
 
-integration_verifier.publication_binding = lambda: {
-    "remote_id": _INTEGRATION_REMOTE_ID,
-    "source_ref": "refs/heads/main",
-    "attempt_store_ref": _INTEGRATION_ATTEMPT_REF,
-    "attempt_store_id": _INTEGRATION_REMOTE_ID,
-}
-integration_verifier.publication_attempt = lambda operation_id: copy.deepcopy(
-    _INTEGRATION_ATTEMPTS.get(operation_id))
+    def publication_binding(self):
+        return {
+            "shared_ref": "refs/heads/main",
+            "remote_id": self.remote_id,
+            "durable_attempts": True,
+            "attempt_store_ref": self.attempt_ref,
+            "attempt_store_id": self.remote_id,
+        }
+
+    def publication_attempt(self, operation_id):
+        return copy.deepcopy(self.attempts.get(operation_id))
+
+    def __call__(self, item, integrator, intent):
+        attempt = {
+            "attempt_id": "attempt:" + intent["operation_id"],
+            "operation_id": intent["operation_id"],
+            "lane_id": item["lane_id"],
+            "result_commit": item["result_commit"],
+            "observed_shared_head": intent["observed_shared_head"],
+            "intended_integrated_head": intent["intended_integrated_head"],
+            "remote_id": self.remote_id,
+            "shared_ref": "refs/heads/main",
+            "status": "confirmed",
+            "prepared_at_utc": "2026-09-30T15:00:00Z",
+            "submitted_at_utc": "2026-09-30T15:00:01Z",
+            "resolved_at_utc": "2026-09-30T15:00:02Z",
+        }
+        self.attempts[intent["operation_id"]] = copy.deepcopy(attempt)
+        return {
+            "integrated": True,
+            "operation_id": intent["operation_id"],
+            "result_commit": item["result_commit"],
+            "observed_shared_head": intent["observed_shared_head"],
+            "integrated_head": intent["intended_integrated_head"],
+            "conditional_update": True,
+            "force_push": False,
+            "publication_attempt_id": attempt["attempt_id"],
+            "publication_attempt_state": "confirmed",
+            "publication_remote_id": self.remote_id,
+            "publication_shared_ref": "refs/heads/main",
+            "publication_attempt_store_ref": self.attempt_ref,
+            "evidence_ref": "git:conditional-integration",
+        }
+
+
+integration_verifier = IntegrationVerifier()
 
 
 class CooperativeLaneExtendedTests(unittest.TestCase):
@@ -211,6 +221,24 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
                           lanes.LaneKind.WORKER, branch=branch), generation=1)
                 self.assertFalse(decision["admitted"])
                 self.assertEqual(decision["reason"], "shared_product_ref_reserved")
+
+    def test_shared_product_branch_unicode_normalization_alias_is_rejected(self):
+        store = MemoryStore()
+        config = runtime.LaneRegistryConfig(
+            canonical_repository="example/g-cdc",
+            product_source_ref="refs/heads/caf\u00e9",
+            coordination_ref=store.ref,
+            coordination_store_id=store.store_id,
+            policy_authority="sha256:" + "d" * 64,
+        )
+        coord = runtime.ProjectLaneCoordinator(
+            store, config, migration_verifier=migration_verifier)
+        coord.establish_migration_gate({"legacy": "observed"})
+        decision = coord.admit(
+            claim("unicode-writer", {"src/a"}, lanes.LaneKind.WORKER,
+                  branch="refs/heads/cafe\u0301"), generation=1)
+        self.assertFalse(decision["admitted"])
+        self.assertEqual(decision["reason"], "shared_product_ref_reserved")
 
     def test_coordinator_blocks_overlap_before_mutation_and_release_is_identity_bound(self):
         coord = coordinator()
@@ -345,49 +373,61 @@ class CooperativeLaneExtendedTests(unittest.TestCase):
                 integrator_executor_id="integrator", observed_shared_head="c" * 40,
                 intended_integrated_head="e" * 40)
 
-    def test_mark_integrated_rejects_mismatched_trusted_attempt_binding(self):
-        def lying_verifier(item, integrator, intent):
-            return {
-                "integrated": True,
-                "operation_id": intent["operation_id"],
-                "result_commit": item["result_commit"],
-                "observed_shared_head": intent["observed_shared_head"],
-                "integrated_head": intent["intended_integrated_head"],
-                "conditional_update": True,
-                "force_push": False,
-                "evidence_ref": "git:conditional-integration",
-                "attempt_id": "fake-attempt",
-                "publication_attempt_state": "confirmed",
-                "remote_id": _INTEGRATION_REMOTE_ID,
-                "source_ref": "refs/heads/main",
-                "attempt_store_ref": _INTEGRATION_ATTEMPT_REF,
-            }
-        lying_verifier.publication_binding = integration_verifier.publication_binding
-        lying_verifier.publication_attempt = lambda operation_id: {
-            "attempt_id": "fake-attempt",
-            "operation_id": operation_id,
-            "result_commit": "f" * 40,
-            "observed_shared_head": "c" * 40,
-            "intended_integrated_head": "d" * 40,
-            "remote_id": _INTEGRATION_REMOTE_ID,
-            "source_ref": "refs/heads/main",
-            "status": "confirmed",
-            "created_at_utc": "2026-09-30T15:00:00Z",
-            "updated_at_utc": "2026-09-30T15:00:00Z",
-            "detail": "wrong result binding",
-        }
-        coord = coordinator(result_verifier=verifier(), integration_verifier=lying_verifier)
+    def test_readonly_integration_verifier_cannot_close_queue(self):
+        class ReadOnly:
+            def publication_binding(self):
+                return {
+                    "shared_ref": "refs/heads/main",
+                    "remote_id": None,
+                    "durable_attempts": False,
+                    "attempt_store_ref": None,
+                    "attempt_store_id": None,
+                }
+
+            def __call__(self, item, integrator, intent):
+                raise AssertionError("read-only verifier must not receive publication authority")
+
+        coord = coordinator(result_verifier=verifier(), integration_verifier=ReadOnly())
         coord.admit(claim("a", {"src/a"}), generation=1)
-        coord.record_result("a", invocation_id="a", generation=1, executor_id="a",
-                            result_commit="b" * 40, evidence_refs=["test:green"])
-        coord.admit(claim("integrator", (), lanes.LaneKind.INTEGRATOR,
-                          branch="refs/heads/main"), generation=1)
+        coord.record_result(
+            "a", invocation_id="a", generation=1, executor_id="a",
+            result_commit="b" * 40, evidence_refs=["test:green"])
+        coord.admit(claim("integrator", (), lanes.LaneKind.INTEGRATOR), generation=1)
         intent = coord.claim_integration(
             "a", result_commit="b" * 40, integrator_lane_id="integrator",
             integrator_invocation_id="integrator", integrator_generation=1,
             integrator_executor_id="integrator", observed_shared_head="c" * 40,
             intended_integrated_head="d" * 40)
-        with self.assertRaisesRegex(ValueError, "attempt|publication"):
+        with self.assertRaisesRegex(ValueError, "durable publication"):
+            coord.mark_integrated(
+                "a", result_commit="b" * 40, operation_id=intent["operation_id"],
+                integrator_lane_id="integrator", integrator_invocation_id="integrator",
+                integrator_generation=1, integrator_executor_id="integrator")
+        self.assertEqual(len(coord.snapshot()["integration_queue"]), 1)
+
+    def test_mark_integrated_rejects_mismatched_trusted_attempt_binding(self):
+        class MismatchedAttemptVerifier(IntegrationVerifier):
+            def publication_attempt(self, operation_id):
+                value = super().publication_attempt(operation_id)
+                if value is not None:
+                    value["result_commit"] = "f" * 40
+                return value
+
+        integration = MismatchedAttemptVerifier()
+        coord = coordinator(result_verifier=verifier(), integration_verifier=integration)
+        coord.admit(claim("a", {"src/a"}), generation=1)
+        coord.record_result(
+            "a", invocation_id="a", generation=1, executor_id="a",
+            result_commit="b" * 40, evidence_refs=["test:green"])
+        coord.admit(
+            claim("integrator", (), lanes.LaneKind.INTEGRATOR,
+                  branch="refs/heads/main"), generation=1)
+        intent = coord.claim_integration(
+            "a", result_commit="b" * 40, integrator_lane_id="integrator",
+            integrator_invocation_id="integrator", integrator_generation=1,
+            integrator_executor_id="integrator", observed_shared_head="c" * 40,
+            intended_integrated_head="d" * 40)
+        with self.assertRaisesRegex(ValueError, "trusted publication attempt"):
             coord.mark_integrated(
                 "a", result_commit="b" * 40, operation_id=intent["operation_id"],
                 integrator_lane_id="integrator", integrator_invocation_id="integrator",

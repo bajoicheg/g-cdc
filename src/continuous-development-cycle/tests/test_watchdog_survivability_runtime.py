@@ -374,12 +374,14 @@ class WatchdogSurvivabilityRuntimeTests(unittest.TestCase):
         )
         runtime.register(alpha)
         runtime.register(beta)
-        result = runtime.reconcile_registered(max_effects=1)
+        result = runtime.reconcile_registered(max_effects=0)
         self.assertEqual(result["registered_count"], 2)
-        self.assertEqual(result["effects_attempted"], 1)
+        self.assertEqual(result["effects_attempted"], 0)
         self.assertEqual(len(result["results"]), 2)
         self.assertTrue(result["continuation_required"])
-        self.assertIn("effect_budget_deferred", {item["outcome"] for item in result["results"]})
+        self.assertEqual(
+            {item["outcome"] for item in result["results"]},
+            {"effect_budget_deferred"})
 
     def test_duplicate_quiescence_consumes_one_effect_per_reconcile(self):
         store = MemoryStore()

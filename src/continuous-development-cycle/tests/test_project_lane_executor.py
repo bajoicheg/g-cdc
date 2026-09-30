@@ -168,6 +168,29 @@ class ProjectLaneExecutionAdapterTests(unittest.TestCase):
         self.assertFalse(state["lanes"]["escape"]["pending_effects"])
         self.assertEqual(state["start_operations"]["escape"]["status"], "failed")
 
+    def test_review_lane_keeps_read_only_executor_identity(self):
+        review = LaneClaim(
+            "review", "review-inv", LaneKind.REVIEW, self.base,
+            str(self.worktrees / "review"), "refs/heads/review",
+            executor_id="review-exec", role="review")
+        decision = self.coordinator.admit(review, generation=1)
+        self.assertTrue(decision["admitted"])
+        self.backend.observation = terminal_receipt
+        result = self.adapter.start(
+            "review", invocation_id="review-inv", generation=1, executor_id="review-exec",
+            argv=[sys.executable, "-c", "pass"], timeout_seconds=10)
+        self.assertEqual(result["status"], "succeeded")
+        self.assertEqual(self.backend.requests[-1]["identity"]["role"], "review")
+
+    def test_malformed_persisted_review_claim_never_reaches_writer_backend(self):
+        self.store.value["lanes"]["lane-a"]["claim"]["kind"] = LaneKind.REVIEW.value
+        self.store.value["lanes"]["lane-a"]["claim"]["role"] = "review"
+        with self.assertRaisesRegex(ValueError, "lane registry lane"):
+            self.adapter.start(
+                "lane-a", invocation_id="inv-a", generation=1, executor_id="exec-a",
+                argv=[sys.executable, "-c", "pass"], timeout_seconds=10)
+        self.assertEqual(self.backend.starts, 0)
+
     def test_integrator_lane_cannot_launch_worker_backend(self):
         store = MemoryStore()
         config = LaneRegistryConfig(
