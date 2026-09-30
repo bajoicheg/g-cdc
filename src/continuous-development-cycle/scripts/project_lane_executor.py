@@ -16,7 +16,7 @@ import json
 import os
 from pathlib import Path
 
-from project_lanes import LaneKind
+from project_lanes import LaneKind, READ_ONLY_ROLES
 
 
 TERMINAL = {"succeeded", "failed", "cancelled", "timed_out"}
@@ -87,12 +87,19 @@ class ProjectLaneExecutionAdapter:
 
     def _identity(self, lane):
         claim = lane["claim"]
+        kind = LaneKind(claim["kind"])
+        if kind == LaneKind.INTEGRATOR:
+            capability = "integrator"
+        elif kind == LaneKind.REVIEW or claim["role"] in READ_ONLY_ROLES:
+            capability = "review"
+        else:
+            capability = "writer" if claim["write_paths"] else "review"
         return {
             "lane_id": claim["lane_id"],
             "invocation_id": claim["invocation_id"],
             "generation": lane["generation"],
             "executor_id": claim["executor_id"],
-            "role": "writer" if claim["write_paths"] else "review",
+            "role": capability,
             "branch": claim["branch"],
             "base_sha": claim["source_head"],
         }
