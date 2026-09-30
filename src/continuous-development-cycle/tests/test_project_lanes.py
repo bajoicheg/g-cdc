@@ -52,6 +52,10 @@ class CooperativeLaneTests(unittest.TestCase):
         self.assertTrue(writer.is_writer)
         self.assertTrue(admit_writer([], writer))
 
+    def test_unknown_role_name_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "role"):
+            admit_writer([], self.claim("custom", {"src/a"}, LaneKind.WORKER, role="custom-authority"))
+
     def test_unsafe_git_branch_names_are_rejected(self):
         for branch_name in ("--force", "refs/tags/not-a-lane", "refs/heads/bad ref",
                             "refs/heads/a..b", "refs/heads/.hidden"):

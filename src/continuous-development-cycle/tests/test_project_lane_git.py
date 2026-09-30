@@ -375,6 +375,8 @@ class GitLaneResultVerifierTests(unittest.TestCase):
             concurrent)
         _, attempt_state = attempt_store.read()
         self.assertEqual(attempt_state["attempts"]["op-casrace"]["status"], "rejected")
+        git(self.repo, "push", "-q", "casrace",
+            result_commit + ":refs/heads/test-only-object-seed")
         subprocess.run(
             ["git", "--git-dir", str(remote), "update-ref",
              "refs/heads/integration", result_commit], check=True)
