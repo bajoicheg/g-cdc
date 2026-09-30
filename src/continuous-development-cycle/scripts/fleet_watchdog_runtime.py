@@ -16,6 +16,7 @@ import secrets
 import sys
 
 from git_document_store import GitDocumentStore
+from git_remote_identity import isolated_remote_args
 import fleet_supervisor_control as fleet_control
 from parallel_task_planner import portable_path_key
 from watchdog_liveness import assess, binding_key, now_utc, text, utc, validate_binding
@@ -46,9 +47,12 @@ class GitFleetLeaderGuard:
 
     def _live_fleet_head(self,state):
         self.store._assert_remote_identity()
-        # Reuse the coordination store's isolated, authenticated remote transport,
-        # but read the authoritative Fleet ref rather than trusting config bytes.
-        output=self.store._git("ls-remote","--refs",self.store.remote,state["fleet_ref"])
+        if portable_path_key(self.store.ref)==portable_path_key(state["fleet_ref"]):
+            raise ValueError("Fleet leader state ref must be isolated from authoritative Fleet ref")
+        # Reuse the coordination store's immutable remote identity, but read the
+        # authoritative Fleet ref rather than trusting config bytes.
+        config,alias=isolated_remote_args(self.store.repo,self.store.remote,self.store.store_id)
+        output=self.store._git(*config,"ls-remote","--refs",alias,state["fleet_ref"])
         rows=[line for line in output.splitlines() if line.strip()]
         if len(rows)!=1:
             raise ValueError("authoritative Fleet ref must resolve exactly once")
@@ -173,6 +177,18 @@ class FleetRuntime:
                     raise ValueError("Fleet operation leader binding invalid")
                 if leader["invocation_id"]!=op.get("controller_invocation_id"):
                     raise ValueError("Fleet operation leader/controller mismatch")
+                if (not isinstance(leader["generation"],int) or leader["generation"]<1
+                        or not isinstance(leader["owner_id"],str) or not leader["owner_id"]
+                        or not isinstance(leader["fleet_repository"],str) or not leader["fleet_repository"]
+                        or not isinstance(leader["fleet_ref"],str) or not leader["fleet_ref"].startswith("refs/heads/")
+                        or not isinstance(leader["observed_fleet_head"],str) or len(leader["observed_fleet_head"])!=40
+                        or any(ch not in "0123456789abcdef" for ch in leader["observed_fleet_head"])):
+                    raise ValueError("Fleet operation leader binding values invalid")
+            fleet_effect_id=op.get("fleet_effect_id")
+            if fleet_effect_id is not None:
+                if (leader is None or not isinstance(fleet_effect_id,str) or not fleet_effect_id.startswith("sha256:")
+                        or len(fleet_effect_id)!=71 or any(ch not in "0123456789abcdef" for ch in fleet_effect_id[7:])):
+                    raise ValueError("Fleet operation effect provenance invalid")
             text(op.get("operation_id"), "operation_id")
             text(op.get("controller_invocation_id"), "controller_invocation_id")
             if op["controller_invocation_id"] not in state["wake_budgets"]:
