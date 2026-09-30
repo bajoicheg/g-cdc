@@ -474,13 +474,16 @@ class GitLaneIntegrationPublisher(GitLaneResultVerifier):
             attempt = self._get_attempt(item, intent)
             if attempt is None:
                 return self._evidence(item, intent, attempt=None, conditional=False)
-            if attempt["status"] in {"submitted", "unknown", "confirmed"}:
-                if attempt["status"] != "confirmed":
+            if attempt["status"] in {"unknown", "confirmed"}:
+                if attempt["status"] == "unknown":
                     attempt = self._transition_attempt(
-                        item, intent, "confirmed", {"submitted", "unknown"})
+                        item, intent, "confirmed", {"unknown"})
                 return self._evidence(item, intent, attempt=attempt, conditional=True)
-            # Prepared means no publication was yet dispatched; rejected/aborted
-            # are explicitly non-authoritative even if the bytes now coincide.
+            # A durable submitted marker is written before transport invocation,
+            # so a crash may leave submitted even though _push_cas() never ran.
+            # Matching bytes therefore cannot upgrade prepared/submitted to proof
+            # of this intent's expected-head CAS. Rejected/aborted are likewise
+            # explicitly non-authoritative. None of these states is replayed.
             return self._evidence(item, intent, attempt=attempt, conditional=False)
 
         if current != observed:
