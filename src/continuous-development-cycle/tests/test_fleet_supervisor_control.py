@@ -45,6 +45,12 @@ class T(unittest.TestCase):
   bad=self.req();bad["effect_id"]="caller-chosen"
   with self.assertRaisesRegex(ValueError,"effect request invalid"):
    m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z",HEAD,bad)
+ def test_persisted_effect_identity_must_be_content_addressed(self):
+  s,_=m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z",HEAD,self.req())
+  bad=copy.deepcopy(s);bad["effects"][0]["effect_id"]="caller"
+  with self.assertRaisesRegex(ValueError,"effect_id must be sha256"):m.validate(bad)
+  bad=copy.deepcopy(s);bad["effects"][0]["intent_digest"]="sha256:bad"
+  with self.assertRaisesRegex(ValueError,"intent_digest must be sha256"):m.validate(bad)
  def test_changed_fleet_head_replans_before_claim(self):
   s,d=m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z","b"*40,self.req())
   self.assertEqual(d["action"],"REPLAN_FLEET_HEAD");self.assertFalse(d["authorizes_effect"]);self.assertEqual(s["effects"],[])
