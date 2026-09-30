@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from git_document_store import GitDocumentStore
@@ -261,6 +262,72 @@ class GitLaneResultVerifierTests(unittest.TestCase):
         evidence = restarted(item, integrator, intent)
         self.assertTrue(evidence["conditional_update"])
         self.assertEqual(evidence["publication_attempt_state"], "confirmed")
+
+    def test_remote_failure_porcelain_is_unknown_and_reconciles_without_replay(self):
+        remote = self.repo / "remote-failure.git"
+        subprocess.run(["git", "init", "--bare", "-q", str(remote)], check=True)
+        git(self.repo, "remote", "add", "remotefailure", str(remote))
+        git(self.repo, "push", "-q", "remotefailure", self.base + ":refs/heads/integration")
+        git(self.repo, "checkout", "-qb", "worker-remote-failure", self.base)
+        result_commit = self.commit(Path("src/a/remote_failure.py"), "ok\n", "worker result")
+        git(self.repo, "checkout", "-q", self.primary)
+        integrator = LaneClaim(
+            "integrator", "integrator-inv", LaneKind.INTEGRATOR, self.base,
+            str(self.repo), self.primary, executor_id="integrator", role="integrator")
+        remote_id = project_lane_git.remote_identity(self.repo, "remotefailure")
+        attempt_store = GitDocumentStore(
+            self.repo, "remotefailure", "refs/heads/cdc/remote-failure-attempts",
+            remote_id, protected_refs=("refs/heads/integration",))
+        publisher = project_lane_git.GitLaneIntegrationPublisher(
+            self.repo, "remotefailure", "refs/heads/integration", remote_id,
+            attempt_store=attempt_store)
+        item = {"lane_id": "lane", "result_commit": result_commit}
+        intent = {
+            "lane_id": "lane", "result_commit": result_commit,
+            "observed_shared_head": self.base,
+            "intended_integrated_head": result_commit,
+            "operation_id": "op-remote-failure",
+        }
+
+        real_run = subprocess.run
+        def remote_failure(args, *positional, **kwargs):
+            if isinstance(args, list) and "push" in args and "--porcelain" in args:
+                return subprocess.CompletedProcess(
+                    args, 1,
+                    stdout=(
+                        "!\t" + result_commit + ":refs/heads/integration"
+                        + "\t[remote failure] (remote failed to report status)\n"
+                    ),
+                    stderr="error: failed to push some refs to 'remotefailure'\n",
+                )
+            return real_run(args, *positional, **kwargs)
+
+        with mock.patch.object(project_lane_git.subprocess, "run", side_effect=remote_failure):
+            with self.assertRaisesRegex(ValueError, "unknown"):
+                publisher(item, integrator, intent)
+
+        _, state = attempt_store.read()
+        attempt = state["attempts"]["op-remote-failure"]
+        self.assertEqual(attempt["status"], "unknown")
+
+        # Simulate the ambiguous transport having actually made B authoritative.
+        git(self.repo, "push", "-q", "remotefailure",
+            result_commit + ":refs/heads/test-only-object-seed")
+        subprocess.run(
+            ["git", "--git-dir", str(remote), "update-ref",
+             "refs/heads/integration", result_commit], check=True)
+
+        class NoReplay(project_lane_git.GitLaneIntegrationPublisher):
+            def _push_cas(self, observed, intended):
+                raise AssertionError("unknown publication must reconcile without replay")
+
+        restarted = NoReplay(
+            self.repo, "remotefailure", "refs/heads/integration", remote_id,
+            attempt_store=attempt_store)
+        evidence = restarted(item, integrator, intent)
+        self.assertTrue(evidence["conditional_update"])
+        self.assertEqual(evidence["publication_attempt_state"], "confirmed")
+        self.assertEqual(evidence["publication_attempt_id"], attempt["attempt_id"])
 
     def test_prepared_but_unsent_attempt_does_not_become_proof_from_matching_head(self):
         remote = self.repo / "remote-unsent.git"
