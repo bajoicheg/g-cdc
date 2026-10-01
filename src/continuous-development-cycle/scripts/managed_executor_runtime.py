@@ -411,13 +411,71 @@ class ManagedExecutorRuntime:
         return {**result,"terminal_capability_ref":intent["capability_ref"],
                 "terminal_task_id":task_id,"terminal_attempt_id":attempt_id}
 
+    def reconcile_execution_lease_hold(self,lease_store,task_id,attempt_id):
+        directory=self._terminal_hold_directory(task_id,attempt_id)
+        paths=_terminal_hold_paths(directory)
+        intent=_read_json(paths["intent"])
+        if intent is None:
+            raise ValueError("managed terminal lease intent missing")
+        release=_read_json(paths["release"])
+        if release is not None:
+            return {"status":"released","release_marker":release}
+        abort=_read_json(paths["abort"])
+        if abort is not None:
+            return {"status":"aborted","abort_marker":abort}
+        owned=_read_json(paths["owned"])
+        if owned is None:
+            recovered=lease_store.find_invocation_ownership(
+                intent["lease_repository"],intent["lease_source_ref"],intent["invocation_id"])
+            if recovered is None:
+                marker={"schema":"managed-terminal-lease-abort/v1",
+                        "capability_ref":intent["capability_ref"],
+                        "aborted_at_utc":_utc(),
+                        "reason":"authoritative lease history proves acquisition absent"}
+                _write(paths["abort"],marker)
+                return {"status":"aborted","abort_marker":marker}
+            owned={"schema":"managed-terminal-lease-owned/v1",
+                   "capability_ref":intent["capability_ref"],
+                   "owner_id":recovered["owner_id"],
+                   "generation":recovered["generation"],
+                   "invocation_id":intent["invocation_id"],
+                   "lease_revision":recovered["revision"]}
+            _write(paths["owned"],owned)
+        try:
+            released=lease_store.find_release_receipt(
+                owned["owner_id"],owned["generation"],owned["invocation_id"])
+        except ValueError as exc:
+            if str(exc)!="exact historical lease release was not found":
+                raise
+            return {"status":"owned","owned_marker":owned}
+        marker={"schema":"managed-terminal-lease-release/v1",
+                "capability_ref":intent["capability_ref"],
+                "owner_id":owned["owner_id"],"generation":owned["generation"],
+                "invocation_id":owned["invocation_id"],
+                "lease_revision":released["release_receipt"]["lease_revision"],
+                "release_receipt":released["release_receipt"]}
+        _write(paths["release"],marker)
+        return {"status":"released","owned_marker":owned,"release_marker":marker,
+                "release_record":released["release_record"],
+                "current_revision":released["current_revision"]}
+
     def release_execution_lease(self,lease_store,expected_revision,repository,source_ref,owner_id,generation,invocation_id,task_id,attempt_id,at):
         import execution_lease_v2
         directory=self._terminal_hold_directory(task_id,attempt_id)
         paths=_terminal_hold_paths(directory)
         intent=_read_json(paths["intent"]);owned=_read_json(paths["owned"])
-        if intent is None or owned is None:
-            raise ValueError("managed terminal hold/ownership marker missing")
+        if intent is None:
+            raise ValueError("managed terminal hold marker missing")
+        if owned is None:
+            reconciled=self.reconcile_execution_lease_hold(lease_store,task_id,attempt_id)
+            if reconciled["status"]=="released":
+                receipt=reconciled["release_marker"]["release_receipt"]
+                return {"revision":reconciled["current_revision"],"record":lease_store.read()[1],
+                        "release_receipt":receipt,"release_record":reconciled["release_record"],
+                        "recovered_after_release":True}
+            if reconciled["status"]=="aborted":
+                raise ValueError("managed terminal hold proves lease acquisition absent")
+            owned=_read_json(paths["owned"])
         if (owned.get("schema")!="managed-terminal-lease-owned/v1"
                 or owned.get("capability_ref")!=intent.get("capability_ref")
                 or owned.get("owner_id")!=owner_id or owned.get("generation")!=generation
