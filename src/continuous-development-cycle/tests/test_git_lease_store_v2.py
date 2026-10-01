@@ -6,7 +6,7 @@ import execution_lease_v2 as v2
 from git_lease_store import validate_coordination_record, validate_coordination_transition
 
 OWNER=str(uuid.UUID("11111111-1111-4111-8111-111111111111"))
-INV={"invocation_id":"wake-1","automation_id":"auto-1","conversation_id":"chat-1","execution_surface":"watchdog","started_at_utc":"2026-01-01T10:00:00Z"}
+INV={"invocation_id":"wake-1","automation_id":"auto-1","conversation_id":"chat-1","execution_surface":"managed","started_at_utc":"2026-01-01T10:00:00Z"}
 
 class Tests(unittest.TestCase):
     def test_valid_owned_v2_is_supported_by_git_store(self):
