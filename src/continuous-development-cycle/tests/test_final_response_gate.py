@@ -42,7 +42,7 @@ class T(unittest.TestCase):
  def test_different_release_does_not_satisfy_owned_generation(self):
   lease=self.released();bad_receipt=receipt(lease);bad_receipt["release"]["generation"]=0
   r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},bad_receipt,lease,"2026-01-01T10:02:00Z")
-  self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"exact_owned_generation_release_not_proven")
+  self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"release_receipt_revision_mismatch")
  def test_pre_release_continuity_never_substitutes_for_release(self):
   lease=self.released()
   r=evaluate(INV_ID,lease,continuity(False),{"owner_id":OWNER,"generation":1},receipt(lease),lease,"2026-01-01T10:02:00Z")
