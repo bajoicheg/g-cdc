@@ -134,7 +134,7 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
                               output_refs=["out:" + task], evidence_refs=["test:" + task])
 
     def test_managed_runtime_capability_controls_execution_lease_terminal_lifecycle(self):
-        self.launch("a", self.worker("a", .35))
+        self.launch("a", self.worker("a", 3.0))
         end=time.monotonic()+4
         while time.monotonic()<end:
             observed=self.rt.observe("a","a1")
