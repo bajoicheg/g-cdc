@@ -109,14 +109,13 @@
       "Independent Stage 2 code-quality review remains NOT_RUN and is separately waived once by owner for this exact candidate; no independent GREEN is claimed.",
       "The release-declaration metadata head still requires exact-head hosted validation before merge/ref creation.",
       "No live scheduler mutation; owner pause remains authoritative.",
-      "No live consumer deployment is implied.",
-      "Personal activation requires separate installed-byte readback."
+      "Personal activation requires separate installed-byte readback.",
+      "Live CDC consumer convergence is recorded in sanitized public evidence; private per-consumer operational details remain on private coordination surfaces."
     ]
   },
   "remaining_authorized_stages": [
-    "personal skill activation/readback",
-    "live Fleet target migration and safe consumer rollout"
+    "personal skill activation/readback"
   ],
   "prior_active_installation": "release/active-package-acceptance-2.11.0.json",
-  "live_consumer_adoption": "release/consumer-live-rollout-2.10.3.json"
+  "live_consumer_adoption": "release/consumer-live-rollout-2.11.3.json"
 }
