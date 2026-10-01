@@ -8,6 +8,7 @@ import operation_intent as op
 from git_lease_store import validate_coordination_record, validate_coordination_transition
 
 OWNER=str(uuid.UUID("11111111-1111-4111-8111-111111111111"))
+CAP=object()
 INV={"invocation_id":"wake-1","automation_id":"auto-1","conversation_id":"chat-1","execution_surface":"managed","started_at_utc":"2026-01-01T10:00:00Z"}
 
 class Store:
@@ -25,6 +26,57 @@ class Tests(unittest.TestCase):
     def test_valid_owned_v2_is_supported_by_git_store(self):
         r=v2.acquire(v2.initialize("example/project","refs/heads/main"),OWNER,"2026-01-01T10:00:01Z",invocation=INV)
         self.assertIs(validate_coordination_record(r),r)
+
+    def test_raw_v2_owner_acquisition_requires_managed_capability_at_store_boundary(self):
+        previous=v2.initialize("example/project","refs/heads/main")
+        owned=v2.acquire(previous,OWNER,"2026-01-01T10:00:01Z",invocation=INV)
+        with self.assertRaisesRegex(ValueError,"requires verified managed terminal capability"):
+            validate_coordination_transition(previous,owned)
+        self.assertIs(validate_coordination_transition(previous,owned,ownership_capability=CAP),owned)
+
+    def test_raw_v2_release_without_ready_state_is_rejected_by_store_boundary(self):
+        previous=v2.acquire(v2.initialize("example/project","refs/heads/main"),OWNER,
+                            "2026-01-01T10:00:01Z",invocation=INV)
+        forged=copy.deepcopy(previous)
+        forged.update(owner_id=None,acquired_at_utc=None,heartbeat_at_utc=None,expires_at_utc=None,
+                      invocation=None,finalization=None)
+        forged["last_release"]={"owner_id":OWNER,"generation":1,"invocation_id":"wake-1",
+                                "at_utc":"2026-01-01T10:00:05Z","checkpoint_ref":None,
+                                "external_reconciliation":"none","completion_reason":"scope_complete"}
+        v2.validate(forged)
+        with self.assertRaisesRegex(ValueError,"ready|release"):
+            validate_coordination_transition(previous,forged)
+
+    def test_canonical_ready_release_is_accepted_by_store_boundary(self):
+        previous=v2.acquire(v2.initialize("example/project","refs/heads/main"),OWNER,
+                            "2026-01-01T10:00:01Z",invocation=INV)
+        previous=v2.begin_finalization(previous,OWNER,1,"wake-1","2026-01-01T10:00:02Z",
+                                       pending_shared_writes=False)
+        previous=v2.record_checkpoint(previous,OWNER,1,"wake-1","2026-01-01T10:00:03Z",
+                                      checkpoint_ref="checkpoint:test",pending_shared_writes=False)
+        previous=v2.reconcile_finalization(previous,OWNER,1,"wake-1","2026-01-01T10:00:04Z",
+                                           external_reconciliation="none")
+        continuity={"schema":"execution-continuity/v1","invocation_id":"wake-1","current_state":"COMPLETE",
+                    "requested_terminal_outcome":"scope_complete","runnable_next_action":False,
+                    "meaningful_progress_refs":["evidence:test"],"primitive_steps":[],"external_binding":None,
+                    "blocker":None,"checkpoint_ref":"checkpoint:test","next_action":None,
+                    "lease_release_required":False,"lease_released":False,
+                    "terminal_state":{"schema":"terminal-state/v2","invocation_id":"wake-1","scope_id":"test",
+                                      "observed_head":"a"*40,"decision":"COMPLETE","runnable_actions":[],
+                                      "pending_external":None,"blocker":None,
+                                      "meaningful_progress_refs":["evidence:test"],
+                                      "completion_evidence_refs":["evidence:test"],
+                                      "checkpoint_ref":"checkpoint:test","lease_released":False}}
+        previous=v2.mark_ready(previous,OWNER,1,"wake-1","2026-01-01T10:00:05Z",
+                               continuity_state=continuity)
+        released=v2.release(previous,OWNER,1,"wake-1","2026-01-01T10:00:06Z")
+        self.assertIs(validate_coordination_transition(previous,released),released)
+
+    def test_new_v1_ownership_is_disabled_at_store_boundary(self):
+        previous=v2.legacy.initialize("example/project","refs/heads/main")
+        owned=v2.legacy.acquire(previous,OWNER,"2026-01-01T10:00:01Z")
+        with self.assertRaisesRegex(ValueError,"v1 ownership is disabled"):
+            validate_coordination_transition(previous,owned)
 
     def test_generation58_style_partial_v1_patch_is_rejected(self):
         r=v2.initialize("example/project","refs/heads/main")
