@@ -1,4 +1,5 @@
 import json, sys, unittest, uuid
+from unittest import mock
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"scripts"))
@@ -19,7 +20,12 @@ def boundary(progress=True):
 
 class Tests(unittest.TestCase):
     def owned(self):
-        return m.acquire(m.initialize("example/project","refs/heads/main"),OWNER,T1,invocation=INV)
+        with mock.patch.object(m.terminal_capability_api,"validate_verified",return_value={}):
+            return m.acquire(m.initialize("example/project","refs/heads/main"),OWNER,T1,invocation=INV,terminal_capability=object())
+    def test_spoofed_managed_label_without_runtime_capability_is_rejected(self):
+        with self.assertRaisesRegex(ValueError,"capability proof"):
+            m.acquire(m.initialize("example/project","refs/heads/main"),OWNER,T1,invocation=INV)
+
     def test_unmanaged_host_surfaces_are_observer_only(self):
         for surface in ("chat","work","codex","watchdog","api","unknown"):
             invocation=dict(INV,execution_surface=surface)
