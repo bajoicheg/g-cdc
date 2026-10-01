@@ -399,6 +399,10 @@ class WatchdogSurvivabilityRuntime:
                 return {"outcome": "post_claim_gate_denied", "assessment": before_io}
             try:
                 self._leader_binding(invocation_id, expected=leader)
+            except ValueError:
+                self._finish(key, op_key, operation_id, "blocked", "fleet head or leader changed before provider I/O")
+                return {"outcome": "fleet_head_or_leader_changed", "assessment": before_io}
+            try:
                 reply = self.backend.create(copy.deepcopy(binding), generation=target_generation,
                                             schedule=desired["schedule"], template_digest=desired["template_digest"],
                                             operation_id=operation_id)
@@ -437,6 +441,10 @@ class WatchdogSurvivabilityRuntime:
                 return {"outcome": "post_claim_gate_denied", "assessment": post_claim}
             try:
                 self._leader_binding(invocation_id, expected=leader)
+            except ValueError:
+                self._finish(key, op_key, operation_id, "blocked", "fleet head or leader changed before provider I/O")
+                return {"outcome": "fleet_head_or_leader_changed", "assessment": post_claim}
+            try:
                 method = getattr(self.backend, verb)
                 claimed_at = self._entry_by_key(key)["operations"][op_key]["claimed_at_utc"]
                 reply = method(copy.deepcopy(binding), object_id=object_id, operation_id=operation_id)
@@ -479,6 +487,10 @@ class WatchdogSurvivabilityRuntime:
                 return {"outcome": "post_claim_gate_denied", "assessment": post_claim}
             try:
                 self._leader_binding(invocation_id, expected=leader)
+            except ValueError:
+                self._finish(key, op_key, operation_id, "blocked", "fleet head or leader changed before provider I/O")
+                return {"outcome": "fleet_head_or_leader_changed", "assessment": post_claim}
+            try:
                 reply = self.backend.disable(copy.deepcopy(binding), object_id=object_id, operation_id=operation_id)
                 inv, readback = self._observe(current)
                 item = next((x for x in inv["objects"] if x["object_id"] == object_id), None)
