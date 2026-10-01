@@ -423,11 +423,24 @@ class ManagedExecutorRuntime:
                 or owned.get("owner_id")!=owner_id or owned.get("generation")!=generation
                 or owned.get("invocation_id")!=invocation_id):
             raise ValueError("managed terminal ownership marker mismatch")
-        released=execution_lease_v2.release_cas(
-            lease_store,expected_revision,repository,source_ref,owner_id,generation,invocation_id,at)
+        current_revision,current_record=lease_store.read()
+        if current_record is None or current_record.get("repository")!=repository or current_record.get("source_ref")!=source_ref:
+            raise ValueError("managed terminal lease coordination binding mismatch")
+        if current_record.get("owner_id")==owner_id and current_record.get("generation")==generation:
+            if current_revision!=expected_revision:
+                raise ValueError("stale expected lease revision before release")
+            released=execution_lease_v2.release_cas(
+                lease_store,expected_revision,repository,source_ref,owner_id,generation,invocation_id,at)
+            receipt=released["release_receipt"]
+        else:
+            recovered=lease_store.find_release_receipt(owner_id,generation,invocation_id)
+            receipt=recovered["release_receipt"]
+            released={"revision":recovered["current_revision"],"record":current_record,
+                      "release_receipt":receipt,"release_record":recovered["release_record"],
+                      "recovered_after_release":True}
         marker={"schema":"managed-terminal-lease-release/v1","capability_ref":intent["capability_ref"],
                 "owner_id":owner_id,"generation":generation,"invocation_id":invocation_id,
-                "lease_revision":released["revision"],"release_receipt":released["release_receipt"]}
+                "lease_revision":receipt["lease_revision"],"release_receipt":receipt}
         _write(paths["release"],marker)
         return released
 
