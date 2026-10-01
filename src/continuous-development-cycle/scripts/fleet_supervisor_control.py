@@ -86,21 +86,21 @@ def leader_binding(state,owner_id,generation,invocation_id,at,observed_fleet_hea
 def _unresolved_effects(state,generation):
     return [e for e in state["effects"] if e["generation"]==generation and e["state"]!="terminal"]
 
-def acquire_record(state,owner_id,at,invocation,*,ttl=1200,quiescence=None):
+def acquire_record(state,owner_id,at,invocation,*,terminal_capability,ttl=1200,quiescence=None):
     validate(state);old=state["lease"]
     if old["owner_id"] is not None and _unresolved_effects(state,old["generation"]):
         raise ValueError("prior fleet leader has unresolved side effects")
     result=copy.deepcopy(state)
-    result["lease"]=leasev2.acquire(old,owner_id,at,invocation=invocation,ttl=ttl,quiescence=quiescence)
+    result["lease"]=leasev2.acquire(old,owner_id,at,invocation=invocation,terminal_capability=terminal_capability,ttl=ttl,quiescence=quiescence)
     return validate(result)
 
-def acquire_cas(store,expected_revision,fleet_repository,fleet_ref,owner_id,at,invocation,*,ttl=1200,quiescence=None):
+def acquire_cas(store,expected_revision,fleet_repository,fleet_ref,owner_id,at,invocation,*,terminal_capability,ttl=1200,quiescence=None):
     revision,state=store.read()
     if revision!=expected_revision:raise ValueError("stale fleet supervisor revision")
     if state is None:state=initialize(fleet_repository,fleet_ref)
     validate(state)
     if state["fleet_repository"]!=fleet_repository or state["fleet_ref"]!=fleet_ref:raise ValueError("fleet supervisor endpoint binding mismatch")
-    result=acquire_record(state,owner_id,at,invocation,ttl=ttl,quiescence=quiescence)
+    result=acquire_record(state,owner_id,at,invocation,terminal_capability=terminal_capability,ttl=ttl,quiescence=quiescence)
     new_revision=store.compare_and_swap(expected_revision,result)
     return {"revision":new_revision,"state":result,"owner_id":owner_id,"generation":result["lease"]["generation"]}
 
