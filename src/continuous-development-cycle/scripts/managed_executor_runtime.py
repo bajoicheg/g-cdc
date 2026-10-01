@@ -11,6 +11,7 @@ from __future__ import annotations
 from git_object_integrity import git_object_environment
 
 import argparse
+import copy
 import ctypes
 from datetime import datetime, timezone
 import hashlib
