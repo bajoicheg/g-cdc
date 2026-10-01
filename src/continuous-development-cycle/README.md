@@ -245,7 +245,7 @@ CDC can coordinate disjoint foreground/watchdog/Work/Codex project lanes under o
 - One invocation-bound Fleet Supervisor leader owns Fleet-wide side effects; other subscriptions are standby observers or project executors.
 - One-shot Fleet effect claims bind leader generation/invocation and exact Fleet HEAD, so duplicate wake/repair/enqueue attempts reconcile instead of replay.
 - Independent runtime evidence distinguishes active execution from orphaned or unknown lease records.
-- The final-response gate requires exact durable lease release for any invocation that acquired ownership.
-- Consumer adoption assembles and verifies the full target off the shared ref, then publishes once by conditional fast-forward and exact readback.
+- Persistent lease ownership is package-managed-only; ordinary ChatGPT/Work/Codex/watchdog/API surfaces without a mechanically enforceable terminal boundary are observer/orchestrator-only. Managed owners still require exact durable release proof before terminal completion.
+- Consumer adoption binds every required path to an immutable assembly-manifest Git object, validates consumer-lock target semantics, then publishes once by conditional fast-forward and exact readback.
 
 Read `references/multi-subscription-coordination-and-ownership.md`.
