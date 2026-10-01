@@ -63,7 +63,7 @@ class T(unittest.TestCase):
   task={"task_id":"task-1","task_url":"https://example.invalid/task/1",
         "operation_key":intent["operation_key"],"attempt_id":intent["attempt_id"],
         "binding":copy.deepcopy(intent["binding"]),"state":"terminal",
-        "conclusion":"success","evidence_refs":["provider:log/1"]}
+        "conclusion":"succeeded","evidence_refs":["provider:log/1"]}
   observation={"schema":"operation-observation/v1","operation_key":intent["operation_key"],
                "observed_at_utc":"2026-01-01T10:02:00Z","lookup_complete":True,"tasks":[task]}
   r=leasev2.clear_guard(r,OWNER,1,"chat-a","2026-01-01T10:02:00Z",observation,"provider:terminal/1")
