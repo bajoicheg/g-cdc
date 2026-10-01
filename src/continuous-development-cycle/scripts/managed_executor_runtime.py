@@ -349,6 +349,37 @@ class ManagedExecutorRuntime:
         if _git(self.repo_root, "rev-parse", plan["base_sha"] + "^{commit}") != plan["base_sha"]:
             raise ValueError("plan base is not an exact available commit")
 
+    def _terminal_hold_directory(self,task_id,attempt_id):
+        return self.journal.directory(self._identity(task_id,attempt_id))
+
+    def _arm_terminal_hold(self,capability):
+        import managed_terminal_capability
+        payload=capability.payload
+        directory=self._terminal_hold_directory(payload["task_id"],payload["attempt_id"])
+        paths=_terminal_hold_paths(directory)
+        if any(path.exists() for path in paths.values()):
+            raise ValueError("managed terminal lease hold already armed or consumed")
+        intent={"schema":"managed-terminal-lease-intent/v1",
+                "capability_ref":managed_terminal_capability.reference(capability),
+                "invocation_id":payload["invocation_id"],"lease_repository":payload["lease_repository"],
+                "lease_source_ref":payload["lease_source_ref"],"armed_at_utc":_utc()}
+        _write(paths["intent"],intent)
+        fd=os.open(directory,os.O_DIRECTORY)
+        try:os.fsync(fd)
+        finally:os.close(fd)
+        return intent
+
+    def _abort_terminal_hold(self,capability,reason):
+        import managed_terminal_capability
+        payload=capability.payload
+        directory=self._terminal_hold_directory(payload["task_id"],payload["attempt_id"])
+        paths=_terminal_hold_paths(directory)
+        if paths["owned"].exists():
+            raise ValueError("cannot abort terminal hold after lease ownership was recorded")
+        _write(paths["abort"],{"schema":"managed-terminal-lease-abort/v1",
+                               "capability_ref":managed_terminal_capability.reference(capability),
+                               "aborted_at_utc":_utc(),"reason":reason})
+
     def terminal_capability(self,task_id,attempt_id,*,lease_repository,lease_source_ref,observed_at_utc=None):
         import managed_terminal_capability
         return managed_terminal_capability.issue(
