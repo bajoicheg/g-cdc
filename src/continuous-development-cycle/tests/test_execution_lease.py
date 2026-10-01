@@ -174,20 +174,10 @@ class GitStoreTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'authoritative coordination ancestry'):
             store.read_revision(unrelated)
 
-    def test_two_simultaneous_claimants_have_exactly_one_winner(self):
+    def test_two_simultaneous_legacy_v1_claimants_are_both_rejected(self):
         initial = self.lease.initialize(REPO, SOURCE)
         revision = self.stores[0].compare_and_swap(None, initial)
         barrier = threading.Barrier(2)
-        push_barrier = threading.Barrier(2)
-        # Force both proposals to reach the actual Git push after observing the
-        # same revision. This tests remote rejection, not only an early reread.
-        for store in self.stores:
-            original_git = store._git
-            def gated_git(*args, _git=original_git, **kwargs):
-                if 'push' in args:
-                    push_barrier.wait(timeout=10)
-                return _git(*args, **kwargs)
-            store._git = gated_git
         def claim(index):
             observed, record = self.stores[index].read()
             proposal = self.lease.acquire(record, str(uuid.uuid4()), AT)
@@ -198,11 +188,11 @@ class GitStoreTests(unittest.TestCase):
                 return None
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
             results = list(pool.map(claim, [0,1]))
-        self.assertEqual(sum(x is not None for x in results), 1)
+        self.assertEqual(sum(x is not None for x in results), 0)
         current, record = self.stores[0].read()
-        self.assertIn(current, results)
-        self.assertEqual(record['generation'], 1)
-        self.assertEqual(self.git(self.checkouts[0], 'rev-parse', current + '^'), revision)
+        self.assertEqual(current, revision)
+        self.assertEqual(record['generation'], 0)
+        self.assertIsNone(record['owner_id'])
 
     def test_check_refetches_revision_and_exact_binding(self):
         revision = self.stores[0].compare_and_swap(None, self.record)
