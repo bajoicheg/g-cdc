@@ -9,6 +9,7 @@ from git_document_store import GitDocumentStore
 from git_object_integrity import git_object_environment
 from git_remote_identity import isolated_remote_args,remote_identity,repository_root
 from parallel_task_planner import portable_path_key
+import migration_transaction as migration
 
 SCHEMA="consumer-adoption-publication/v1"
 REQUIRED_STATIC_PATHS={
@@ -30,7 +31,7 @@ def _path(v):
 
 def validate(s):
     fields={"schema","source_head","target_ref","target_version","target_release_ref","target_release_commit",
-            "target_package_tree","required_paths","prepared_paths","assembly_manifest",
+            "target_package_tree","required_paths","prepared_paths","assembly_manifest","assembly_authority",
             "final_tree_sha","observed_package_tree","candidate_commit","live_source_head","publication_claim",
             "published_head","readback_package_tree"}
     if not isinstance(s,dict) or set(s)!=fields or s.get("schema")!=SCHEMA:raise ValueError("atomic adoption state invalid")
@@ -60,13 +61,33 @@ def validate(s):
     package=[x for x in manifest if x["path"]==".agents/skills/continuous-development-cycle"]
     if len(package)!=1 or package[0]["object_type"]!="tree" or package[0]["object_sha1"]!=s["target_package_tree"]:
         raise ValueError("assembly manifest package tree mismatch")
+    authority=s["assembly_authority"]
+    afields={"schema","store_ref","store_id","revision","transaction_id","manifest_digest"}
+    if not isinstance(authority,dict) or set(authority)!=afields or authority.get("schema")!="migration-assembly-authority/v1":
+        raise ValueError("assembly authority invalid")
+    if not isinstance(authority["store_ref"],str) or not authority["store_ref"].startswith("refs/heads/cdc/"):
+        raise ValueError("assembly authority store_ref invalid")
+    if not isinstance(authority["store_id"],str) or not DIGEST.fullmatch(authority["store_id"]):
+        raise ValueError("assembly authority store_id invalid")
+    if not isinstance(authority["revision"],str) or not re.fullmatch(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$",authority["revision"]):
+        raise ValueError("assembly authority revision invalid")
+    if not isinstance(authority["transaction_id"],str) or not authority["transaction_id"].strip():
+        raise ValueError("assembly authority transaction_id invalid")
+    if not isinstance(authority["manifest_digest"],str) or not DIGEST.fullmatch(authority["manifest_digest"]):
+        raise ValueError("assembly authority manifest_digest invalid")
+    if authority["manifest_digest"]!=_manifest_digest(manifest):
+        raise ValueError("assembly authority digest does not bind supplied manifest")
     claim=s["publication_claim"]
     if claim is not None:
-        if not isinstance(claim,dict) or set(claim)!={"effect_id","expected_head","intended_head","target_ref","manifest_digest"}:raise ValueError("publication claim invalid")
+        if not isinstance(claim,dict) or set(claim)!={"effect_id","expected_head","intended_head","target_ref","manifest_digest",
+                                                      "assembly_store_ref","assembly_store_id","assembly_revision","transaction_id"}:raise ValueError("publication claim invalid")
         if not isinstance(claim["effect_id"],str) or not DIGEST.fullmatch(claim["effect_id"]):raise ValueError("publication effect id invalid")
         _sha(claim["expected_head"],"claim expected_head");_sha(claim["intended_head"],"claim intended_head")
         if not isinstance(claim["manifest_digest"],str) or not DIGEST.fullmatch(claim["manifest_digest"]):raise ValueError("publication manifest digest invalid")
-        if claim["target_ref"]!=s["target_ref"] or claim["manifest_digest"]!=_manifest_digest(s["assembly_manifest"]):
+        authority=s["assembly_authority"]
+        if (claim["target_ref"]!=s["target_ref"] or claim["manifest_digest"]!=_manifest_digest(s["assembly_manifest"])
+                or claim["assembly_store_ref"]!=authority["store_ref"] or claim["assembly_store_id"]!=authority["store_id"]
+                or claim["assembly_revision"]!=authority["revision"] or claim["transaction_id"]!=authority["transaction_id"]):
             raise ValueError("publication claim binding mismatch")
     return s
 
@@ -76,13 +97,18 @@ def _manifest_digest(manifest):
 
 def _claim(s):
     manifest_digest=_manifest_digest(s["assembly_manifest"])
+    authority=s["assembly_authority"]
     payload={"target_ref":s["target_ref"],"expected_head":s["source_head"],"intended_head":s["candidate_commit"],
              "target_version":s["target_version"],"target_release_ref":s["target_release_ref"],
              "target_release_commit":s["target_release_commit"],"target_package_tree":s["target_package_tree"],
-             "manifest_digest":manifest_digest}
+             "manifest_digest":manifest_digest,"assembly_store_ref":authority["store_ref"],
+             "assembly_store_id":authority["store_id"],"assembly_revision":authority["revision"],
+             "transaction_id":authority["transaction_id"]}
     digest=hashlib.sha256(json.dumps(payload,sort_keys=True,separators=(",",":")).encode()).hexdigest()
     return {"effect_id":"sha256:"+digest,"expected_head":s["source_head"],"intended_head":s["candidate_commit"],
-            "target_ref":s["target_ref"],"manifest_digest":manifest_digest}
+            "target_ref":s["target_ref"],"manifest_digest":manifest_digest,
+            "assembly_store_ref":authority["store_ref"],"assembly_store_id":authority["store_id"],
+            "assembly_revision":authority["revision"],"transaction_id":authority["transaction_id"]}
 
 def assess(s):
     validate(s)
@@ -119,13 +145,14 @@ def _now_utc():
 class GitConsumerAdoptionPublisher:
     """Publish one fully assembled consumer adoption by durable, non-replayed Git CAS."""
 
-    def __init__(self,repo,remote,target_ref,remote_id,attempt_store,*,clock=None,
+    def __init__(self,repo,remote,target_ref,remote_id,attempt_store,assembly_store,*,clock=None,
                  package_path=".agents/skills/continuous-development-cycle"):
         self.repo=repository_root(repo)
         self.remote=remote
         self.target_ref=target_ref
         self.remote_id=remote_id
         self.attempt_store=attempt_store
+        self.assembly_store=assembly_store
         self.clock=clock or _now_utc
         self.package_path=package_path
         if not isinstance(target_ref,str) or not target_ref.startswith("refs/heads/"):
@@ -134,10 +161,14 @@ class GitConsumerAdoptionPublisher:
         _path(package_path)
         if not isinstance(attempt_store,GitDocumentStore):
             raise ValueError("consumer adoption publication requires GitDocumentStore attempt journal")
-        if attempt_store.store_id!=remote_id:
-            raise ValueError("consumer adoption attempt store remote identity mismatch")
+        if not isinstance(assembly_store,GitDocumentStore):
+            raise ValueError("consumer adoption publication requires authoritative GitDocumentStore assembly record")
+        if attempt_store.store_id!=remote_id or assembly_store.store_id!=remote_id:
+            raise ValueError("consumer adoption store remote identity mismatch")
         if portable_path_key(attempt_store.ref)==portable_path_key(target_ref):
             raise ValueError("consumer adoption attempt ref must be isolated from product ref")
+        if portable_path_key(assembly_store.ref) in {portable_path_key(target_ref),portable_path_key(attempt_store.ref)}:
+            raise ValueError("consumer adoption assembly ref must be isolated from product and attempt refs")
         if remote_identity(self.repo,self.remote)!=self.remote_id:
             raise ValueError("consumer adoption remote identity drift")
 
@@ -173,8 +204,29 @@ class GitConsumerAdoptionPublisher:
             raise ValueError("consumer candidate package tree invalid")
         return out
 
+    def _resolve_assembly(self,state):
+        authority=state["assembly_authority"]
+        if self.assembly_store.ref!=authority["store_ref"] or self.assembly_store.store_id!=authority["store_id"]:
+            raise ValueError("assembly authority does not match configured authoritative store")
+        record=self.assembly_store.read_revision(authority["revision"])
+        migration.validate_assembly_record(record)
+        expected={
+            "transaction_id":authority["transaction_id"],"source_head":state["source_head"],
+            "target_ref":state["target_ref"],"target_version":state["target_version"],
+            "target_release_ref":state["target_release_ref"],"target_release_commit":state["target_release_commit"],
+            "final_tree_sha":state["final_tree_sha"],"expected_subtree_tree":state["target_package_tree"],
+            "manifest_digest":authority["manifest_digest"],
+        }
+        for name,value in expected.items():
+            if record.get(name)!=value:
+                raise ValueError("authoritative assembly transaction binding mismatch: "+name)
+        if record["manifest"]!=state["assembly_manifest"]:
+            raise ValueError("caller assembly manifest does not match authoritative transaction manifest")
+        return record
+
     def _verify_candidate(self,state):
         plan=assess(state)
+        assembly=self._resolve_assembly(state)
         if plan["action"]!="READY_CONDITIONAL_FAST_FORWARD":
             raise ValueError("consumer adoption candidate is not ready for conditional publication")
         if state["target_ref"]!=self.target_ref:
@@ -189,7 +241,7 @@ class GitConsumerAdoptionPublisher:
         root_tree,_=self._git("rev-parse",candidate+"^{tree}")
         if root_tree!=state["final_tree_sha"]:
             raise ValueError("consumer adoption candidate root tree does not match detached final tree")
-        manifest={item["path"]:item for item in state["assembly_manifest"]}
+        manifest={item["path"]:item for item in assembly["manifest"]}
         for path in state["required_paths"]:
             _,code=self._git("cat-file","-e",f"{candidate}:{path}",check=False)
             if code!=0:
@@ -231,7 +283,8 @@ class GitConsumerAdoptionPublisher:
             raise ValueError("consumer adoption attempt journal identity mismatch")
         for effect_id,a in state["attempts"].items():
             fields={"effect_id","expected_head","intended_head","target_package_tree","target_release_ref",
-                    "target_release_commit","manifest_digest","status",
+                    "target_release_commit","manifest_digest","assembly_store_ref","assembly_store_id",
+                    "assembly_revision","transaction_id","status",
                     "prepared_at_utc","submitted_at_utc","resolved_at_utc"}
             if (not isinstance(a,dict) or set(a)!=fields or a["effect_id"]!=effect_id
                     or not isinstance(effect_id,str) or not DIGEST.fullmatch(effect_id)
@@ -242,6 +295,14 @@ class GitConsumerAdoptionPublisher:
                 raise ValueError("consumer adoption attempt target_release_ref invalid")
             if not isinstance(a["manifest_digest"],str) or not DIGEST.fullmatch(a["manifest_digest"]):
                 raise ValueError("consumer adoption attempt manifest digest invalid")
+            if not isinstance(a["assembly_store_ref"],str) or not a["assembly_store_ref"].startswith("refs/heads/cdc/"):
+                raise ValueError("consumer adoption attempt assembly_store_ref invalid")
+            if not isinstance(a["assembly_store_id"],str) or not DIGEST.fullmatch(a["assembly_store_id"]):
+                raise ValueError("consumer adoption attempt assembly_store_id invalid")
+            if not isinstance(a["assembly_revision"],str) or not re.fullmatch(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$",a["assembly_revision"]):
+                raise ValueError("consumer adoption attempt assembly_revision invalid")
+            if not isinstance(a["transaction_id"],str) or not a["transaction_id"].strip():
+                raise ValueError("consumer adoption attempt transaction_id invalid")
             if not isinstance(a["prepared_at_utc"],str) or not a["prepared_at_utc"].endswith("Z"):
                 raise ValueError("consumer adoption attempt prepared timestamp invalid")
             for name in ("submitted_at_utc","resolved_at_utc"):
@@ -256,11 +317,14 @@ class GitConsumerAdoptionPublisher:
         return revision,state
 
     def _attempt_fields(self,state):
-        return {"effect_id":state["publication_claim"]["effect_id"],
+        claim=state["publication_claim"]
+        return {"effect_id":claim["effect_id"],
                 "expected_head":state["source_head"],"intended_head":state["candidate_commit"],
                 "target_package_tree":state["target_package_tree"],
                 "target_release_ref":state["target_release_ref"],"target_release_commit":state["target_release_commit"],
-                "manifest_digest":state["publication_claim"]["manifest_digest"]}
+                "manifest_digest":claim["manifest_digest"],"assembly_store_ref":claim["assembly_store_ref"],
+                "assembly_store_id":claim["assembly_store_id"],"assembly_revision":claim["assembly_revision"],
+                "transaction_id":claim["transaction_id"]}
 
     def _prepare(self,state):
         expected=self._attempt_fields(state)
