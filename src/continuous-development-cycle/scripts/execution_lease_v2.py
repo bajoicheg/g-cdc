@@ -299,7 +299,7 @@ def _owner(record, owner_id, generation, invocation_id, at):
     if op._timestamp(at, "at") < op._timestamp(record["heartbeat_at_utc"], "heartbeat"):
         raise ValueError("ownership action cannot move backwards in time")
 
-def acquire(record, owner_id, at, *, invocation, terminal_capability, ttl=1200, quiescence=None):
+def acquire(record, owner_id, at, *, invocation, terminal_capability=None, ttl=1200, quiescence=None):
     validate(record)
     if record["schema"] != "execution-lease/v2":
         raise ValueError("migrate v1 lease before v2 acquisition")
