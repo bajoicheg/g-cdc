@@ -439,7 +439,7 @@ class ManagedExecutorRuntime:
                 or receipt.get("request_ref") != _digest(request)
                 or receipt.get("launch_id") != _digest(request)):
             raise ValueError("backend observation claim/receipt mismatch")
-        active = receipt.get("status") in {"running", "starting"}
+        active = receipt.get("status") in {"running", "starting", "awaiting_release"}
         terminal = receipt.get("status") in {"succeeded", "failed", "cancelled", "timed_out"}
         if not (active or terminal) or receipt.get("quiescent") is not terminal:
             raise ValueError("backend must prove descendant quiescence before terminal status")
