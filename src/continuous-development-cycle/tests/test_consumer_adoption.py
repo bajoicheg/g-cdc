@@ -155,6 +155,16 @@ class GitPublisherTests(unittest.TestCase):
   with self.assertRaisesRegex(ValueError,"missing required path"):
    self.publisher.publish(d)
   self.assertEqual(self.remote_head(),self.source);self.assertIsNone(self.attempt(d))
+ def test_candidate_root_tree_must_match_prepared_detached_tree(self):
+  d=self.ready_state();d["final_tree_sha"]="f"*40
+  with self.assertRaisesRegex(ValueError,"root tree"):
+   self.publisher.publish(d)
+  self.assertEqual(self.remote_head(),self.source);self.assertIsNone(self.attempt(d))
+ def test_required_core_paths_cannot_be_shrunk_by_caller(self):
+  d=self.ready_state();d["required_paths"]=[d["required_paths"][0]];d["prepared_paths"]=d["required_paths"][:]
+  d["publication_claim"]=None
+  with self.assertRaisesRegex(ValueError,"required core path"):
+   assess(d)
  def test_attempt_journal_must_be_remote_bound_and_ref_isolated(self):
   fake="sha256:"+"0"*64
   with self.assertRaisesRegex(ValueError,"remote identity mismatch"):
