@@ -1,4 +1,5 @@
 import copy, json, sys, unittest, uuid
+from unittest import mock
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"scripts"))
@@ -18,6 +19,9 @@ class Store:
         self.n+=1;self.revision="r"+str(self.n);self.record=copy.deepcopy(record);return self.revision
 
 class Tests(unittest.TestCase):
+    def setUp(self):
+        patcher=mock.patch.object(v2.terminal_capability_api,"validate_verified",return_value={})
+        patcher.start();self.addCleanup(patcher.stop)
     def test_valid_owned_v2_is_supported_by_git_store(self):
         r=v2.acquire(v2.initialize("example/project","refs/heads/main"),OWNER,"2026-01-01T10:00:01Z",invocation=INV)
         self.assertIs(validate_coordination_record(r),r)
