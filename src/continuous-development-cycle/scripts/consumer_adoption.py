@@ -11,6 +11,13 @@ from git_remote_identity import isolated_remote_args,remote_identity,repository_
 from parallel_task_planner import portable_path_key
 
 SCHEMA="consumer-adoption-publication/v1"
+REQUIRED_CORE_PATHS={
+    ".agents/skills/continuous-development-cycle",
+    "docs/cdc-consumer-lock.json",
+    "docs/development-cycle.yaml",
+    "docs/work-status/current.md",
+    "docs/cdc-adoption-2.11.3.md",
+}
 SHA=re.compile(r"^[0-9a-f]{40}$");DIGEST=re.compile(r"^sha256:[0-9a-f]{64}$")
 SEMVER=re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
 
@@ -35,6 +42,7 @@ def validate(s):
     required=[_path(x) for x in s["required_paths"]]
     prepared=[_path(x) for x in s["prepared_paths"]] if isinstance(s["prepared_paths"],list) else (_ for _ in ()).throw(ValueError("prepared_paths invalid"))
     if len(required)!=len(set(required)) or len(prepared)!=len(set(prepared)):raise ValueError("duplicate adoption path")
+    if not REQUIRED_CORE_PATHS<=set(required):raise ValueError("atomic adoption required core path missing")
     if not set(prepared)<=set(required):raise ValueError("prepared path outside required set")
     claim=s["publication_claim"]
     if claim is not None:
@@ -152,6 +160,9 @@ class GitConsumerAdoptionPublisher:
         _,code=self._git("merge-base","--is-ancestor",source,candidate,check=False)
         if code!=0:
             raise ValueError("consumer adoption candidate must fast-forward expected source")
+        root_tree,_=self._git("rev-parse",candidate+"^{tree}")
+        if root_tree!=state["final_tree_sha"]:
+            raise ValueError("consumer adoption candidate root tree does not match detached final tree")
         for path in state["required_paths"]:
             _,code=self._git("cat-file","-e",f"{candidate}:{path}",check=False)
             if code!=0:
