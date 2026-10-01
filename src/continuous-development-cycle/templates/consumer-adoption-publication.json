@@ -47,5 +47,13 @@
   "live_source_head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "publication_claim": null,
   "published_head": null,
-  "readback_package_tree": null
+  "readback_package_tree": null,
+  "assembly_authority": {
+    "schema": "migration-assembly-authority/v1",
+    "store_ref": "refs/heads/cdc/adoption-assembly",
+    "store_id": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "revision": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "transaction_id": "migration-example",
+    "manifest_digest": "sha256:5b26b16d6fb70924e92030d313a09f94153918685cc2a09e242e6c2623313525"
+  }
 }
