@@ -29,12 +29,15 @@ def _path(v):
     return v
 
 def validate(s):
-    fields={"schema","source_head","target_ref","target_version","target_package_tree","required_paths","prepared_paths",
+    fields={"schema","source_head","target_ref","target_version","target_release_ref","target_release_commit",
+            "target_package_tree","required_paths","prepared_paths","assembly_manifest",
             "final_tree_sha","observed_package_tree","candidate_commit","live_source_head","publication_claim",
             "published_head","readback_package_tree"}
     if not isinstance(s,dict) or set(s)!=fields or s.get("schema")!=SCHEMA:raise ValueError("atomic adoption state invalid")
     _sha(s["source_head"],"source_head");_sha(s["target_package_tree"],"target_package_tree");_sha(s["live_source_head"],"live_source_head")
+    _sha(s["target_release_commit"],"target_release_commit")
     if not isinstance(s["target_ref"],str) or not s["target_ref"].startswith("refs/heads/"):raise ValueError("target_ref invalid")
+    if not isinstance(s["target_release_ref"],str) or not s["target_release_ref"].startswith("refs/heads/release/"):raise ValueError("target_release_ref invalid")
     if not isinstance(s["target_version"],str) or not SEMVER.fullmatch(s["target_version"]):raise ValueError("target_version invalid")
     for n in ("final_tree_sha","observed_package_tree","candidate_commit","published_head","readback_package_tree"):_sha(s[n],n,True)
     if not isinstance(s["required_paths"],list) or not s["required_paths"]:raise ValueError("required_paths invalid")
@@ -44,19 +47,42 @@ def validate(s):
     required_core=REQUIRED_STATIC_PATHS|{"docs/cdc-adoption-"+s["target_version"]+".md"}
     if not required_core<=set(required):raise ValueError("atomic adoption required core path missing")
     if not set(prepared)<=set(required):raise ValueError("prepared path outside required set")
+    manifest=s["assembly_manifest"]
+    if not isinstance(manifest,list) or len(manifest)!=len(required):raise ValueError("assembly_manifest must cover every required path exactly once")
+    manifest_paths=[]
+    for item in manifest:
+        if not isinstance(item,dict) or set(item)!={"path","object_type","object_sha1"}:raise ValueError("assembly manifest item invalid")
+        path=_path(item["path"]);manifest_paths.append(path)
+        if item["object_type"] not in {"blob","tree"}:raise ValueError("assembly manifest object_type invalid")
+        _sha(item["object_sha1"],"assembly manifest object")
+    if len(manifest_paths)!=len(set(manifest_paths)) or set(manifest_paths)!=set(required):
+        raise ValueError("assembly_manifest path set mismatch")
+    package=[x for x in manifest if x["path"]==".agents/skills/continuous-development-cycle"]
+    if len(package)!=1 or package[0]["object_type"]!="tree" or package[0]["object_sha1"]!=s["target_package_tree"]:
+        raise ValueError("assembly manifest package tree mismatch")
     claim=s["publication_claim"]
     if claim is not None:
-        if not isinstance(claim,dict) or set(claim)!={"effect_id","expected_head","intended_head","target_ref"}:raise ValueError("publication claim invalid")
+        if not isinstance(claim,dict) or set(claim)!={"effect_id","expected_head","intended_head","target_ref","manifest_digest"}:raise ValueError("publication claim invalid")
         if not isinstance(claim["effect_id"],str) or not DIGEST.fullmatch(claim["effect_id"]):raise ValueError("publication effect id invalid")
         _sha(claim["expected_head"],"claim expected_head");_sha(claim["intended_head"],"claim intended_head")
-        if claim["target_ref"]!=s["target_ref"]:raise ValueError("publication claim ref mismatch")
+        if not isinstance(claim["manifest_digest"],str) or not DIGEST.fullmatch(claim["manifest_digest"]):raise ValueError("publication manifest digest invalid")
+        if claim["target_ref"]!=s["target_ref"] or claim["manifest_digest"]!=_manifest_digest(s["assembly_manifest"]):
+            raise ValueError("publication claim binding mismatch")
     return s
 
+def _manifest_digest(manifest):
+    raw=json.dumps(manifest,sort_keys=True,separators=(",",":"),ensure_ascii=False,allow_nan=False).encode("utf-8")
+    return "sha256:"+hashlib.sha256(raw).hexdigest()
+
 def _claim(s):
+    manifest_digest=_manifest_digest(s["assembly_manifest"])
     payload={"target_ref":s["target_ref"],"expected_head":s["source_head"],"intended_head":s["candidate_commit"],
-             "target_version":s["target_version"],"target_package_tree":s["target_package_tree"]}
+             "target_version":s["target_version"],"target_release_ref":s["target_release_ref"],
+             "target_release_commit":s["target_release_commit"],"target_package_tree":s["target_package_tree"],
+             "manifest_digest":manifest_digest}
     digest=hashlib.sha256(json.dumps(payload,sort_keys=True,separators=(",",":")).encode()).hexdigest()
-    return {"effect_id":"sha256:"+digest,"expected_head":s["source_head"],"intended_head":s["candidate_commit"],"target_ref":s["target_ref"]}
+    return {"effect_id":"sha256:"+digest,"expected_head":s["source_head"],"intended_head":s["candidate_commit"],
+            "target_ref":s["target_ref"],"manifest_digest":manifest_digest}
 
 def assess(s):
     validate(s)
@@ -163,10 +189,28 @@ class GitConsumerAdoptionPublisher:
         root_tree,_=self._git("rev-parse",candidate+"^{tree}")
         if root_tree!=state["final_tree_sha"]:
             raise ValueError("consumer adoption candidate root tree does not match detached final tree")
+        manifest={item["path"]:item for item in state["assembly_manifest"]}
         for path in state["required_paths"]:
             _,code=self._git("cat-file","-e",f"{candidate}:{path}",check=False)
             if code!=0:
                 raise ValueError("consumer adoption candidate missing required path: "+path)
+            object_sha,_=self._git("rev-parse",f"{candidate}:{path}")
+            object_type,_=self._git("cat-file","-t",object_sha)
+            expected=manifest[path]
+            if object_sha!=expected["object_sha1"] or object_type!=expected["object_type"]:
+                raise ValueError("consumer adoption candidate object identity mismatch: "+path)
+        lock_raw,_=self._git("show",f"{candidate}:docs/cdc-consumer-lock.json")
+        try:lock=json.loads(lock_raw)
+        except json.JSONDecodeError as exc:raise ValueError("consumer lock JSON invalid") from exc
+        expected_lock={
+            "version":state["target_version"],
+            "package_tree":state["target_package_tree"],
+            "release_ref":state["target_release_ref"],
+            "release_commit":state["target_release_commit"],
+        }
+        for name,value in expected_lock.items():
+            if lock.get(name)!=value:
+                raise ValueError("consumer lock target binding mismatch: "+name)
         tree=self._package_tree(candidate)
         if tree!=state["target_package_tree"]:
             raise ValueError("consumer adoption candidate package tree mismatch")
@@ -186,13 +230,18 @@ class GitConsumerAdoptionPublisher:
                 or state["attempt_store_ref"]!=self.attempt_store.ref or not isinstance(state["attempts"],dict)):
             raise ValueError("consumer adoption attempt journal identity mismatch")
         for effect_id,a in state["attempts"].items():
-            fields={"effect_id","expected_head","intended_head","target_package_tree","status",
+            fields={"effect_id","expected_head","intended_head","target_package_tree","target_release_ref",
+                    "target_release_commit","manifest_digest","status",
                     "prepared_at_utc","submitted_at_utc","resolved_at_utc"}
             if (not isinstance(a,dict) or set(a)!=fields or a["effect_id"]!=effect_id
                     or not isinstance(effect_id,str) or not DIGEST.fullmatch(effect_id)
                     or a["status"] not in ATTEMPT_STATES):
                 raise ValueError("consumer adoption attempt invalid")
-            for name in ("expected_head","intended_head","target_package_tree"):_sha(a[name],name)
+            for name in ("expected_head","intended_head","target_package_tree","target_release_commit"):_sha(a[name],name)
+            if not isinstance(a["target_release_ref"],str) or not a["target_release_ref"].startswith("refs/heads/release/"):
+                raise ValueError("consumer adoption attempt target_release_ref invalid")
+            if not isinstance(a["manifest_digest"],str) or not DIGEST.fullmatch(a["manifest_digest"]):
+                raise ValueError("consumer adoption attempt manifest digest invalid")
             if not isinstance(a["prepared_at_utc"],str) or not a["prepared_at_utc"].endswith("Z"):
                 raise ValueError("consumer adoption attempt prepared timestamp invalid")
             for name in ("submitted_at_utc","resolved_at_utc"):
@@ -209,7 +258,9 @@ class GitConsumerAdoptionPublisher:
     def _attempt_fields(self,state):
         return {"effect_id":state["publication_claim"]["effect_id"],
                 "expected_head":state["source_head"],"intended_head":state["candidate_commit"],
-                "target_package_tree":state["target_package_tree"]}
+                "target_package_tree":state["target_package_tree"],
+                "target_release_ref":state["target_release_ref"],"target_release_commit":state["target_release_commit"],
+                "manifest_digest":state["publication_claim"]["manifest_digest"]}
 
     def _prepare(self,state):
         expected=self._attempt_fields(state)
