@@ -7,7 +7,7 @@ from continuity_fixtures import with_terminal_evidence
 
 T0="2026-01-01T10:00:00Z"; T1="2026-01-01T10:00:01Z"
 OWNER=str(uuid.UUID("11111111-1111-4111-8111-111111111111"))
-INV={"invocation_id":"wake-1","automation_id":"auto-1","conversation_id":"chat-1","execution_surface":"watchdog","started_at_utc":T0}
+INV={"invocation_id":"wake-1","automation_id":"auto-1","conversation_id":"chat-1","execution_surface":"managed","started_at_utc":T0}
 def boundary(progress=True):
     state = {"schema":"execution-continuity/v1","invocation_id":"wake-1","current_state":"CHECKPOINT",
             "requested_terminal_outcome":"scope_complete" if progress else "progress","runnable_next_action":not progress,
@@ -20,6 +20,11 @@ def boundary(progress=True):
 class Tests(unittest.TestCase):
     def owned(self):
         return m.acquire(m.initialize("example/project","refs/heads/main"),OWNER,T1,invocation=INV)
+    def test_unmanaged_host_surfaces_are_observer_only(self):
+        for surface in ("chat","work","codex","watchdog","api","unknown"):
+            invocation=dict(INV,execution_surface=surface)
+            with self.subTest(surface=surface), self.assertRaisesRegex(ValueError,"observer/orchestrator only"):
+                m.acquire(m.initialize("example/project","refs/heads/main"),OWNER,T1,invocation=invocation)
     def test_wrong_invocation_cannot_renew(self):
         with self.assertRaisesRegex(ValueError,"invocation binding"):
             m.renew(self.owned(),OWNER,1,"wake-other","2026-01-01T10:00:02Z",activity_ref="git:x")
