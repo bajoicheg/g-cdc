@@ -290,11 +290,43 @@ def _supervise(directory):
                             pass
             time.sleep(.01)
         elapsed = time.monotonic() - started
-        receipt.update(status=termination or ("succeeded" if exit_code == 0 else "failed"),
-                       quiescent=True, finished_at_utc=_utc(), exit_code=exit_code,
-                       elapsed_seconds=elapsed, runtime_seconds=min(elapsed, request["timeout_seconds"]))
-        if receipt["status"] != "succeeded":
-            receipt["failure"] = termination or f"worker exit {exit_code}"
+        terminal_status=termination or ("succeeded" if exit_code == 0 else "failed")
+        terminal_failure=None if terminal_status=="succeeded" else (termination or f"worker exit {exit_code}")
+        paths=_terminal_hold_paths(directory)
+        intent=_read_json(paths["intent"])
+        if intent is not None:
+            required={"schema","capability_ref","invocation_id","lease_repository","lease_source_ref","armed_at_utc"}
+            if set(intent)!=required or intent.get("schema")!="managed-terminal-lease-intent/v1":
+                raise ValueError("managed terminal lease intent invalid")
+            while True:
+                release=_read_json(paths["release"])
+                abort=_read_json(paths["abort"])
+                owned=_read_json(paths["owned"])
+                if release is not None:
+                    expected={"schema","capability_ref","owner_id","generation","invocation_id","lease_revision","release_receipt"}
+                    if (set(release)!=expected or release.get("schema")!="managed-terminal-lease-release/v1"
+                            or release.get("capability_ref")!=intent["capability_ref"]
+                            or release.get("invocation_id")!=intent["invocation_id"]):
+                        raise ValueError("managed terminal lease release marker invalid")
+                    break
+                if abort is not None and owned is None:
+                    expected={"schema","capability_ref","aborted_at_utc","reason"}
+                    if (set(abort)!=expected or abort.get("schema")!="managed-terminal-lease-abort/v1"
+                            or abort.get("capability_ref")!=intent["capability_ref"]):
+                        raise ValueError("managed terminal lease abort marker invalid")
+                    break
+                receipt.update(status="awaiting_release",quiescent=False,finished_at_utc=None,
+                               exit_code=exit_code,elapsed_seconds=elapsed,
+                               runtime_seconds=min(elapsed,request["timeout_seconds"]),
+                               failure=None,terminal_hold_ref=intent["capability_ref"],
+                               pending_terminal_status=terminal_status)
+                _write(directory/"receipt.json",receipt)
+                time.sleep(.02)
+                elapsed=time.monotonic()-started
+        receipt.update(status=terminal_status,quiescent=True,finished_at_utc=_utc(),exit_code=exit_code,
+                       elapsed_seconds=elapsed,runtime_seconds=min(elapsed,request["timeout_seconds"]),
+                       failure=terminal_failure)
+        receipt.pop("terminal_hold_ref",None);receipt.pop("pending_terminal_status",None)
         _write(directory / "receipt.json", receipt)
     except Exception as exc:
         # Unexpected supervisor failure may leave children. Never manufacture closure.
