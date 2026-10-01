@@ -1,10 +1,11 @@
 from pathlib import Path
 import copy,sys,unittest
+from unittest import mock
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 import fleet_supervisor_control as m
 
 A="33333333-3333-4333-8333-333333333333";B="44444444-4444-4444-8444-444444444444"
-HEAD="a"*40
+HEAD="a"*40;CAP=object()
 def inv(name):return {"invocation_id":name,"automation_id":None,"conversation_id":None,"execution_surface":"managed","started_at_utc":"2026-01-01T10:00:00Z"}
 
 class Store:
@@ -27,16 +28,23 @@ def continuity(invocation_id,checkpoint):
  }
 
 class T(unittest.TestCase):
+ def setUp(self):
+  patcher=mock.patch.object(m.leasev2.terminal_capability_api,"validate_verified",return_value={})
+  patcher.start();self.addCleanup(patcher.stop)
+ def acquire_record(self,*args,**kwargs):
+  return m.acquire_record(*args,terminal_capability=CAP,**kwargs)
+ def acquire_cas(self,*args,**kwargs):
+  return m.acquire_cas(*args,terminal_capability=CAP,**kwargs)
  def effect_id(self,s):
   self.assertEqual(len(s["effects"]),1);return s["effects"][0]["effect_id"]
  def leader(self):
   s=m.initialize("o/fleet","refs/heads/cdc/fleet")
-  return m.acquire_record(s,A,"2026-01-01T10:00:00Z",inv("a"))
+  return self.acquire_record(s,A,"2026-01-01T10:00:00Z",inv("a"))
  def req(self,intent=None):
   return {"kind":"project_wake","target":"o/project","observed_fleet_head":HEAD,"intent":intent or {"reason":"stalled"}}
  def test_leader_transactional_release_returns_revision_receipt(self):
   store=Store()
-  acq=m.acquire_cas(store,None,"o/fleet","refs/heads/cdc/fleet",A,"2026-01-01T10:00:00Z",inv("a"))
+  acq=self.acquire_cas(store,None,"o/fleet","refs/heads/cdc/fleet",A,"2026-01-01T10:00:00Z",inv("a"))
   r=m.begin_finalization_cas(store,acq["revision"],A,1,"a","2026-01-01T10:01:00Z")
   r=m.record_checkpoint_cas(store,r["revision"],A,1,"a","2026-01-01T10:01:01Z",checkpoint_ref="fleet:checkpoint")
   r=m.reconcile_finalization_cas(store,r["revision"],A,1,"a","2026-01-01T10:01:02Z")
@@ -47,7 +55,7 @@ class T(unittest.TestCase):
   self.assertEqual(r["release_receipt"]["release"]["generation"],1)
  def test_unresolved_effect_blocks_leader_reconcile_and_release(self):
   store=Store()
-  acq=m.acquire_cas(store,None,"o/fleet","refs/heads/cdc/fleet",A,"2026-01-01T10:00:00Z",inv("a"))
+  acq=self.acquire_cas(store,None,"o/fleet","refs/heads/cdc/fleet",A,"2026-01-01T10:00:00Z",inv("a"))
   s,d=m.claim_effect_record(acq["state"],A,1,"a","2026-01-01T10:00:30Z",HEAD,self.req())
   rev=store.compare_and_swap(acq["revision"],s)
   r=m.begin_finalization_cas(store,rev,A,1,"a","2026-01-01T10:01:00Z")
@@ -57,9 +65,9 @@ class T(unittest.TestCase):
 
  def test_cas_allows_only_one_subscription_to_become_leader(self):
   store=Store()
-  a=m.acquire_cas(store,None,"o/fleet","refs/heads/cdc/fleet",A,"2026-01-01T10:00:00Z",inv("a"))
+  a=self.acquire_cas(store,None,"o/fleet","refs/heads/cdc/fleet",A,"2026-01-01T10:00:00Z",inv("a"))
   self.assertEqual(a["generation"],1)
-  with self.assertRaisesRegex(ValueError,"stale"):m.acquire_cas(store,None,"o/fleet","refs/heads/cdc/fleet",B,"2026-01-01T10:00:00Z",inv("b"))
+  with self.assertRaisesRegex(ValueError,"stale"):self.acquire_cas(store,None,"o/fleet","refs/heads/cdc/fleet",B,"2026-01-01T10:00:00Z",inv("b"))
  def test_nonleader_cannot_claim_fleet_effect(self):
   s=self.leader()
   with self.assertRaisesRegex(ValueError,"not fleet leader"):m.claim_effect_record(s,B,1,"b","2026-01-01T10:01:00Z",HEAD,self.req())
@@ -100,7 +108,7 @@ class T(unittest.TestCase):
   s=m.update_effect_record(s,A,1,"a","2026-01-01T10:02:00Z",self.effect_id(s),"unknown","scheduler:request-1")
   self.assertEqual(m.assess_takeover(s)["action"],"BLOCK_PENDING_EFFECTS")
   q={"owner_id":A,"generation":1,"repository":"o/fleet","source_ref":"refs/heads/cdc/fleet","invocation_id":"a","kind":"executor_stopped","reference":"runtime:a:stopped","pending_shared_writes":False,"external_effects_state":"preserved_unknown"}
-  with self.assertRaisesRegex(ValueError,"unresolved side effects"):m.acquire_record(s,B,"2026-01-01T10:03:00Z",inv("b"),quiescence=q)
+  with self.assertRaisesRegex(ValueError,"unresolved side effects"):self.acquire_record(s,B,"2026-01-01T10:03:00Z",inv("b"),quiescence=q)
  def observation(self,s,eid=None,state="terminal",receipt="scheduler:run-1",outcome="success",lookup=True):
   if eid is None:eid=self.effect_id(s)
   e=next(x for x in s["effects"] if x["effect_id"]==eid)
@@ -113,7 +121,7 @@ class T(unittest.TestCase):
   self.assertEqual(d["action"],"TERMINAL_RECONCILED");self.assertTrue(d["resolved"]);self.assertFalse(d["authorizes_effect"])
   self.assertEqual(m.assess_takeover(s)["action"],"REQUIRE_EXECUTOR_STOPPED_EVIDENCE")
   q={"owner_id":A,"generation":1,"repository":"o/fleet","source_ref":"refs/heads/cdc/fleet","invocation_id":"a","kind":"executor_stopped","reference":"runtime:a:stopped","pending_shared_writes":False,"external_effects_state":"reconciled"}
-  s=m.acquire_record(s,B,"2026-01-01T10:04:00Z",inv("b"),quiescence=q)
+  s=self.acquire_record(s,B,"2026-01-01T10:04:00Z",inv("b"),quiescence=q)
   self.assertEqual(s["lease"]["owner_id"],B);self.assertEqual(s["lease"]["generation"],2)
  def test_running_reconciliation_keeps_takeover_blocked(self):
   s,_=m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z",HEAD,self.req())
@@ -135,7 +143,7 @@ class T(unittest.TestCase):
   s,_=m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z",HEAD,self.req())
   s=m.update_effect_record(s,A,1,"a","2026-01-01T10:02:00Z",self.effect_id(s),"terminal","scheduler:run-1","success")
   q={"owner_id":A,"generation":1,"repository":"o/fleet","source_ref":"refs/heads/cdc/fleet","invocation_id":"a","kind":"executor_stopped","reference":"runtime:a:stopped","pending_shared_writes":False,"external_effects_state":"reconciled"}
-  s=m.acquire_record(s,B,"2026-01-01T10:03:00Z",inv("b"),quiescence=q)
+  s=self.acquire_record(s,B,"2026-01-01T10:03:00Z",inv("b"),quiescence=q)
   self.assertEqual(s["lease"]["owner_id"],B);self.assertEqual(s["lease"]["generation"],2)
 
 if __name__=="__main__":unittest.main()
