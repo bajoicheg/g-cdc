@@ -65,7 +65,7 @@ class Tests(unittest.TestCase):
                                       "observed_head":"a"*40,"decision":"COMPLETE","runnable_actions":[],
                                       "pending_external":None,"blocker":None,
                                       "meaningful_progress_refs":["evidence:test"],
-                                      "completion_evidence_refs":["evidence:test"],
+                                      "completion_evidence_refs":["scope-complete:test"],
                                       "checkpoint_ref":"checkpoint:test","lease_released":False}}
         previous=v2.mark_ready(previous,OWNER,1,"wake-1","2026-01-01T10:00:05Z",
                                continuity_state=continuity)
