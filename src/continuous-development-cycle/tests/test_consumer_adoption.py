@@ -160,6 +160,15 @@ class GitPublisherTests(unittest.TestCase):
   with self.assertRaisesRegex(ValueError,"root tree"):
    self.publisher.publish(d)
   self.assertEqual(self.remote_head(),self.source);self.assertIsNone(self.attempt(d))
+ def test_adoption_provenance_path_tracks_target_version(self):
+  d=state();d["target_version"]="2.11.4"
+  d["required_paths"]=[p.replace("cdc-adoption-2.11.3.md","cdc-adoption-2.11.4.md") for p in d["required_paths"]]
+  d["prepared_paths"]=d["required_paths"][:]
+  d["final_tree_sha"]="d"*40;d["observed_package_tree"]=TREE;d["candidate_commit"]=B
+  self.assertEqual(assess(d)["action"],"CLAIM_CONDITIONAL_PUBLISH")
+  bad=copy.deepcopy(d);bad["required_paths"]=[p.replace("cdc-adoption-2.11.4.md","cdc-adoption-2.11.3.md") for p in bad["required_paths"]]
+  bad["prepared_paths"]=bad["required_paths"][:]
+  with self.assertRaisesRegex(ValueError,"required core path"):assess(bad)
  def test_required_core_paths_cannot_be_shrunk_by_caller(self):
   d=self.ready_state();d["required_paths"]=[d["required_paths"][0]];d["prepared_paths"]=d["required_paths"][:]
   d["publication_claim"]=None
