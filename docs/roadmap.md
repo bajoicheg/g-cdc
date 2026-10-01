@@ -8,7 +8,7 @@ Acceptance: real acquire→finalization regressions RED→GREEN; candidate/manif
 
 Evidence: 525/525 package tests, 17/17 independent bootstrap tests, package validator PASS, 3/3 archived consumer snapshots, spec and code-quality review PASS, GitHub Actions run `36383383699` GREEN for `fd11ff5`, and installed runtime-byte readback against package tree `a1fdca8c4a00409069b790e6dd13944e64fbf9bd` (host metadata normalization recorded in release evidence). The recovery release changes no live consumer deployment or scheduler state. Release ref: `refs/heads/release/v2.10.3`; integration: PR #66.
 
-## CDC 2.11 — Managed Multi-Executor & Watchdog Resilience — AUTHORIZED / IN PROGRESS
+## CDC 2.11 — Managed Multi-Executor & Watchdog Resilience — COMPLETE / TERMINAL
 
 Initial owner authorization on 2026-09-27 started CDC 2.11 under released 2.10.2. The 2026-09-28 recovery plan resumes it under 2.10.3 and puts watchdog liveness before cooperative lanes. The line extends 2.10.2 safe parallelism from isolated implementation workers to a managed multi-executor control plane and makes watchdog continuity a release-grade invariant.
 
@@ -17,7 +17,7 @@ CDC 2.11 preserves staged bootstrap/release discipline:
 - develop 2.11.1 only after 2.11.0 is independently GREEN and released;
 - develop 2.11.2 only after 2.11.1 is independently GREEN and released.
 
-The original three stages were explicitly authorized and released. On 2026-10-01 the owner explicitly authorized a fourth patch stage, CDC 2.11.3, after live multi-subscription rollout exposed an orphan-lease/fleet-leadership integrity gap. Each release still requires its normal independent evidence.
+All four owner-authorized 2.11 stages are released. On 2026-10-01 the owner authorized the fourth patch stage, CDC 2.11.3, after live multi-subscription rollout exposed an orphan-lease/fleet-leadership integrity gap. No further 2.11 stage is authorized; a new version line requires explicit roadmap authorization.
 
 ### 2.11.0 — Managed Executor Pool — P0 / RELEASED
 
@@ -109,7 +109,7 @@ Release: `refs/heads/release/v2.11.2`, frozen source `6af4443b1afa86085622625bee
 
 Expected benefit: CDC moves from “safe parallel tasks” to a resilient multi-executor development system: useful work continues concurrently, foreground and watchdog execution cooperate instead of excluding each other, and fleet supervision actively restores projects that are idle for the wrong reason.
 
-### 2.11.3 — Multi-Subscription Coordination & Ownership Integrity — P0 / AUTHORIZED / IN PROGRESS
+### 2.11.3 — Multi-Subscription Coordination & Ownership Integrity — P0 / RELEASED
 
 Goal: make several independent ChatGPT subscriptions safe as one CDC execution pool while preserving exactly one Fleet Supervisor side-effect leader and closing the orphan-lease / partial-adoption defect class reproduced during the 2.11.2 live rollout.
 
@@ -133,7 +133,7 @@ Acceptance:
 
 Authority boundary: Fleet leadership is control-plane only; it never grants project product-write, project takeover, merge, release, scope expansion or scheduler authority beyond separately authorized effect policy.
 
-Tracking: issue #82; systemic RCA #81. Design: `docs/superpowers/specs/2026-10-01-multi-subscription-coordination-design.md`; plan: `docs/superpowers/plans/2026-10-01-cdc-2.11.3.md`.
+Tracking: issue #82; systemic RCA #81. Design: `docs/superpowers/specs/2026-10-01-multi-subscription-coordination-design.md`; plan: `docs/superpowers/plans/2026-10-01-cdc-2.11.3.md`.\n\nRelease: `refs/heads/release/v2.11.3`, frozen source `7f31544ffd80252587b7ff1bd76b9a3f38e019e5`, package tree `39f733127ac130de4f647cf9e5ec55afcca0769c`. Candidate validation is GREEN with 950/950 package tests, 37/37 independent bootstrap, package validator 331 files/templates, full bootstrap binding and 3/3 archived consumers. Historical Stage 1 RED remains truthful with all findings remediated; the exact-candidate fresh Stage 1 re-review and independent Stage 2 requirement were each skipped once by explicit owner waiver and are not relabeled GREEN. Release finalization retains a separate exact-head hosted CI gate before immutable ref creation. Schedulers remain owner-paused and this release performs no live consumer deployment.
 
 ## CDC 2.10 — Superpowers Execution Quality — COMPLETE / TERMINAL
 
@@ -411,7 +411,7 @@ Remaining feature: **registry-driven watchdog target resolution**, included in 2
 Active recovery work:
 - 2.11.0: released with real execution, exact parent finalization and independently verified corrections. Active installation passed runtime-byte readback; see release/active-package-acceptance-2.11.0.json.
 - 2.11.1: combine target resolution, persistent liveness and bounded Fleet recovery; fresh explicit owner pause takes precedence.
-- 2.11.2: released cooperative lanes with portable conflict exclusion, one integrator, durable integration provenance and watchdog survivability.
+- 2.11.2: released cooperative lanes with portable conflict exclusion, one integrator, durable integration provenance and watchdog survivability.\n- 2.11.3: released multi-subscription ownership integrity with Fleet leader/effect fencing, truthful execution liveness, fail-closed final response and atomic consumer adoption.
 - Chat command timestamping dogfood defect — RCA reinforcement 2026-09-30: a live CDC-managed chat emitted zero per-command timestamps even though the rule was present. Reinforce existing fix key `chat-command-timestamping` with a missing-timestamp RED→GREEN pressure scenario and fail-closed first-response timestamp cardinality preflight/ledger; see the retained RCA/feedback reports.
 - Independent review backend resilience — RCA 2026-09-30: a documented Copilot review request on a non-draft exact-head PR produced no reviewer/review/thread/comment, repeating an earlier no-op. Add fix key `independent-review-backend-fallback`: request acceptance is submission evidence only; require concrete reviewer identity + durable review artifact, classify non-materializing backends unavailable, suppress unchanged retries, and route to an alternate authorized reviewer or exact blocker.
 - Consumer adoption: g-ad-control adopted2.10.3 and released generation42 at verified coordination794e152; g-supervisor, g-pc-health-check and g-switcher require current-owner release or independently established quiescence. Re-read live refs before every mutation.
