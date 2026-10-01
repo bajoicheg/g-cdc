@@ -5,7 +5,7 @@ import fleet_supervisor_control as m
 
 A="33333333-3333-4333-8333-333333333333";B="44444444-4444-4444-8444-444444444444"
 HEAD="a"*40
-def inv(name):return {"invocation_id":name,"automation_id":None,"conversation_id":None,"execution_surface":"chat","started_at_utc":"2026-01-01T10:00:00Z"}
+def inv(name):return {"invocation_id":name,"automation_id":None,"conversation_id":None,"execution_surface":"managed","started_at_utc":"2026-01-01T10:00:00Z"}
 
 class Store:
  def __init__(self):self.rev=None;self.doc=None;self.n=0
