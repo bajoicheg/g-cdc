@@ -16,7 +16,7 @@ Core implementation belongs under `src/continuous-development-cycle`; independen
 
 CDC N is developed under the previously released CDC N-1. CDC 2.10.2 is released at `refs/heads/release/v2.10.2`, package tree `2bee3b8159aaf80de981afba7cf284f21bafa1c3`.
 
-CDC 2.11.2 is the current released development authority at `refs/heads/release/v2.11.2`, frozen source `6af4443b1afa86085622625bee9b62a045a08a07`, package tree `7a7a7faa75b7fc9160d912d8fb507c6b9573d17f`. It was developed under released CDC 2.11.1. A new version line requires explicit roadmap authorization and must preserve the independent-bootstrap rule.
+CDC 2.11.2 is the current released development authority at `refs/heads/release/v2.11.2`, frozen source `6af4443b1afa86085622625bee9b62a045a08a07`, package tree `7a7a7faa75b7fc9160d912d8fb507c6b9573d17f`. It was developed under released CDC 2.11.1. A new version line requires explicit roadmap authorization and must preserve the independent-bootstrap rule.\n\nThe owner explicitly authorized CDC 2.11.3 on 2026-10-01. It is developed under released 2.11.2 and is not a release until the normal independent gates pass.
 
 ## Canonical-source rule
 

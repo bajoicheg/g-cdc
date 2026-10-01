@@ -1,0 +1,19 @@
+{
+  "schema": "blocked-state-proof/v1",
+  "dependency_id": "independent-code-quality-review:cdc-2.11.3",
+  "category": "capability",
+  "observed_at_utc": "2026-10-01T13:00:00Z",
+  "max_age_seconds": 86400,
+  "evidence_refs": [
+    "release/owner-review-waiver-2.11.3-stage1-quality-rebind-2.json",
+    "release/review-pipeline-2.11.3.json",
+    "release/validation-2.11.3.json",
+    "github-actions:36865140338:success@7fc4f80537c1404c742fbcdc21d43014452f50d8",
+    "candidate-source:7f31544ffd80252587b7ff1bd76b9a3f38e019e5",
+    "candidate-package-tree:39f733127ac130de4f647cf9e5ec55afcca0769c",
+    "review-request-channel:blocked-before-dispatch"
+  ],
+  "next_action": "Obtain a concrete independent Stage 2 code-quality review artifact for PR #83 against exact source 7f31544ffd80252587b7ff1bd76b9a3f38e019e5, package tree 39f733127ac130de4f647cf9e5ec55afcca0769c. Stage 1 fresh rereview is skipped only by the exact-candidate owner waiver; release remains forbidden until Stage 2 is GREEN or separately waived by owner.",
+  "recheck_trigger": "independent-stage2-review-backend-availability-or-new-review-artifact",
+  "same_invocation_work_exhausted": true
+}

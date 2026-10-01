@@ -1,0 +1,33 @@
+{
+  "schema": "cdc-owner-review-waiver/v1",
+  "version": "2.11.3",
+  "one_time": true,
+  "scope": "exact-quality-hardened-candidate-stage1-rereview-only",
+  "source_commit": "4bba0235c641582d76fd403a4b3e4cf96ba3e75c",
+  "package_tree": "78b275e039aee6b3aed3bf77ac8481383b065491",
+  "pre_waiver_metadata_head": "efecde0e16b108d51b647de556ef1d2184cc7d69",
+  "authorized_at": "2026-10-01T14:19:01+03:00",
+  "authorization_source": "foreground-user-command:2026-10-01T14:19:01+03:00",
+  "authorization_text": "Этот ревью пропускай и продолжай",
+  "waived_requirement": "fresh independent Stage 1 specification re-review for the quality-hardened exact candidate; no specification scope expansion occurred after the original waiver",
+  "technical_review_evidence": [
+    "https://github.com/bajoicheg/g-cdc/pull/83#issuecomment-5928748463",
+    "release/validation-2.11.3.json",
+    "github-actions:36856694000:success@efecde0e16b108d51b647de556ef1d2184cc7d69"
+  ],
+  "review_truth": "Historical Stage 1 RED remains truthful and is not relabeled GREEN. This successor exact binding carries forward the owner's instruction to skip that rereview while continuing through quality-only hardening. Stage 2 is not waived.",
+  "not_waived": [
+    "independent Stage 2 code-quality review",
+    "exact source/package binding",
+    "fresh hosted validation after metadata changes",
+    "non-force integration",
+    "immutable release-ref readback",
+    "owner-paused scheduler state",
+    "live consumer rollout authorization",
+    "future independent-review policy"
+  ],
+  "expires_on": [
+    "candidate drift",
+    "completion of this exact 2.11.3 integration/release"
+  ]
+}

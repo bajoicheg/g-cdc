@@ -855,6 +855,100 @@
         "product_write",
         "release"
       ]
+    },
+    {
+      "id": "fleet-supervisor-active-active-split-brain",
+      "fault": "two_subscriptions_attempt_fleet_side_effect_leadership_from_same_coordination_revision",
+      "expected": "SINGLE_CAS_LEADER",
+      "forbidden_authorities": [
+        "dual_fleet_leader",
+        "duplicate_scheduler_effect"
+      ]
+    },
+    {
+      "id": "fleet-side-effect-replay",
+      "fault": "same_fleet_effect_id_is_requested_again_after_durable_claim",
+      "expected": "OBSERVE_EXISTING",
+      "forbidden_authorities": [
+        "duplicate_external_start",
+        "duplicate_scheduler_effect"
+      ]
+    },
+    {
+      "id": "orphan-lease-owner-only-liveness",
+      "fault": "lease_owner_exists_but_exact_runtime_state_is_not_independently_proven",
+      "expected": "UNKNOWN_NOT_ACTIVE",
+      "forbidden_authorities": [
+        "ghost_active_worker",
+        "takeover_by_ttl"
+      ]
+    },
+    {
+      "id": "consumer-adoption-partial-shared-ref",
+      "fault": "target_version_metadata_is_prepared_before_full_package_policy_checkpoint_provenance_convergence",
+      "expected": "KEEP_SHARED_REF_UNCHANGED",
+      "forbidden_authorities": [
+        "partial_migration_ref_move",
+        "version_only_integration"
+      ]
+    },
+    {
+      "id": "fleet-runtime-unfenced-effect",
+      "fault": "scheduler_effect_budget_positive_without_exact_fleet_supervisor_leader_binding",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "duplicate_scheduler_effect"
+      ]
+    },
+    {
+      "id": "fleet-incident-rename-replay",
+      "fault": "same_project_watchdog_effect_is_reissued_under_a_new_incident_label",
+      "expected": "OBSERVE_EXISTING",
+      "forbidden_authorities": [
+        "duplicate_scheduler_effect"
+      ]
+    },
+    {
+      "id": "watchdog-survivability-unfenced-effect",
+      "fault": "watchdog_survivability_scheduler_create_enable_run_or_disable_without_exact_fleet_leader_binding",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "duplicate_scheduler_effect"
+      ]
+    },
+    {
+      "id": "consumer-adoption-unknown-publish-replay",
+      "fault": "consumer_adoption_push_outcome_unknown_while_product_ref_still_equals_expected_source",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "partial_migration_ref_move"
+      ]
+    },
+    {
+      "id": "ordinary-chat-persistent-lease",
+      "fault": "unmanaged_chat_or_host_surface_attempts_persistent_execution_lease_acquisition",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "ghost_active_worker",
+        "takeover_by_ttl"
+      ]
+    },
+    {
+      "id": "resolved-submission-false-pending",
+      "fault": "terminal_reconciled_submission_claim_is_treated_as_pending_after_executor_stops",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "ghost_active_worker"
+      ]
+    },
+    {
+      "id": "consumer-adoption-stale-bound-core-object",
+      "fault": "exact_target_package_tree_but_lock_adapter_checkpoint_or_provenance_object_differs_from_detached_assembly_manifest",
+      "expected": "KEEP_SHARED_REF_UNCHANGED",
+      "forbidden_authorities": [
+        "partial_migration_ref_move",
+        "version_only_integration"
+      ]
     }
   ]
 }

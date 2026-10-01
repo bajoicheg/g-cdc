@@ -17,7 +17,7 @@ CDC 2.11 preserves staged bootstrap/release discipline:
 - develop 2.11.1 only after 2.11.0 is independently GREEN and released;
 - develop 2.11.2 only after 2.11.1 is independently GREEN and released.
 
-All three stages are explicitly authorized by the owner. They may be developed continuously without another approval boundary, but each release still requires its normal independent evidence.
+The original three stages were explicitly authorized and released. On 2026-10-01 the owner explicitly authorized a fourth patch stage, CDC 2.11.3, after live multi-subscription rollout exposed an orphan-lease/fleet-leadership integrity gap. Each release still requires its normal independent evidence.
 
 ### 2.11.0 — Managed Executor Pool — P0 / RELEASED
 
@@ -108,6 +108,32 @@ Acceptance:
 Release: `refs/heads/release/v2.11.2`, frozen source `6af4443b1afa86085622625bee9b62a045a08a07`, package tree `7a7a7faa75b7fc9160d912d8fb507c6b9573d17f`. Final technical SPEC recheck and internal quality hardening found no remaining material technical defect; exact-head hosted validation runs `36749087759` and `36750000629` are GREEN with 866/866 candidate tests, 37/37 independent bootstrap tests, package validator 316 files/templates, full bootstrap binding, and 3/3 archived consumers. The owner explicitly authorized a one-time exception for the unavailable fresh independent-reviewer identity requirement on this exact candidate; the waiver is recorded in `release/owner-review-waiver-2.11.2.json` and does not relabel the skipped independent stages as GREEN or weaken future review policy. Schedulers remain owner-paused and this release performs no live consumer deployment.
 
 Expected benefit: CDC moves from “safe parallel tasks” to a resilient multi-executor development system: useful work continues concurrently, foreground and watchdog execution cooperate instead of excluding each other, and fleet supervision actively restores projects that are idle for the wrong reason.
+
+### 2.11.3 — Multi-Subscription Coordination & Ownership Integrity — P0 / AUTHORIZED / IN PROGRESS
+
+Goal: make several independent ChatGPT subscriptions safe as one CDC execution pool while preserving exactly one Fleet Supervisor side-effect leader and closing the orphan-lease / partial-adoption defect class reproduced during the 2.11.2 live rollout.
+
+Required controls:
+- dedicated Git-CAS Fleet Supervisor state embedding invocation-bound `execution-lease/v2`; one leader generation may emit Fleet-wide effects while other subscriptions remain standby observers or project executors;
+- one-shot Fleet effect journal binding effect ID, exact leader owner/generation/invocation and exact observed Fleet HEAD; duplicate intent observes/reconciles and intent collision fails closed;
+- leader replacement requires exact stopped-executor/quiescence evidence and no unresolved claimed/submitted/unknown effects; TTL alone never elects a replacement;
+- independent runtime liveness classification: `active` requires exact runtime-running evidence plus a fresh lease, while stopped clean owners become `orphaned_recoverable`, pending effects become `blocked_unknown_effects`, unproven runtime is `unknown`, and no owner is `released`;
+- fail-closed final-response gate: any invocation that acquired a lease must prove exact owner/generation/invocation release and post-release execution-continuity state before terminal response;
+- atomic consumer adoption: package, lock, adapter, checkpoint and adoption/provenance state are assembled detached, exact target subtree is verified, then one expected-head conditional fast-forward and exact readback publishes the target; partial VERSION/metadata exposure is forbidden.
+
+Acceptance:
+- two supervisors racing from the same coordination revision produce at most one CAS leader;
+- duplicate wake/repair/enqueue effect cannot produce two submissions;
+- unknown prior effect blocks standby takeover, while terminal reconciled effects plus exact executor-stopped evidence permit a new generation;
+- an owner record without exact runtime evidence is never reported as active;
+- final-response gate is RED while exact acquired ownership remains and GREEN only after exact release;
+- interrupted adoption before publication leaves the shared consumer ref unchanged;
+- moved source/Fleet HEAD replans instead of force-updating;
+- #81 is closed only after these regressions remain GREEN in release validation.
+
+Authority boundary: Fleet leadership is control-plane only; it never grants project product-write, project takeover, merge, release, scope expansion or scheduler authority beyond separately authorized effect policy.
+
+Tracking: issue #82; systemic RCA #81. Design: `docs/superpowers/specs/2026-10-01-multi-subscription-coordination-design.md`; plan: `docs/superpowers/plans/2026-10-01-cdc-2.11.3.md`.
 
 ## CDC 2.10 — Superpowers Execution Quality — COMPLETE / TERMINAL
 
