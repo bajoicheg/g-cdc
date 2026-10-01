@@ -172,6 +172,29 @@ class GitLeaseStore:
             raise ValueError('coordination ref must differ from product source ref')
         return record
 
+    def find_invocation_ownership(self, repository, source_ref, invocation_id):
+        """Find exact authoritative owned generation for a managed invocation."""
+        current, _ = self.read()
+        if current is None:
+            raise ValueError("coordination history is absent")
+        revisions = self._git("rev-list", "--first-parent", current).splitlines()
+        matches = []
+        for revision in revisions[:10000]:
+            record = json.loads(self._git("show", revision + ":lease.json"), object_pairs_hook=op._unique_object)
+            validate_coordination_record(record)
+            invocation = record.get("invocation")
+            if (record.get("schema") == "execution-lease/v2" and record.get("repository") == repository
+                    and record.get("source_ref") == source_ref and record.get("owner_id") is not None
+                    and isinstance(invocation, dict) and invocation.get("invocation_id") == invocation_id):
+                matches.append({"revision": revision, "owner_id": record["owner_id"],
+                                "generation": record["generation"], "record": record})
+        identities={(row["owner_id"],row["generation"]) for row in matches}
+        if len(identities)>1:
+            raise ValueError("managed invocation appears under multiple lease identities")
+        if not matches:
+            return None
+        return matches[-1]
+
     def find_release_receipt(self, owner_id, generation, invocation_id):
         current, _ = self.read()
         if current is None:
