@@ -53,6 +53,27 @@ def _write(path, value):
         os.close(fd)
 
 
+def _read_json(path):
+    path=Path(path)
+    if not path.exists():
+        return None
+    try:
+        value=json.loads(path.read_text(encoding="utf-8"))
+    except (OSError,json.JSONDecodeError) as exc:
+        raise ValueError("managed terminal marker invalid") from exc
+    if not isinstance(value,dict):
+        raise ValueError("managed terminal marker must be an object")
+    return value
+
+def _terminal_hold_paths(directory):
+    directory=Path(directory)
+    return {
+        "intent":directory/"terminal-lease-intent.json",
+        "owned":directory/"terminal-lease-owned.json",
+        "release":directory/"terminal-lease-release.json",
+        "abort":directory/"terminal-lease-abort.json",
+    }
+
 def _git(root, *args):
     result = subprocess.run(["git", "-C", str(root), *args], env=git_object_environment(), text=True, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, timeout=20)
