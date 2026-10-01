@@ -15,6 +15,9 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import managed_executor_pool as pool
+import execution_lease_v2 as leasev2
+import final_response_gate as final_gate
+from git_lease_store import GitLeaseStore
 import managed_executor_handoff as handoff_api
 from managed_executor_store import GitManagedExecutorStore, coordination_store_id_for_endpoint
 from continuity_fixtures import with_terminal_evidence
@@ -129,6 +132,78 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
         commit = self.git("rev-parse", "worker-" + task)
         return self.rt.accept(task, task + "1", result_commit=commit,
                               output_refs=["out:" + task], evidence_refs=["test:" + task])
+
+    def test_managed_runtime_capability_controls_execution_lease_terminal_lifecycle(self):
+        self.launch("a", self.worker("a", 1.2))
+        end=time.monotonic()+4
+        observed=None
+        while time.monotonic()<end:
+            observed=self.rt.observe("a","a1")
+            if observed["status"]=="running":break
+            time.sleep(.01)
+        self.assertEqual(observed["status"],"running")
+
+        lease_store=GitLeaseStore(self.repo,"origin","refs/heads/cdc/runtime-lease")
+        lease_revision=lease_store.compare_and_swap(
+            None,leasev2.initialize("test/project","refs/heads/integration"))
+        owner="99999999-9999-4999-8999-999999999999"
+        at=runtime._utc()
+
+        spoof={"invocation_id":"spoofed","automation_id":None,"conversation_id":None,
+               "execution_surface":"managed","started_at_utc":at}
+        with self.assertRaisesRegex(ValueError,"capability proof"):
+            leasev2.acquire(leasev2.initialize("test/project","refs/heads/integration"),owner,at,invocation=spoof)
+
+        request_file=self.root/"spoof-acquire.json"
+        request_file.write_text(json.dumps({
+            "expected_revision":lease_revision,"repository":"test/project","source_ref":"refs/heads/integration",
+            "at":at,"invocation":spoof
+        }))
+        cli=subprocess.run([
+            sys.executable,str(ROOT/"scripts"/"execution_lease_v2.py"),"acquire",
+            "--repo",str(self.repo),"--remote","origin","--coordination-ref","refs/heads/cdc/runtime-lease",
+            "--request",str(request_file)],text=True,capture_output=True)
+        self.assertEqual(cli.returncode,2)
+        self.assertIn("generic CLI acquisition cannot prove managed terminal capability",cli.stderr)
+
+        acquired=self.rt.acquire_execution_lease(
+            lease_store,lease_revision,"test/project","refs/heads/integration",owner,"a","a1",at)
+        invocation=acquired["invocation"];invocation_id=invocation["invocation_id"]
+        self.assertEqual(invocation["execution_surface"],"managed")
+        self.assertTrue(invocation_id.startswith("managed-terminal:"))
+        revision=acquired["revision"];record=acquired["record"]
+
+        record=leasev2.begin_finalization(
+            record,owner,1,invocation_id,runtime._utc(),pending_shared_writes=False)
+        revision=lease_store.compare_and_swap(revision,record)
+        checkpoint="checkpoint:managed-terminal"
+        record=leasev2.record_checkpoint(
+            record,owner,1,invocation_id,runtime._utc(),checkpoint_ref=checkpoint,pending_shared_writes=False)
+        revision=lease_store.compare_and_swap(revision,record)
+        record=leasev2.reconcile_finalization(
+            record,owner,1,invocation_id,runtime._utc(),external_reconciliation="none")
+        revision=lease_store.compare_and_swap(revision,record)
+        continuity={
+            "schema":"execution-continuity/v1","invocation_id":invocation_id,"current_state":"COMPLETE",
+            "requested_terminal_outcome":"scope_complete","runnable_next_action":False,
+            "meaningful_progress_refs":["git:"+self.base],"primitive_steps":[],"external_binding":None,
+            "blocker":None,"checkpoint_ref":checkpoint,"next_action":None,
+            "lease_release_required":False,"lease_released":False}
+        continuity=with_terminal_evidence(continuity)
+        continuity["terminal_state"]["lease_released"]=False
+        record=leasev2.mark_ready(
+            record,owner,1,invocation_id,runtime._utc(),continuity_state=continuity)
+        revision=lease_store.compare_and_swap(revision,record)
+        released=leasev2.release_cas(
+            lease_store,revision,"test/project","refs/heads/integration",owner,1,invocation_id,runtime._utc())
+        release_record=lease_store.read_revision(released["release_receipt"]["lease_revision"])
+        post=copy.deepcopy(continuity);post["lease_release_required"]=True;post["lease_released"]=True
+        post["terminal_state"]["lease_released"]=True
+        gate=final_gate.evaluate(
+            invocation_id,released["record"],post,{"owner_id":owner,"generation":1},
+            released["release_receipt"],release_record,runtime._utc())
+        self.assertTrue(gate["final_response_allowed"])
+        self.assertEqual(self.wait("a")["status"],"succeeded")
 
     def test_two_workers_really_overlap_and_commit_in_isolated_worktrees(self):
         self.launch("a", self.worker("a", .8))
