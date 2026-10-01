@@ -1,7 +1,8 @@
 from pathlib import Path
 import copy,subprocess,sys,tempfile,unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from consumer_adoption import assess,GitConsumerAdoptionPublisher
+from consumer_adoption import assess,GitConsumerAdoptionPublisher,_manifest_digest
+import migration_transaction as migration
 from git_document_store import GitDocumentStore
 from git_remote_identity import endpoint_identity
 
@@ -15,10 +16,17 @@ def fake_manifest(paths=REQ,package_tree=TREE):
               "object_sha1":package_tree if path==REQ[0] else format(i+1,"040x")})
  return out
 
+def fake_authority(manifest=None):
+ manifest=manifest or fake_manifest()
+ return {"schema":"migration-assembly-authority/v1","store_ref":"refs/heads/cdc/adoption-assembly",
+         "store_id":"sha256:"+"1"*64,"revision":"e"*40,"transaction_id":"migration-test",
+         "manifest_digest":_manifest_digest(manifest)}
+
 def state():
  return {"schema":"consumer-adoption-publication/v1","source_head":A,"target_ref":"refs/heads/main","target_version":"2.11.3",
   "target_release_ref":"refs/heads/release/v2.11.3","target_release_commit":REL,
   "target_package_tree":TREE,"required_paths":REQ,"prepared_paths":[],"assembly_manifest":fake_manifest(),
+  "assembly_authority":fake_authority(),
   "final_tree_sha":None,"observed_package_tree":None,
   "candidate_commit":None,"live_source_head":A,"publication_claim":None,"published_head":None,"readback_package_tree":None}
 
@@ -95,8 +103,21 @@ class GitPublisherTests(unittest.TestCase):
   self.remote_id=endpoint_identity(str(self.remote))
   self.store=GitDocumentStore(self.work,"origin","refs/heads/cdc/adoption-attempts",self.remote_id,
                               protected_refs=["refs/heads/main"])
+  self.assembly_store=GitDocumentStore(self.work,"origin","refs/heads/cdc/adoption-assembly",self.remote_id,
+                                       protected_refs=["refs/heads/main","refs/heads/cdc/adoption-attempts"])
+  tx={"schema":"migration-transaction/v1","transaction_id":"migration-publisher-test",
+      "source_head":self.source,"target_ref":"refs/heads/main",
+      "items":copy.deepcopy(self.manifest),"completed_paths":[x["path"] for x in self.manifest],
+      "operation_budget":100,"per_item_operations":1,"batch_overhead_operations":0,
+      "finalization_reserve_operations":1,"detached_checkpoints":[],
+      "final_tree_sha":self.final_tree,"expected_subtree_tree":self.package_tree,
+      "observed_subtree_tree":self.package_tree,"policy_reconciled":True}
+  self.assembly_record=migration.assembly_record(
+      tx,target_version="2.11.3",target_release_ref=self.release_ref,
+      target_release_commit=self.release_commit,completed_at_utc="2026-10-01T04:59:00Z")
+  self.assembly_revision=self.assembly_store.compare_and_swap(None,self.assembly_record)
   self.publisher=GitConsumerAdoptionPublisher(
-      self.work,"origin","refs/heads/main",self.remote_id,self.store,
+      self.work,"origin","refs/heads/main",self.remote_id,self.store,self.assembly_store,
       clock=lambda:"2026-10-01T05:00:00Z")
  def git(self,cwd,*args):
   p=subprocess.run(["git","-C",str(cwd),*args],text=True,capture_output=True,check=True)
@@ -115,6 +136,10 @@ class GitPublisherTests(unittest.TestCase):
      "target_version":"2.11.3","target_release_ref":self.release_ref,"target_release_commit":self.release_commit,
      "target_package_tree":self.package_tree,
      "required_paths":self.required[:],"prepared_paths":self.required[:],"assembly_manifest":copy.deepcopy(self.manifest),
+     "assembly_authority":{"schema":"migration-assembly-authority/v1","store_ref":self.assembly_store.ref,
+                           "store_id":self.assembly_store.store_id,"revision":self.assembly_revision,
+                           "transaction_id":self.assembly_record["transaction_id"],
+                           "manifest_digest":self.assembly_record["manifest_digest"]},
      "final_tree_sha":self.final_tree,"observed_package_tree":self.package_tree,
      "candidate_commit":self.candidate,"live_source_head":self.source,
      "publication_claim":None,"published_head":None,"readback_package_tree":None}
@@ -134,6 +159,7 @@ class GitPublisherTests(unittest.TestCase):
   self.assertEqual(self.publisher._package_tree(self.remote_head()),self.package_tree)
   self.assertEqual(self.attempt(d)["status"],"confirmed")
   self.assertEqual(self.attempt(d)["manifest_digest"],d["publication_claim"]["manifest_digest"])
+  self.assertEqual(self.attempt(d)["assembly_revision"],self.assembly_revision)
  def test_remote_head_move_replans_without_attempt_or_push(self):
   self.git(self.work,"checkout","-q","main")
   self.write("other.txt","concurrent\n");self.git(self.work,"add","other.txt");self.git(self.work,"commit","-qm","concurrent")
@@ -218,6 +244,23 @@ class GitPublisherTests(unittest.TestCase):
     with self.assertRaisesRegex(ValueError,"object identity mismatch"):
      self.publisher.publish(d)
     self.assertEqual(self.remote_head(),self.source);self.assertIsNone(self.attempt(d))
+ def test_regenerated_stale_manifest_cannot_replace_authoritative_detached_transaction(self):
+  for path in ["docs/development-cycle.yaml","docs/work-status/current.md","docs/cdc-adoption-2.11.3.md"]:
+   with self.subTest(path=path):
+    self.git(self.work,"checkout","-q","--detach",self.candidate)
+    self.write(path,"stale-but-self-consistent\n")
+    self.git(self.work,"add",path);self.git(self.work,"commit","-qm","self-consistent stale "+path.replace("/","-"))
+    stale=self.git(self.work,"rev-parse","HEAD")
+    manifest=self.manifest_for(stale)
+    d=self.ready_state();d["candidate_commit"]=stale;d["final_tree_sha"]=self.git(self.work,"rev-parse",stale+"^{tree}")
+    d["assembly_manifest"]=manifest
+    d["assembly_authority"]=copy.deepcopy(d["assembly_authority"])
+    d["assembly_authority"]["manifest_digest"]=_manifest_digest(manifest)
+    d["publication_claim"]=None;d["publication_claim"]=assess(d)["claim"]
+    with self.assertRaisesRegex(ValueError,"authoritative assembly transaction binding mismatch|transaction manifest"):
+     self.publisher.publish(d)
+    self.assertEqual(self.remote_head(),self.source);self.assertIsNone(self.attempt(d))
+
  def test_semantically_stale_consumer_lock_is_rejected_even_when_manifest_matches(self):
   self.git(self.work,"checkout","-q","--detach",self.candidate)
   import json
@@ -235,10 +278,10 @@ class GitPublisherTests(unittest.TestCase):
  def test_attempt_journal_must_be_remote_bound_and_ref_isolated(self):
   fake="sha256:"+"0"*64
   with self.assertRaisesRegex(ValueError,"remote identity mismatch"):
-   GitConsumerAdoptionPublisher(self.work,"origin","refs/heads/main",fake,self.store)
+   GitConsumerAdoptionPublisher(self.work,"origin","refs/heads/main",fake,self.store,self.assembly_store)
   product_store=GitDocumentStore(self.work,"origin","refs/heads/cdc/main",self.remote_id)
   with self.assertRaisesRegex(ValueError,"isolated"):
-   GitConsumerAdoptionPublisher(self.work,"origin","refs/heads/cdc/main",self.remote_id,product_store)
+   GitConsumerAdoptionPublisher(self.work,"origin","refs/heads/cdc/main",self.remote_id,product_store,self.assembly_store)
 
 
 if __name__=="__main__":unittest.main()
