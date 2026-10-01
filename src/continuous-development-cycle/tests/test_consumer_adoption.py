@@ -131,6 +131,20 @@ class GitPublisherTests(unittest.TestCase):
    typ=self.git(self.work,"cat-file","-t",sha)
    out.append({"path":path,"object_type":typ,"object_sha1":sha})
   return out
+ def authorize_manifest(self,manifest,final_tree,transaction_id):
+  tx={"schema":"migration-transaction/v1","transaction_id":transaction_id,
+      "source_head":self.source,"target_ref":"refs/heads/main",
+      "items":copy.deepcopy(manifest),"completed_paths":[x["path"] for x in manifest],
+      "operation_budget":100,"per_item_operations":1,"batch_overhead_operations":0,
+      "finalization_reserve_operations":1,"detached_checkpoints":[],
+      "final_tree_sha":final_tree,"expected_subtree_tree":self.package_tree,
+      "observed_subtree_tree":self.package_tree,"policy_reconciled":True}
+  record=migration.assembly_record(tx,target_version="2.11.3",target_release_ref=self.release_ref,
+      target_release_commit=self.release_commit,completed_at_utc="2026-10-01T05:01:00Z")
+  current,_=self.assembly_store.read();revision=self.assembly_store.compare_and_swap(current,record)
+  return {"schema":"migration-assembly-authority/v1","store_ref":self.assembly_store.ref,
+          "store_id":self.assembly_store.store_id,"revision":revision,
+          "transaction_id":record["transaction_id"],"manifest_digest":record["manifest_digest"]}
  def ready_state(self):
   d={"schema":"consumer-adoption-publication/v1","source_head":self.source,"target_ref":"refs/heads/main",
      "target_version":"2.11.3","target_release_ref":self.release_ref,"target_release_commit":self.release_commit,
@@ -219,10 +233,12 @@ class GitPublisherTests(unittest.TestCase):
   d=state();d["target_version"]="2.11.4"
   d["required_paths"]=[p.replace("cdc-adoption-2.11.3.md","cdc-adoption-2.11.4.md") for p in d["required_paths"]]
   d["prepared_paths"]=d["required_paths"][:];d["assembly_manifest"]=fake_manifest(d["required_paths"])
+  d["assembly_authority"]=fake_authority(d["assembly_manifest"])
   d["final_tree_sha"]="d"*40;d["observed_package_tree"]=TREE;d["candidate_commit"]=B
   self.assertEqual(assess(d)["action"],"CLAIM_CONDITIONAL_PUBLISH")
   bad=copy.deepcopy(d);bad["required_paths"]=[p.replace("cdc-adoption-2.11.4.md","cdc-adoption-2.11.3.md") for p in bad["required_paths"]]
   bad["prepared_paths"]=bad["required_paths"][:];bad["assembly_manifest"]=fake_manifest(bad["required_paths"])
+  bad["assembly_authority"]=fake_authority(bad["assembly_manifest"])
   with self.assertRaisesRegex(ValueError,"required core path"):assess(bad)
  def test_required_core_paths_cannot_be_shrunk_by_caller(self):
   d=self.ready_state();d["required_paths"]=[d["required_paths"][0]];d["prepared_paths"]=d["required_paths"][:]
@@ -271,7 +287,9 @@ class GitPublisherTests(unittest.TestCase):
   self.git(self.work,"add","docs/cdc-consumer-lock.json");self.git(self.work,"commit","-qm","semantic stale lock")
   stale=self.git(self.work,"rev-parse","HEAD")
   d=self.ready_state();d["candidate_commit"]=stale;d["final_tree_sha"]=self.git(self.work,"rev-parse",stale+"^{tree}")
-  d["assembly_manifest"]=self.manifest_for(stale);d["publication_claim"]=None;d["publication_claim"]=assess(d)["claim"]
+  d["assembly_manifest"]=self.manifest_for(stale)
+  d["assembly_authority"]=self.authorize_manifest(d["assembly_manifest"],d["final_tree_sha"],"semantic-stale-lock")
+  d["publication_claim"]=None;d["publication_claim"]=assess(d)["claim"]
   with self.assertRaisesRegex(ValueError,"consumer lock target binding mismatch"):
    self.publisher.publish(d)
   self.assertEqual(self.remote_head(),self.source);self.assertIsNone(self.attempt(d))
