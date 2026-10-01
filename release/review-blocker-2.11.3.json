@@ -2,17 +2,17 @@
   "schema": "blocked-state-proof/v1",
   "dependency_id": "independent-spec-rereview:cdc-2.11.3",
   "category": "review",
-  "observed_at_utc": "2026-10-01T07:13:19Z",
+  "observed_at_utc": "2026-10-01T10:22:46Z",
   "max_age_seconds": 86400,
   "evidence_refs": [
-    "https://github.com/bajoicheg/g-cdc/pull/83#issuecomment-5926049824",
-    "github-actions:36828707930:success@4b18046885e4c06aaaf61ef8c72196cb6d86d6e4",
-    "remediation-source:d15adb65879b76f1d499d146a7810c8fc734b280",
-    "remediation-package-tree:01b6f071135c708818ded37c0b99ce245e63a083",
+    "https://github.com/bajoicheg/g-cdc/pull/83#issuecomment-5928748463",
+    "github-actions:36848309600:success@9a1c9ee5333a23c19bb4fd04f90f200a236b6b5c",
+    "remediation-source:c3062e8a9fcc00df7ee6c53833e926030670065d",
+    "remediation-package-tree:2566627af4d6f7a014a1994d7c590aa49e032945",
     "release/review-pipeline-2.11.3.json",
     "release/validation-2.11.3.json"
   ],
-  "next_action": "Run a fresh independent Stage 1 specification re-review of PR #83 against exact remediation source d15adb65879b76f1d499d146a7810c8fc734b280 and package tree 01b6f071135c708818ded37c0b99ce245e63a083; verify closure of S1/S2/S3. Stage 2 remains forbidden until Stage 1 becomes GREEN.",
+  "next_action": "Run a fresh independent Stage 1 specification re-review of PR #83 against exact second-remediation source c3062e8a9fcc00df7ee6c53833e926030670065d and package tree 2566627af4d6f7a014a1994d7c590aa49e032945; verify closure of S1/S2/S3. Stage 2 remains forbidden until Stage 1 becomes GREEN.",
   "recheck_trigger": "new-independent-stage1-review-artifact",
   "same_invocation_work_exhausted": true
 }

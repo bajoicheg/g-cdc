@@ -2,8 +2,8 @@
   "schema": "cdc-release-evidence/v1",
   "version": "2.11.3",
   "canonical_repository": "bajoicheg/g-cdc",
-  "candidate_source_commit": "d15adb65879b76f1d499d146a7810c8fc734b280",
-  "package_tree": "01b6f071135c708818ded37c0b99ce245e63a083",
+  "candidate_source_commit": "c3062e8a9fcc00df7ee6c53833e926030670065d",
+  "package_tree": "2566627af4d6f7a014a1994d7c590aa49e032945",
   "status": "blocked_stage1_rereview",
   "development_driver": {
     "version": "2.11.2",
@@ -12,40 +12,41 @@
     "validation_run_id": 36750000629
   },
   "release_validation": {
-    "package": "933/933 PASS",
+    "package": "942/942 PASS",
     "package_validator": "330 required files and parsed templates PASS",
     "bootstrap": "37/37 PASS; independent bootstrap/full GREEN",
     "consumers": "3/3 archived snapshots PASS; not live adoption",
     "local_record": "release/validation-2.11.3.json",
     "candidate_ci": [
       {
-        "run_id": 36828707930,
-        "head_sha": "4b18046885e4c06aaaf61ef8c72196cb6d86d6e4",
+        "run_id": 36848309600,
+        "head_sha": "9a1c9ee5333a23c19bb4fd04f90f200a236b6b5c",
         "conclusion": "success",
-        "purpose": "exact Stage-1-remediated technical candidate validation"
+        "purpose": "exact second Stage-1 remediation technical validation"
       }
     ],
     "final_metadata_ci": {
-      "state": "pending exact remediation metadata head"
+      "state": "pending exact second-remediation metadata head"
     }
   },
   "reviews": {
     "technical_spec_precheck": {
-      "result": "PASS_TECHNICAL_AFTER_REMEDIATION",
+      "result": "PASS_TECHNICAL_AFTER_SECOND_REMEDIATION",
       "report": "docs/superpowers/reports/2026-10-01-cdc-2.11.3-internal-spec-precheck.md",
       "note": "Self technical precheck only; does not change independent Stage 1 verdict."
     },
     "independent_spec_review": {
-      "result": "RED_REMEDIATED_REREVIEW_REQUIRED",
-      "reviewer_artifact": "https://github.com/bajoicheg/g-cdc/pull/83#issuecomment-5926049824",
+      "result": "RED_SECOND_REMEDIATION_REREVIEW_REQUIRED",
+      "reviewer_artifact": "https://github.com/bajoicheg/g-cdc/pull/83#issuecomment-5928748463",
+      "prior_reviewer_artifact": "https://github.com/bajoicheg/g-cdc/pull/83#issuecomment-5926049824",
       "pipeline": "release/review-pipeline-2.11.3.json",
       "blocker": "release/review-blocker-2.11.3.json",
-      "reviewed_source": "bb0bf33cfab6bf2681e24d74c9b5be7db0385ac8",
-      "reviewed_package_tree": "ea7de7448c974987fe0df5b886530e3fea1817a1",
+      "reviewed_source": "d15adb65879b76f1d499d146a7810c8fc734b280",
+      "reviewed_package_tree": "01b6f071135c708818ded37c0b99ce245e63a083",
       "findings_total": 3,
       "findings_remediated": 3,
-      "remediation_source": "d15adb65879b76f1d499d146a7810c8fc734b280",
-      "remediation_package_tree": "01b6f071135c708818ded37c0b99ce245e63a083",
+      "remediation_source": "c3062e8a9fcc00df7ee6c53833e926030670065d",
+      "remediation_package_tree": "2566627af4d6f7a014a1994d7c590aa49e032945",
       "rereview_required": true,
       "waiver": null
     },
@@ -55,14 +56,13 @@
     }
   },
   "corrections": [
-    "S1: unmanaged chat/work/codex/watchdog/api/unknown surfaces cannot acquire new persistent execution-lease/v2 ownership; only package-managed execution may own a lease",
-    "S1: managed owner still requires revision-bound execution-release-receipt and authoritative historical readback before terminal completion",
-    "S2: atomic adoption claim/journal binds immutable assembly-manifest digest covering every required path Git object identity",
-    "S2: publisher verifies candidate root tree, every manifest object, exact package tree, and semantic consumer-lock version/package_tree/release_ref/release_commit before publication attempt",
-    "S3: consumed submission claims remain append-only, and exact terminal reconciliation appends immutable claim-bound submission_resolutions",
-    "S3: truthful liveness blocks only unresolved current-generation claims; terminal-resolved checkpointed orphan is recoverable without granting takeover",
-    "Fleet Supervisor and watchdog scheduler effect paths remain leader/Fleet-HEAD fenced and one-shot",
-    "ambiguous external/publication outcomes remain reconcile-only and non-replayable"
+    "S1: generic/direct/CLI execution-lease/v2 admission cannot mint ownership from a managed string; only an exact package-owned live ManagedExecutorRuntime stack can issue the non-serializable capability",
+    "S1: managed supervisor persists a terminal hold and remains awaiting_release/nonquiescent until exact lease CAS release becomes durable; controller loss cannot produce terminal worker evidence while the lease remains owned",
+    "S2: completed migration transaction emits a content-addressed migration-assembly-record; publisher resolves immutable authoritative assembly-store history and binds transaction/store/revision/manifest digest in publication claim and journal",
+    "S2: caller-regenerated manifests for stale policy/checkpoint/provenance candidates are rejected before attempt creation even when candidate and caller manifest are self-consistent",
+    "S3: GitLeaseStore transition validation accepts a new submission_resolution only if the whole transition exactly equals canonical clear_guard(previous, persisted terminal observation/evidence), and guard clearing without the resolution is rejected",
+    "S3: truthful liveness still fences only unresolved current-generation submissions; exact terminal-resolved checkpointed orphan remains recoverable with authorizes_takeover=false",
+    "Fleet Supervisor/watchdog effect fencing and adoption no-replay behavior remain intact"
   ],
   "scheduler_state": "Owner-paused; zero scheduler mutations",
   "release_ref": null,
@@ -71,22 +71,22 @@
   "runtime_acceptance": {
     "backend": "real local Git/process fixtures plus hosted GitHub Actions; scheduler effects only through recording/test backends",
     "observed": [
-      "managed-only execution-lease/v2 acquisition and explicit ordinary-chat rejection",
-      "terminal claim resolution and g-pc-health-check checkpointed orphan regression",
-      "immutable assembly-manifest path object binding and semantic consumer-lock validation",
-      "real bare-remote atomic publication with no replay",
+      "spoofed managed direct API and CLI acquisition rejection",
+      "real package-managed worker capability -> lease acquire -> terminal hold -> transactional release receipt -> historical readback",
+      "authoritative migration assembly record/history and caller-regenerated stale-manifest rejection",
+      "fabricated raw-CAS submission-resolution rejection and canonical terminal reconciliation",
       "two-subscription Fleet leader/effect fencing",
-      "933/933 full candidate tests plus three archived consumer snapshots"
+      "942/942 full candidate tests plus three archived consumer snapshots"
     ],
     "limits": [
-      "Independent Stage 1 re-review of the remediated exact candidate is still required.",
+      "Independent Stage 1 re-review of the second-remediated exact candidate is still required.",
       "Stage 2 code-quality review is not authorized until Stage 1 is GREEN.",
       "No live scheduler mutation; owner pause remains authoritative.",
       "No live consumer deployment is implied."
     ]
   },
   "remaining_authorized_stages": [
-    "fresh independent Stage 1 specification re-review of S1/S2/S3 remediation",
+    "fresh independent Stage 1 specification re-review of second remediation S1/S2/S3",
     "independent Stage 2 code-quality review only after Stage 1 GREEN",
     "immutable 2.11.3 release identity only after both review stages GREEN",
     "personal skill activation/readback",

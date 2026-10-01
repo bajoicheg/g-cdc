@@ -1,53 +1,43 @@
 {
   "schema": "cdc-release-validation/v1",
   "version": "2.11.3",
-  "source_commit": "d15adb65879b76f1d499d146a7810c8fc734b280",
-  "candidate_metadata_head": "4b18046885e4c06aaaf61ef8c72196cb6d86d6e4",
-  "package_tree": "01b6f071135c708818ded37c0b99ce245e63a083",
+  "source_commit": "c3062e8a9fcc00df7ee6c53833e926030670065d",
+  "candidate_metadata_head": "9a1c9ee5333a23c19bb4fd04f90f200a236b6b5c",
+  "package_tree": "2566627af4d6f7a014a1994d7c590aa49e032945",
   "bootstrap": "37/37 PASS; independent bootstrap/full GREEN",
   "package_validator": "330 files and parsed templates PASS",
-  "package_tests": "933/933 PASS",
+  "package_tests": "942/942 PASS",
   "consumers": "3/3 archived snapshots GREEN; compatibility only",
   "hosted_runs": [
     {
-      "run_id": 36828707930,
-      "head_sha": "4b18046885e4c06aaaf61ef8c72196cb6d86d6e4",
+      "run_id": 36848309600,
+      "head_sha": "9a1c9ee5333a23c19bb4fd04f90f200a236b6b5c",
       "conclusion": "success",
-      "purpose": "exact Stage-1-remediated technical candidate validation"
+      "purpose": "exact second Stage-1 remediation technical validation"
     }
   ],
   "retained_red_green": [
     {
-      "finding": "S1 unmanaged ordinary-chat lease ownership can bypass host final-channel gate",
-      "red_evidence": "independent Stage-1 finding S1 at PR #83 comment 5926049824",
-      "green_evidence": "managed-only lease admission + ordinary-chat rejection tests in 36828707930"
+      "finding": "S1 caller-spoofed managed label lacked capability proof",
+      "red_evidence": "independent Stage-1 re-review finding S1 at PR #83 comment 5928748463",
+      "green_evidence": "runtime-backed capability + terminal hold + direct API/CLI spoof rejection in 36848309600"
     },
     {
-      "finding": "S2 stale lock/adapter/checkpoint/provenance bytes could pass path-only adoption validation",
-      "red_evidence": "independent Stage-1 finding S2 at PR #83 comment 5926049824",
-      "green_evidence": "assembly manifest object identity + semantic lock + stale-core regressions in 36828707930"
+      "finding": "S2 caller-regenerated stale assembly manifest could self-consistently pass",
+      "red_evidence": "independent Stage-1 re-review finding S2 at PR #83 comment 5928748463",
+      "green_evidence": "authoritative migration assembly revision + stale regenerated manifest rejection in 36848309600"
     },
     {
-      "finding": "S3 terminal-reconciled submission claim remained false pending effect",
-      "red_evidence": "independent Stage-1 finding S3 at PR #83 comment 5926049824",
-      "green_evidence": "append-only submission resolutions + g-pc-health-check checkpointed regression in 36828707930"
-    },
-    {
-      "finding": "remediation fixture/provider conclusion and time binding",
-      "red_run": 36827814973,
-      "green_run": 36828707930
-    },
-    {
-      "finding": "execution-lease/v2 backward-compatible field-set check",
-      "red_run": 36827513325,
-      "green_run": 36828707930
+      "finding": "S3 fabricated raw-CAS submission resolution could clear unresolved claim",
+      "red_evidence": "independent Stage-1 re-review finding S3 at PR #83 comment 5928748463",
+      "green_evidence": "canonical terminal transition enforcement + fabricated-resolution rejection in 36848309600"
     }
   ],
   "scheduler_state": "Owner-paused; zero scheduler mutations",
-  "review_state": "Independent Stage 1 SPEC review remains RED by prior artifact; all three recorded findings are technically remediated and require independent re-review. Stage 2 remains not_run.",
+  "review_state": "Independent Stage 1 re-review remains RED by artifact 5928748463; S1/S2/S3 are technically remediated and require a fresh independent re-review. Stage 2 remains not_run.",
   "final_metadata_ci": {
     "state": "requested",
     "pull_request": 83,
-    "note": "This metadata-only remediation record must pass its own exact-head workflow before Stage-1 re-review target is considered frozen."
+    "note": "This metadata-only remediation record must pass its own exact-head workflow before the next independent Stage-1 re-review target is frozen."
   }
 }

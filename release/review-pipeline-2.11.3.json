@@ -12,26 +12,28 @@
       "reviewed-source:d15adb65879b76f1d499d146a7810c8fc734b280",
       "reviewed-package-tree:01b6f071135c708818ded37c0b99ce245e63a083",
       "reviewed-head:57a50a866806e475eaa56da379e69288c2b4dab9",
-      "github-actions:36829260261:success@57a50a866806e475eaa56da379e69288c2b4dab9"
+      "remediation-source:c3062e8a9fcc00df7ee6c53833e926030670065d",
+      "remediation-package-tree:2566627af4d6f7a014a1994d7c590aa49e032945",
+      "github-actions:36848309600:success@9a1c9ee5333a23c19bb4fd04f90f200a236b6b5c"
     ],
     "findings": [
       {
         "id": "S1",
-        "summary": "managed execution surface is still a caller-controlled label without independent terminal-lifecycle capability proof",
-        "state": "open",
-        "resolution_ref": null
+        "summary": "managed execution surface was caller-spoofable without independent terminal-lifecycle capability proof",
+        "state": "resolved",
+        "resolution_ref": "git:c3062e8a9fcc00df7ee6c53833e926030670065d:runtime-backed-managed-capability+terminal-hold+spoofed-api-cli-rejection"
       },
       {
         "id": "S2",
-        "summary": "consumer adoption manifest is caller-authored and not bound to an authoritative detached-assembly transaction revision",
-        "state": "open",
-        "resolution_ref": null
+        "summary": "consumer adoption manifest was caller-authored rather than resolved from authoritative detached assembly history",
+        "state": "resolved",
+        "resolution_ref": "git:c3062e8a9fcc00df7ee6c53833e926030670065d:migration-assembly-record+authoritative-history-readback+caller-regenerated-manifest-rejection"
       },
       {
         "id": "S3",
-        "summary": "raw coordination CAS can fabricate a submission resolution without proving the previous guard transitioned through exact terminal reconciliation",
-        "state": "open",
-        "resolution_ref": null
+        "summary": "raw coordination CAS could fabricate submission resolution without canonical terminal reconciliation",
+        "state": "resolved",
+        "resolution_ref": "git:c3062e8a9fcc00df7ee6c53833e926030670065d:canonical-clear-guard-transition-enforcement+fabricated-resolution-rejection"
       }
     ]
   },
