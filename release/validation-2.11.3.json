@@ -14,6 +14,12 @@
       "head_sha": "7fc4f80537c1404c742fbcdc21d43014452f50d8",
       "conclusion": "success",
       "purpose": "exact successor quality-hardened candidate validation"
+    },
+    {
+      "run_id": 36865923111,
+      "head_sha": "dc7d428e61c51bec847b66a5386f021b4d242364",
+      "conclusion": "success",
+      "purpose": "exact frozen quality evidence and Stage 2 blocker metadata validation"
     }
   ],
   "retained_red_green": [
@@ -50,10 +56,14 @@
     }
   ],
   "scheduler_state": "Owner-paused; zero scheduler mutations",
-  "review_state": "Stage 1 fresh rereview remains historically RED but is waived once by owner for this exact successor quality-hardened candidate; independent Stage 2 remains not_run.",
+  "review_state": "Stage 1 fresh rereview remains historically RED but is waived once by owner for this exact successor quality-hardened candidate. Independent Stage 2 remains NOT_RUN and is separately waived once by owner for this exact candidate; no independent GREEN is claimed.",
+  "review_waivers": [
+    "release/owner-review-waiver-2.11.3-stage1-quality-rebind-2.json",
+    "release/owner-review-waiver-2.11.3-stage2.json"
+  ],
   "final_metadata_ci": {
     "state": "requested",
     "pull_request": 83,
-    "note": "Quality evidence and exact successor waiver metadata require their own exact-head workflow."
+    "note": "Stage 2 owner-waiver and release-evidence metadata require their own exact-head workflow before integration."
   }
 }
