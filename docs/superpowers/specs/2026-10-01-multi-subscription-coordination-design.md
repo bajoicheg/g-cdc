@@ -12,8 +12,8 @@ Multiple ChatGPT subscriptions may concurrently operate the same CDC Fleet. Proj
 2. Standby supervisors can observe, assess and work as independent project executors, but cannot emit Fleet-wide side effects without leadership.
 3. Fleet effects are one-shot and bind leader generation/invocation plus exact observed Fleet HEAD.
 4. Runtime liveness is independent evidence. Owner/TTL alone never means `active`.
-5. Final response is fail-closed for an invocation that acquired a lease until exact release is durable.
-6. Consumer adoption is detached/atomic: no shared ref movement until package tree and all required bindings are complete.
+5. Final response is fail-closed for an invocation that acquired a lease until exact release is durable. Because ordinary ChatGPT has no package-interceptable final channel, new persistent lease acquisition is denied on unmanaged host surfaces; only package-managed execution may own a lease.
+6. Consumer adoption is detached/atomic: no shared ref movement until package tree and all required bindings are complete and every required path is bound to an immutable assembly-manifest Git object plus target consumer-lock semantics.
 7. TTL/provider terminal/scheduler silence never grants takeover.
 8. All controls remain authority-minimizing: no project product-write/merge/release/scope authority is created.
 
@@ -23,7 +23,7 @@ Multiple ChatGPT subscriptions may concurrently operate the same CDC Fleet. Proj
 - duplicate Fleet effect intent produces one claim; differing intent under the same effect ID is rejected;
 - unknown leader effect blocks replacement; terminal reconciled effects allow replacement only with exact executor-stopped evidence;
 - no-runtime lease is `unknown`, not `active`;
-- stopped/no-effect lease is `orphaned_recoverable`, not `active`;
-- an owned lease makes the final-response gate RED; exact post-release state makes it GREEN;
+- stopped/no-effect lease is `orphaned_recoverable`, not `active`, including a stopped owner whose current-generation submission claim has an append-only exact terminal resolution;
+- unmanaged ordinary-chat/work/codex/watchdog/api acquisition is mechanically rejected; a package-managed owned lease makes the final-response gate RED until exact post-release state makes it GREEN;
 - partial adoption preparation never reaches a shared-ref publication state;
 - exact detached package tree + full bindings + unchanged live HEAD yields one conditional-fast-forward boundary and exact readback requirement.
