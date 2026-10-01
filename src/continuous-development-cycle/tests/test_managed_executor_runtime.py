@@ -134,9 +134,8 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
                               output_refs=["out:" + task], evidence_refs=["test:" + task])
 
     def test_managed_runtime_capability_controls_execution_lease_terminal_lifecycle(self):
-        self.launch("a", self.worker("a", 1.2))
+        self.launch("a", self.worker("a", .35))
         end=time.monotonic()+4
-        observed=None
         while time.monotonic()<end:
             observed=self.rt.observe("a","a1")
             if observed["status"]=="running":break
@@ -148,7 +147,6 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
             None,leasev2.initialize("test/project","refs/heads/integration"))
         owner="99999999-9999-4999-8999-999999999999"
         at=runtime._utc()
-
         spoof={"invocation_id":"spoofed","automation_id":None,"conversation_id":None,
                "execution_surface":"managed","started_at_utc":at}
         with self.assertRaisesRegex(ValueError,"capability proof"):
@@ -169,14 +167,30 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
         acquired=self.rt.acquire_execution_lease(
             lease_store,lease_revision,"test/project","refs/heads/integration",owner,"a","a1",at)
         invocation=acquired["invocation"];invocation_id=invocation["invocation_id"]
+        revision=acquired["revision"];record=acquired["record"]
         self.assertEqual(invocation["execution_surface"],"managed")
         self.assertTrue(invocation_id.startswith("managed-terminal:"))
-        revision=acquired["revision"];record=acquired["record"]
 
+        end=time.monotonic()+4
+        held=None
+        while time.monotonic()<end:
+            held=self.rt.observe("a","a1")
+            if held["status"]=="awaiting_release":break
+            time.sleep(.01)
+        self.assertEqual(held["status"],"awaiting_release")
+        self.assertFalse(held["quiescent"])
+        self.assertEqual(lease_store.read()[1]["owner_id"],owner)
+
+        # Reconstructing the controller simulates controller/chat loss. The package
+        # supervisor remains nonterminal until the exact lease is released.
+        self.rt=runtime.ManagedExecutorRuntime(
+            self.plan,self.store,self.repo,runtime.LocalCommandBackend(self.root/"journal"))
+        self.assertEqual(self.rt.observe("a","a1")["status"],"awaiting_release")
+
+        checkpoint="checkpoint:managed-terminal"
         record=leasev2.begin_finalization(
             record,owner,1,invocation_id,runtime._utc(),pending_shared_writes=False)
         revision=lease_store.compare_and_swap(revision,record)
-        checkpoint="checkpoint:managed-terminal"
         record=leasev2.record_checkpoint(
             record,owner,1,invocation_id,runtime._utc(),checkpoint_ref=checkpoint,pending_shared_writes=False)
         revision=lease_store.compare_and_swap(revision,record)
@@ -194,8 +208,12 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
         record=leasev2.mark_ready(
             record,owner,1,invocation_id,runtime._utc(),continuity_state=continuity)
         revision=lease_store.compare_and_swap(revision,record)
-        released=leasev2.release_cas(
-            lease_store,revision,"test/project","refs/heads/integration",owner,1,invocation_id,runtime._utc())
+
+        pre=final_gate.evaluate(
+            invocation_id,record,continuity,{"owner_id":owner,"generation":1},None,None,runtime._utc())
+        self.assertFalse(pre["final_response_allowed"])
+        released=self.rt.release_execution_lease(
+            lease_store,revision,"test/project","refs/heads/integration",owner,1,invocation_id,"a","a1",runtime._utc())
         release_record=lease_store.read_revision(released["release_receipt"]["lease_revision"])
         post=copy.deepcopy(continuity);post["lease_release_required"]=True;post["lease_released"]=True
         post["terminal_state"]["lease_released"]=True
@@ -203,7 +221,8 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
             invocation_id,released["record"],post,{"owner_id":owner,"generation":1},
             released["release_receipt"],release_record,runtime._utc())
         self.assertTrue(gate["final_response_allowed"])
-        self.assertEqual(self.wait("a")["status"],"succeeded")
+        final=self.wait("a")
+        self.assertEqual(final["status"],"succeeded");self.assertTrue(final["quiescent"])
 
     def test_two_workers_really_overlap_and_commit_in_isolated_worktrees(self):
         self.launch("a", self.worker("a", .8))
