@@ -1,19 +1,18 @@
 {
   "schema": "blocked-state-proof/v1",
-  "dependency_id": "independent-spec-reviewer:cdc-2.11.3",
-  "category": "capability",
-  "observed_at_utc": "2026-10-01T05:55:06Z",
-  "max_age_seconds": 3600,
+  "dependency_id": "independent-spec-rereview:cdc-2.11.3",
+  "category": "review",
+  "observed_at_utc": "2026-10-01T07:13:19Z",
+  "max_age_seconds": 86400,
   "evidence_refs": [
-    "github:pr-83:requested_reviewers=null",
-    "github:pr-83:reviews=0",
-    "github:pr-83:review_threads=0",
-    "github:pr-83:comments=0",
-    "github:run-36821819429:success@942682f25a630fcd533bdbbdc2815559ef60d1e3",
-    "docs/superpowers/reports/2026-10-01-cdc-2.11.3-internal-spec-precheck.md",
-    "release/review-pipeline-2.11.3.json"
+    "https://github.com/bajoicheg/g-cdc/pull/83#issuecomment-5926049824",
+    "github-actions:36828707930:success@4b18046885e4c06aaaf61ef8c72196cb6d86d6e4",
+    "remediation-source:d15adb65879b76f1d499d146a7810c8fc734b280",
+    "remediation-package-tree:01b6f071135c708818ded37c0b99ce245e63a083",
+    "release/review-pipeline-2.11.3.json",
+    "release/validation-2.11.3.json"
   ],
-  "next_action": "Obtain a concrete independent Stage 1 specification-review artifact for PR #83 bound to source bb0bf33cfab6bf2681e24d74c9b5be7db0385ac8 and package tree ea7de7448c974987fe0df5b886530e3fea1817a1; if SPEC is green, run the ordered independent Stage 2 code-quality review.",
-  "recheck_trigger": "independent-review-backend-availability-or-new-review-artifact",
+  "next_action": "Run a fresh independent Stage 1 specification re-review of PR #83 against exact remediation source d15adb65879b76f1d499d146a7810c8fc734b280 and package tree 01b6f071135c708818ded37c0b99ce245e63a083; verify closure of S1/S2/S3. Stage 2 remains forbidden until Stage 1 becomes GREEN.",
+  "recheck_trigger": "new-independent-stage1-review-artifact",
   "same_invocation_work_exhausted": true
 }

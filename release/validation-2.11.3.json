@@ -1,50 +1,53 @@
 {
   "schema": "cdc-release-validation/v1",
   "version": "2.11.3",
-  "source_commit": "bb0bf33cfab6bf2681e24d74c9b5be7db0385ac8",
-  "candidate_metadata_head": "c22ab84572882676a39a10eeef15b01d8a496cd3",
-  "package_tree": "ea7de7448c974987fe0df5b886530e3fea1817a1",
+  "source_commit": "d15adb65879b76f1d499d146a7810c8fc734b280",
+  "candidate_metadata_head": "4b18046885e4c06aaaf61ef8c72196cb6d86d6e4",
+  "package_tree": "01b6f071135c708818ded37c0b99ce245e63a083",
   "bootstrap": "37/37 PASS; independent bootstrap/full GREEN",
   "package_validator": "330 files and parsed templates PASS",
-  "package_tests": "926/926 PASS",
+  "package_tests": "933/933 PASS",
   "consumers": "3/3 archived snapshots GREEN; compatibility only",
   "hosted_runs": [
     {
-      "run_id": 36821428517,
-      "head_sha": "c22ab84572882676a39a10eeef15b01d8a496cd3",
+      "run_id": 36828707930,
+      "head_sha": "4b18046885e4c06aaaf61ef8c72196cb6d86d6e4",
       "conclusion": "success",
-      "purpose": "exact final technical candidate validation"
+      "purpose": "exact Stage-1-remediated technical candidate validation"
     }
   ],
   "retained_red_green": [
     {
-      "finding": "new ownership-integrity fault vocabulary rejected by independent bootstrap",
-      "red_run": 36789375442,
-      "green_evidence": "bootstrap GREEN in 36821428517"
+      "finding": "S1 unmanaged ordinary-chat lease ownership can bypass host final-channel gate",
+      "red_evidence": "independent Stage-1 finding S1 at PR #83 comment 5926049824",
+      "green_evidence": "managed-only lease admission + ordinary-chat rejection tests in 36828707930"
     },
     {
-      "finding": "2.11.3 package-transport fixture tree drift",
-      "red_run": 36789599405,
-      "green_evidence": "package validator GREEN in 36821428517"
+      "finding": "S2 stale lock/adapter/checkpoint/provenance bytes could pass path-only adoption validation",
+      "red_evidence": "independent Stage-1 finding S2 at PR #83 comment 5926049824",
+      "green_evidence": "assembly manifest object identity + semantic lock + stale-core regressions in 36828707930"
     },
     {
-      "finding": "mutable release proof / successor-generation race",
-      "green_evidence": "revision-bound execution-release-receipt tests included in 926/926"
+      "finding": "S3 terminal-reconciled submission claim remained false pending effect",
+      "red_evidence": "independent Stage-1 finding S3 at PR #83 comment 5926049824",
+      "green_evidence": "append-only submission resolutions + g-pc-health-check checkpointed regression in 36828707930"
     },
     {
-      "finding": "real Fleet/survivability leader bypass and mid-call Fleet HEAD races",
-      "green_evidence": "leader-fenced scheduler pressure tests included in 926/926"
+      "finding": "remediation fixture/provider conclusion and time binding",
+      "red_run": 36827814973,
+      "green_run": 36828707930
     },
     {
-      "finding": "planner-only consumer adoption publication",
-      "green_evidence": "real bare-remote atomic publisher/no-replay tests included in 926/926"
+      "finding": "execution-lease/v2 backward-compatible field-set check",
+      "red_run": 36827513325,
+      "green_run": 36828707930
     }
   ],
   "scheduler_state": "Owner-paused; zero scheduler mutations",
-  "review_state": "Independent Stage 1 SPEC review not materialized; release remains blocked.",
+  "review_state": "Independent Stage 1 SPEC review remains RED by prior artifact; all three recorded findings are technically remediated and require independent re-review. Stage 2 remains not_run.",
   "final_metadata_ci": {
     "state": "requested",
     "pull_request": 83,
-    "note": "Observed externally after this metadata-only commit; release cannot proceed while review stages are not_run."
+    "note": "This metadata-only remediation record must pass its own exact-head workflow before Stage-1 re-review target is considered frozen."
   }
 }

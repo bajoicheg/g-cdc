@@ -2,9 +2,9 @@
   "schema": "cdc-release-evidence/v1",
   "version": "2.11.3",
   "canonical_repository": "bajoicheg/g-cdc",
-  "candidate_source_commit": "bb0bf33cfab6bf2681e24d74c9b5be7db0385ac8",
-  "package_tree": "ea7de7448c974987fe0df5b886530e3fea1817a1",
-  "status": "blocked_independent_review",
+  "candidate_source_commit": "d15adb65879b76f1d499d146a7810c8fc734b280",
+  "package_tree": "01b6f071135c708818ded37c0b99ce245e63a083",
+  "status": "blocked_stage1_rereview",
   "development_driver": {
     "version": "2.11.2",
     "commit": "48e637b230e7640d0dcd13da60d712f38f59a2b6",
@@ -12,44 +12,41 @@
     "validation_run_id": 36750000629
   },
   "release_validation": {
-    "package": "926/926 PASS",
+    "package": "933/933 PASS",
     "package_validator": "330 required files and parsed templates PASS",
     "bootstrap": "37/37 PASS; independent bootstrap/full GREEN",
     "consumers": "3/3 archived snapshots PASS; not live adoption",
     "local_record": "release/validation-2.11.3.json",
     "candidate_ci": [
       {
-        "run_id": 36821428517,
-        "head_sha": "c22ab84572882676a39a10eeef15b01d8a496cd3",
+        "run_id": 36828707930,
+        "head_sha": "4b18046885e4c06aaaf61ef8c72196cb6d86d6e4",
         "conclusion": "success",
-        "purpose": "exact technical candidate validation"
+        "purpose": "exact Stage-1-remediated technical candidate validation"
       }
     ],
     "final_metadata_ci": {
-      "run_id": 36821819429,
-      "head_sha": "942682f25a630fcd533bdbbdc2815559ef60d1e3",
-      "conclusion": "success",
-      "purpose": "validation-record metadata exact-head verification"
+      "state": "pending exact remediation metadata head"
     }
   },
   "reviews": {
     "technical_spec_precheck": {
-      "result": "PASS_TECHNICAL",
+      "result": "PASS_TECHNICAL_AFTER_REMEDIATION",
       "report": "docs/superpowers/reports/2026-10-01-cdc-2.11.3-internal-spec-precheck.md",
-      "open_material_findings": 0,
-      "note": "Self technical precheck only; not an independent Stage 1 review."
+      "note": "Self technical precheck only; does not change independent Stage 1 verdict."
     },
     "independent_spec_review": {
-      "result": "BLOCKED_NOT_RUN",
+      "result": "RED_REMEDIATED_REREVIEW_REQUIRED",
+      "reviewer_artifact": "https://github.com/bajoicheg/g-cdc/pull/83#issuecomment-5926049824",
       "pipeline": "release/review-pipeline-2.11.3.json",
       "blocker": "release/review-blocker-2.11.3.json",
-      "reviewer_route": "copilot-pull-request-reviewer[bot]",
-      "readback": {
-        "requested_reviewers": 0,
-        "reviews": 0,
-        "review_threads": 0,
-        "comments": 0
-      },
+      "reviewed_source": "bb0bf33cfab6bf2681e24d74c9b5be7db0385ac8",
+      "reviewed_package_tree": "ea7de7448c974987fe0df5b886530e3fea1817a1",
+      "findings_total": 3,
+      "findings_remediated": 3,
+      "remediation_source": "d15adb65879b76f1d499d146a7810c8fc734b280",
+      "remediation_package_tree": "01b6f071135c708818ded37c0b99ce245e63a083",
+      "rereview_required": true,
       "waiver": null
     },
     "independent_code_quality_review": {
@@ -58,15 +55,14 @@
     }
   },
   "corrections": [
-    "orphan lease liveness no longer infers active from owner/TTL; exact fresh runtime evidence is required",
-    "final response requires immutable revision-bound exact release receipt and post-release continuity",
-    "Fleet Supervisor leadership is one invocation-bound CAS generation",
-    "Fleet effects use deterministic content-addressed identity and unresolved same-target effects fence later heads",
-    "standby effect reconciliation is evidence-only and cannot replay provider work",
-    "real Fleet scheduler recovery requires a pinned leader/Fleet HEAD and one-shot outer effect journal",
-    "watchdog survivability create/enable/run/disable effects recheck the same leader immediately before provider I/O",
-    "consumer adoption requires mandatory core paths, exact detached root tree, exact package subtree, durable publication journal, conditional non-force push and exact readback",
-    "ambiguous adoption publication is not replayed"
+    "S1: unmanaged chat/work/codex/watchdog/api/unknown surfaces cannot acquire new persistent execution-lease/v2 ownership; only package-managed execution may own a lease",
+    "S1: managed owner still requires revision-bound execution-release-receipt and authoritative historical readback before terminal completion",
+    "S2: atomic adoption claim/journal binds immutable assembly-manifest digest covering every required path Git object identity",
+    "S2: publisher verifies candidate root tree, every manifest object, exact package tree, and semantic consumer-lock version/package_tree/release_ref/release_commit before publication attempt",
+    "S3: consumed submission claims remain append-only, and exact terminal reconciliation appends immutable claim-bound submission_resolutions",
+    "S3: truthful liveness blocks only unresolved current-generation claims; terminal-resolved checkpointed orphan is recoverable without granting takeover",
+    "Fleet Supervisor and watchdog scheduler effect paths remain leader/Fleet-HEAD fenced and one-shot",
+    "ambiguous external/publication outcomes remain reconcile-only and non-replayable"
   ],
   "scheduler_state": "Owner-paused; zero scheduler mutations",
   "release_ref": null,
@@ -75,26 +71,24 @@
   "runtime_acceptance": {
     "backend": "real local Git/process fixtures plus hosted GitHub Actions; scheduler effects only through recording/test backends",
     "observed": [
-      "two-subscription Fleet leader CAS pressure",
-      "deterministic one-shot Fleet effects and unknown-effect takeover blocking",
-      "real Fleet scheduler leader fencing and Fleet-HEAD-change denial",
-      "watchdog survivability leader fencing at provider-I/O boundary",
-      "truthful active/orphaned/unknown execution liveness",
-      "revision-bound final-response release receipts across successor generations",
-      "real bare-remote atomic consumer publication, lost-reply readback and no-replay",
-      "926/926 full candidate tests plus three archived consumer snapshots"
+      "managed-only execution-lease/v2 acquisition and explicit ordinary-chat rejection",
+      "terminal claim resolution and g-pc-health-check checkpointed orphan regression",
+      "immutable assembly-manifest path object binding and semantic consumer-lock validation",
+      "real bare-remote atomic publication with no replay",
+      "two-subscription Fleet leader/effect fencing",
+      "933/933 full candidate tests plus three archived consumer snapshots"
     ],
     "limits": [
-      "Independent Stage 1/Stage 2 reviewer identity has not materialized; release is blocked.",
+      "Independent Stage 1 re-review of the remediated exact candidate is still required.",
+      "Stage 2 code-quality review is not authorized until Stage 1 is GREEN.",
       "No live scheduler mutation; owner pause remains authoritative.",
-      "No live consumer deployment is implied.",
-      "Personal activation requires separate installed-byte readback after release."
+      "No live consumer deployment is implied."
     ]
   },
   "remaining_authorized_stages": [
-    "independent Stage 1 specification-compliance review",
-    "independent Stage 2 code-quality review",
-    "immutable 2.11.3 release identity after both review stages are green",
+    "fresh independent Stage 1 specification re-review of S1/S2/S3 remediation",
+    "independent Stage 2 code-quality review only after Stage 1 GREEN",
+    "immutable 2.11.3 release identity only after both review stages GREEN",
     "personal skill activation/readback",
     "live Fleet target migration and safe consumer rollout"
   ],
