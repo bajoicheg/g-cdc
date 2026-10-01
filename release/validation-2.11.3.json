@@ -1,0 +1,50 @@
+{
+  "schema": "cdc-release-validation/v1",
+  "version": "2.11.3",
+  "source_commit": "bb0bf33cfab6bf2681e24d74c9b5be7db0385ac8",
+  "candidate_metadata_head": "c22ab84572882676a39a10eeef15b01d8a496cd3",
+  "package_tree": "ea7de7448c974987fe0df5b886530e3fea1817a1",
+  "bootstrap": "37/37 PASS; independent bootstrap/full GREEN",
+  "package_validator": "330 files and parsed templates PASS",
+  "package_tests": "926/926 PASS",
+  "consumers": "3/3 archived snapshots GREEN; compatibility only",
+  "hosted_runs": [
+    {
+      "run_id": 36821428517,
+      "head_sha": "c22ab84572882676a39a10eeef15b01d8a496cd3",
+      "conclusion": "success",
+      "purpose": "exact final technical candidate validation"
+    }
+  ],
+  "retained_red_green": [
+    {
+      "finding": "new ownership-integrity fault vocabulary rejected by independent bootstrap",
+      "red_run": 36789375442,
+      "green_evidence": "bootstrap GREEN in 36821428517"
+    },
+    {
+      "finding": "2.11.3 package-transport fixture tree drift",
+      "red_run": 36789599405,
+      "green_evidence": "package validator GREEN in 36821428517"
+    },
+    {
+      "finding": "mutable release proof / successor-generation race",
+      "green_evidence": "revision-bound execution-release-receipt tests included in 926/926"
+    },
+    {
+      "finding": "real Fleet/survivability leader bypass and mid-call Fleet HEAD races",
+      "green_evidence": "leader-fenced scheduler pressure tests included in 926/926"
+    },
+    {
+      "finding": "planner-only consumer adoption publication",
+      "green_evidence": "real bare-remote atomic publisher/no-replay tests included in 926/926"
+    }
+  ],
+  "scheduler_state": "Owner-paused; zero scheduler mutations",
+  "review_state": "Independent Stage 1 SPEC review not materialized; release remains blocked.",
+  "final_metadata_ci": {
+    "state": "requested",
+    "pull_request": 83,
+    "note": "Observed externally after this metadata-only commit; release cannot proceed while review stages are not_run."
+  }
+}
