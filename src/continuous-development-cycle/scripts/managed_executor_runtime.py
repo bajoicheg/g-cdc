@@ -397,8 +397,26 @@ class ManagedExecutorRuntime:
             result=execution_lease_v2.acquire_managed_cas(
                 lease_store,expected_revision,repository,source_ref,owner_id,at,
                 terminal_capability=capability,ttl=ttl,quiescence=quiescence)
-        except Exception:
-            self._abort_terminal_hold(capability,"lease acquisition did not become authoritative")
+        except Exception as exc:
+            try:
+                reconciled=self.reconcile_execution_lease_hold(lease_store,task_id,attempt_id)
+            except Exception:
+                raise
+            if reconciled["status"]=="owned":
+                current_revision,current_record=lease_store.read()
+                owned=reconciled["owned_marker"]
+                if (current_record is None or current_record.get("owner_id")!=owned["owner_id"]
+                        or current_record.get("generation")!=owned["generation"]
+                        or current_record.get("invocation",{}).get("invocation_id")!=owned["invocation_id"]):
+                    raise ValueError("managed lease acquisition recovery lost exact ownership") from exc
+                return {"revision":current_revision,"record":current_record,
+                        "owner_id":owned["owner_id"],"generation":owned["generation"],
+                        "invocation":copy.deepcopy(current_record["invocation"]),
+                        "terminal_capability_ref":intent["capability_ref"],
+                        "terminal_task_id":task_id,"terminal_attempt_id":attempt_id,
+                        "recovered_after_acquire":True}
+            if reconciled["status"]=="released":
+                raise ValueError("managed lease acquisition was already released during reconciliation") from exc
             raise
         payload=capability.payload
         paths=_terminal_hold_paths(self._terminal_hold_directory(task_id,attempt_id))
