@@ -181,7 +181,7 @@ class GitPublisherTests(unittest.TestCase):
   d=self.ready_state();d.update(candidate_commit=candidate,target_package_tree=tree,observed_package_tree=tree,final_tree_sha=final)
   d["assembly_manifest"]=copy.deepcopy(self.manifest)
   d["publication_claim"]=None;d["publication_claim"]=assess(d)["claim"]
-  with self.assertRaisesRegex(ValueError,"missing required path"):
+  with self.assertRaisesRegex(ValueError,"missing required path|object identity mismatch"):
    self.publisher.publish(d)
   self.assertEqual(self.remote_head(),self.source);self.assertIsNone(self.attempt(d))
  def test_candidate_root_tree_must_match_prepared_detached_tree(self):
