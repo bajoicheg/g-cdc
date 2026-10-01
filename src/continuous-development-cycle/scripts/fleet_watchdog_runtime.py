@@ -139,6 +139,9 @@ class FleetRuntime:
         self.max_age_seconds = max_age_seconds
         self.survivability_runtime = survivability_runtime
         self.leader_guard = leader_guard
+        if (self.survivability_runtime is not None and self.leader_guard is not None
+                and getattr(self.survivability_runtime, "leader_guard", None) is None):
+            self.survivability_runtime.leader_guard = self.leader_guard
 
     def _initial_state(self):
         return {"schema": SCHEMA, "coordination_ref": self.store.ref,
@@ -476,7 +479,8 @@ class FleetRuntime:
             try:
                 if max_effects>0 and self._leader_binding(invocation_id)!=batch_leader:
                     raise ValueError("Fleet head or leader changed before survivability effects")
-                survivability = self.survivability_runtime.reconcile_registered(max_effects=max_effects)
+                survivability = self.survivability_runtime.reconcile_registered(
+                    max_effects=max_effects, invocation_id=invocation_id, leader_binding=batch_leader)
                 if (not isinstance(survivability, dict)
                         or type(survivability.get("effects_attempted")) is not int
                         or not 0 <= survivability["effects_attempted"] <= max_effects
