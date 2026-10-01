@@ -2,7 +2,7 @@
   "schema": "cdc-release-validation/v1",
   "version": "2.11.3",
   "source_commit": "c3062e8a9fcc00df7ee6c53833e926030670065d",
-  "candidate_metadata_head": "9a1c9ee5333a23c19bb4fd04f90f200a236b6b5c",
+  "candidate_metadata_head": "855a3a92569561553115c8a4234558852264e2c9",
   "package_tree": "2566627af4d6f7a014a1994d7c590aa49e032945",
   "bootstrap": "37/37 PASS; independent bootstrap/full GREEN",
   "package_validator": "330 files and parsed templates PASS",
@@ -36,8 +36,11 @@
   "scheduler_state": "Owner-paused; zero scheduler mutations",
   "review_state": "Independent Stage 1 re-review remains RED by artifact 5928748463; S1/S2/S3 are technically remediated and require a fresh independent re-review. Stage 2 remains not_run.",
   "final_metadata_ci": {
-    "state": "requested",
+    "state": "success",
     "pull_request": 83,
-    "note": "This metadata-only remediation record must pass its own exact-head workflow before the next independent Stage-1 re-review target is frozen."
+    "run_id": 36848888998,
+    "head_sha": "855a3a92569561553115c8a4234558852264e2c9",
+    "conclusion": "success",
+    "note": "Metadata-only second-remediation record validated exactly; subsequent blocker-summary commit must be exact-head validated before re-review handoff."
   }
 }

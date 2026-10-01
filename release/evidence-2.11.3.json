@@ -26,7 +26,11 @@
       }
     ],
     "final_metadata_ci": {
-      "state": "pending exact second-remediation metadata head"
+      "state": "success",
+      "run_id": 36848888998,
+      "head_sha": "855a3a92569561553115c8a4234558852264e2c9",
+      "conclusion": "success",
+      "purpose": "exact second-remediation metadata verification"
     }
   },
   "reviews": {
