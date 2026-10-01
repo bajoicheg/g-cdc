@@ -296,6 +296,20 @@ class ManagedExecutorRuntime:
         if _git(self.repo_root, "rev-parse", plan["base_sha"] + "^{commit}") != plan["base_sha"]:
             raise ValueError("plan base is not an exact available commit")
 
+    def terminal_capability(self,task_id,attempt_id,*,lease_repository,lease_source_ref,observed_at_utc=None):
+        import managed_terminal_capability
+        return managed_terminal_capability.issue(
+            self,task_id,attempt_id,lease_repository=lease_repository,lease_source_ref=lease_source_ref,
+            observed_at_utc=observed_at_utc)
+
+    def acquire_execution_lease(self,lease_store,expected_revision,repository,source_ref,owner_id,task_id,attempt_id,at,*,ttl=1200,quiescence=None):
+        import execution_lease_v2
+        capability=self.terminal_capability(
+            task_id,attempt_id,lease_repository=repository,lease_source_ref=source_ref,observed_at_utc=at)
+        return execution_lease_v2.acquire_managed_cas(
+            lease_store,expected_revision,repository,source_ref,owner_id,at,
+            terminal_capability=capability,ttl=ttl,quiescence=quiescence)
+
     def _task(self, task_id):
         return next(task for task in self.plan["tasks"] if task["id"] == task_id)
 
