@@ -120,7 +120,7 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
         end = time.monotonic() + 12
         while time.monotonic() < end:
             observed = self.rt.observe(task, task + "1")
-            if observed["status"] not in {"running", "starting"}:
+            if observed["status"] not in {"running", "starting", "awaiting_release"}:
                 return observed
             time.sleep(.025)
         self.fail("real worker did not finish")
