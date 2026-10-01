@@ -57,9 +57,11 @@ class _VerifiedManagedTerminalCapability:
 
 def issue(runtime,task_id,attempt_id,*,lease_repository,lease_source_ref,observed_at_utc=None):
     # Exact package runtime type: a generic object implementing the same method names is not capability evidence.
-    from managed_executor_runtime import ManagedExecutorRuntime
-    if type(runtime) is not ManagedExecutorRuntime:
-        raise ValueError("managed terminal capability requires exact ManagedExecutorRuntime")
+    from managed_executor_runtime import ManagedExecutorRuntime,LocalCommandBackend,ExecutionJournal
+    from managed_executor_store import GitManagedExecutorStore
+    if (type(runtime) is not ManagedExecutorRuntime or type(runtime.store) is not GitManagedExecutorStore
+            or type(runtime.backend) is not LocalCommandBackend or type(runtime.journal) is not ExecutionJournal):
+        raise ValueError("managed terminal capability requires exact package-owned managed runtime/store/backend/journal")
     if not isinstance(lease_repository,str) or not lease_repository.strip():
         raise ValueError("lease_repository invalid")
     if not isinstance(lease_source_ref,str) or not lease_source_ref.startswith("refs/heads/"):
