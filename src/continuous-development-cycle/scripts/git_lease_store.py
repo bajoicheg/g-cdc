@@ -28,6 +28,48 @@ def validate_coordination_record(record):
     raise ValueError('unsupported lease schema')
 
 
+def _validate_submission_resolution_transition(previous, record):
+    prev_res=previous.get("submission_resolutions",[])
+    curr_res=record.get("submission_resolutions",[])
+    appended=curr_res[len(prev_res):]
+    prev_guard=previous.get("external_guard")
+    prev_claim=prev_guard.get("submission_claim") if isinstance(prev_guard,dict) else None
+    guard_cleared=prev_guard is not None and record.get("external_guard") is None
+
+    if appended:
+        if previous.get("schema")!="execution-lease/v2" or record.get("schema")!="execution-lease/v2":
+            raise ValueError("submission resolution append requires v2-to-v2 terminal reconciliation")
+        if len(appended)!=1 or prev_claim is None or not guard_cleared:
+            raise ValueError("submission resolution append requires exact prior guarded submission")
+        terminal=record.get("last_terminal")
+        if not isinstance(terminal,dict):
+            raise ValueError("submission resolution append requires persisted terminal observation")
+        resolution=appended[0]
+        if (resolution["grant_id"]!=prev_claim["grant_id"]
+                or resolution["evidence_reference"]!=terminal.get("evidence_reference")
+                or resolution["observation_digest"]!=op._hash(terminal.get("observation"))
+                or resolution["operation_key"]!=terminal.get("operation_key")
+                or resolution["intent_digest"]!=terminal.get("intent_digest")
+                or resolution["resolved_at_utc"]!=terminal.get("at_utc")):
+            raise ValueError("submission resolution is not bound to exact persisted terminal evidence")
+        # A resolution is an atomic guard->terminal transition. No unrelated state
+        # may be smuggled through the same raw CAS.
+        allowed={"external_guard","last_terminal","submission_resolutions"}
+        all_fields=set(previous)|set(record)
+        for name in all_fields-allowed:
+            if previous.get(name)!=record.get(name):
+                raise ValueError("terminal submission resolution CAS contains unrelated mutation")
+        expected=execution_lease_v2.clear_guard(
+            previous,
+            previous["owner_id"],previous["generation"],previous["invocation"]["invocation_id"],
+            terminal["at_utc"],terminal["observation"],terminal["evidence_reference"])
+        if expected!=record:
+            raise ValueError("submission resolution must equal the canonical terminal guard reconciliation")
+    elif prev_claim is not None and guard_cleared:
+        raise ValueError("guarded submission cannot clear without append-only terminal resolution")
+    return record
+
+
 def validate_coordination_transition(previous, record):
     validate_coordination_record(record)
     if previous is None:
@@ -39,6 +81,7 @@ def validate_coordination_transition(previous, record):
         raise ValueError('execution-lease/v2 cannot downgrade to v1')
     if record['submission_claims'][:len(previous['submission_claims'])] != previous['submission_claims']:
         raise ValueError('consumed submission history cannot be removed or rewritten')
+    _validate_submission_resolution_transition(previous, record)
     previous_resolutions=previous.get('submission_resolutions', [])
     current_resolutions=record.get('submission_resolutions', [])
     if current_resolutions[:len(previous_resolutions)] != previous_resolutions:
