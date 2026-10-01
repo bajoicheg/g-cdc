@@ -172,6 +172,23 @@ class GitLeaseStore:
             raise ValueError('coordination ref must differ from product source ref')
         return record
 
+    def find_release_receipt(self, owner_id, generation, invocation_id):
+        current, _ = self.read()
+        if current is None:
+            raise ValueError('coordination history is absent')
+        revisions = self._git('rev-list', '--first-parent', current).splitlines()
+        for revision in revisions[:10000]:
+            record = json.loads(self._git('show', revision + ':lease.json'), object_pairs_hook=op._unique_object)
+            validate_coordination_record(record)
+            release = record.get('last_release')
+            if (record.get('owner_id') is None and isinstance(release, dict)
+                    and release.get('owner_id') == owner_id and release.get('generation') == generation
+                    and release.get('invocation_id') == invocation_id and record.get('generation') == generation):
+                return {'release_receipt': {'schema': 'execution-release-receipt/v1',
+                                            'lease_revision': revision, 'release': release},
+                        'release_record': record, 'current_revision': current}
+        raise ValueError('exact historical lease release was not found')
+
     def compare_and_swap(self, expected_revision, record):
         validate_coordination_record(record)
         if record['source_ref'] == self.ref:
