@@ -39,6 +39,10 @@ def validate_coordination_transition(previous, record):
         raise ValueError('execution-lease/v2 cannot downgrade to v1')
     if record['submission_claims'][:len(previous['submission_claims'])] != previous['submission_claims']:
         raise ValueError('consumed submission history cannot be removed or rewritten')
+    previous_resolutions=previous.get('submission_resolutions', [])
+    current_resolutions=record.get('submission_resolutions', [])
+    if current_resolutions[:len(previous_resolutions)] != previous_resolutions:
+        raise ValueError('submission resolution history cannot be removed or rewritten')
     if record['generation'] < previous['generation']:
         raise ValueError('lease generation cannot decrease')
     return record
