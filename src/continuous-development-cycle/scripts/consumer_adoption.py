@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Fail-closed atomic consumer adoption publication planning."""
 from __future__ import annotations
-import argparse,hashlib,json,re,sys
+import argparse,copy,hashlib,json,re,secrets,subprocess,sys
+from datetime import datetime,timezone
 from pathlib import Path
+
+from git_document_store import GitDocumentStore
+from git_object_integrity import git_object_environment
+from git_remote_identity import isolated_remote_args,remote_identity,repository_root
 
 SCHEMA="consumer-adoption-publication/v1"
 SHA=re.compile(r"^[0-9a-f]{40}$");SEMVER=re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
@@ -68,6 +73,276 @@ def assess(s):
         return {**common,"action":"RECOVERY_REQUIRED","missing_paths":[],"claim":expected,"reason":"published_package_tree_mismatch"}
     return {**common,"action":"COMPLETE","missing_paths":[],"claim":expected,"publication_prerequisites_satisfied":True,
             "reason":"single_conditional_publish_and_exact_readback"}
+
+ATTEMPT_SCHEMA="consumer-adoption-attempts/v1"
+ATTEMPT_STATES={"prepared","submitted","unknown","confirmed","rejected","aborted"}
+
+def _now_utc():
+    return datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
+
+class GitConsumerAdoptionPublisher:
+    """Publish one fully assembled consumer adoption by durable, non-replayed Git CAS."""
+
+    def __init__(self,repo,remote,target_ref,remote_id,attempt_store,*,clock=None,
+                 package_path=".agents/skills/continuous-development-cycle"):
+        self.repo=repository_root(repo)
+        self.remote=remote
+        self.target_ref=target_ref
+        self.remote_id=remote_id
+        self.attempt_store=attempt_store
+        self.clock=clock or _now_utc
+        self.package_path=package_path
+        if not isinstance(target_ref,str) or not target_ref.startswith("refs/heads/"):
+            raise ValueError("consumer target_ref invalid")
+        _path(package_path)
+        if not isinstance(attempt_store,GitDocumentStore):
+            raise ValueError("consumer adoption publication requires GitDocumentStore attempt journal")
+        if attempt_store.store_id!=remote_id:
+            raise ValueError("consumer adoption attempt store remote identity mismatch")
+        if attempt_store.ref==target_ref:
+            raise ValueError("consumer adoption attempt ref must be isolated from product ref")
+        if remote_identity(self.repo,self.remote)!=self.remote_id:
+            raise ValueError("consumer adoption remote identity drift")
+
+    def _git(self,*args,input_text=None,check=True):
+        env=git_object_environment(GIT_TERMINAL_PROMPT="0",
+            GIT_AUTHOR_NAME="CDC adoption",GIT_AUTHOR_EMAIL="cdc@example.invalid",
+            GIT_COMMITTER_NAME="CDC adoption",GIT_COMMITTER_EMAIL="cdc@example.invalid")
+        try:
+            p=subprocess.run(["git","-C",str(self.repo),*args],input=input_text,text=True,
+                             stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env,timeout=30)
+        except (OSError,subprocess.SubprocessError):
+            raise ValueError("consumer adoption Git transport unavailable") from None
+        if check and p.returncode:
+            raise ValueError("consumer adoption Git command failed")
+        return p.stdout.rstrip("\n"),p.returncode
+
+    def _remote_head(self):
+        if remote_identity(self.repo,self.remote)!=self.remote_id:
+            raise ValueError("consumer adoption remote identity drift")
+        config,alias=isolated_remote_args(self.repo,self.remote,self.remote_id)
+        out,_=self._git(*config,"ls-remote","--refs",alias,self.target_ref)
+        rows=[x for x in out.splitlines() if x.strip()]
+        if len(rows)!=1:
+            raise ValueError("consumer target ref must resolve exactly once")
+        parts=rows[0].split("\t")
+        if len(parts)!=2 or parts[1]!=self.target_ref or not SHA.fullmatch(parts[0]):
+            raise ValueError("consumer target ref response invalid")
+        return parts[0]
+
+    def _package_tree(self,commit):
+        out,_=self._git("rev-parse",f"{commit}:{self.package_path}")
+        if not SHA.fullmatch(out):
+            raise ValueError("consumer candidate package tree invalid")
+        return out
+
+    def _verify_candidate(self,state):
+        plan=assess(state)
+        if plan["action"]!="READY_CONDITIONAL_FAST_FORWARD":
+            raise ValueError("consumer adoption candidate is not ready for conditional publication")
+        if state["target_ref"]!=self.target_ref:
+            raise ValueError("consumer adoption target ref mismatch")
+        candidate=state["candidate_commit"];source=state["source_head"]
+        kind,_=self._git("cat-file","-t",candidate)
+        if kind!="commit":
+            raise ValueError("consumer adoption candidate must be a commit")
+        _,code=self._git("merge-base","--is-ancestor",source,candidate,check=False)
+        if code!=0:
+            raise ValueError("consumer adoption candidate must fast-forward expected source")
+        for path in state["required_paths"]:
+            _,code=self._git("cat-file","-e",f"{candidate}:{path}",check=False)
+            if code!=0:
+                raise ValueError("consumer adoption candidate missing required path: "+path)
+        tree=self._package_tree(candidate)
+        if tree!=state["target_package_tree"]:
+            raise ValueError("consumer adoption candidate package tree mismatch")
+        return plan
+
+    def _initial_journal(self):
+        return {"schema":ATTEMPT_SCHEMA,"remote_id":self.remote_id,"target_ref":self.target_ref,
+                "attempt_store_ref":self.attempt_store.ref,"attempts":{}}
+
+    def _read_journal(self):
+        revision,state=self.attempt_store.read()
+        if state is None:
+            return revision,self._initial_journal()
+        initial=self._initial_journal()
+        if (not isinstance(state,dict) or set(state)!=set(initial) or state["schema"]!=ATTEMPT_SCHEMA
+                or state["remote_id"]!=self.remote_id or state["target_ref"]!=self.target_ref
+                or state["attempt_store_ref"]!=self.attempt_store.ref or not isinstance(state["attempts"],dict)):
+            raise ValueError("consumer adoption attempt journal identity mismatch")
+        for effect_id,a in state["attempts"].items():
+            fields={"effect_id","expected_head","intended_head","target_package_tree","status",
+                    "prepared_at_utc","submitted_at_utc","resolved_at_utc"}
+            if (not isinstance(a,dict) or set(a)!=fields or a["effect_id"]!=effect_id
+                    or not isinstance(effect_id,str) or not effect_id.startswith("sha256:")
+                    or a["status"] not in ATTEMPT_STATES):
+                raise ValueError("consumer adoption attempt invalid")
+            for name in ("expected_head","intended_head","target_package_tree"):_sha(a[name],name)
+            for name in ("prepared_at_utc","submitted_at_utc","resolved_at_utc"):
+                if a[name] is not None and (not isinstance(a[name],str) or not a[name].endswith("Z")):
+                    raise ValueError("consumer adoption attempt timestamp invalid")
+            if a["status"]=="prepared" and (a["submitted_at_utc"] is not None or a["resolved_at_utc"] is not None):
+                raise ValueError("prepared adoption attempt has impossible timestamps")
+            if a["status"] in {"submitted","unknown"} and a["submitted_at_utc"] is None:
+                raise ValueError("submitted/unknown adoption attempt missing submission time")
+            if a["status"] in {"confirmed","rejected","aborted"} and a["resolved_at_utc"] is None:
+                raise ValueError("resolved adoption attempt missing resolution time")
+        return revision,state
+
+    def _attempt_fields(self,state):
+        return {"effect_id":state["publication_claim"]["effect_id"],
+                "expected_head":state["source_head"],"intended_head":state["candidate_commit"],
+                "target_package_tree":state["target_package_tree"]}
+
+    def _prepare(self,state):
+        expected=self._attempt_fields(state)
+        for _ in range(6):
+            revision,journal=self._read_journal()
+            existing=journal["attempts"].get(expected["effect_id"])
+            if existing is not None:
+                if any(existing[k]!=v for k,v in expected.items()):
+                    raise ValueError("consumer adoption attempt identity collision")
+                return copy.deepcopy(existing)
+            attempt={**expected,"status":"prepared","prepared_at_utc":self.clock(),
+                     "submitted_at_utc":None,"resolved_at_utc":None}
+            changed=copy.deepcopy(journal);changed["attempts"][expected["effect_id"]]=attempt
+            try:
+                self.attempt_store.compare_and_swap(revision,changed)
+                return copy.deepcopy(attempt)
+            except ValueError:
+                continue
+        raise ValueError("consumer adoption attempt journal contention")
+
+    def _transition(self,state,status,allowed):
+        effect_id=state["publication_claim"]["effect_id"]
+        for _ in range(6):
+            revision,journal=self._read_journal()
+            attempt=journal["attempts"].get(effect_id)
+            if attempt is None:
+                raise ValueError("consumer adoption attempt missing")
+            if attempt["status"] not in allowed:
+                raise ValueError("consumer adoption attempt transition invalid")
+            changed=copy.deepcopy(journal);item=changed["attempts"][effect_id]
+            item["status"]=status
+            if status=="submitted":
+                item["submitted_at_utc"]=self.clock()
+            if status in {"confirmed","rejected","aborted"}:
+                item["resolved_at_utc"]=self.clock()
+            try:
+                self.attempt_store.compare_and_swap(revision,changed)
+                return copy.deepcopy(item)
+            except ValueError:
+                continue
+        raise ValueError("consumer adoption attempt transition contention")
+
+    def _push(self,expected,candidate):
+        if self._remote_head()!=expected:
+            raise ValueError("consumer target ref moved before publication")
+        config,alias=isolated_remote_args(self.repo,self.remote,self.remote_id)
+        _,code=self._git(*config,"-c","push.followTags=false","push","--porcelain",alias,
+                         f"{candidate}:{self.target_ref}",check=False)
+        if code!=0:
+            raise ValueError("consumer conditional publication transport failed")
+
+    def _exact_readback(self,state):
+        current=self._remote_head()
+        if current!=state["candidate_commit"]:
+            return False
+        return self._package_tree(current)==state["target_package_tree"]
+
+    def publish(self,state):
+        self._verify_candidate(state)
+        current=self._remote_head()
+        if current==state["candidate_commit"]:
+            if not self._exact_readback(state):
+                raise ValueError("consumer published candidate package readback mismatch")
+            return {"schema":"consumer-adoption-publication-result/v1","action":"OBSERVED_EXISTING",
+                    "published_head":current,"package_tree":state["target_package_tree"],
+                    "conditional_update":False,"force_push":False,"replay_allowed":False}
+        if current!=state["source_head"]:
+            return {"schema":"consumer-adoption-publication-result/v1","action":"REPLAN_FRESH_HEAD",
+                    "published_head":current,"package_tree":None,
+                    "conditional_update":False,"force_push":False,"replay_allowed":False}
+
+        attempt=self._prepare(state)
+        if attempt["status"] in {"submitted","unknown"}:
+            if self._exact_readback(state):
+                self._transition(state,"confirmed",{attempt["status"]})
+                return {"schema":"consumer-adoption-publication-result/v1","action":"CONFIRMED_FROM_READBACK",
+                        "published_head":state["candidate_commit"],"package_tree":state["target_package_tree"],
+                        "conditional_update":True,"force_push":False,"replay_allowed":False}
+            return {"schema":"consumer-adoption-publication-result/v1","action":"RECONCILE_UNKNOWN",
+                    "published_head":self._remote_head(),"package_tree":None,
+                    "conditional_update":False,"force_push":False,"replay_allowed":False}
+        if attempt["status"]=="confirmed":
+            if not self._exact_readback(state):
+                raise ValueError("confirmed adoption attempt no longer matches target ref")
+            return {"schema":"consumer-adoption-publication-result/v1","action":"CONFIRMED",
+                    "published_head":state["candidate_commit"],"package_tree":state["target_package_tree"],
+                    "conditional_update":True,"force_push":False,"replay_allowed":False}
+        if attempt["status"] in {"rejected","aborted"}:
+            return {"schema":"consumer-adoption-publication-result/v1","action":"TERMINAL_NO_REPLAY",
+                    "published_head":current,"package_tree":None,
+                    "conditional_update":False,"force_push":False,"replay_allowed":False}
+
+        if self._remote_head()!=state["source_head"]:
+            self._transition(state,"aborted",{"prepared"})
+            return {"schema":"consumer-adoption-publication-result/v1","action":"REPLAN_FRESH_HEAD",
+                    "published_head":self._remote_head(),"package_tree":None,
+                    "conditional_update":False,"force_push":False,"replay_allowed":False}
+
+        self._transition(state,"submitted",{"prepared"})
+        try:
+            self._push(state["source_head"],state["candidate_commit"])
+        except ValueError:
+            try:
+                after=self._remote_head()
+            except ValueError:
+                revision,journal=self._read_journal()
+                item=journal["attempts"][state["publication_claim"]["effect_id"]]
+                if item["status"]=="submitted":
+                    changed=copy.deepcopy(journal)
+                    changed["attempts"][item["effect_id"]]["status"]="unknown"
+                    try:self.attempt_store.compare_and_swap(revision,changed)
+                    except ValueError:pass
+                return {"schema":"consumer-adoption-publication-result/v1","action":"RECONCILE_UNKNOWN",
+                        "published_head":None,"package_tree":None,
+                        "conditional_update":False,"force_push":False,"replay_allowed":False}
+            if after==state["candidate_commit"] and self._exact_readback(state):
+                self._transition(state,"confirmed",{"submitted"})
+                return {"schema":"consumer-adoption-publication-result/v1","action":"CONFIRMED_FROM_READBACK",
+                        "published_head":after,"package_tree":state["target_package_tree"],
+                        "conditional_update":True,"force_push":False,"replay_allowed":False}
+            if after==state["source_head"]:
+                self._transition(state,"rejected",{"submitted"})
+                return {"schema":"consumer-adoption-publication-result/v1","action":"REJECTED",
+                        "published_head":after,"package_tree":None,
+                        "conditional_update":False,"force_push":False,"replay_allowed":False}
+            revision,journal=self._read_journal()
+            item=journal["attempts"][state["publication_claim"]["effect_id"]]
+            if item["status"]=="submitted":
+                changed=copy.deepcopy(journal);changed["attempts"][item["effect_id"]]["status"]="unknown"
+                try:self.attempt_store.compare_and_swap(revision,changed)
+                except ValueError:pass
+            return {"schema":"consumer-adoption-publication-result/v1","action":"RECONCILE_UNKNOWN",
+                    "published_head":after,"package_tree":None,
+                    "conditional_update":False,"force_push":False,"replay_allowed":False}
+
+        if not self._exact_readback(state):
+            revision,journal=self._read_journal()
+            item=journal["attempts"][state["publication_claim"]["effect_id"]]
+            if item["status"]=="submitted":
+                changed=copy.deepcopy(journal);changed["attempts"][item["effect_id"]]["status"]="unknown"
+                try:self.attempt_store.compare_and_swap(revision,changed)
+                except ValueError:pass
+            return {"schema":"consumer-adoption-publication-result/v1","action":"RECONCILE_UNKNOWN",
+                    "published_head":self._remote_head(),"package_tree":None,
+                    "conditional_update":True,"force_push":False,"replay_allowed":False}
+        self._transition(state,"confirmed",{"submitted"})
+        return {"schema":"consumer-adoption-publication-result/v1","action":"PUBLISHED",
+                "published_head":state["candidate_commit"],"package_tree":state["target_package_tree"],
+                "conditional_update":True,"force_push":False,"replay_allowed":False}
 
 def main(argv=None):
     p=argparse.ArgumentParser();p.add_argument("state");a=p.parse_args(argv)
