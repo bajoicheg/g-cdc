@@ -26,7 +26,7 @@ def owned():
     return lease.acquire(lease.initialize("example/project", "refs/heads/main"),
                          OWNER, AT, invocation=dict(invocation_id="recovery",
                          automation_id=None, conversation_id=None,
-                         execution_surface="work", started_at_utc=AT))
+                         execution_surface="managed", started_at_utc=AT))
 
 
 def reconciled():
