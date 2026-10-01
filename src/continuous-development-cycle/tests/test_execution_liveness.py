@@ -1,5 +1,6 @@
 from pathlib import Path
 import copy,json,sys,unittest
+from unittest import mock
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 import execution_lease_v2 as leasev2
 import operation_intent as op
@@ -20,7 +21,8 @@ class Store:
 class T(unittest.TestCase):
  def owned(self):
   r=leasev2.initialize("o/r","refs/heads/main")
-  return leasev2.acquire(r,OWNER,"2026-01-01T10:00:00Z",invocation=INV,ttl=1200)
+  with mock.patch.object(leasev2.terminal_capability_api,"validate_verified",return_value={}):
+   return leasev2.acquire(r,OWNER,"2026-01-01T10:00:00Z",invocation=INV,terminal_capability=object(),ttl=1200)
  def runtime(self,state="running",inv="chat-a"):
   return {"schema":"runtime-observation/v1","invocation_id":inv,"state":state,"observed_at_utc":"2026-01-01T10:05:00Z","evidence_ref":"runtime:test"}
  def test_owner_record_without_runtime_is_not_active(self):
