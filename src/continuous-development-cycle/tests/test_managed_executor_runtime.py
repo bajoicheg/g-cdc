@@ -11,6 +11,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -221,6 +222,62 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
             invocation_id,released["record"],post,{"owner_id":owner,"generation":1},
             released["release_receipt"],release_record,runtime._utc())
         self.assertTrue(gate["final_response_allowed"])
+        final=self.wait("a")
+        self.assertEqual(final["status"],"succeeded");self.assertTrue(final["quiescent"])
+
+    def test_ambiguous_acquire_transport_error_reconciles_authoritative_ownership_instead_of_aborting(self):
+        self.launch("a", self.worker("a", 2.0))
+        end=time.monotonic()+4
+        while time.monotonic()<end:
+            observed=self.rt.observe("a","a1")
+            if observed["status"]=="running":break
+            time.sleep(.01)
+        self.assertEqual(observed["status"],"running")
+
+        lease_store=GitLeaseStore(self.repo,"origin","refs/heads/cdc/runtime-lease-ambiguous-acquire")
+        lease_revision=lease_store.compare_and_swap(
+            None,leasev2.initialize("test/project","refs/heads/integration"))
+        owner="cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+        at=runtime._utc()
+        real_acquire=leasev2.acquire_managed_cas
+
+        def lost_reply(*args,**kwargs):
+            real_acquire(*args,**kwargs)
+            raise ValueError("transport reply lost after authoritative acquire")
+
+        with mock.patch.object(leasev2,"acquire_managed_cas",side_effect=lost_reply):
+            acquired=self.rt.acquire_execution_lease(
+                lease_store,lease_revision,"test/project","refs/heads/integration",
+                owner,"a","a1",at)
+        self.assertTrue(acquired["recovered_after_acquire"])
+        self.assertEqual(acquired["record"]["owner_id"],owner)
+        invocation_id=acquired["invocation"]["invocation_id"]
+        paths=runtime._terminal_hold_paths(self.rt._terminal_hold_directory("a","a1"))
+        self.assertTrue(paths["owned"].exists());self.assertFalse(paths["abort"].exists())
+
+        record=acquired["record"];revision=acquired["revision"]
+        checkpoint="checkpoint:ambiguous-acquire"
+        record=leasev2.begin_finalization(record,owner,1,invocation_id,runtime._utc(),pending_shared_writes=False)
+        revision=lease_store.compare_and_swap(revision,record)
+        record=leasev2.record_checkpoint(record,owner,1,invocation_id,runtime._utc(),
+                                         checkpoint_ref=checkpoint,pending_shared_writes=False)
+        revision=lease_store.compare_and_swap(revision,record)
+        record=leasev2.reconcile_finalization(record,owner,1,invocation_id,runtime._utc(),
+                                              external_reconciliation="none")
+        revision=lease_store.compare_and_swap(revision,record)
+        continuity={
+            "schema":"execution-continuity/v1","invocation_id":invocation_id,"current_state":"COMPLETE",
+            "requested_terminal_outcome":"scope_complete","runnable_next_action":False,
+            "meaningful_progress_refs":["git:"+self.base],"primitive_steps":[],"external_binding":None,
+            "blocker":None,"checkpoint_ref":checkpoint,"next_action":None,
+            "lease_release_required":False,"lease_released":False}
+        continuity=with_terminal_evidence(continuity)
+        continuity["terminal_state"]["lease_released"]=False
+        record=leasev2.mark_ready(record,owner,1,invocation_id,runtime._utc(),continuity_state=continuity)
+        revision=lease_store.compare_and_swap(revision,record)
+        self.rt.release_execution_lease(
+            lease_store,revision,"test/project","refs/heads/integration",owner,1,invocation_id,
+            "a","a1",runtime._utc())
         final=self.wait("a")
         self.assertEqual(final["status"],"succeeded");self.assertTrue(final["quiescent"])
 
