@@ -387,12 +387,29 @@ class ManagedExecutorRuntime:
             observed_at_utc=observed_at_utc)
 
     def acquire_execution_lease(self,lease_store,expected_revision,repository,source_ref,owner_id,task_id,attempt_id,at,*,ttl=1200,quiescence=None):
-        import execution_lease_v2
+        import execution_lease_v2,managed_terminal_capability
         capability=self.terminal_capability(
             task_id,attempt_id,lease_repository=repository,lease_source_ref=source_ref,observed_at_utc=at)
-        return execution_lease_v2.acquire_managed_cas(
-            lease_store,expected_revision,repository,source_ref,owner_id,at,
-            terminal_capability=capability,ttl=ttl,quiescence=quiescence)
+        intent=self._arm_terminal_hold(capability)
+        try:
+            managed_terminal_capability.validate_verified(
+                capability,capability.invocation(),repository,source_ref,at)
+            result=execution_lease_v2.acquire_managed_cas(
+                lease_store,expected_revision,repository,source_ref,owner_id,at,
+                terminal_capability=capability,ttl=ttl,quiescence=quiescence)
+        except Exception:
+            self._abort_terminal_hold(capability,"lease acquisition did not become authoritative")
+            raise
+        payload=capability.payload
+        paths=_terminal_hold_paths(self._terminal_hold_directory(task_id,attempt_id))
+        owned={"schema":"managed-terminal-lease-owned/v1","capability_ref":intent["capability_ref"],
+               "owner_id":owner_id,"generation":result["generation"],
+               "invocation_id":result["invocation"]["invocation_id"],"lease_revision":result["revision"]}
+        if payload["invocation_id"]!=owned["invocation_id"]:
+            raise ValueError("managed lease acquisition invocation mismatch")
+        _write(paths["owned"],owned)
+        return {**result,"terminal_capability_ref":intent["capability_ref"],
+                "terminal_task_id":task_id,"terminal_attempt_id":attempt_id}
 
     def _task(self, task_id):
         return next(task for task in self.plan["tasks"] if task["id"] == task_id)
