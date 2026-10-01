@@ -48,7 +48,9 @@ def classify(lease,runtime,now_utc,heartbeat_freshness_seconds=600,runtime_max_a
                     "runtime_evidence_ref":runtime["evidence_ref"]}
         return {**common,"state":"active","reason":"exact_runtime_running_and_lease_fresh","quiescence_candidate":False,
                 "runtime_evidence_ref":runtime["evidence_ref"]}
-    current_claims=[c for c in lease.get("submission_claims",[]) if c.get("generation")==lease["generation"]]
+    resolved={x.get("grant_id") for x in lease.get("submission_resolutions",[])}
+    current_claims=[c for c in lease.get("submission_claims",[])
+                    if c.get("generation")==lease["generation"] and c.get("grant_id") not in resolved]
     finalization=lease["finalization"]
     pending=bool(finalization and finalization.get("pending_shared_writes"))
     if pending or lease["external_guard"] is not None or current_claims:
