@@ -3,16 +3,40 @@
   "change_id": "cdc-2.11.3-multi-subscription-ownership",
   "material_change": true,
   "spec_compliance": {
-    "state": "not_run",
-    "reviewer_ref": null,
+    "state": "red",
+    "reviewer_ref": "reviewer:openai-chatgpt-gpt-5.6-sol:stage1:5926049824",
     "sequence": 1,
-    "evidence_refs": [],
-    "findings": []
+    "evidence_refs": [
+      "https://github.com/bajoicheg/g-cdc/pull/83#issuecomment-5926049824",
+      "source:bb0bf33cfab6bf2681e24d74c9b5be7db0385ac8",
+      "package-tree:ea7de7448c974987fe0df5b886530e3fea1817a1",
+      "reviewed-head:360a603d7d1ab9c8f3e83ddf1555e525b1baa336"
+    ],
+    "findings": [
+      {
+        "id": "S1",
+        "summary": "ordinary-chat final response gate is not mechanically unavoidable at the host boundary",
+        "state": "open",
+        "resolution_ref": null
+      },
+      {
+        "id": "S2",
+        "summary": "atomic adoption publication does not bind non-package core paths to immutable expected Git object identities/semantic lock target",
+        "state": "open",
+        "resolution_ref": null
+      },
+      {
+        "id": "S3",
+        "summary": "terminal-reconciled current-generation submission claims remain falsely classified as pending liveness effects",
+        "state": "open",
+        "resolution_ref": null
+      }
+    ]
   },
   "code_quality": {
     "state": "not_run",
     "reviewer_ref": null,
-    "sequence": 2,
+    "sequence": null,
     "evidence_refs": [],
     "findings": []
   }
