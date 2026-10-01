@@ -84,6 +84,14 @@ class T(unittest.TestCase):
   with self.assertRaisesRegex(ValueError,"effect_id must be sha256"):m.validate(bad)
   bad=copy.deepcopy(s);bad["effects"][0]["intent_digest"]="sha256:bad"
   with self.assertRaisesRegex(ValueError,"intent_digest must be sha256"):m.validate(bad)
+ def test_unresolved_semantic_effect_blocks_new_id_after_fleet_head_change(self):
+  s,_=m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z",HEAD,self.req())
+  eid=self.effect_id(s)
+  s=m.update_effect_record(s,A,1,"a","2026-01-01T10:02:00Z",eid,"unknown","scheduler:request-1")
+  req=self.req(intent={"reason":"stalled-again"});req["observed_fleet_head"]="b"*40
+  s2,d=m.claim_effect_record(s,A,1,"a","2026-01-01T10:03:00Z","b"*40,req)
+  self.assertEqual(d["action"],"OBSERVE_PENDING_CONFLICT");self.assertFalse(d["authorizes_effect"])
+  self.assertEqual(d["effect"]["effect_id"],eid);self.assertEqual(len(s2["effects"]),1)
  def test_changed_fleet_head_replans_before_claim(self):
   s,d=m.claim_effect_record(self.leader(),A,1,"a","2026-01-01T10:01:00Z","b"*40,self.req())
   self.assertEqual(d["action"],"REPLAN_FLEET_HEAD");self.assertFalse(d["authorizes_effect"]);self.assertEqual(s["effects"],[])
