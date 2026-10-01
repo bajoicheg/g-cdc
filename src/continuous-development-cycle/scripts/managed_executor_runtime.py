@@ -69,6 +69,7 @@ def _terminal_hold_paths(directory):
     directory=Path(directory)
     return {
         "intent":directory/"terminal-lease-intent.json",
+        "acquire_done":directory/"terminal-lease-acquire-done.json",
         "owned":directory/"terminal-lease-owned.json",
         "release":directory/"terminal-lease-release.json",
         "abort":directory/"terminal-lease-abort.json",
@@ -295,7 +296,8 @@ def _supervise(directory):
         paths=_terminal_hold_paths(directory)
         intent=_read_json(paths["intent"])
         if intent is not None:
-            required={"schema","capability_ref","invocation_id","lease_repository","lease_source_ref","armed_at_utc"}
+            required={"schema","capability_ref","invocation_id","lease_repository","lease_source_ref","armed_at_utc",
+                      "controller_proc_pid","controller_birth"}
             if set(intent)!=required or intent.get("schema")!="managed-terminal-lease-intent/v1":
                 raise ValueError("managed terminal lease intent invalid")
             while True:
@@ -359,15 +361,32 @@ class ManagedExecutorRuntime:
         paths=_terminal_hold_paths(directory)
         if any(path.exists() for path in paths.values()):
             raise ValueError("managed terminal lease hold already armed or consumed")
+        proc_pid=int(os.readlink("/proc/self"))
+        proc_state=_process(proc_pid)
+        if proc_state is None:
+            raise ValueError("controller process identity unavailable")
         intent={"schema":"managed-terminal-lease-intent/v1",
                 "capability_ref":managed_terminal_capability.reference(capability),
                 "invocation_id":payload["invocation_id"],"lease_repository":payload["lease_repository"],
-                "lease_source_ref":payload["lease_source_ref"],"armed_at_utc":_utc()}
+                "lease_source_ref":payload["lease_source_ref"],"armed_at_utc":_utc(),
+                "controller_proc_pid":proc_pid,"controller_birth":proc_state["birth"]}
         _write(paths["intent"],intent)
         fd=os.open(directory,os.O_DIRECTORY)
         try:os.fsync(fd)
         finally:os.close(fd)
         return intent
+
+    def _mark_terminal_acquire_done(self,capability,status):
+        import managed_terminal_capability
+        if status not in {"authoritative","error"}:
+            raise ValueError("managed terminal acquire completion status invalid")
+        payload=capability.payload
+        paths=_terminal_hold_paths(self._terminal_hold_directory(payload["task_id"],payload["attempt_id"]))
+        marker={"schema":"managed-terminal-lease-acquire-done/v1",
+                "capability_ref":managed_terminal_capability.reference(capability),
+                "status":status,"finished_at_utc":_utc()}
+        _write(paths["acquire_done"],marker)
+        return marker
 
     def _abort_terminal_hold(self,capability,reason):
         import managed_terminal_capability
@@ -397,7 +416,12 @@ class ManagedExecutorRuntime:
             result=execution_lease_v2.acquire_managed_cas(
                 lease_store,expected_revision,repository,source_ref,owner_id,at,
                 terminal_capability=capability,ttl=ttl,quiescence=quiescence)
+            self._mark_terminal_acquire_done(capability,"authoritative")
         except Exception as exc:
+            try:
+                self._mark_terminal_acquire_done(capability,"error")
+            except Exception:
+                pass
             try:
                 reconciled=self.reconcile_execution_lease_hold(lease_store,task_id,attempt_id)
             except Exception:
@@ -446,10 +470,21 @@ class ManagedExecutorRuntime:
             recovered=lease_store.find_invocation_ownership(
                 intent["lease_repository"],intent["lease_source_ref"],intent["invocation_id"])
             if recovered is None:
+                done=_read_json(paths["acquire_done"])
+                controller=_process(intent["controller_proc_pid"])
+                controller_live=bool(controller and controller["birth"]==intent["controller_birth"])
+                if done is None and controller_live:
+                    return {"status":"acquire_pending","reason":"exact acquisition controller is still live"}
+                if done is not None:
+                    expected={"schema","capability_ref","status","finished_at_utc"}
+                    if (set(done)!=expected or done.get("schema")!="managed-terminal-lease-acquire-done/v1"
+                            or done.get("capability_ref")!=intent["capability_ref"]
+                            or done.get("status") not in {"authoritative","error"}):
+                        raise ValueError("managed terminal acquire completion marker invalid")
                 marker={"schema":"managed-terminal-lease-abort/v1",
                         "capability_ref":intent["capability_ref"],
                         "aborted_at_utc":_utc(),
-                        "reason":"authoritative lease history proves acquisition absent"}
+                        "reason":"authoritative lease history and controller quiescence prove acquisition absent"}
                 _write(paths["abort"],marker)
                 return {"status":"aborted","abort_marker":marker}
             owned={"schema":"managed-terminal-lease-owned/v1",
