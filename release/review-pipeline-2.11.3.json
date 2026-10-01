@@ -1,0 +1,19 @@
+{
+  "schema": "review-pipeline/v1",
+  "change_id": "cdc-2.11.3-multi-subscription-ownership",
+  "material_change": true,
+  "spec_compliance": {
+    "state": "not_run",
+    "reviewer_ref": null,
+    "sequence": 1,
+    "evidence_refs": [],
+    "findings": []
+  },
+  "code_quality": {
+    "state": "not_run",
+    "reviewer_ref": null,
+    "sequence": 2,
+    "evidence_refs": [],
+    "findings": []
+  }
+}
