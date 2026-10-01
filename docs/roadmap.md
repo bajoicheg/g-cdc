@@ -135,6 +135,21 @@ Authority boundary: Fleet leadership is control-plane only; it never grants proj
 
 Tracking: issue #82; systemic RCA #81. Design: `docs/superpowers/specs/2026-10-01-multi-subscription-coordination-design.md`; plan: `docs/superpowers/plans/2026-10-01-cdc-2.11.3.md`.\n\nRelease: `refs/heads/release/v2.11.3`, frozen source `7f31544ffd80252587b7ff1bd76b9a3f38e019e5`, package tree `39f733127ac130de4f647cf9e5ec55afcca0769c`. Candidate validation is GREEN with 950/950 package tests, 37/37 independent bootstrap, package validator 331 files/templates, full bootstrap binding and 3/3 archived consumers. Historical Stage 1 RED remains truthful with all findings remediated; the exact-candidate fresh Stage 1 re-review and independent Stage 2 requirement were each skipped once by explicit owner waiver and are not relabeled GREEN. Release finalization retains a separate exact-head hosted CI gate before immutable ref creation. Schedulers remain owner-paused and this release performs no live consumer deployment.
 
+## CDC 2.11.4 — Managed Host Bridge — P0 / IN PROGRESS
+
+Owner authorization on 2026-10-01: add the missing host-facing bridge exposed by the live 2.11.3 rollout. The 2.11.3 ownership restriction remains intact: unmanaged Chat/Work/Codex/watchdog/API surfaces stay observer/orchestrator-only. This patch adds a package-owned transport-neutral lifecycle adapter so a host/plugin can dispatch a real ManagedExecutorRuntime task and receive a durable handle without ever receiving the non-serializable lease capability.
+
+Acceptance:
+- host start returns a durable handle only after a real managed supervisor exists and the exact project lease is acquired as execution_surface=managed;
+- source-HEAD/remote/plan drift fails before worker effects;
+- worker exit while the lease is owned remains awaiting_release/nonquiescent;
+- finish proves result ancestry/write scope, conditionally publishes the exact result, performs transactional lease finalization/release, records pool completion, and returns immutable release proof;
+- controller interruption after claim/acquire/publication/release reconciles from durable state and never blind-replays a start or publication;
+- a ChatGPT/plugin adapter can map start/observe/cancel/finish directly to the package contract without embedding CDC ownership logic in the host.
+
+Design: docs/superpowers/specs/2026-10-01-managed-host-bridge-design.md.
+Plan: docs/superpowers/plans/2026-10-01-cdc-2.11.4.md.
+
 ## CDC 2.10 — Superpowers Execution Quality — COMPLETE / TERMINAL
 
 Owner acceptance authorizes this roadmap. CDC 2.10 integrates the strongest Superpowers engineering disciplines as a **quality layer** under the CDC control plane. Superpowers workflows never grant ownership, external-start, merge, release, scheduler, scope-expansion or user-approval authority; CDC remains authoritative for those controls.
