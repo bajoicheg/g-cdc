@@ -221,12 +221,12 @@ class GitPublisherTests(unittest.TestCase):
   d=self.ready_state();d.update(candidate_commit=candidate,target_package_tree=tree,observed_package_tree=tree,final_tree_sha=final)
   d["assembly_manifest"]=copy.deepcopy(self.manifest)
   d["publication_claim"]=None;d["publication_claim"]=assess(d)["claim"]
-  with self.assertRaisesRegex(ValueError,"missing required path|object identity mismatch"):
+  with self.assertRaisesRegex(ValueError,"authoritative assembly transaction binding mismatch|missing required path|object identity mismatch"):
    self.publisher.publish(d)
   self.assertEqual(self.remote_head(),self.source);self.assertIsNone(self.attempt(d))
  def test_candidate_root_tree_must_match_prepared_detached_tree(self):
   d=self.ready_state();d["final_tree_sha"]="f"*40
-  with self.assertRaisesRegex(ValueError,"root tree"):
+  with self.assertRaisesRegex(ValueError,"authoritative assembly transaction binding mismatch|root tree"):
    self.publisher.publish(d)
   self.assertEqual(self.remote_head(),self.source);self.assertIsNone(self.attempt(d))
  def test_adoption_provenance_path_tracks_target_version(self):
@@ -257,7 +257,7 @@ class GitPublisherTests(unittest.TestCase):
     stale=self.git(self.work,"rev-parse","HEAD")
     d=copy.deepcopy(good);d["candidate_commit"]=stale;d["final_tree_sha"]=self.git(self.work,"rev-parse",stale+"^{tree}")
     d["publication_claim"]=None;d["publication_claim"]=assess(d)["claim"]
-    with self.assertRaisesRegex(ValueError,"object identity mismatch"):
+    with self.assertRaisesRegex(ValueError,"authoritative assembly transaction binding mismatch|object identity mismatch"):
      self.publisher.publish(d)
     self.assertEqual(self.remote_head(),self.source);self.assertIsNone(self.attempt(d))
  def test_regenerated_stale_manifest_cannot_replace_authoritative_detached_transaction(self):
