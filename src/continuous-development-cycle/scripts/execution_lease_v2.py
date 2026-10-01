@@ -357,7 +357,7 @@ def acquire_managed_cas(store,expected_revision,repository,source_ref,owner_id,a
         raise ValueError("exact repository/source-ref binding mismatch")
     invocation=terminal_capability.invocation()
     result=acquire(record,owner_id,at,invocation=invocation,terminal_capability=terminal_capability,ttl=ttl,quiescence=quiescence)
-    new_revision=store.compare_and_swap(expected_revision,result)
+    new_revision=store.compare_and_swap(expected_revision,result,ownership_capability=terminal_capability)
     return {"revision":new_revision,"record":result,"owner_id":owner_id,"generation":result["generation"],
             "invocation":copy.deepcopy(invocation)}
 
