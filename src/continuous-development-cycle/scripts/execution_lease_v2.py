@@ -179,7 +179,8 @@ def validate(record):
         raise ValueError("lease must be an object")
     if record.get("schema") == "execution-lease/v1":
         return legacy.validate(record)
-    if set(record) not in {FIELDS, LEGACY_V2_FIELDS}:
+    record_fields=set(record)
+    if record_fields != FIELDS and record_fields != LEGACY_V2_FIELDS:
         raise ValueError("lease fields mismatch")
     if record["schema"] != "execution-lease/v2":
         raise ValueError("unsupported lease schema")
