@@ -171,7 +171,7 @@ class FleetTests(unittest.TestCase):
 
     def acquire_leader(self,*args,**kwargs):
         with mock.patch.object(fleet_control.leasev2.terminal_capability_api,"validate_verified",return_value={}):
-            return self.acquire_leader(*args,terminal_capability=object(),**kwargs)
+            return fleet_control.acquire_record(*args,terminal_capability=object(),**kwargs)
 
     def test_git_leader_guard_binds_authoritative_remote_fleet_head(self):
         source=self.root/"fleet-source"
