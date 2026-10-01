@@ -915,6 +915,14 @@
       "forbidden_authorities": [
         "duplicate_scheduler_effect"
       ]
+    },
+    {
+      "id": "consumer-adoption-unknown-publish-replay",
+      "fault": "consumer_adoption_push_outcome_unknown_while_product_ref_still_equals_expected_source",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "partial_migration_ref_move"
+      ]
     }
   ]
 }
