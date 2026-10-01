@@ -8,9 +8,11 @@ from pathlib import Path
 from git_document_store import GitDocumentStore
 from git_object_integrity import git_object_environment
 from git_remote_identity import isolated_remote_args,remote_identity,repository_root
+from parallel_task_planner import portable_path_key
 
 SCHEMA="consumer-adoption-publication/v1"
-SHA=re.compile(r"^[0-9a-f]{40}$");SEMVER=re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
+SHA=re.compile(r"^[0-9a-f]{40}$");DIGEST=re.compile(r"^sha256:[0-9a-f]{64}$")
+SEMVER=re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
 
 def _sha(v,n,nullable=False):
     if v is None and nullable:return
@@ -37,7 +39,7 @@ def validate(s):
     claim=s["publication_claim"]
     if claim is not None:
         if not isinstance(claim,dict) or set(claim)!={"effect_id","expected_head","intended_head","target_ref"}:raise ValueError("publication claim invalid")
-        if not isinstance(claim["effect_id"],str) or not claim["effect_id"].startswith("sha256:"):raise ValueError("publication effect id invalid")
+        if not isinstance(claim["effect_id"],str) or not DIGEST.fullmatch(claim["effect_id"]):raise ValueError("publication effect id invalid")
         _sha(claim["expected_head"],"claim expected_head");_sha(claim["intended_head"],"claim intended_head")
         if claim["target_ref"]!=s["target_ref"]:raise ValueError("publication claim ref mismatch")
     return s
@@ -94,12 +96,13 @@ class GitConsumerAdoptionPublisher:
         self.package_path=package_path
         if not isinstance(target_ref,str) or not target_ref.startswith("refs/heads/"):
             raise ValueError("consumer target_ref invalid")
+        self._git("check-ref-format",target_ref)
         _path(package_path)
         if not isinstance(attempt_store,GitDocumentStore):
             raise ValueError("consumer adoption publication requires GitDocumentStore attempt journal")
         if attempt_store.store_id!=remote_id:
             raise ValueError("consumer adoption attempt store remote identity mismatch")
-        if attempt_store.ref==target_ref:
+        if portable_path_key(attempt_store.ref)==portable_path_key(target_ref):
             raise ValueError("consumer adoption attempt ref must be isolated from product ref")
         if remote_identity(self.repo,self.remote)!=self.remote_id:
             raise ValueError("consumer adoption remote identity drift")
@@ -175,17 +178,19 @@ class GitConsumerAdoptionPublisher:
             fields={"effect_id","expected_head","intended_head","target_package_tree","status",
                     "prepared_at_utc","submitted_at_utc","resolved_at_utc"}
             if (not isinstance(a,dict) or set(a)!=fields or a["effect_id"]!=effect_id
-                    or not isinstance(effect_id,str) or not effect_id.startswith("sha256:")
+                    or not isinstance(effect_id,str) or not DIGEST.fullmatch(effect_id)
                     or a["status"] not in ATTEMPT_STATES):
                 raise ValueError("consumer adoption attempt invalid")
             for name in ("expected_head","intended_head","target_package_tree"):_sha(a[name],name)
-            for name in ("prepared_at_utc","submitted_at_utc","resolved_at_utc"):
+            if not isinstance(a["prepared_at_utc"],str) or not a["prepared_at_utc"].endswith("Z"):
+                raise ValueError("consumer adoption attempt prepared timestamp invalid")
+            for name in ("submitted_at_utc","resolved_at_utc"):
                 if a[name] is not None and (not isinstance(a[name],str) or not a[name].endswith("Z")):
                     raise ValueError("consumer adoption attempt timestamp invalid")
             if a["status"]=="prepared" and (a["submitted_at_utc"] is not None or a["resolved_at_utc"] is not None):
                 raise ValueError("prepared adoption attempt has impossible timestamps")
-            if a["status"] in {"submitted","unknown"} and a["submitted_at_utc"] is None:
-                raise ValueError("submitted/unknown adoption attempt missing submission time")
+            if a["status"] in {"submitted","unknown","confirmed","rejected"} and a["submitted_at_utc"] is None:
+                raise ValueError("submitted-derived adoption attempt missing submission time")
             if a["status"] in {"confirmed","rejected","aborted"} and a["resolved_at_utc"] is None:
                 raise ValueError("resolved adoption attempt missing resolution time")
         return revision,state
