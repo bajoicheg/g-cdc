@@ -7,7 +7,7 @@ from execution_liveness import classify
 ROOT=Path(__file__).resolve().parents[1]
 
 OWNER="11111111-1111-4111-8111-111111111111"
-INV={"invocation_id":"chat-a","automation_id":None,"conversation_id":None,"execution_surface":"chat","started_at_utc":"2026-01-01T10:00:00Z"}
+INV={"invocation_id":"chat-a","automation_id":None,"conversation_id":None,"execution_surface":"managed","started_at_utc":"2026-01-01T10:00:00Z"}
 
 class Store:
  def __init__(self,record):
