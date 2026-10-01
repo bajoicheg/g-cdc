@@ -188,7 +188,7 @@ class FleetTests(unittest.TestCase):
         state=fleet_control.acquire_record(
             state,"77777777-7777-4777-8777-777777777777",NOW,
             {"invocation_id":"leader-live","automation_id":None,"conversation_id":None,
-             "execution_surface":"chat","started_at_utc":NOW})
+             "execution_surface":"managed","started_at_utc":NOW})
         leader_store.compare_and_swap(None,state)
         guard=fleet.GitFleetLeaderGuard(
             leader_store,owner_id="77777777-7777-4777-8777-777777777777",generation=1,
@@ -650,7 +650,7 @@ def build(config):
         leader_state = fleet_control.acquire_record(
             leader_state, owner_id, at,
             {"invocation_id":"cli-invocation","automation_id":None,"conversation_id":None,
-             "execution_surface":"chat","started_at_utc":at},
+             "execution_surface":"managed","started_at_utc":at},
             ttl=3600)
         leader_revision, existing_leader = leader_store.read()
         if existing_leader is None:
