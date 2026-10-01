@@ -47,7 +47,7 @@ class _VerifiedManagedTerminalCapability:
         if request is None or _digest(request)!=p["request_ref"]:
             raise ValueError("managed terminal capability request binding mismatch")
         observation=runtime.observe(p["task_id"],p["attempt_id"])
-        if observation.get("status") not in {"starting","running"} or observation.get("quiescent") is not False:
+        if observation.get("status") not in {"starting","running","awaiting_release"} or observation.get("quiescent") is not False:
             raise ValueError("managed terminal capability requires a live nonterminal supervisor")
         if observation.get("launch_id")!=p["launch_id"] or observation.get("request_ref")!=p["request_ref"]:
             raise ValueError("managed terminal capability live launch binding mismatch")
@@ -96,6 +96,11 @@ def issue(runtime,task_id,attempt_id,*,lease_repository,lease_source_ref,observe
              "lease_source_ref":lease_source_ref,"observed_at_utc":observed_at,
              "started_at_utc":observation.get("created_at_utc") or observed_at}
     return _VerifiedManagedTerminalCapability(_SEAL,runtime,payload)
+
+def reference(value):
+    if type(value) is not _VerifiedManagedTerminalCapability or value._seal is not _SEAL:
+        raise ValueError("managed terminal capability reference requires verified capability")
+    return _digest(value.payload)
 
 def validate_verified(value,invocation,repository,source_ref,at):
     if type(value) is not _VerifiedManagedTerminalCapability or value._seal is not _SEAL:
