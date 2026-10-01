@@ -411,6 +411,26 @@ class ManagedExecutorRuntime:
         return {**result,"terminal_capability_ref":intent["capability_ref"],
                 "terminal_task_id":task_id,"terminal_attempt_id":attempt_id}
 
+    def release_execution_lease(self,lease_store,expected_revision,repository,source_ref,owner_id,generation,invocation_id,task_id,attempt_id,at):
+        import execution_lease_v2
+        directory=self._terminal_hold_directory(task_id,attempt_id)
+        paths=_terminal_hold_paths(directory)
+        intent=_read_json(paths["intent"]);owned=_read_json(paths["owned"])
+        if intent is None or owned is None:
+            raise ValueError("managed terminal hold/ownership marker missing")
+        if (owned.get("schema")!="managed-terminal-lease-owned/v1"
+                or owned.get("capability_ref")!=intent.get("capability_ref")
+                or owned.get("owner_id")!=owner_id or owned.get("generation")!=generation
+                or owned.get("invocation_id")!=invocation_id):
+            raise ValueError("managed terminal ownership marker mismatch")
+        released=execution_lease_v2.release_cas(
+            lease_store,expected_revision,repository,source_ref,owner_id,generation,invocation_id,at)
+        marker={"schema":"managed-terminal-lease-release/v1","capability_ref":intent["capability_ref"],
+                "owner_id":owner_id,"generation":generation,"invocation_id":invocation_id,
+                "lease_revision":released["revision"],"release_receipt":released["release_receipt"]}
+        _write(paths["release"],marker)
+        return released
+
     def _task(self, task_id):
         return next(task for task in self.plan["tasks"] if task["id"] == task_id)
 
