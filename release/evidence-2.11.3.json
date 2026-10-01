@@ -4,7 +4,7 @@
   "canonical_repository": "bajoicheg/g-cdc",
   "candidate_source_commit": "7f31544ffd80252587b7ff1bd76b9a3f38e019e5",
   "package_tree": "39f733127ac130de4f647cf9e5ec55afcca0769c",
-  "status": "review_waivers_recorded_final_metadata_ci_required",
+  "status": "released",
   "development_driver": {
     "version": "2.11.2",
     "commit": "48e637b230e7640d0dcd13da60d712f38f59a2b6",
@@ -29,12 +29,18 @@
         "head_sha": "dc7d428e61c51bec847b66a5386f021b4d242364",
         "conclusion": "success",
         "purpose": "exact frozen quality evidence and Stage 2 blocker metadata validation"
+      },
+      {
+        "run_id": 36881367868,
+        "head_sha": "a6ba6d641711bc41eb7e9dd0bfb5901ba55ccade",
+        "conclusion": "success",
+        "purpose": "exact Stage 2 owner-waiver and release-readiness metadata validation"
       }
     ],
     "final_metadata_ci": {
-      "state": "requested",
-      "purpose": "Stage 2 owner-waiver and release-readiness metadata exact-head validation"
-    }
+      "state": "pending exact GitHub head"
+    },
+    "binding_note": "Package/source/tree are frozen. This release-declaration metadata head must pass its own exact-head workflow before non-force integration and immutable release-ref creation; that run is observed externally to avoid self-reference."
   },
   "reviews": {
     "technical_spec_precheck": {
@@ -84,8 +90,8 @@
     "Quality: canonical release regression uses distinct scope-completion evidence; legacy v1 concurrent claimants are expected to remain fail-closed."
   ],
   "scheduler_state": "Owner-paused; zero scheduler mutations",
-  "release_ref": null,
-  "release_ready": false,
+  "release_ref": "refs/heads/release/v2.11.3",
+  "release_ready": true,
   "blocker_ref": null,
   "runtime_acceptance": {
     "backend": "real local Git/process fixtures plus hosted GitHub Actions; scheduler effects only through recording/test backends",
@@ -101,15 +107,13 @@
     "limits": [
       "Fresh independent Stage 1 re-review is waived once by owner for this exact quality-hardened candidate; historical RED is not relabeled GREEN.",
       "Independent Stage 2 code-quality review remains NOT_RUN and is separately waived once by owner for this exact candidate; no independent GREEN is claimed.",
-      "Final Stage 2 waiver/release-readiness metadata still requires exact-head hosted validation before integration.",
+      "The release-declaration metadata head still requires exact-head hosted validation before merge/ref creation.",
       "No live scheduler mutation; owner pause remains authoritative.",
-      "No live consumer deployment is implied."
+      "No live consumer deployment is implied.",
+      "Personal activation requires separate installed-byte readback."
     ]
   },
   "remaining_authorized_stages": [
-    "fresh hosted validation on the final Stage 2 waiver metadata head",
-    "non-force integration into main after exact-head GREEN",
-    "immutable release/v2.11.3 identity creation and readback after integration",
     "personal skill activation/readback",
     "live Fleet target migration and safe consumer rollout"
   ],
