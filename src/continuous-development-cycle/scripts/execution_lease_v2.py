@@ -15,7 +15,8 @@ import execution_lease as legacy
 V1_FIELDS = set(legacy.FIELDS)
 FIELDS = V1_FIELDS | {"invocation", "finalization", "legacy_migration", "submission_resolutions"}
 LEGACY_V2_FIELDS = FIELDS - {"submission_resolutions"}
-SURFACES = {"chat", "watchdog", "work", "codex", "api", "unknown"}
+SURFACES = {"chat", "watchdog", "work", "codex", "api", "unknown", "managed"}
+ACQUIRABLE_SURFACES = {"managed"}
 FINALIZATION_STATES = {"active", "draining", "checkpointed", "reconciled", "ready", "failed"}
 RECONCILIATION_STATES = {"pending", "none", "terminal_reconciled", "unknown_preserved"}
 QUIESCENCE_EFFECTS = {"none", "reconciled", "preserved_unknown"}
@@ -302,6 +303,8 @@ def acquire(record, owner_id, at, *, invocation, ttl=1200, quiescence=None):
         raise ValueError("migrate v1 lease before v2 acquisition")
     _uuid(owner_id)
     inv = copy.deepcopy(_validate_invocation(invocation))
+    if inv["execution_surface"] not in ACQUIRABLE_SURFACES:
+        raise ValueError("execution surface lacks a package-owned mechanically enforced terminal boundary; observer/orchestrator only")
     at_dt = op._timestamp(at, "at")
     if op._timestamp(inv["started_at_utc"], "invocation start") > at_dt:
         raise ValueError("invocation start cannot be after acquisition")
