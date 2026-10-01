@@ -16,7 +16,7 @@ Core implementation belongs under `src/continuous-development-cycle`; independen
 
 CDC N is developed under the previously released CDC N-1. CDC 2.10.2 is released at `refs/heads/release/v2.10.2`, package tree `2bee3b8159aaf80de981afba7cf284f21bafa1c3`.
 
-CDC 2.11.2 is the current released development authority at `refs/heads/release/v2.11.2`, frozen source `6af4443b1afa86085622625bee9b62a045a08a07`, package tree `7a7a7faa75b7fc9160d912d8fb507c6b9573d17f`. It was developed under released CDC 2.11.1. A new version line requires explicit roadmap authorization and must preserve the independent-bootstrap rule.\n\nThe owner explicitly authorized CDC 2.11.3 on 2026-10-01. It is developed under released 2.11.2 and is not a release until the normal independent gates pass.
+CDC 2.11.3 is the current released development authority at `refs/heads/release/v2.11.3`, frozen source `7f31544ffd80252587b7ff1bd76b9a3f38e019e5`, package tree `39f733127ac130de4f647cf9e5ec55afcca0769c`. It was developed under released CDC 2.11.2. A new version line requires explicit roadmap authorization and must preserve the independent-bootstrap rule.
 
 ## Canonical-source rule
 
@@ -28,8 +28,8 @@ A release requires independent bootstrap GREEN, candidate package GREEN, compati
 
 ## Self-hosting
 
-The source release is CDC 2.11.2. The last retained personal-skill runtime-byte acceptance record is still `release/active-package-acceptance-2.11.0.json`; source release alone does not prove activation. Consumer snapshots prove compatibility only; they do not update consumers' vendored packages. See `release/evidence-2.11.2.json` and `docs/roadmap.md`.
+The source release is CDC 2.11.3. The last retained personal-skill runtime-byte acceptance record is still `release/active-package-acceptance-2.11.0.json`; source release alone does not prove activation. Consumer snapshots prove compatibility only; they do not update consumers' vendored packages. See `release/evidence-2.11.3.json` and `docs/roadmap.md`.
 
 ## Recovery priority
 
-CDC 2.11.2 completes the authorized 2.11 source-release sequence. Live Fleet authority migration, safe consumer rollout and personal-skill activation/readback remain separate evidence surfaces. Do not infer deployment from a source release or VERSION. No task/milestone/commit is a final-response boundary while authorized runnable work remains. Schedulers remain owner-paused; recovery grants no authority to re-enable them.
+CDC 2.11.3 completes the currently authorized 2.11 source-release sequence and closes the multi-subscription ownership-integrity patch scope. Live Fleet authority migration, safe consumer rollout and personal-skill activation/readback remain separate evidence surfaces. Do not infer deployment from a source release or VERSION. No task/milestone/commit is a final-response boundary while authorized runnable work remains. Schedulers remain owner-paused; recovery grants no authority to re-enable them.
