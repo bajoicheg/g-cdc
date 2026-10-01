@@ -69,7 +69,7 @@ class T(unittest.TestCase):
   lease=self.released();first_record=copy.deepcopy(lease);first_receipt=receipt(first_record)
   other="55555555-5555-4555-8555-555555555555"
   inv2={"invocation_id":"chat-next","automation_id":None,"conversation_id":None,"execution_surface":"managed","started_at_utc":"2026-01-01T10:02:00Z"}
-  lease=leasev2.acquire(lease,other,"2026-01-01T10:02:00Z",invocation=inv2,ttl=1200)
+  lease=self.admit(lease,other,"2026-01-01T10:02:00Z",inv2)
   lease=leasev2.begin_finalization(lease,other,2,"chat-next","2026-01-01T10:03:00Z",pending_shared_writes=False)
   lease=leasev2.record_checkpoint(lease,other,2,"chat-next","2026-01-01T10:03:01Z",checkpoint_ref=CP,pending_shared_writes=False)
   lease=leasev2.reconcile_finalization(lease,other,2,"chat-next","2026-01-01T10:03:02Z",external_reconciliation="none")
