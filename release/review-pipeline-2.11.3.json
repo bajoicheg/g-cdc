@@ -41,7 +41,12 @@
     "state": "not_run",
     "reviewer_ref": null,
     "sequence": null,
-    "evidence_refs": [],
+    "evidence_refs": [
+      "owner-waiver:release/owner-review-waiver-2.11.3-stage2.json",
+      "technical-precheck:docs/superpowers/reports/2026-10-01-cdc-2.11.3-internal-quality-precheck.md",
+      "github-actions:36865140338:success@7fc4f80537c1404c742fbcdc21d43014452f50d8",
+      "github-actions:36865923111:success@dc7d428e61c51bec847b66a5386f021b4d242364"
+    ],
     "findings": []
   }
 }
