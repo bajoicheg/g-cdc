@@ -51,6 +51,7 @@ class T(unittest.TestCase):
  def terminal_reconciled_claim(self,checkpointed=False):
   r=self.owned()
   intent=op._load(ROOT/"templates"/"operation-intent.json")
+  intent["created_at_utc"]="2026-01-01T10:00:00Z";intent["updated_at_utc"]="2026-01-01T10:00:00Z"
   intent["binding"]["repository"]="o/r";intent["source_ref"]="refs/heads/main"
   intent["operation_key"]=op.operation_key(intent["binding"])
   receipt=op.verify_readback(intent,copy.deepcopy(intent),"store:intent/1",intent["updated_at_utc"])
@@ -83,6 +84,7 @@ class T(unittest.TestCase):
  def test_unreconciled_claim_remains_blocked(self):
   r=self.owned()
   intent=op._load(ROOT/"templates"/"operation-intent.json")
+  intent["created_at_utc"]="2026-01-01T10:00:00Z";intent["updated_at_utc"]="2026-01-01T10:00:00Z"
   intent["binding"]["repository"]="o/r";intent["source_ref"]="refs/heads/main";intent["operation_key"]=op.operation_key(intent["binding"])
   receipt=op.verify_readback(intent,copy.deepcopy(intent),"store:intent/2",intent["updated_at_utc"])
   intent=op.transition(intent,"submitting",intent["updated_at_utc"],receipt=receipt)
