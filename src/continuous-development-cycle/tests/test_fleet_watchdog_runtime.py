@@ -169,6 +169,10 @@ class FleetTests(unittest.TestCase):
     def batch(self, runtime=None, budget=20, invocation="controller-invocation-1"):
         return (runtime or self.runtime()).run_batch(self.projects, max_effects=budget, invocation_id=invocation)
 
+    def acquire_leader(self,*args,**kwargs):
+        with mock.patch.object(fleet_control.leasev2.terminal_capability_api,"validate_verified",return_value={}):
+            return self.acquire_leader(*args,terminal_capability=object(),**kwargs)
+
     def test_git_leader_guard_binds_authoritative_remote_fleet_head(self):
         source=self.root/"fleet-source"
         source.mkdir();self.git("init","-q",str(source))
@@ -185,7 +189,7 @@ class FleetTests(unittest.TestCase):
         leader_store=GitDocumentStore(leader_repo,"origin","refs/heads/cdc/fleet-supervisor",self.store_id,
                                       protected_refs=["refs/heads/cdc/fleet"])
         state=fleet_control.initialize("owner/fleet","refs/heads/cdc/fleet")
-        state=fleet_control.acquire_record(
+        state=self.acquire_leader(
             state,"77777777-7777-4777-8777-777777777777",NOW,
             {"invocation_id":"leader-live","automation_id":None,"conversation_id":None,
              "execution_surface":"managed","started_at_utc":NOW})
@@ -647,7 +651,7 @@ def build(config):
         owner_id = "88888888-8888-4888-8888-888888888888"
         at = fleet.now_utc()
         leader_state = fleet_control.initialize("owner/fleet", "refs/heads/cdc/fleet")
-        leader_state = fleet_control.acquire_record(
+        leader_state = self.acquire_leader(
             leader_state, owner_id, at,
             {"invocation_id":"cli-invocation","automation_id":None,"conversation_id":None,
              "execution_surface":"managed","started_at_utc":at},
