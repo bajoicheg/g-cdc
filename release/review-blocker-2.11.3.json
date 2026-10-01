@@ -1,21 +1,18 @@
 {
   "schema": "blocked-state-proof/v1",
-  "dependency_id": "independent-spec-rereview:cdc-2.11.3",
+  "dependency_id": "independent-code-quality-review:cdc-2.11.3",
   "category": "review",
-  "observed_at_utc": "2026-10-01T10:27:35Z",
+  "observed_at_utc": "2026-10-01T11:19:01Z",
   "max_age_seconds": 86400,
   "evidence_refs": [
-    "https://github.com/bajoicheg/g-cdc/pull/83#issuecomment-5928748463",
-    "prior-red:https://github.com/bajoicheg/g-cdc/pull/83#issuecomment-5926049824",
-    "github-actions:36848309600:success@9a1c9ee5333a23c19bb4fd04f90f200a236b6b5c",
-    "github-actions:36848888998:success@855a3a92569561553115c8a4234558852264e2c9",
-    "remediation-source:c3062e8a9fcc00df7ee6c53833e926030670065d",
-    "remediation-package-tree:2566627af4d6f7a014a1994d7c590aa49e032945",
+    "release/owner-review-waiver-2.11.3-stage1.json",
     "release/review-pipeline-2.11.3.json",
     "release/validation-2.11.3.json",
-    "release/evidence-2.11.3.json"
+    "candidate-source:c3062e8a9fcc00df7ee6c53833e926030670065d",
+    "candidate-package-tree:2566627af4d6f7a014a1994d7c590aa49e032945",
+    "pre-waiver-head:607678d91db1b1f1bdc8b431805fe19c45df657c"
   ],
-  "next_action": "Run a fresh independent Stage 1 specification re-review of PR #83 against exact second-remediation source c3062e8a9fcc00df7ee6c53833e926030670065d and package tree 2566627af4d6f7a014a1994d7c590aa49e032945; verify closure of S1/S2/S3. Stage 2 remains forbidden until Stage 1 becomes GREEN.",
-  "recheck_trigger": "new-independent-stage1-review-artifact",
-  "same_invocation_work_exhausted": true
+  "next_action": "Run independent Stage 2 code-quality review of PR #83 against exact source c3062e8a9fcc00df7ee6c53833e926030670065d, package tree 2566627af4d6f7a014a1994d7c590aa49e032945, with Stage 1 fresh re-review skipped only by release/owner-review-waiver-2.11.3-stage1.json.",
+  "recheck_trigger": "new-independent-stage2-review-artifact",
+  "same_invocation_work_exhausted": false
 }

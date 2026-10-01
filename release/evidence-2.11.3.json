@@ -4,7 +4,7 @@
   "canonical_repository": "bajoicheg/g-cdc",
   "candidate_source_commit": "c3062e8a9fcc00df7ee6c53833e926030670065d",
   "package_tree": "2566627af4d6f7a014a1994d7c590aa49e032945",
-  "status": "blocked_stage1_rereview",
+  "status": "stage1_rereview_waived_stage2_required",
   "development_driver": {
     "version": "2.11.2",
     "commit": "48e637b230e7640d0dcd13da60d712f38f59a2b6",
@@ -40,7 +40,7 @@
       "note": "Self technical precheck only; does not change independent Stage 1 verdict."
     },
     "independent_spec_review": {
-      "result": "RED_SECOND_REMEDIATION_REREVIEW_REQUIRED",
+      "result": "WAIVED_ONCE_BY_OWNER_AFTER_RED_REMEDIATION",
       "reviewer_artifact": "https://github.com/bajoicheg/g-cdc/pull/83#issuecomment-5928748463",
       "prior_reviewer_artifact": "https://github.com/bajoicheg/g-cdc/pull/83#issuecomment-5926049824",
       "pipeline": "release/review-pipeline-2.11.3.json",
@@ -51,11 +51,12 @@
       "findings_remediated": 3,
       "remediation_source": "c3062e8a9fcc00df7ee6c53833e926030670065d",
       "remediation_package_tree": "2566627af4d6f7a014a1994d7c590aa49e032945",
-      "rereview_required": true,
-      "waiver": null
+      "rereview_required": false,
+      "waiver": "release/owner-review-waiver-2.11.3-stage1.json",
+      "note": "Historical Stage 1 RED remains truthful; all findings are marked resolved. Owner explicitly waived only the fresh re-review requirement on this exact candidate."
     },
     "independent_code_quality_review": {
-      "result": "NOT_RUN_ORDERED_AFTER_SPEC",
+      "result": "NOT_RUN_NOW_AUTHORIZED_BY_OWNER_STAGE1_WAIVER",
       "waiver": null
     }
   },
@@ -83,16 +84,15 @@
       "942/942 full candidate tests plus three archived consumer snapshots"
     ],
     "limits": [
-      "Independent Stage 1 re-review of the second-remediated exact candidate is still required.",
-      "Stage 2 code-quality review is not authorized until Stage 1 is GREEN.",
+      "Fresh independent Stage 1 re-review was explicitly waived once by the owner for this exact candidate; historical RED is not relabeled GREEN.",
+      "Independent Stage 2 code-quality review is still required.",
       "No live scheduler mutation; owner pause remains authoritative.",
       "No live consumer deployment is implied."
     ]
   },
   "remaining_authorized_stages": [
-    "fresh independent Stage 1 specification re-review of second remediation S1/S2/S3",
-    "independent Stage 2 code-quality review only after Stage 1 GREEN",
-    "immutable 2.11.3 release identity only after both review stages GREEN",
+    "independent Stage 2 code-quality review",
+    "immutable 2.11.3 release identity only after Stage 2 is GREEN or separately waived by owner",
     "personal skill activation/readback",
     "live Fleet target migration and safe consumer rollout"
   ],
