@@ -907,6 +907,14 @@
       "forbidden_authorities": [
         "duplicate_scheduler_effect"
       ]
+    },
+    {
+      "id": "watchdog-survivability-unfenced-effect",
+      "fault": "watchdog_survivability_scheduler_create_enable_run_or_disable_without_exact_fleet_leader_binding",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "duplicate_scheduler_effect"
+      ]
     }
   ]
 }
