@@ -1,5 +1,6 @@
 from pathlib import Path
 import copy,sys,unittest
+from unittest import mock
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 import execution_lease_v2 as leasev2
 from final_response_gate import evaluate
@@ -23,9 +24,11 @@ def receipt(lease,revision="b"*40):
  return {"schema":"execution-release-receipt/v1","lease_revision":revision,"release":copy.deepcopy(lease["last_release"])}
 
 class T(unittest.TestCase):
+ def admit(self,record,owner,at,inv):
+  with mock.patch.object(leasev2.terminal_capability_api,"validate_verified",return_value={}):
+   return leasev2.acquire(record,owner,at,invocation=inv,terminal_capability=object(),ttl=1200)
  def owned(self):
-  r=leasev2.initialize("o/r","refs/heads/main")
-  return leasev2.acquire(r,OWNER,"2026-01-01T10:00:00Z",invocation=INV,ttl=1200)
+  return self.admit(leasev2.initialize("o/r","refs/heads/main"),OWNER,"2026-01-01T10:00:00Z",INV)
  def released(self):
   r=self.owned()
   r=leasev2.begin_finalization(r,OWNER,1,INV_ID,"2026-01-01T10:01:00Z",pending_shared_writes=False)
@@ -33,6 +36,9 @@ class T(unittest.TestCase):
   r=leasev2.reconcile_finalization(r,OWNER,1,INV_ID,"2026-01-01T10:01:02Z",external_reconciliation="none")
   r=leasev2.mark_ready(r,OWNER,1,INV_ID,"2026-01-01T10:01:03Z",continuity_state=continuity(False))
   return leasev2.release(r,OWNER,1,INV_ID,"2026-01-01T10:01:04Z")
+ def test_spoofed_managed_label_without_capability_cannot_enter_owned_terminal_path(self):
+  with self.assertRaisesRegex(ValueError,"capability proof"):
+   leasev2.acquire(leasev2.initialize("o/r","refs/heads/main"),OWNER,"2026-01-01T10:00:00Z",invocation=INV,ttl=1200)
  def test_ordinary_chat_cannot_enter_owned_terminal_path(self):
   chat=dict(INV,execution_surface="chat")
   with self.assertRaisesRegex(ValueError,"observer/orchestrator only"):
@@ -56,7 +62,7 @@ class T(unittest.TestCase):
   other="55555555-5555-4555-8555-555555555555"
   inv2={"invocation_id":"chat-next","automation_id":None,"conversation_id":None,"execution_surface":"managed","started_at_utc":"2026-01-01T10:02:00Z"}
   first_record=copy.deepcopy(lease);first_receipt=receipt(first_record)
-  lease=leasev2.acquire(lease,other,"2026-01-01T10:02:00Z",invocation=inv2,ttl=1200)
+  lease=self.admit(lease,other,"2026-01-01T10:02:00Z",inv2)
   r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},first_receipt,first_record,"2026-01-01T10:03:00Z")
   self.assertTrue(r["allowed"])
  def test_successor_release_cannot_erase_prior_release_proof(self):
