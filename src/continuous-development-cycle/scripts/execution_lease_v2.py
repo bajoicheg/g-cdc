@@ -11,6 +11,7 @@ import uuid
 
 import operation_intent as op
 import execution_lease as legacy
+import managed_terminal_capability as terminal_capability_api
 
 V1_FIELDS = set(legacy.FIELDS)
 FIELDS = V1_FIELDS | {"invocation", "finalization", "legacy_migration", "submission_resolutions"}
@@ -298,7 +299,7 @@ def _owner(record, owner_id, generation, invocation_id, at):
     if op._timestamp(at, "at") < op._timestamp(record["heartbeat_at_utc"], "heartbeat"):
         raise ValueError("ownership action cannot move backwards in time")
 
-def acquire(record, owner_id, at, *, invocation, ttl=1200, quiescence=None):
+def acquire(record, owner_id, at, *, invocation, terminal_capability, ttl=1200, quiescence=None):
     validate(record)
     if record["schema"] != "execution-lease/v2":
         raise ValueError("migrate v1 lease before v2 acquisition")
@@ -306,6 +307,7 @@ def acquire(record, owner_id, at, *, invocation, ttl=1200, quiescence=None):
     inv = copy.deepcopy(_validate_invocation(invocation))
     if inv["execution_surface"] not in ACQUIRABLE_SURFACES:
         raise ValueError("execution surface lacks a package-owned mechanically enforced terminal boundary; observer/orchestrator only")
+    terminal_capability_api.validate_verified(terminal_capability,inv,record["repository"],record["source_ref"],at)
     at_dt = op._timestamp(at, "at")
     if op._timestamp(inv["started_at_utc"], "invocation start") > at_dt:
         raise ValueError("invocation start cannot be after acquisition")
@@ -346,6 +348,18 @@ def acquire(record, owner_id, at, *, invocation, ttl=1200, quiescence=None):
                                 "checkpoint_ref": None, "external_reconciliation": "pending",
                                 "completion_reason": None, "updated_at_utc": at, "failure": None})
     return validate(result)
+
+def acquire_managed_cas(store,expected_revision,repository,source_ref,owner_id,at,*,terminal_capability,ttl=1200,quiescence=None):
+    revision,record=store.read()
+    if revision!=expected_revision or record is None:
+        raise ValueError("stale coordination store revision")
+    if record["repository"]!=repository or record["source_ref"]!=source_ref:
+        raise ValueError("exact repository/source-ref binding mismatch")
+    invocation=terminal_capability.invocation()
+    result=acquire(record,owner_id,at,invocation=invocation,terminal_capability=terminal_capability,ttl=ttl,quiescence=quiescence)
+    new_revision=store.compare_and_swap(expected_revision,result)
+    return {"revision":new_revision,"record":result,"owner_id":owner_id,"generation":result["generation"],
+            "invocation":copy.deepcopy(invocation)}
 
 def renew(record, owner_id, generation, invocation_id, at, *, activity_ref, ttl=1200):
     _owner(record, owner_id, generation, invocation_id, at)
@@ -560,9 +574,7 @@ def _mutate(store, expected, repository, source_ref, command, request):
         if record is None or record["repository"] != repository or record["source_ref"] != source_ref:
             raise ValueError("exact repository/source-ref binding mismatch")
         if command == "acquire":
-            if "owner_id" in request:
-                raise ValueError("CLI acquisition generates a new executor UUID")
-            request["owner_id"] = str(uuid.uuid4())
+            raise ValueError("generic CLI acquisition cannot prove managed terminal capability; use ManagedExecutorRuntime acquisition")
         command_name = {
             "finalize-begin": "begin_finalization",
             "finalize-checkpoint": "record_checkpoint",
