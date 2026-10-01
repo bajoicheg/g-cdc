@@ -5,7 +5,7 @@ import execution_lease_v2 as leasev2
 from final_response_gate import evaluate
 
 OWNER="22222222-2222-4222-8222-222222222222";INV_ID="chat-final"
-INV={"invocation_id":INV_ID,"automation_id":None,"conversation_id":None,"execution_surface":"chat","started_at_utc":"2026-01-01T10:00:00Z"}
+INV={"invocation_id":INV_ID,"automation_id":None,"conversation_id":None,"execution_surface":"managed","started_at_utc":"2026-01-01T10:00:00Z"}
 CP="https://example.test/checkpoint"
 HEAD="a"*40
 
@@ -33,6 +33,10 @@ class T(unittest.TestCase):
   r=leasev2.reconcile_finalization(r,OWNER,1,INV_ID,"2026-01-01T10:01:02Z",external_reconciliation="none")
   r=leasev2.mark_ready(r,OWNER,1,INV_ID,"2026-01-01T10:01:03Z",continuity_state=continuity(False))
   return leasev2.release(r,OWNER,1,INV_ID,"2026-01-01T10:01:04Z")
+ def test_ordinary_chat_cannot_enter_owned_terminal_path(self):
+  chat=dict(INV,execution_surface="chat")
+  with self.assertRaisesRegex(ValueError,"observer/orchestrator only"):
+   leasev2.acquire(leasev2.initialize("o/r","refs/heads/main"),OWNER,"2026-01-01T10:00:00Z",invocation=chat,ttl=1200)
  def test_owned_invocation_cannot_final_respond(self):
   r=evaluate(INV_ID,self.owned(),continuity(False),{"owner_id":OWNER,"generation":1},None,None,"2026-01-01T10:02:00Z")
   self.assertFalse(r["allowed"]);self.assertEqual(r["reason"],"invocation_still_owns_exact_generation")
@@ -50,7 +54,7 @@ class T(unittest.TestCase):
  def test_successor_owner_does_not_reopen_released_invocation(self):
   lease=self.released()
   other="55555555-5555-4555-8555-555555555555"
-  inv2={"invocation_id":"chat-next","automation_id":None,"conversation_id":None,"execution_surface":"chat","started_at_utc":"2026-01-01T10:02:00Z"}
+  inv2={"invocation_id":"chat-next","automation_id":None,"conversation_id":None,"execution_surface":"managed","started_at_utc":"2026-01-01T10:02:00Z"}
   first_record=copy.deepcopy(lease);first_receipt=receipt(first_record)
   lease=leasev2.acquire(lease,other,"2026-01-01T10:02:00Z",invocation=inv2,ttl=1200)
   r=evaluate(INV_ID,lease,continuity(True),{"owner_id":OWNER,"generation":1},first_receipt,first_record,"2026-01-01T10:03:00Z")
@@ -58,7 +62,7 @@ class T(unittest.TestCase):
  def test_successor_release_cannot_erase_prior_release_proof(self):
   lease=self.released();first_record=copy.deepcopy(lease);first_receipt=receipt(first_record)
   other="55555555-5555-4555-8555-555555555555"
-  inv2={"invocation_id":"chat-next","automation_id":None,"conversation_id":None,"execution_surface":"chat","started_at_utc":"2026-01-01T10:02:00Z"}
+  inv2={"invocation_id":"chat-next","automation_id":None,"conversation_id":None,"execution_surface":"managed","started_at_utc":"2026-01-01T10:02:00Z"}
   lease=leasev2.acquire(lease,other,"2026-01-01T10:02:00Z",invocation=inv2,ttl=1200)
   lease=leasev2.begin_finalization(lease,other,2,"chat-next","2026-01-01T10:03:00Z",pending_shared_writes=False)
   lease=leasev2.record_checkpoint(lease,other,2,"chat-next","2026-01-01T10:03:01Z",checkpoint_ref=CP,pending_shared_writes=False)
