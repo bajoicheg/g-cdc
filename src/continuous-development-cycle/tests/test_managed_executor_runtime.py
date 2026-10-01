@@ -224,6 +224,88 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
         final=self.wait("a")
         self.assertEqual(final["status"],"succeeded");self.assertTrue(final["quiescent"])
 
+    def test_owned_marker_is_recovered_after_controller_crash_post_acquire_cas(self):
+        self.launch("a", self.worker("a", 2.0))
+        end=time.monotonic()+4
+        while time.monotonic()<end:
+            observed=self.rt.observe("a","a1")
+            if observed["status"]=="running":break
+            time.sleep(.01)
+        self.assertEqual(observed["status"],"running")
+
+        lease_store=GitLeaseStore(self.repo,"origin","refs/heads/cdc/runtime-lease-acquire-recovery")
+        lease_revision=lease_store.compare_and_swap(
+            None,leasev2.initialize("test/project","refs/heads/integration"))
+        owner="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+        at=runtime._utc()
+        capability=self.rt.terminal_capability(
+            "a","a1",lease_repository="test/project",lease_source_ref="refs/heads/integration",
+            observed_at_utc=at)
+        intent=self.rt._arm_terminal_hold(capability)
+        acquired=leasev2.acquire_managed_cas(
+            lease_store,lease_revision,"test/project","refs/heads/integration",owner,at,
+            terminal_capability=capability)
+        invocation_id=acquired["invocation"]["invocation_id"]
+        paths=runtime._terminal_hold_paths(self.rt._terminal_hold_directory("a","a1"))
+        self.assertFalse(paths["owned"].exists())
+
+        self.rt=runtime.ManagedExecutorRuntime(
+            self.plan,self.store,self.repo,runtime.LocalCommandBackend(self.root/"journal"))
+        reconciled=self.rt.reconcile_execution_lease_hold(lease_store,"a","a1")
+        self.assertEqual(reconciled["status"],"owned")
+        owned=json.loads(paths["owned"].read_text())
+        self.assertEqual(owned["capability_ref"],intent["capability_ref"])
+        self.assertEqual(owned["owner_id"],owner)
+        self.assertEqual(owned["generation"],1)
+        self.assertEqual(owned["invocation_id"],invocation_id)
+        self.assertEqual(owned["lease_revision"],acquired["revision"])
+
+        record=acquired["record"];revision=acquired["revision"]
+        checkpoint="checkpoint:acquire-recovery"
+        record=leasev2.begin_finalization(record,owner,1,invocation_id,runtime._utc(),pending_shared_writes=False)
+        revision=lease_store.compare_and_swap(revision,record)
+        record=leasev2.record_checkpoint(record,owner,1,invocation_id,runtime._utc(),
+                                         checkpoint_ref=checkpoint,pending_shared_writes=False)
+        revision=lease_store.compare_and_swap(revision,record)
+        record=leasev2.reconcile_finalization(record,owner,1,invocation_id,runtime._utc(),
+                                              external_reconciliation="none")
+        revision=lease_store.compare_and_swap(revision,record)
+        continuity={
+            "schema":"execution-continuity/v1","invocation_id":invocation_id,"current_state":"COMPLETE",
+            "requested_terminal_outcome":"scope_complete","runnable_next_action":False,
+            "meaningful_progress_refs":["git:"+self.base],"primitive_steps":[],"external_binding":None,
+            "blocker":None,"checkpoint_ref":checkpoint,"next_action":None,
+            "lease_release_required":False,"lease_released":False}
+        continuity=with_terminal_evidence(continuity)
+        continuity["terminal_state"]["lease_released"]=False
+        record=leasev2.mark_ready(record,owner,1,invocation_id,runtime._utc(),continuity_state=continuity)
+        revision=lease_store.compare_and_swap(revision,record)
+        released=self.rt.release_execution_lease(
+            lease_store,revision,"test/project","refs/heads/integration",owner,1,invocation_id,
+            "a","a1",runtime._utc())
+        self.assertEqual(released["release_receipt"]["release"]["owner_id"],owner)
+        final=self.wait("a")
+        self.assertEqual(final["status"],"succeeded");self.assertTrue(final["quiescent"])
+
+    def test_terminal_hold_aborts_only_when_authoritative_history_proves_no_acquire(self):
+        self.launch("a", self.worker("a", .4))
+        end=time.monotonic()+4
+        while time.monotonic()<end:
+            observed=self.rt.observe("a","a1")
+            if observed["status"]=="running":break
+            time.sleep(.01)
+        self.assertEqual(observed["status"],"running")
+        lease_store=GitLeaseStore(self.repo,"origin","refs/heads/cdc/runtime-lease-no-acquire")
+        lease_store.compare_and_swap(None,leasev2.initialize("test/project","refs/heads/integration"))
+        capability=self.rt.terminal_capability(
+            "a","a1",lease_repository="test/project",lease_source_ref="refs/heads/integration",
+            observed_at_utc=runtime._utc())
+        self.rt._arm_terminal_hold(capability)
+        reconciled=self.rt.reconcile_execution_lease_hold(lease_store,"a","a1")
+        self.assertEqual(reconciled["status"],"aborted")
+        final=self.wait("a")
+        self.assertEqual(final["status"],"succeeded");self.assertTrue(final["quiescent"])
+
     def test_release_marker_is_recovered_after_controller_crash_post_release_cas(self):
         self.launch("a", self.worker("a", 2.0))
         end=time.monotonic()+4
