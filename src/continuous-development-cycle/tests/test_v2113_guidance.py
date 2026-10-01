@@ -9,7 +9,7 @@ class T(unittest.TestCase):
    self.assertIn(term,text)
  def test_reference_has_fail_closed_boundaries(self):
   text=(ROOT/"references"/"multi-subscription-coordination-and-ownership.md").read_text(encoding="utf-8").lower()
-  for term in ("ttl alone","orphaned_recoverable","blocked_unknown_effects","one publication boundary","duplicate effect"):
+  for term in ("ttl alone","orphaned_recoverable","blocked_unknown_effects","one publication boundary","duplicate effect","package-managed","assembly manifest","terminal resolutions"):
    self.assertIn(term,text)
 
 if __name__=="__main__":unittest.main()
