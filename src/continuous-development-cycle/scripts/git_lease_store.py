@@ -70,13 +70,41 @@ def _validate_submission_resolution_transition(previous, record):
     return record
 
 
-def validate_coordination_transition(previous, record):
+def validate_coordination_transition(previous, record, *, ownership_capability=None):
     validate_coordination_record(record)
     if previous is None:
         return record
     validate_coordination_record(previous)
     if any(previous[key] != record[key] for key in ('repository', 'source_ref')):
         raise ValueError('coordination binding is immutable')
+    prev_schema=previous.get('schema');new_schema=record.get('schema')
+    if prev_schema=='execution-lease/v1' and new_schema=='execution-lease/v1':
+        if record['owner_id'] is not None and (record['generation']>previous['generation']
+                or record['owner_id']!=previous['owner_id']):
+            raise ValueError('new execution-lease/v1 ownership is disabled; migrate to managed v2')
+    if prev_schema=='execution-lease/v2' and new_schema=='execution-lease/v2':
+        ownership_changed=(record['owner_id']!=previous['owner_id']
+                           or record['generation']!=previous['generation'])
+        if record['owner_id'] is not None and ownership_changed:
+            if ownership_capability is None:
+                raise ValueError('v2 ownership transition requires verified managed terminal capability')
+            ttl=int((op._timestamp(record['expires_at_utc'],'expiry')
+                     -op._timestamp(record['acquired_at_utc'],'acquired')).total_seconds())
+            expected=execution_lease_v2.acquire(
+                previous,record['owner_id'],record['acquired_at_utc'],
+                invocation=record['invocation'],terminal_capability=ownership_capability,
+                ttl=ttl,quiescence=record.get('takeover_evidence'))
+            if expected!=record:
+                raise ValueError('v2 ownership transition must equal canonical managed acquire')
+        if previous['owner_id'] is not None and record['owner_id'] is None:
+            release=record.get('last_release')
+            if not isinstance(release,dict):
+                raise ValueError('v2 release transition requires last_release')
+            expected=execution_lease_v2.release(
+                previous,previous['owner_id'],previous['generation'],
+                previous['invocation']['invocation_id'],release['at_utc'])
+            if expected!=record:
+                raise ValueError('v2 owner release transition must equal canonical transactional release')
     if previous.get('schema') == 'execution-lease/v2' and record.get('schema') != 'execution-lease/v2':
         raise ValueError('execution-lease/v2 cannot downgrade to v1')
     if record['submission_claims'][:len(previous['submission_claims'])] != previous['submission_claims']:
@@ -212,14 +240,14 @@ class GitLeaseStore:
                         'release_record': record, 'current_revision': current}
         raise ValueError('exact historical lease release was not found')
 
-    def compare_and_swap(self, expected_revision, record):
+    def compare_and_swap(self, expected_revision, record, *, ownership_capability=None):
         validate_coordination_record(record)
         if record['source_ref'] == self.ref:
             raise ValueError('coordination ref must differ from product source ref')
         current, previous = self.read()
         if current != expected_revision:
             raise ValueError('stale expected coordination revision')
-        validate_coordination_transition(previous, record)
+        validate_coordination_transition(previous, record, ownership_capability=ownership_capability)
         blob = self._git('hash-object', '-w', '--stdin', input=op._canonical(record).decode() + '\n')
         tree = self._git('mktree', input=f'100644 blob {blob}\tlease.json\n')
         parent = ['-p', expected_revision] if expected_revision else []
