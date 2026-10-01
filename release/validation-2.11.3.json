@@ -1,19 +1,19 @@
 {
   "schema": "cdc-release-validation/v1",
   "version": "2.11.3",
-  "source_commit": "c3062e8a9fcc00df7ee6c53833e926030670065d",
-  "candidate_metadata_head": "855a3a92569561553115c8a4234558852264e2c9",
-  "package_tree": "2566627af4d6f7a014a1994d7c590aa49e032945",
+  "source_commit": "4bba0235c641582d76fd403a4b3e4cf96ba3e75c",
+  "candidate_metadata_head": "efecde0e16b108d51b647de556ef1d2184cc7d69",
+  "package_tree": "78b275e039aee6b3aed3bf77ac8481383b065491",
   "bootstrap": "37/37 PASS; independent bootstrap/full GREEN",
-  "package_validator": "330 files and parsed templates PASS",
-  "package_tests": "942/942 PASS",
+  "package_validator": "331 files and parsed templates PASS",
+  "package_tests": "945/945 PASS",
   "consumers": "3/3 archived snapshots GREEN; compatibility only",
   "hosted_runs": [
     {
-      "run_id": 36848309600,
-      "head_sha": "9a1c9ee5333a23c19bb4fd04f90f200a236b6b5c",
+      "run_id": 36856694000,
+      "head_sha": "efecde0e16b108d51b647de556ef1d2184cc7d69",
       "conclusion": "success",
-      "purpose": "exact second Stage-1 remediation technical validation"
+      "purpose": "exact quality-hardened candidate validation"
     }
   ],
   "retained_red_green": [
@@ -31,16 +31,21 @@
       "finding": "S3 fabricated raw-CAS submission resolution could clear unresolved claim",
       "red_evidence": "independent Stage-1 re-review finding S3 at PR #83 comment 5928748463",
       "green_evidence": "canonical terminal transition enforcement + fabricated-resolution rejection in 36848309600"
+    },
+    {
+      "finding": "post-release CAS controller loss could strand managed supervisor awaiting_release",
+      "green_evidence": "historical exact release-receipt recovery in run 36856694000"
+    },
+    {
+      "finding": "post-acquire CAS controller loss could leave local managed ownership marker incomplete",
+      "green_evidence": "authoritative ownership-history reconciliation in run 36856694000"
     }
   ],
   "scheduler_state": "Owner-paused; zero scheduler mutations",
-  "review_state": "Independent Stage 1 re-review remains RED by artifact 5928748463; S1/S2/S3 are technically remediated and require a fresh independent re-review. Stage 2 remains not_run.",
+  "review_state": "Fresh Stage 1 rereview is waived once by owner on the exact quality-hardened candidate; independent Stage 2 remains not_run.",
   "final_metadata_ci": {
-    "state": "success",
+    "state": "requested",
     "pull_request": 83,
-    "run_id": 36848888998,
-    "head_sha": "855a3a92569561553115c8a4234558852264e2c9",
-    "conclusion": "success",
-    "note": "Metadata-only second-remediation record validated exactly; subsequent blocker-summary commit must be exact-head validated before re-review handoff."
+    "note": "Quality-waiver/evidence metadata commits require one final exact-head workflow."
   }
 }
