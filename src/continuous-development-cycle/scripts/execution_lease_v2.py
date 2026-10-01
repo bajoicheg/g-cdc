@@ -13,7 +13,8 @@ import operation_intent as op
 import execution_lease as legacy
 
 V1_FIELDS = set(legacy.FIELDS)
-FIELDS = V1_FIELDS | {"invocation", "finalization", "legacy_migration"}
+FIELDS = V1_FIELDS | {"invocation", "finalization", "legacy_migration", "submission_resolutions"}
+LEGACY_V2_FIELDS = FIELDS - {"submission_resolutions"}
 SURFACES = {"chat", "watchdog", "work", "codex", "api", "unknown"}
 FINALIZATION_STATES = {"active", "draining", "checkpointed", "reconciled", "ready", "failed"}
 RECONCILIATION_STATES = {"pending", "none", "terminal_reconciled", "unknown_preserved"}
@@ -72,6 +73,32 @@ def _validate_finalization(value):
     if value["state"] != "ready" and value["completion_reason"] is not None:
         raise ValueError("completion_reason is recorded only at ready boundary")
     return value
+
+def _validate_submission_resolution(value, claims, generation):
+    fields={"grant_id","owner_id","generation","operation_key","attempt_id","intent_digest",
+            "resolved_at_utc","evidence_reference","observation_digest"}
+    op._object(value,fields,"submission resolution")
+    _uuid(value["grant_id"],"resolved grant_id")
+    _uuid(value["owner_id"],"resolved owner_id")
+    _generation(value["generation"])
+    if not 0 < value["generation"] <= generation:
+        raise ValueError("submission resolution generation mismatch")
+    op._digest(value["operation_key"],"resolved operation key")
+    op._text(value["attempt_id"],"resolved attempt")
+    op._digest(value["intent_digest"],"resolved intent digest")
+    op._timestamp(value["resolved_at_utc"],"submission resolution time")
+    op._text(value["evidence_reference"],"submission resolution evidence")
+    op._digest(value["observation_digest"],"submission resolution observation digest")
+    claim=next((x for x in claims if x.get("grant_id")==value["grant_id"]),None)
+    if claim is None:
+        raise ValueError("submission resolution must bind an existing claim")
+    for name in ("owner_id","generation","operation_key","attempt_id","intent_digest"):
+        if value[name]!=claim[name]:
+            raise ValueError("submission resolution claim binding mismatch")
+    return value
+
+def _resolved_grant_ids(record):
+    return {x["grant_id"] for x in record.get("submission_resolutions",[])}
 
 def _validate_release(value, generation):
     op._object(value, {"owner_id", "generation", "invocation_id", "at_utc",
@@ -151,13 +178,23 @@ def validate(record):
         raise ValueError("lease must be an object")
     if record.get("schema") == "execution-lease/v1":
         return legacy.validate(record)
-    op._object(record, FIELDS, "lease")
+    if set(record) not in {FIELDS, LEGACY_V2_FIELDS}:
+        raise ValueError("lease fields mismatch")
     if record["schema"] != "execution-lease/v2":
         raise ValueError("unsupported lease schema")
     if record["legacy_migration"] is None:
         legacy.validate(_legacy_projection(record))
     else:
         _validate_legacy_migration(record)
+    resolutions=record.get("submission_resolutions",[])
+    if not isinstance(resolutions,list):
+        raise ValueError("submission_resolutions must be a list")
+    resolved_ids=[]
+    for item in resolutions:
+        _validate_submission_resolution(item,record["submission_claims"],record["generation"])
+        resolved_ids.append(item["grant_id"])
+    if len(resolved_ids)!=len(set(resolved_ids)):
+        raise ValueError("duplicate submission resolution")
     if record["owner_id"] is None:
         if record["invocation"] is not None or record["finalization"] is not None:
             raise ValueError("released v2 lease cannot retain live invocation/finalization")
@@ -205,6 +242,7 @@ def initialize(repository, source_ref):
     record["invocation"] = None
     record["finalization"] = None
     record["legacy_migration"] = None
+    record["submission_resolutions"] = []
     return validate(record)
 
 def migrate_v1(record, at):
@@ -224,6 +262,7 @@ def migrate_v1(record, at):
     result["schema"] = "execution-lease/v2"
     result["invocation"] = None
     result["finalization"] = None
+    result["submission_resolutions"] = []
     result["legacy_migration"] = {
         "from_schema": "execution-lease/v1",
         "migrated_at_utc": at,
@@ -294,6 +333,7 @@ def acquire(record, owner_id, at, *, invocation, ttl=1200, quiescence=None):
     elif quiescence is not None:
         raise ValueError("quiescence supplied without a prior owner")
     result = copy.deepcopy(record)
+    result.setdefault("submission_resolutions",[])
     result.update(owner_id=owner_id, generation=record["generation"] + 1,
                   acquired_at_utc=at, heartbeat_at_utc=at, expires_at_utc=_expiry(at, ttl),
                   activity_refs=[], takeover_evidence=copy.deepcopy(quiescence),
@@ -420,11 +460,24 @@ def set_guard(record, owner_id, generation, invocation_id, at, intent, intent_re
 
 def clear_guard(record, owner_id, generation, invocation_id, at, observation, evidence_reference):
     _owner(record, owner_id, generation, invocation_id, at)
+    guard=copy.deepcopy(record["external_guard"])
     projected = legacy.clear_guard(_legacy_projection(record, sanitize_migrated=True), owner_id, generation, at,
                                    observation, evidence_reference)
     result = copy.deepcopy(record)
+    result.setdefault("submission_resolutions",[])
     result["external_guard"] = projected["external_guard"]
     result["last_terminal"] = projected["last_terminal"]
+    claim=None if guard is None else guard.get("submission_claim")
+    if claim is not None:
+        if claim["grant_id"] in _resolved_grant_ids(result):
+            raise ValueError("submission claim already terminal-resolved")
+        resolution={
+            "grant_id":claim["grant_id"],"owner_id":claim["owner_id"],"generation":claim["generation"],
+            "operation_key":claim["operation_key"],"attempt_id":claim["attempt_id"],
+            "intent_digest":claim["intent_digest"],"resolved_at_utc":at,
+            "evidence_reference":evidence_reference,"observation_digest":op._hash(observation),
+        }
+        result["submission_resolutions"].append(resolution)
     return validate(result)
 
 def check_record(record, owner_id, generation, invocation_id, at, *,
@@ -478,6 +531,7 @@ def claim_submission(store, expected_revision, repository, source_ref, owner_id,
              "operation_key": guard["operation_key"], "attempt_id": guard["intent"]["attempt_id"],
              "intent_digest": intent_digest, "claimed_at_utc": at}
     record = copy.deepcopy(record)
+    record.setdefault("submission_resolutions",[])
     record["external_guard"]["submission_claim"] = grant
     record["submission_claims"].append(copy.deepcopy(grant))
     validate(record)
