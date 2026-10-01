@@ -52,8 +52,9 @@ _FINISH_FIELDS = {
     "schema", "handle_root", "handle_id", "output_refs", "evidence_refs", "checkpoint_ref",
 }
 _IMMUTABLE_SESSION_FIELDS = (
-    "handle_id", "repo_root", "remote", "plan", "journal_root", "lease_coordination_ref",
-    "lease_repository", "lease_source_ref", "task_id", "attempt_id", "reservation_token",
+    "handle_id", "repo_root", "remote", "plan", "journal_root", "handle_root",
+    "lease_coordination_ref", "lease_repository", "lease_source_ref",
+    "task_id", "attempt_id", "reservation_token",
     "owner_id", "argv_digest", "publication_ref", "gate_directory",
 )
 
@@ -274,6 +275,8 @@ def _validate_start(request):
         raise ValueError("managed host start request fields/schema mismatch")
     plan = request["plan"]
     pool.validate_plan(plan)
+    if len(plan["tasks"]) != 1:
+        raise ValueError("managed host v1 requires exactly one task")
     repo = repository_root(request["repo_root"])
     remote = _text(request["remote"], "remote")
     source_ref = _heads_ref(request["lease_source_ref"], "lease_source_ref")
