@@ -923,6 +923,32 @@
       "forbidden_authorities": [
         "partial_migration_ref_move"
       ]
+    },
+    {
+      "id": "ordinary-chat-persistent-lease",
+      "fault": "unmanaged_chat_or_host_surface_attempts_persistent_execution_lease_acquisition",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "ghost_active_worker",
+        "takeover_by_ttl"
+      ]
+    },
+    {
+      "id": "resolved-submission-false-pending",
+      "fault": "terminal_reconciled_submission_claim_is_treated_as_pending_after_executor_stops",
+      "expected": "RECOVERY_REQUIRED",
+      "forbidden_authorities": [
+        "ghost_active_worker"
+      ]
+    },
+    {
+      "id": "consumer-adoption-stale-bound-core-object",
+      "fault": "exact_target_package_tree_but_lock_adapter_checkpoint_or_provenance_object_differs_from_detached_assembly_manifest",
+      "expected": "KEEP_SHARED_REF_UNCHANGED",
+      "forbidden_authorities": [
+        "partial_migration_ref_move",
+        "version_only_integration"
+      ]
     }
   ]
 }
