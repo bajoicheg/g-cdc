@@ -89,7 +89,7 @@ REQUIRED = [
     'scripts/watchdog_liveness.py', 'scripts/fleet_watchdog_runtime.py', 'scripts/git_document_store.py',
     'templates/watchdog-liveness-probe.json', 'tests/test_coordination_transport.py',
     'tests/test_watchdog_liveness.py', 'tests/test_fleet_watchdog_runtime.py', 'references/watchdog-liveness-runtime.md',
-    'scripts/managed_executor_runtime.py', 'tests/test_managed_executor_runtime.py',
+    'scripts/managed_executor_runtime.py', 'scripts/managed_terminal_capability.py', 'tests/test_managed_executor_runtime.py',
     'references/managed-executor-runtime.md',
     'references/runtime-routing-and-subagents.md', 'references/task-lifecycle.md',
     'references/validation-compute-and-ci.md', 'references/codex-compute.md',
