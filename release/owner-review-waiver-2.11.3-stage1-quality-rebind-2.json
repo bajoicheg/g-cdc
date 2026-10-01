@@ -1,0 +1,38 @@
+{
+  "schema": "cdc-owner-review-waiver/v1",
+  "version": "2.11.3",
+  "one_time": true,
+  "scope": "exact-successor-quality-hardened-candidate-stage1-rereview-only",
+  "source_commit": "7f31544ffd80252587b7ff1bd76b9a3f38e019e5",
+  "package_tree": "39f733127ac130de4f647cf9e5ec55afcca0769c",
+  "pre_waiver_metadata_head": "7fc4f80537c1404c742fbcdc21d43014452f50d8",
+  "authorized_at": "2026-10-01T14:19:01+03:00",
+  "authorization_source": "foreground-user-command:2026-10-01T14:19:01+03:00",
+  "authorization_text": "Этот ревью пропускай и продолжай",
+  "waived_requirement": "fresh independent Stage 1 specification re-review for the successor quality-hardened exact candidate; changes after the prior waiver were quality-only crash/CAS fencing and regression corrections, with no specification scope expansion",
+  "predecessor_waivers": [
+    "release/owner-review-waiver-2.11.3-stage1.json",
+    "release/owner-review-waiver-2.11.3-stage1-quality-rebind.json"
+  ],
+  "technical_review_evidence": [
+    "https://github.com/bajoicheg/g-cdc/pull/83#issuecomment-5928748463",
+    "release/review-pipeline-2.11.3.json",
+    "github-actions:36865140338:success@7fc4f80537c1404c742fbcdc21d43014452f50d8",
+    "docs/superpowers/reports/2026-10-01-cdc-2.11.3-internal-quality-precheck.md"
+  ],
+  "review_truth": "Historical Stage 1 RED remains truthful and is not relabeled GREEN. This exact successor binding carries forward the owner's instruction to skip that re-review through quality-only hardening. Stage 2 remains unwaived.",
+  "not_waived": [
+    "independent Stage 2 code-quality review",
+    "exact source/package binding",
+    "fresh hosted validation after metadata changes",
+    "non-force integration",
+    "immutable release-ref readback",
+    "owner-paused scheduler state",
+    "live consumer rollout authorization",
+    "future independent-review policy"
+  ],
+  "expires_on": [
+    "candidate drift",
+    "completion of this exact 2.11.3 integration/release"
+  ]
+}

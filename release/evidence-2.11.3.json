@@ -2,8 +2,8 @@
   "schema": "cdc-release-evidence/v1",
   "version": "2.11.3",
   "canonical_repository": "bajoicheg/g-cdc",
-  "candidate_source_commit": "c3062e8a9fcc00df7ee6c53833e926030670065d",
-  "package_tree": "2566627af4d6f7a014a1994d7c590aa49e032945",
+  "candidate_source_commit": "7f31544ffd80252587b7ff1bd76b9a3f38e019e5",
+  "package_tree": "39f733127ac130de4f647cf9e5ec55afcca0769c",
   "status": "stage1_rereview_waived_stage2_required",
   "development_driver": {
     "version": "2.11.2",
@@ -12,25 +12,22 @@
     "validation_run_id": 36750000629
   },
   "release_validation": {
-    "package": "942/942 PASS",
-    "package_validator": "330 required files and parsed templates PASS",
+    "package": "950/950 PASS",
+    "package_validator": "331 required files and parsed templates PASS",
     "bootstrap": "37/37 PASS; independent bootstrap/full GREEN",
     "consumers": "3/3 archived snapshots PASS; not live adoption",
     "local_record": "release/validation-2.11.3.json",
     "candidate_ci": [
       {
-        "run_id": 36848309600,
-        "head_sha": "9a1c9ee5333a23c19bb4fd04f90f200a236b6b5c",
+        "run_id": 36865140338,
+        "head_sha": "7fc4f80537c1404c742fbcdc21d43014452f50d8",
         "conclusion": "success",
-        "purpose": "exact second Stage-1 remediation technical validation"
+        "purpose": "exact successor quality-hardened candidate validation"
       }
     ],
     "final_metadata_ci": {
-      "state": "success",
-      "run_id": 36848888998,
-      "head_sha": "855a3a92569561553115c8a4234558852264e2c9",
-      "conclusion": "success",
-      "purpose": "exact second-remediation metadata verification"
+      "state": "requested",
+      "purpose": "quality evidence / successor Stage-1 waiver exact-head validation"
     }
   },
   "reviews": {
@@ -49,15 +46,23 @@
       "reviewed_package_tree": "01b6f071135c708818ded37c0b99ce245e63a083",
       "findings_total": 3,
       "findings_remediated": 3,
-      "remediation_source": "c3062e8a9fcc00df7ee6c53833e926030670065d",
-      "remediation_package_tree": "2566627af4d6f7a014a1994d7c590aa49e032945",
+      "remediation_source": "7f31544ffd80252587b7ff1bd76b9a3f38e019e5",
+      "remediation_package_tree": "39f733127ac130de4f647cf9e5ec55afcca0769c",
       "rereview_required": false,
-      "waiver": "release/owner-review-waiver-2.11.3-stage1.json",
-      "note": "Historical Stage 1 RED remains truthful; all findings are marked resolved. Owner explicitly waived only the fresh re-review requirement on this exact candidate."
+      "waiver": "release/owner-review-waiver-2.11.3-stage1-quality-rebind-2.json",
+      "note": "Historical Stage 1 RED remains truthful. Exact-candidate owner waiver is rebound only across quality-only hardening; no Stage 1 GREEN is claimed."
     },
     "independent_code_quality_review": {
-      "result": "NOT_RUN_NOW_AUTHORIZED_BY_OWNER_STAGE1_WAIVER",
-      "waiver": null
+      "result": "NOT_RUN_REVIEW_CHANNEL_UNAVAILABLE",
+      "waiver": null,
+      "blocker": "release/review-blocker-2.11.3.json",
+      "note": "Reviewer-request channel was blocked before dispatch; no independent Stage 2 artifact exists."
+    },
+    "technical_quality_precheck": {
+      "result": "PASS_TECHNICAL_CURRENT_CANDIDATE",
+      "report": "docs/superpowers/reports/2026-10-01-cdc-2.11.3-internal-quality-precheck.md",
+      "open_material_findings": 0,
+      "note": "Self technical quality precheck only; it is not the independent Stage 2 review."
     }
   },
   "corrections": [
@@ -67,7 +72,11 @@
     "S2: caller-regenerated manifests for stale policy/checkpoint/provenance candidates are rejected before attempt creation even when candidate and caller manifest are self-consistent",
     "S3: GitLeaseStore transition validation accepts a new submission_resolution only if the whole transition exactly equals canonical clear_guard(previous, persisted terminal observation/evidence), and guard clearing without the resolution is rejected",
     "S3: truthful liveness still fences only unresolved current-generation submissions; exact terminal-resolved checkpointed orphan remains recoverable with authorizes_takeover=false",
-    "Fleet Supervisor/watchdog effect fencing and adoption no-replay behavior remain intact"
+    "Fleet Supervisor/watchdog effect fencing and adoption no-replay behavior remain intact",
+    "Quality: managed lease acquire/release CAS-to-local-marker crash windows reconcile from authoritative first-parent Git history without replay.",
+    "Quality: ambiguous acquire outcomes are reconciled before terminal abort; a live acquisition cannot be falsely classified as absent.",
+    "Quality: GitLeaseStore rejects new legacy-v1 ownership, requires verified managed capability for v2 ownership transitions, and accepts v2 release only as canonical transactional release.",
+    "Quality: canonical release regression uses distinct scope-completion evidence; legacy v1 concurrent claimants are expected to remain fail-closed."
   ],
   "scheduler_state": "Owner-paused; zero scheduler mutations",
   "release_ref": null,
@@ -76,16 +85,17 @@
   "runtime_acceptance": {
     "backend": "real local Git/process fixtures plus hosted GitHub Actions; scheduler effects only through recording/test backends",
     "observed": [
-      "spoofed managed direct API and CLI acquisition rejection",
-      "real package-managed worker capability -> lease acquire -> terminal hold -> transactional release receipt -> historical readback",
-      "authoritative migration assembly record/history and caller-regenerated stale-manifest rejection",
-      "fabricated raw-CAS submission-resolution rejection and canonical terminal reconciliation",
-      "two-subscription Fleet leader/effect fencing",
-      "942/942 full candidate tests plus three archived consumer snapshots"
+      "37/37 independent bootstrap",
+      "331-file package validator",
+      "950/950 full candidate tests",
+      "3/3 archived consumer compatibility snapshots",
+      "real managed process terminal-hold acquire/release crash recovery",
+      "lease-store raw-CAS acquisition/release fencing",
+      "Fleet leader/effect fencing and atomic consumer adoption/no-replay regressions"
     ],
     "limits": [
-      "Fresh independent Stage 1 re-review was explicitly waived once by the owner for this exact candidate; historical RED is not relabeled GREEN.",
-      "Independent Stage 2 code-quality review is still required.",
+      "Fresh independent Stage 1 re-review is waived once by owner for this exact quality-hardened candidate; historical RED is not relabeled GREEN.",
+      "Independent Stage 2 code-quality review is still required and no reviewer artifact is available.",
       "No live scheduler mutation; owner pause remains authoritative.",
       "No live consumer deployment is implied."
     ]
