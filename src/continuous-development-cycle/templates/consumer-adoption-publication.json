@@ -3,6 +3,8 @@
   "source_head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "target_ref": "refs/heads/main",
   "target_version": "2.11.3",
+  "target_release_ref": "refs/heads/release/v2.11.3",
+  "target_release_commit": "9999999999999999999999999999999999999999",
   "target_package_tree": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "required_paths": [
     ".agents/skills/continuous-development-cycle",
@@ -12,6 +14,33 @@
     "docs/cdc-adoption-2.11.3.md"
   ],
   "prepared_paths": [],
+  "assembly_manifest": [
+    {
+      "path": ".agents/skills/continuous-development-cycle",
+      "object_type": "tree",
+      "object_sha1": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    {
+      "path": "docs/cdc-consumer-lock.json",
+      "object_type": "blob",
+      "object_sha1": "0000000000000000000000000000000000000002"
+    },
+    {
+      "path": "docs/development-cycle.yaml",
+      "object_type": "blob",
+      "object_sha1": "0000000000000000000000000000000000000003"
+    },
+    {
+      "path": "docs/work-status/current.md",
+      "object_type": "blob",
+      "object_sha1": "0000000000000000000000000000000000000004"
+    },
+    {
+      "path": "docs/cdc-adoption-2.11.3.md",
+      "object_type": "blob",
+      "object_sha1": "0000000000000000000000000000000000000005"
+    }
+  ],
   "final_tree_sha": null,
   "observed_package_tree": null,
   "candidate_commit": null,
