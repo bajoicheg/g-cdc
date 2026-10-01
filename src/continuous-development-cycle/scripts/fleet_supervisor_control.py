@@ -119,6 +119,11 @@ def claim_effect_record(state,owner_id,generation,invocation_id,at,live_fleet_he
         if e["effect_id"]==effect_id:
             if e["intent_digest"]!=intent_digest:raise ValueError("derived fleet effect identity collision")
             return copy.deepcopy(state),{"action":"OBSERVE_EXISTING","authorizes_effect":False,"effect":copy.deepcopy(e)}
+    pending=[e for e in state["effects"]
+             if e["state"]!="terminal" and e["kind"]==request["kind"] and e["target"]==request["target"]]
+    if pending:
+        return copy.deepcopy(state),{"action":"OBSERVE_PENDING_CONFLICT","authorizes_effect":False,
+                                     "effect":copy.deepcopy(pending[0])}
     if request["observed_fleet_head"]!=live_fleet_head:
         return copy.deepcopy(state),{"action":"REPLAN_FLEET_HEAD","authorizes_effect":False,"effect":None}
     result=copy.deepcopy(state)
