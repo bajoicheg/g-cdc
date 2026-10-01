@@ -31,8 +31,13 @@ class RecordingSurvivability:
         self.continuation_required = continuation_required
         self.calls = []
 
-    def reconcile_registered(self, *, max_effects):
+    def reconcile_registered(self, *, max_effects, invocation_id=None, leader_binding=None):
         self.calls.append(max_effects)
+        if max_effects>0:
+            if not isinstance(invocation_id,str) or not invocation_id:
+                raise ValueError("invocation required")
+            if leader_binding is None:
+                raise ValueError("leader binding required")
         return {
             "schema": "watchdog-survivability-batch/v1",
             "registered_count": 1,
