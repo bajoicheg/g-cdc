@@ -285,8 +285,6 @@ def _validate_start(request):
         raise ValueError("managed host coordination refs must be isolated")
     if remote_identity(repo, remote) != plan["coordination_store_id"]:
         raise ValueError("managed host remote identity does not match plan")
-    if _remote_head(repo, remote, source_ref) != plan["base_sha"]:
-        raise ValueError("source HEAD drifted from managed host plan base")
     _task(plan, _text(request["task_id"], "task_id"))
     for name in ("attempt_id", "reservation_token", "lease_repository"):
         _text(request[name], name)
@@ -305,8 +303,23 @@ def _validate_start(request):
 
 def start(request):
     repo, journal_root, handle_root = _validate_start(request)
+    identity = {"repo_root": str(repo), "store": request["plan"]["coordination_store_id"],
+                "coordination_ref": request["plan"]["coordination_ref"],
+                "pool_id": request["plan"]["pool_id"], "task_id": request["task_id"],
+                "attempt_id": request["attempt_id"]}
+    handle_id = str(uuid.uuid5(uuid.NAMESPACE_URL, _canonical(identity)))
+    # This host-local lock serializes handle creation only; lease and shared
+    # publication authority still come exclusively from their Git CAS stores.
+    import fcntl
+    lock_path = handle_root / "locks" / (handle_id + ".lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        return _start_locked(request, repo, journal_root, handle_root, handle_id)
+
+
+def _start_locked(request, repo, journal_root, handle_root, handle_id):
     plan = copy.deepcopy(request["plan"])
-    handle_id = str(uuid.uuid4())
     publication_ref = "refs/heads/cdc/managed-host-publish-" + handle_id.replace("-", "")
     gate_directory = (handle_root / "gates" / handle_id).resolve()
     session = {
@@ -340,6 +353,23 @@ def start(request):
         "final_response_gate": None,
     }
     session["context_digest"] = _digest(_session_context(session))
+    resume_queued = False
+    path = _session_path(handle_root, handle_id)
+    if path.exists():
+        existing = _load_session(handle_root, handle_id)
+        if existing["context_digest"] != session["context_digest"]:
+            raise ValueError("managed host repeated attempt has conflicting immutable context")
+        _, prior_pool = _runtime(existing).store.read()
+        prior_task = next((row for row in prior_pool["tasks"] if row["id"] == existing["task_id"]), None) if prior_pool else None
+        resume_queued = bool(prior_task and prior_task["status"] == "queued"
+                             and prior_task["active_attempt_id"] == existing["attempt_id"])
+        attempted = bool(prior_task and existing["attempt_id"] in prior_task["attempt_ids"])
+        if existing["state"] != "prepared" or (attempted and not resume_queued):
+            recovered, _, _ = _recover_session(handle_root, handle_id)
+            return _public_handle(recovered)
+        session = existing
+    if _remote_head(repo, request["remote"], request["lease_source_ref"]) != plan["base_sha"]:
+        raise ValueError("source HEAD drifted from managed host plan base")
     _save_session(session)
 
     gate = _gate_paths(session)
@@ -367,7 +397,8 @@ def start(request):
         sys.executable, "-B", str(Path(__file__).resolve()),
         "--worker-gate", str(gate["payload"]),
     ]
-    observation = runtime.start(
+    launch = runtime.start_queued if resume_queued else runtime.start
+    observation = launch(
         store_revision, request["task_id"], request["attempt_id"],
         reservation_token=request["reservation_token"], argv=wrapped,
     )

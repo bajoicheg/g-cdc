@@ -314,6 +314,56 @@ subprocess.run(['git','commit','-qm','managed closure'],check=True)
                 self.assertEqual(self.lease_store.read()[0], revision)
         self.assertTrue(bridge.finish(self.finish_request(handle))["final_response_allowed"])
 
+    def test_repeated_exact_start_recovers_original_handle_after_publication(self):
+        request = self.start_request()
+        handle = bridge.start(request)
+        repeated = bridge.start(request)
+        self.assertEqual(repeated["handle_id"], handle["handle_id"])
+        self.assertEqual(len(list((self.root / "handles").glob("*.json"))), 1)
+        self.wait_for(handle, "awaiting_release")
+        finished = bridge.finish(self.finish_request(handle))
+        repeated = bridge.start(request)
+        self.assertEqual(repeated["handle_id"], handle["handle_id"])
+        self.assertEqual(repeated["state"], "released")
+        self.assertEqual(self.remote_head(), finished["published_commit"])
+        self.assertEqual(len(list((self.root / "journal").glob("**/launch.lock"))), 1)
+
+    def test_repeated_attempt_rejects_conflicting_immutable_request(self):
+        request = self.start_request()
+        handle = bridge.start(request)
+        for field, value in (("argv", [sys.executable, "-c", "raise SystemExit(9)"]),
+                             ("owner_id", "88888888-8888-4888-8888-888888888888")):
+            with self.subTest(field=field):
+                changed = {**request, field: value}
+                with self.assertRaisesRegex(ValueError, "immutable"):
+                    bridge.start(changed)
+        self.assertEqual(len(list((self.root / "handles").glob("*.json"))), 1)
+        self.wait_for(handle, "awaiting_release")
+        self.assertTrue(bridge.finish(self.finish_request(handle))["final_response_allowed"])
+
+    def test_repeated_start_resumes_prepared_request_before_launch(self):
+        request = self.start_request()
+        with patch.object(bridge.ManagedExecutorRuntime, "start", side_effect=RuntimeError("before launch")):
+            with self.assertRaisesRegex(RuntimeError, "before launch"):
+                bridge.start(request)
+        original_id = next((self.root / "handles").glob("*.json")).stem
+        handle = bridge.start(request)
+        self.assertEqual(handle["handle_id"], original_id)
+        self.wait_for(handle, "awaiting_release")
+        self.assertTrue(bridge.finish(self.finish_request(handle))["final_response_allowed"])
+
+    def test_repeated_start_resumes_unconsumed_queue_without_new_attempt(self):
+        request = self.start_request()
+        with patch.object(bridge.ManagedExecutorRuntime, "start_queued", side_effect=RuntimeError("before claim")):
+            with self.assertRaisesRegex(RuntimeError, "before claim"):
+                bridge.start(request)
+        original_id = next((self.root / "handles").glob("*.json")).stem
+        handle = bridge.start(request)
+        self.assertEqual(handle["handle_id"], original_id)
+        self.wait_for(handle, "awaiting_release")
+        self.assertTrue(bridge.finish(self.finish_request(handle))["final_response_allowed"])
+        self.assertEqual(len(list((self.root / "journal").glob("**/launch.lock"))), 1)
+
     def test_crash_after_release_before_session_save_finishes_on_retry(self):
         handle = bridge.start(self.start_request())
         self.wait_for(handle, "awaiting_release")

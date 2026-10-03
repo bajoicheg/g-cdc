@@ -105,7 +105,7 @@ class RuntimeTests(unittest.TestCase):
         code = '''import json, pathlib, subprocess, time, sys
 p=pathlib.Path("src")/sys.argv[1]; p.mkdir(parents=True)
 start=time.monotonic()
-if sys.argv[4]:
+if sys.argv[4] != "-":
     barrier=pathlib.Path(sys.argv[4])
     barrier.with_name(barrier.name+"."+sys.argv[1]+".ready").touch()
     while not barrier.exists(): time.sleep(.01)
@@ -116,7 +116,7 @@ subprocess.run(["git","add",str(p)],check=True)
 subprocess.run(["git","commit","-qm","worker result"],check=True)
 '''
         return [sys.executable, "-c", code, task, str(delay), "fail" if fail else "ok",
-                str(barrier) if barrier is not None else ""]
+                str(barrier) if barrier is not None else "-"]
 
     def launch(self, task="a", argv=None):
         rev, _ = self.store.read()

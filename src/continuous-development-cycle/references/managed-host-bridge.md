@@ -8,7 +8,7 @@ The safety rule from 2.11.3 does not change: ordinary ChatGPT/Work/Codex/watchdo
 
 The initial local transport exposes four JSON actions:
 
-- `start` — validate exact repo/remote/source HEAD and pool plan; create a gated isolated worker; acquire the managed project lease; only then release the worker gate and return `managed-host-handle/v1`.
+- `start` — validate exact repo/remote/source HEAD and pool plan; create a gated isolated worker; acquire the managed project lease; only then release the worker gate and return `managed-host-handle/v1`. An exact repeated request returns the same durable handle, including after publication; conflicting immutable request context is rejected. An unconsumed queued reservation resumes through the runtime without creating a new attempt.
 - `observe` — observe the exact task/attempt/launch and live lease without launching anything.
 - `cancel` — request cancellation of that exact worker. Cancellation acknowledgement is not release; call `finish` once the exact worker reaches the managed terminal hold.
 - `finish` — validate the checkpoint and required output/evidence references before recovery, lease mutation or publication. For a successful writer in `awaiting_release`, verify exact branch/result ancestry and portable write scope, conditionally publish the result to the exact observed source HEAD using a durable publication journal, transactionally finalize/release the managed lease, wait for supervisor quiescence, accept/integrate the pool result, and run the exact release-receipt final-response gate. Failed, cancelled and timed-out workers use the same transactional release without publishing or accepting a successful result; their response reports `scope_complete=false` and a resumable BLOCKED boundary.
