@@ -10,8 +10,8 @@ The initial local transport exposes four JSON actions:
 
 - `start` — validate exact repo/remote/source HEAD and pool plan; create a gated isolated worker; acquire the managed project lease; only then release the worker gate and return `managed-host-handle/v1`.
 - `observe` — observe the exact task/attempt/launch and live lease without launching anything.
-- `cancel` — request cancellation of that exact worker. Cancellation acknowledgement is not release; the managed terminal hold remains until a normal terminal finalization path is supplied.
-- `finish` — for a successful writer in `awaiting_release`, verify exact branch/result ancestry and portable write scope, conditionally publish the result to the exact observed source HEAD using a durable publication journal, transactionally finalize/release the managed lease, wait for supervisor quiescence, accept/integrate the pool result, and run the exact release-receipt final-response gate.
+- `cancel` — request cancellation of that exact worker. Cancellation acknowledgement is not release; call `finish` once the exact worker reaches the managed terminal hold.
+- `finish` — validate the checkpoint and required output/evidence references before recovery, lease mutation or publication. For a successful writer in `awaiting_release`, verify exact branch/result ancestry and portable write scope, conditionally publish the result to the exact observed source HEAD using a durable publication journal, transactionally finalize/release the managed lease, wait for supervisor quiescence, accept/integrate the pool result, and run the exact release-receipt final-response gate. Failed, cancelled and timed-out workers use the same transactional release without publishing or accepting a successful result; their response reports `scope_complete=false` and a resumable BLOCKED boundary.
 
 A ChatGPT plugin, Work adapter, scheduler adapter or other host service can wrap these same actions. The package contains no claim that such a host transport is installed merely because the script exists.
 
@@ -19,13 +19,15 @@ A ChatGPT plugin, Work adapter, scheduler adapter or other host service can wrap
 
 `start` does not race a fast worker against lease acquisition. The runtime first launches a package-owned worker-gate process. That process remains live while `ManagedExecutorRuntime.acquire_execution_lease()` issues and revalidates the managed-terminal capability. The real task argv is released only after durable ownership has been persisted. If acquisition fails, the gate aborts without executing the task.
 
+An initially unknown launch, or a controller crash after launch before its reply is saved, is observed through its exact consumed attempt; when that same gated supervisor becomes live, recovery rechecks the source HEAD and resumes managed lease acquisition without launching another process.
+
 The gate state and runtime journals are outside the product tree. A controller restart uses the durable handle plus the runtime's terminal-hold markers to recover exact ownership; it never creates a replacement launch.
 
 ## Publication
 
 The v1 bridge is intentionally a single-writer fast-forward path. The worker changes only its isolated assigned branch/worktree. `finish` derives the result from that exact branch, reuses the managed-pool full-history write-set verifier, checks a fresh managed lease, and invokes `GitLaneIntegrationPublisher` with a dedicated GitDocumentStore publication-attempt journal. Only `conditional_update=true` evidence is accepted. A same-byte readback without the original durable publication attempt is not enough.
 
-The bridge then runs `active -> draining -> checkpointed -> reconciled -> ready -> release` and records the immutable `execution-release-receipt/v1`. The worker supervisor does not become quiescent before the release marker exists.
+The bridge then runs `active -> draining -> checkpointed -> reconciled -> ready -> release` and records the immutable `execution-release-receipt/v1`. The worker supervisor does not become quiescent before the release marker exists. If the controller dies after the authoritative release CAS, recovery repairs the supervisor marker from exact lease history and completes pool acceptance before reporting completion.
 
 ## Host authorization
 

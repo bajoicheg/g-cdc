@@ -429,7 +429,43 @@ def _recover_session(handle_root, handle_id):
         except ValueError as exc:
             if "hold marker missing" not in str(exc) and "intent missing" not in str(exc):
                 raise
-            return session, runtime, lease_store
+            gate = _gate_paths(session)
+            if session["state"] not in {"prepared", "start_unknown"} or gate["abort"].exists():
+                return session, runtime, lease_store
+            # A lost start reply is not a second start grant. Observe the exact
+            # consumed attempt; only its now-live gated supervisor can obtain
+            # the normal non-serializable managed terminal capability.
+            observation = runtime.observe(session["task_id"], session["attempt_id"])
+            if observation.get("status") not in {"starting", "running"}:
+                if observation.get("quiescent") is True:
+                    session["state"] = "terminal_without_lease"
+                    _save_session(session)
+                return session, runtime, lease_store
+            session["runtime_launch_id"] = observation.get("launch_id")
+            try:
+                if _remote_head(session["repo_root"], session["remote"], session["lease_source_ref"]) != session["plan"]["base_sha"]:
+                    raise ValueError("source HEAD drifted before unknown-start recovery")
+                lease_revision, record = lease_store.read()
+                if lease_revision is None or record is None:
+                    raise ValueError("managed host project lease coordination is absent")
+                acquired = runtime.acquire_execution_lease(
+                    lease_store, lease_revision, session["lease_repository"],
+                    session["lease_source_ref"], session["owner_id"], session["task_id"],
+                    session["attempt_id"], _utc(),
+                )
+            except Exception:
+                _write(gate["abort"], {"reason": "unknown-start managed acquisition failed"})
+                session["state"] = "lease_acquire_failed"
+                _save_session(session)
+                raise
+            session.update(state="owned", lease_revision=acquired["revision"],
+                           generation=acquired["generation"],
+                           invocation_id=acquired["invocation"]["invocation_id"],
+                           terminal_capability_ref=acquired["terminal_capability_ref"])
+            _save_session(session)
+            recovered = {"status": "owned", "owned_marker": {
+                "owner_id": session["owner_id"], "generation": session["generation"],
+                "invocation_id": session["invocation_id"], "lease_revision": session["lease_revision"]}}
         if recovered["status"] == "owned":
             owned = recovered["owned_marker"]
             _, current = lease_store.read()
@@ -446,8 +482,8 @@ def _recover_session(handle_root, handle_id):
         elif recovered["status"] == "released":
             session.update(
                 state="released",
-                generation=recovered["owned_marker"]["generation"],
-                invocation_id=recovered["owned_marker"]["invocation_id"],
+                generation=recovered["release_marker"]["generation"],
+                invocation_id=recovered["release_marker"]["invocation_id"],
                 lease_revision=recovered["release_marker"]["lease_revision"],
                 release_receipt=recovered["release_marker"]["release_receipt"],
             )
@@ -480,6 +516,13 @@ def _recover_session(handle_root, handle_id):
             except ValueError:
                 released = None
             if released is not None:
+                # The authoritative release CAS may have succeeded before the
+                # controller saved the supervisor marker. Repair that marker
+                # from exact lease history before waiting for quiescence.
+                recovered = runtime.reconcile_execution_lease_hold(
+                    lease_store, session["task_id"], session["attempt_id"])
+                if recovered["status"] != "released":
+                    raise ValueError("managed host runtime release is not reconciled")
                 session.update(
                     state="released",
                     lease_revision=released["release_receipt"]["lease_revision"],
@@ -553,6 +596,8 @@ def _result(session, runtime):
     request = runtime._request(session["task_id"], session["attempt_id"])
     if request is None:
         raise ValueError("managed host worker request is unavailable")
+    if _git(request["cwd"], "status", "--porcelain", "--untracked-files=all")[0]:
+        raise ValueError("worker worktree must be clean before publication")
     branch = task["branch"]
     branch_ref = branch if branch.startswith("refs/heads/") else "refs/heads/" + branch
     result_commit, code = _git(request["cwd"], "rev-parse", "--verify", branch_ref, check=False)
@@ -615,10 +660,9 @@ def _publish(session, result_commit):
 
 def _continuity(session, result_commit, checkpoint_ref, publication, *, released):
     progress = ["git:" + result_commit]
-    completion = [
-        "managed-host:worker:" + str(session["runtime_launch_id"]),
-        "managed-host:publication:" + publication["evidence_ref"],
-    ]
+    completion = ["managed-host:worker:" + str(session["runtime_launch_id"])]
+    if publication is not None:
+        completion.append("managed-host:publication:" + publication["evidence_ref"])
     terminal = {
         "schema": "terminal-state/v2",
         "invocation_id": session["invocation_id"],
@@ -633,7 +677,7 @@ def _continuity(session, result_commit, checkpoint_ref, publication, *, released
         "checkpoint_ref": checkpoint_ref,
         "lease_released": released,
     }
-    return {
+    continuity = {
         "schema": "execution-continuity/v1",
         "invocation_id": session["invocation_id"],
         "current_state": "CHECKPOINT",
@@ -649,6 +693,26 @@ def _continuity(session, result_commit, checkpoint_ref, publication, *, released
         "lease_released": released,
         "terminal_state": terminal,
     }
+    if publication is None:
+        # A failed attempt is resumable, never project-scope completion. The
+        # exact supervisor still holds the lease until this BLOCKED transaction
+        # has persisted the terminal observation and release receipt.
+        status = session["worker_status"]
+        dependency = "managed-host-worker-" + status
+        evidence = ["managed-host:terminal:" + str(session["runtime_launch_id"]) + ":" + status]
+        next_action = "Diagnose the " + status + " worker and authorize the next exact attempt"
+        trigger = "host supplies a corrected or explicitly retried managed attempt"
+        blocker = {"code": dependency, "evidence_refs": evidence,
+                   "next_action": next_action, "recheck_trigger": trigger}
+        terminal.update(decision="BLOCKED", completion_evidence_refs=[], blocker=blocker)
+        continuity.update(requested_terminal_outcome="blocked", blocker=dependency,
+                          next_action=next_action,
+                          blocker_proof={"schema": "blocked-state-proof/v1",
+                                         "dependency_id": dependency, "category": "worker_terminal",
+                                         "observed_at_utc": _utc(), "max_age_seconds": 120,
+                                         "evidence_refs": evidence, "next_action": next_action,
+                                         "recheck_trigger": trigger, "same_invocation_work_exhausted": True})
+    return continuity
 
 
 def _finalize_release(session, runtime, lease_store, result_commit, checkpoint_ref, publication):
@@ -663,28 +727,34 @@ def _finalize_release(session, runtime, lease_store, result_commit, checkpoint_r
         return recovered["release_marker"]["release_receipt"]
 
     at = _utc()
-    record = leasev2.begin_finalization(
-        record, session["owner_id"], session["generation"], session["invocation_id"], at,
-        pending_shared_writes=False,
-    )
-    revision = lease_store.compare_and_swap(revision, record)
-    record = leasev2.record_checkpoint(
-        record, session["owner_id"], session["generation"], session["invocation_id"], _utc(),
-        checkpoint_ref=checkpoint_ref, pending_shared_writes=False,
-    )
-    revision = lease_store.compare_and_swap(revision, record)
-    record = leasev2.reconcile_finalization(
-        record, session["owner_id"], session["generation"], session["invocation_id"], _utc(),
-        external_reconciliation="none",
-    )
-    revision = lease_store.compare_and_swap(revision, record)
-    continuity = _continuity(
-        session, result_commit, checkpoint_ref, publication, released=False)
-    record = leasev2.mark_ready(
-        record, session["owner_id"], session["generation"], session["invocation_id"], _utc(),
-        continuity_state=continuity,
-    )
-    revision = lease_store.compare_and_swap(revision, record)
+    if record["finalization"]["state"] in {"active", "failed"}:
+        record = leasev2.begin_finalization(
+            record, session["owner_id"], session["generation"], session["invocation_id"], at,
+            pending_shared_writes=False,
+        )
+        revision = lease_store.compare_and_swap(revision, record)
+    if record["finalization"]["state"] == "draining":
+        record = leasev2.record_checkpoint(
+            record, session["owner_id"], session["generation"], session["invocation_id"], _utc(),
+            checkpoint_ref=checkpoint_ref, pending_shared_writes=False,
+        )
+        revision = lease_store.compare_and_swap(revision, record)
+    if record["finalization"]["checkpoint_ref"] != checkpoint_ref:
+        raise ValueError("managed host retry checkpoint does not match finalization")
+    if record["finalization"]["state"] == "checkpointed":
+        record = leasev2.reconcile_finalization(
+            record, session["owner_id"], session["generation"], session["invocation_id"], _utc(),
+            external_reconciliation="none",
+        )
+        revision = lease_store.compare_and_swap(revision, record)
+    if record["finalization"]["state"] == "reconciled":
+        continuity = _continuity(
+            session, result_commit, checkpoint_ref, publication, released=False)
+        record = leasev2.mark_ready(
+            record, session["owner_id"], session["generation"], session["invocation_id"], _utc(),
+            continuity_state=continuity,
+        )
+        revision = lease_store.compare_and_swap(revision, record)
     released = runtime.release_execution_lease(
         lease_store, revision, session["lease_repository"], session["lease_source_ref"],
         session["owner_id"], session["generation"], session["invocation_id"],
@@ -738,25 +808,44 @@ def finish(request):
         raise ValueError("managed host finish request fields/schema mismatch")
     output_refs = _refs(request["output_refs"], "output_refs")
     evidence_refs = _refs(request["evidence_refs"], "evidence_refs")
+    if request["checkpoint_ref"] is not None:
+        _text(request["checkpoint_ref"], "checkpoint_ref")
+    session = _load_session(request["handle_root"], request["handle_id"])
+    task = _task(session["plan"], session["task_id"])
+    if not set(task["expected_outputs"]) <= set(output_refs):
+        raise ValueError("worker result missing expected outputs")
+    if not set(task["expected_evidence"]) <= set(evidence_refs):
+        raise ValueError("worker result missing expected evidence")
     session, runtime, lease_store = _recover_session(request["handle_root"], request["handle_id"])
-    if session.get("release_receipt") is not None and session.get("final_response_gate", {}).get("final_response_allowed") is True:
+    if session.get("release_receipt") is not None and (session.get("final_response_gate") or {}).get("final_response_allowed") is True:
         return {
             **_public_handle(session),
-            "published_commit": session["result_commit"],
+            "published_commit": session["result_commit"] if session.get("publication") is not None else None,
             "release_receipt": session["release_receipt"],
             "final_response_allowed": True,
+            "worker_status": session.get("worker_status", "succeeded"),
+            "scope_complete": session.get("worker_status", "succeeded") == "succeeded",
         }
 
     observation = runtime.observe(session["task_id"], session["attempt_id"])
     if session.get("release_receipt") is None:
-        if observation.get("status") != "awaiting_release" or observation.get("pending_terminal_status") != "succeeded":
-            raise ValueError("managed host finish requires a successful worker awaiting managed lease release")
-        _renew_for_result(session, lease_store, observation)
-        result_commit, changed_paths, _ = _result(session, runtime)
-        publication = _publish(session, result_commit)
-        checkpoint_ref = request["checkpoint_ref"] or (
-            "git:" + session["lease_source_ref"] + "@" + result_commit
-        )
+        status = observation.get("pending_terminal_status")
+        if observation.get("status") != "awaiting_release" or status not in {"succeeded", "failed", "cancelled", "timed_out"}:
+            raise ValueError("managed host finish requires a terminal worker awaiting managed lease release")
+        session["worker_status"] = status
+        if status == "succeeded":
+            if session.get("publication") is None:
+                _renew_for_result(session, lease_store, observation)
+                result_commit, changed_paths, _ = _result(session, runtime)
+                publication = _publish(session, result_commit)
+            else:
+                result_commit, publication = session["result_commit"], session["publication"]
+            default_checkpoint = "git:" + session["lease_source_ref"] + "@" + result_commit
+        else:
+            result_commit, publication = session["plan"]["base_sha"], None
+            default_checkpoint = "managed-host:terminal:" + session["handle_id"] + ":" + status
+            session["terminal_observation"] = observation
+        checkpoint_ref = request["checkpoint_ref"] if request["checkpoint_ref"] is not None else default_checkpoint
         _text(checkpoint_ref, "checkpoint_ref")
         session.update(
             state="published",
@@ -779,9 +868,11 @@ def finish(request):
         release_receipt = session["release_receipt"]
 
     terminal = _wait_terminal(runtime, session)
-    if terminal.get("status") != "succeeded":
-        raise ValueError("managed host worker did not terminate successfully after release")
-    _complete_pool(session, runtime, result_commit, output_refs, evidence_refs)
+    status = session.get("worker_status", "succeeded")
+    if terminal.get("status") != status:
+        raise ValueError("managed host worker terminal status changed after release")
+    if status == "succeeded":
+        _complete_pool(session, runtime, result_commit, output_refs, evidence_refs)
 
     current_revision, current_lease = lease_store.read()
     release_record = lease_store.read_revision(release_receipt["lease_revision"])
@@ -798,11 +889,13 @@ def finish(request):
     _save_session(session)
     return {
         **_public_handle(session),
-        "published_commit": result_commit,
+        "published_commit": result_commit if publication is not None else None,
         "changed_paths": changed_paths if "changed_paths" in locals() else None,
         "release_receipt": release_receipt,
         "current_lease_revision": current_revision,
         "final_response_allowed": True,
+        "worker_status": status,
+        "scope_complete": status == "succeeded",
     }
 
 
