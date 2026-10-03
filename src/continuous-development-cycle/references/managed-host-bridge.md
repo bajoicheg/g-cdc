@@ -25,6 +25,10 @@ The gate state and runtime journals are outside the product tree. A controller r
 
 ## Publication
 
+`remote` identifies the source publication endpoint. To keep operational state in a private repository, supply both `coordination_remote` (a separately configured Git remote) and `source_remote_id` (the pinned source endpoint identity). The pool plan's `coordination_store_id` pins the private endpoint. Lease, pool and publication-attempt refs use only that coordination remote; source HEAD checks and exact-head publication use only `remote`. Both identities are immutable handle context and are checked before start, recovery and publication. Supplying only one of the new fields is rejected. Existing single-remote requests and durable sessions retain their previous binding.
+
+The host must verify actual Git write authorization for both repositories before execution. Account-level repository permission metadata does not prove that a Codespace credential has the required scope. Additional repository access must be explicitly granted by the owner; the bridge neither widens permissions nor creates credentials.
+
 The v1 bridge is intentionally a single-writer fast-forward path. The worker changes only its isolated assigned branch/worktree. `finish` derives the result from that exact branch, reuses the managed-pool full-history write-set verifier, checks a fresh managed lease, and invokes `GitLaneIntegrationPublisher` with a dedicated GitDocumentStore publication-attempt journal. Only `conditional_update=true` evidence is accepted. A same-byte readback without the original durable publication attempt is not enough.
 
 The bridge then runs `active -> draining -> checkpointed -> reconciled -> ready -> release` and records the immutable `execution-release-receipt/v1`. The worker supervisor does not become quiescent before the release marker exists. If the controller dies after the authoritative release CAS, recovery repairs the supervisor marker from exact lease history and completes pool acceptance before reporting completion.

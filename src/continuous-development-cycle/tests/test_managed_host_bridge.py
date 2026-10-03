@@ -153,6 +153,83 @@ subprocess.run(['git','commit','-qm','managed closure'],check=True)
         ).strip()
         return row.split("\t", 1)[0]
 
+    def split_request(self):
+        private = self.root / "private.git"
+        subprocess.run(["git", "init", "--bare", "-q", str(private)], check=True)
+        self.git("remote", "add", "control", str(private))
+        GitLeaseStore(self.repo, "control", "refs/heads/cdc/lease").compare_and_swap(
+            None, leasev2.initialize("test/project", "refs/heads/main"))
+        # The public source must have no control-plane refs.
+        self.git("push", "-q", "origin", ":refs/heads/cdc/lease")
+        self.plan["coordination_store_id"] = coordination_store_id_for_endpoint(
+            str(private), repo_root=self.repo)
+        request = self.start_request()
+        request.update(coordination_remote="control", source_remote_id=self.store_id)
+        return request, private
+
+    def test_split_routes_publish_source_and_keep_control_state_private(self):
+        request, private = self.split_request()
+        handle = bridge.start(request)
+        self.wait_for(handle, "awaiting_release")
+        finished = bridge.finish(self.finish_request(handle))
+        self.assertEqual(finished["state"], "released")
+        self.assertTrue(finished["final_response_allowed"])
+        self.assertEqual(self.remote_head(), finished["published_commit"])
+        public_refs = subprocess.check_output(
+            ["git", "--git-dir", str(self.remote), "for-each-ref", "--format=%(refname)"], text=True).splitlines()
+        self.assertEqual(public_refs, ["refs/heads/main"])
+        private_refs = subprocess.check_output(
+            ["git", "--git-dir", str(private), "for-each-ref", "--format=%(refname)"], text=True).splitlines()
+        self.assertIn("refs/heads/cdc/lease", private_refs)
+        self.assertIn(self.plan["coordination_ref"], private_refs)
+        self.assertIn(handle["publication_ref"], private_refs)
+
+    def test_split_routes_reject_source_identity_mismatch_before_effects(self):
+        request, private = self.split_request()
+        request["source_remote_id"] = self.plan["coordination_store_id"]
+        with self.assertRaisesRegex(ValueError, "source.*identity"):
+            bridge.start(request)
+        self.assertFalse((self.root / "journal").exists())
+
+    def test_split_routes_recovery_rejects_private_identity_drift(self):
+        request, private = self.split_request()
+        handle = bridge.start(request)
+        self.wait_for(handle, "awaiting_release")
+        self.git("remote", "set-url", "control", str(self.remote))
+        with self.assertRaisesRegex(ValueError, "identity"):
+            bridge.finish(self.finish_request(handle))
+        self.assertEqual(self.remote_head(), self.base)
+
+    def test_split_routes_recovery_rejects_source_identity_drift(self):
+        request, private = self.split_request()
+        handle = bridge.start(request)
+        self.wait_for(handle, "awaiting_release")
+        self.git("remote", "set-url", "origin", str(private))
+        with self.assertRaisesRegex(ValueError, "identity"):
+            bridge.finish(self.finish_request(handle))
+
+    def test_split_routes_require_both_explicit_binding_fields(self):
+        request, _ = self.split_request()
+        for missing in ("source_remote_id", "coordination_remote"):
+            incomplete = dict(request)
+            del incomplete[missing]
+            with self.assertRaisesRegex(ValueError, "fields/schema"):
+                bridge.start(incomplete)
+        self.assertFalse((self.root / "journal").exists())
+
+    def test_split_routes_repeat_rejects_changed_source_binding(self):
+        request, _ = self.split_request()
+        handle = bridge.start(request)
+        self.wait_for(handle, "awaiting_release")
+        other = self.root / "other.git"
+        subprocess.run(["git", "clone", "--bare", "-q", str(self.remote), str(other)], check=True)
+        self.git("remote", "set-url", "origin", str(other))
+        request["source_remote_id"] = coordination_store_id_for_endpoint(str(other), repo_root=self.repo)
+        with self.assertRaisesRegex(ValueError, "conflicting immutable"):
+            bridge.start(request)
+        self.git("remote", "set-url", "origin", str(self.remote))
+        self.assertEqual(bridge.finish(self.finish_request(handle))["state"], "released")
+
     def test_start_holds_exact_managed_lease_then_finish_publishes_and_releases(self):
         handle = bridge.start(self.start_request())
         self.assertEqual(handle["schema"], "managed-host-handle/v1")

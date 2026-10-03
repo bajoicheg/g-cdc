@@ -169,7 +169,22 @@ def _task(plan, task_id):
 
 
 def _session_context(session):
-    return {name: copy.deepcopy(session[name]) for name in _IMMUTABLE_SESSION_FIELDS}
+    context = {name: copy.deepcopy(session[name]) for name in _IMMUTABLE_SESSION_FIELDS}
+    for name in ("coordination_remote", "source_remote_id"):
+        if name in session:
+            context[name] = copy.deepcopy(session[name])
+    return context
+
+
+def _routes(session):
+    repo = session["repo_root"]
+    control = session.get("coordination_remote", session["remote"])
+    source_id = session.get("source_remote_id", session["plan"]["coordination_store_id"])
+    if remote_identity(repo, session["remote"]) != source_id:
+        raise ValueError("managed host source remote identity drift")
+    if remote_identity(repo, control) != session["plan"]["coordination_store_id"]:
+        raise ValueError("managed host coordination remote identity drift")
+    return control, source_id
 
 
 def _session_path(handle_root, handle_id):
@@ -206,8 +221,9 @@ def _load_session(handle_root, handle_id):
 
 def _runtime(session):
     repo = Path(session["repo_root"])
+    control, _ = _routes(session)
     store = GitManagedExecutorStore(
-        repo, session["remote"], session["plan"]["coordination_ref"], session["plan"],
+        repo, control, session["plan"]["coordination_ref"], session["plan"],
         protected_refs=[
             session["lease_source_ref"],
             session["lease_coordination_ref"],
@@ -221,8 +237,9 @@ def _runtime(session):
 
 
 def _lease_store(session):
+    control, _ = _routes(session)
     return GitLeaseStore(
-        session["repo_root"], session["remote"], session["lease_coordination_ref"]
+        session["repo_root"], control, session["lease_coordination_ref"]
     )
 
 
@@ -271,7 +288,9 @@ def _worker_gate(payload_path):
 
 
 def _validate_start(request):
-    if not isinstance(request, dict) or set(request) != _START_FIELDS or request.get("schema") != START_SCHEMA:
+    if (not isinstance(request, dict)
+            or set(request) not in (_START_FIELDS, _START_FIELDS | {"coordination_remote", "source_remote_id"})
+            or request.get("schema") != START_SCHEMA):
         raise ValueError("managed host start request fields/schema mismatch")
     plan = request["plan"]
     pool.validate_plan(plan)
@@ -283,8 +302,7 @@ def _validate_start(request):
     lease_ref = _heads_ref(request["lease_coordination_ref"], "lease_coordination_ref")
     if source_ref == lease_ref or plan["coordination_ref"] in {source_ref, lease_ref}:
         raise ValueError("managed host coordination refs must be isolated")
-    if remote_identity(repo, remote) != plan["coordination_store_id"]:
-        raise ValueError("managed host remote identity does not match plan")
+    _routes(request)
     _task(plan, _text(request["task_id"], "task_id"))
     for name in ("attempt_id", "reservation_token", "lease_repository"):
         _text(request[name], name)
@@ -352,6 +370,9 @@ def _start_locked(request, repo, journal_root, handle_root, handle_id):
         "release_receipt": None,
         "final_response_gate": None,
     }
+    if "coordination_remote" in request:
+        session.update(coordination_remote=request["coordination_remote"],
+                       source_remote_id=request["source_remote_id"])
     session["context_digest"] = _digest(_session_context(session))
     resume_queued = False
     path = _session_path(handle_root, handle_id)
@@ -381,8 +402,9 @@ def _start_locked(request, repo, journal_root, handle_root, handle_id):
         "abort_path": str(gate["abort"]),
     })
 
+    control, _ = _routes(session)
     store = GitManagedExecutorStore(
-        repo, request["remote"], plan["coordination_ref"], plan,
+        repo, control, plan["coordination_ref"], plan,
         protected_refs=[request["lease_source_ref"], request["lease_coordination_ref"], publication_ref],
     )
     store_revision, pool_state = store.read()
@@ -412,7 +434,7 @@ def _start_locked(request, repo, journal_root, handle_root, handle_id):
         _save_session(session)
         return _public_handle(session)
 
-    lease_store = GitLeaseStore(repo, request["remote"], request["lease_coordination_ref"])
+    lease_store = _lease_store(session)
     lease_revision, lease_record = lease_store.read()
     if lease_revision is None or lease_record is None:
         _write(gate["abort"], {"reason": "lease coordination absent"})
@@ -646,16 +668,18 @@ def _result(session, runtime):
 def _publish(session, result_commit):
     repo = Path(session["repo_root"])
     source_ref = session["lease_source_ref"]
+    control, source_id = _routes(session)
     publication_store = GitDocumentStore(
-        repo, session["remote"], session["publication_ref"],
+        repo, control, session["publication_ref"],
         session["plan"]["coordination_store_id"],
         protected_refs=[
             source_ref, session["lease_coordination_ref"], session["plan"]["coordination_ref"]
         ],
     )
     publisher = GitLaneIntegrationPublisher(
-        repo, session["remote"], source_ref, session["plan"]["coordination_store_id"],
+        repo, session["remote"], source_ref, source_id,
         attempt_store=publication_store,
+        attempt_store_id=session["plan"]["coordination_store_id"],
     )
     integrator = LaneClaim(
         lane_id="managed-host-integrator-" + session["handle_id"],
