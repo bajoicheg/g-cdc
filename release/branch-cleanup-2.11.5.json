@@ -1,0 +1,924 @@
+{
+  "minimum_supported_version": "2.11.3",
+  "deleted_refs": [
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.10.2-release-candidate",
+      "sha": "b5d2f7e8c25b6227d7cb64b7f0d56130bb555471",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:50:15.910746Z",
+      "confirmed_at_utc": "2026-10-04T21:50:22.960925Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11-roadmap",
+      "sha": "961315e807cca5e0767a28070b0deeb6f588d729",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:50:34.977795Z",
+      "confirmed_at_utc": "2026-10-04T21:50:42.364002Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.0-adversarial-final3",
+      "sha": "d7156fecca13ee9989c5241ee8fc834ba88e7d7d",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-final3",
+          "sha": "d7156fecca13ee9989c5241ee8fc834ba88e7d7d"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-final3",
+          "sha": "d7156fecca13ee9989c5241ee8fc834ba88e7d7d",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:50:54.576196Z",
+      "confirmed_at_utc": "2026-10-04T21:51:01.600080Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.0-adversarial-r7",
+      "sha": "8e9f0c7460e702d0fa7de499d495fd98dc44cf70",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r7",
+          "sha": "8e9f0c7460e702d0fa7de499d495fd98dc44cf70"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r7",
+          "sha": "8e9f0c7460e702d0fa7de499d495fd98dc44cf70",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:51:13.845799Z",
+      "confirmed_at_utc": "2026-10-04T21:51:21.086130Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.0-adversarial-r8",
+      "sha": "67868ece437901bfe47e68736a2ad35886fdbf41",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r8",
+          "sha": "67868ece437901bfe47e68736a2ad35886fdbf41"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r8",
+          "sha": "67868ece437901bfe47e68736a2ad35886fdbf41",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:51:33.057247Z",
+      "confirmed_at_utc": "2026-10-04T21:51:40.272462Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.0-adversarial-r9",
+      "sha": "4bdf962bcd916235f2ba09de126daa3ff03a6e86",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r9",
+          "sha": "4bdf962bcd916235f2ba09de126daa3ff03a6e86"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r9",
+          "sha": "4bdf962bcd916235f2ba09de126daa3ff03a6e86",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:51:52.416218Z",
+      "confirmed_at_utc": "2026-10-04T21:51:59.781891Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.0-adversarial-r9-final",
+      "sha": "2534003e85e4487c0161f72bfe3988d543c1f7e9",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r9-final",
+          "sha": "2534003e85e4487c0161f72bfe3988d543c1f7e9"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r9-final",
+          "sha": "2534003e85e4487c0161f72bfe3988d543c1f7e9",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:52:12.033098Z",
+      "confirmed_at_utc": "2026-10-04T21:52:19.062860Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.0-adversarial-r9-final2",
+      "sha": "40dba2d3778645d622e47f41e704c09dc1d2b8c5",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r9-final2",
+          "sha": "40dba2d3778645d622e47f41e704c09dc1d2b8c5"
+        },
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-only-final3",
+          "sha": "40dba2d3778645d622e47f41e704c09dc1d2b8c5"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r9-final2",
+          "sha": "40dba2d3778645d622e47f41e704c09dc1d2b8c5",
+          "method": "identical exact object"
+        },
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-only-final3",
+          "sha": "40dba2d3778645d622e47f41e704c09dc1d2b8c5",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:52:31.566782Z",
+      "confirmed_at_utc": "2026-10-04T21:52:38.577970Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.0-consumer-validation",
+      "sha": "eb9e0fee896efc80b139a8034900b4b9117d7ce2",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r2",
+          "sha": "eb9e0fee896efc80b139a8034900b4b9117d7ce2"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r2",
+          "sha": "eb9e0fee896efc80b139a8034900b4b9117d7ce2",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:52:50.753169Z",
+      "confirmed_at_utc": "2026-10-04T21:52:58.171247Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.0-consumer-validation-final3",
+      "sha": "da5c851ad4f7f8cee2144233f8fa99b9719b6a16",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-managed-executor-pool",
+          "sha": "da5c851ad4f7f8cee2144233f8fa99b9719b6a16"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-managed-executor-pool",
+          "sha": "da5c851ad4f7f8cee2144233f8fa99b9719b6a16",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:53:10.432878Z",
+      "confirmed_at_utc": "2026-10-04T21:53:17.280415Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.0-consumer-validation-r2",
+      "sha": "c5938e968aaa0eee4a47d8580ff53208f5e01d1a",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r3",
+          "sha": "c5938e968aaa0eee4a47d8580ff53208f5e01d1a"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r3",
+          "sha": "c5938e968aaa0eee4a47d8580ff53208f5e01d1a",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:53:29.489967Z",
+      "confirmed_at_utc": "2026-10-04T21:53:36.526309Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.0-delta-validation-r8",
+      "sha": "67868ece437901bfe47e68736a2ad35886fdbf41",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r8",
+          "sha": "67868ece437901bfe47e68736a2ad35886fdbf41"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r8",
+          "sha": "67868ece437901bfe47e68736a2ad35886fdbf41",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:53:48.818442Z",
+      "confirmed_at_utc": "2026-10-04T21:53:56.045111Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.0-source-review-r4",
+      "sha": "8b7948b7b16c43e12d3814dbdf4bc6d49f44ca99",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r4",
+          "sha": "8b7948b7b16c43e12d3814dbdf4bc6d49f44ca99"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r4",
+          "sha": "8b7948b7b16c43e12d3814dbdf4bc6d49f44ca99",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:54:08.057898Z",
+      "confirmed_at_utc": "2026-10-04T21:54:15.098511Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.0-source-review-r5",
+      "sha": "eb39425482a03e6c7a832963485a392eb1c083ff",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r5",
+          "sha": "eb39425482a03e6c7a832963485a392eb1c083ff"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r5",
+          "sha": "eb39425482a03e6c7a832963485a392eb1c083ff",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:54:27.323298Z",
+      "confirmed_at_utc": "2026-10-04T21:54:34.627772Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.0-source-review-r6",
+      "sha": "c79a912945168f35a52e984d5fb12f90dc38c8a4",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r6",
+          "sha": "c79a912945168f35a52e984d5fb12f90dc38c8a4"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/cdc/2.11.0-source-freeze-r6",
+          "sha": "c79a912945168f35a52e984d5fb12f90dc38c8a4",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:54:46.579800Z",
+      "confirmed_at_utc": "2026-10-04T21:54:53.676612Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.2-cooperative-lanes-implementation",
+      "sha": "0aaa656d3172fdf21b6ab3856a8d4153506ca8ba",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:55:05.672696Z",
+      "confirmed_at_utc": "2026-10-04T21:55:12.844292Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.2-spec-corrective-s1-s5-v2",
+      "sha": "0aaa656d3172fdf21b6ab3856a8d4153506ca8ba",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:55:24.678510Z",
+      "confirmed_at_utc": "2026-10-04T21:55:31.917732Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.2-spec-rereview-r1-remote-failure",
+      "sha": "ce5adede534ff760dbc41d99fcd985fb8b71a4be",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:55:43.866510Z",
+      "confirmed_at_utc": "2026-10-04T21:55:50.919893Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/2.11.4-managed-host-bridge",
+      "sha": "282e711c94f5a8eb8ba3d6a0ac8448b5ea0d3caa",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:56:02.795651Z",
+      "confirmed_at_utc": "2026-10-04T21:56:09.947135Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/managed-execution-recovery-2.11.0",
+      "sha": "92c7f1cd96f621ace887d3197f0635dc965618ee",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:56:21.958544Z",
+      "confirmed_at_utc": "2026-10-04T21:56:28.970108Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/cdc/watchdog-resilience-2.11.1",
+      "sha": "7cc035cf8b28b030847a9904a19ec992cd28b787",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:56:40.665003Z",
+      "confirmed_at_utc": "2026-10-04T21:56:47.722250Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/chore/classified-storage-20261004",
+      "sha": "1dae100c8f8965d787923f56fed1139e6932a099",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:56:59.538077Z",
+      "confirmed_at_utc": "2026-10-04T21:57:06.583117Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/chore/version-test-cleanup-20261004",
+      "sha": "40204f1d6b7c21e6fc5c9ecf3718984184ea6286",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/chore/version-test-cleanup-20261004-r3",
+          "sha": "40204f1d6b7c21e6fc5c9ecf3718984184ea6286"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/chore/version-test-cleanup-20261004-r3",
+          "sha": "40204f1d6b7c21e6fc5c9ecf3718984184ea6286",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:57:19.012967Z",
+      "confirmed_at_utc": "2026-10-04T21:57:26.112104Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/chore/version-test-cleanup-20261004-r2",
+      "sha": "40204f1d6b7c21e6fc5c9ecf3718984184ea6286",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/chore/version-test-cleanup-20261004-r3",
+          "sha": "40204f1d6b7c21e6fc5c9ecf3718984184ea6286"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/chore/version-test-cleanup-20261004-r3",
+          "sha": "40204f1d6b7c21e6fc5c9ecf3718984184ea6286",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:57:38.234269Z",
+      "confirmed_at_utc": "2026-10-04T21:57:45.278162Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/fix/ci-execution-evidence-20260928",
+      "sha": "b791b6dda6d4f759175b87edcf294be3033fd118",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:57:57.063884Z",
+      "confirmed_at_utc": "2026-10-04T21:58:04.417818Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/fix/continuous-recovery-2.10.3",
+      "sha": "76de86adfe13331cfa98dd557d897ce2d77587bb",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:58:16.429554Z",
+      "confirmed_at_utc": "2026-10-04T21:58:23.593890Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/fix/taskless-submission-recovery-20261004",
+      "sha": "5cd8202336500cd87d262c375c36f363a4a37fa2",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/release/v2.11.4",
+          "sha": "5cd8202336500cd87d262c375c36f363a4a37fa2"
+        }
+      ],
+      "retained_main_reachable": null,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/release/v2.11.4",
+          "sha": "5cd8202336500cd87d262c375c36f363a4a37fa2",
+          "method": "identical exact object"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:58:35.495189Z",
+      "confirmed_at_utc": "2026-10-04T21:58:42.636184Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.10.0",
+      "sha": "394fb42703bb5edd584fca4f6bee83fc6eae62d4",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:58:54.895172Z",
+      "confirmed_at_utc": "2026-10-04T21:59:02.162239Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.10.1",
+      "sha": "408408c0fa5a0126f649a7328f8f667d27f5ff18",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:59:14.034866Z",
+      "confirmed_at_utc": "2026-10-04T21:59:21.153519Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.10.2",
+      "sha": "bafed26bc91fd490c94c37113dc7fcc28340aca9",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:59:32.656738Z",
+      "confirmed_at_utc": "2026-10-04T21:59:39.933708Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.10.3",
+      "sha": "685d35cac8316c303fc466345a18ed8abf9fb256",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T21:59:51.886863Z",
+      "confirmed_at_utc": "2026-10-04T21:59:58.883521Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.11.0",
+      "sha": "5865399c2ddc0cb9c84fd8ebad207612d6e6e02b",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T22:00:11.894702Z",
+      "confirmed_at_utc": "2026-10-04T22:00:19.291122Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.11.1",
+      "sha": "a262f78b82cd9e8eba9bc3b6108e0b52a17c33b0",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T22:00:31.233122Z",
+      "confirmed_at_utc": "2026-10-04T22:00:38.350592Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.11.2",
+      "sha": "48e637b230e7640d0dcd13da60d712f38f59a2b6",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T22:00:50.280955Z",
+      "confirmed_at_utc": "2026-10-04T22:00:57.454924Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.7.0",
+      "sha": "5b84c89596e04d8411bf6cc24d8aa882a24c483a",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T22:01:09.354194Z",
+      "confirmed_at_utc": "2026-10-04T22:01:16.547445Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.7.1",
+      "sha": "8e97192ef89bf37657a4444a954530f22e8b2267",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T22:01:28.479045Z",
+      "confirmed_at_utc": "2026-10-04T22:01:35.494123Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.7.2",
+      "sha": "9f68f150a46dcd2de6933d0469ab12a07dc1fd74",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T22:01:47.122526Z",
+      "confirmed_at_utc": "2026-10-04T22:01:54.285120Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.7.3",
+      "sha": "88ee8a209caf562c02fe2ad53e047d7feee0e007",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T22:02:06.492333Z",
+      "confirmed_at_utc": "2026-10-04T22:02:13.869680Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.8.0",
+      "sha": "08996f44eee59750ba27b3169eec8735511f30f5",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T22:02:25.970516Z",
+      "confirmed_at_utc": "2026-10-04T22:02:33.125410Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.8.1",
+      "sha": "a3f3e8db0d6a863e1dfa19c27af51820c954bf69",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T22:02:45.018898Z",
+      "confirmed_at_utc": "2026-10-04T22:02:52.435349Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.8.2",
+      "sha": "d926f98f01017e9c007a6cbb66023f729516eb9a",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T22:03:04.469001Z",
+      "confirmed_at_utc": "2026-10-04T22:03:11.817658Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.9.0",
+      "sha": "539d1282c5803fbc79147a18c871aaddbf29fe25",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T22:03:23.910707Z",
+      "confirmed_at_utc": "2026-10-04T22:03:31.097091Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.9.1",
+      "sha": "5579ac73e4df820ee163ecfb68829f3bf08173bf",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T22:03:43.175654Z",
+      "confirmed_at_utc": "2026-10-04T22:03:50.515193Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/release/v2.9.2",
+      "sha": "0dd30a888be852d2820f690be04dbd374d732c06",
+      "retained_exact_refs": [],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T22:04:03.184892Z",
+      "confirmed_at_utc": "2026-10-04T22:04:10.572915Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/review/2.11.2-final-spec-ddb8503",
+      "sha": "ddb8503b3b8f2ff18009a90f4adc370965d38872",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/cdc/2.11.2-quality-q1-survivability-budget",
+          "sha": "ddb8503b3b8f2ff18009a90f4adc370965d38872"
+        }
+      ],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/cdc/2.11.2-quality-q1-survivability-budget",
+          "sha": "ddb8503b3b8f2ff18009a90f4adc370965d38872",
+          "method": "identical exact object"
+        },
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T22:04:22.394619Z",
+      "confirmed_at_utc": "2026-10-04T22:04:29.417128Z"
+    },
+    {
+      "repository": "bajoicheg/g-cdc",
+      "ref": "refs/heads/validation/2.11.2-quality-q1-red-e86a3c5",
+      "sha": "ddb8503b3b8f2ff18009a90f4adc370965d38872",
+      "retained_exact_refs": [
+        {
+          "ref": "refs/heads/cdc/2.11.2-quality-q1-survivability-budget",
+          "sha": "ddb8503b3b8f2ff18009a90f4adc370965d38872"
+        }
+      ],
+      "retained_main_reachable": true,
+      "retained_recovery_chain": [
+        {
+          "ref": "refs/heads/cdc/2.11.2-quality-q1-survivability-budget",
+          "sha": "ddb8503b3b8f2ff18009a90f4adc370965d38872",
+          "method": "identical exact object"
+        },
+        {
+          "ref": "refs/heads/main",
+          "sha": "49dd20a1cfe36cb042a5404383e0ea3579b766d7",
+          "method": "deleted exact object is proven ancestor of retained main"
+        }
+      ],
+      "state": "confirmed",
+      "submitted_at_utc": "2026-10-04T22:04:41.255937Z",
+      "confirmed_at_utc": "2026-10-04T22:04:48.492475Z"
+    }
+  ],
+  "retained": [
+    "refs/heads/main",
+    "refs/heads/release/v2.11.3",
+    "refs/heads/release/v2.11.4",
+    "exact source/provenance aliases",
+    "diverged heads without retained exact-object reachability",
+    "all coordination and audit refs",
+    "g-pc-health-check PR105 branch and guard"
+  ],
+  "journal_ref": "git:a9008176e3d71f19cab90985cf2f0af9a4a81694",
+  "guard_audit": {
+    "observed_at_utc": "2026-10-04T21:49:08.718Z",
+    "current_live_lock_count": 4,
+    "current_live_locks_minimum": "2.11.3",
+    "candidate_refs_referenced_by_active_guards": false,
+    "pc_health_check_pr105_preserved": true,
+    "coordination_and_audit_refs_preserved": true,
+    "surfaces": 5,
+    "unchanged": true,
+    "at_utc": "2026-10-04T21:49:08.718Z",
+    "live_locks_readback_at_utc": "2026-10-04T21:49:08.718Z",
+    "live_locks_heads_unchanged": true,
+    "candidate_refs_fresh_unchanged": 46,
+    "protected_candidate_refs": 0,
+    "repository_rulesets": 0,
+    "refs_readback_at_utc": "2026-10-04T21:23:25.092Z"
+  },
+  "audit_history_deleted": false
+}

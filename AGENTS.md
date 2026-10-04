@@ -28,7 +28,7 @@ A release requires independent bootstrap GREEN, candidate package GREEN, compati
 
 ## Self-hosting
 
-The source release is CDC 2.11.4. Personal-skill 2.11.3 remains the separately verified installed authority until explicit installed-byte acceptance. Personal-skill 2.11.3 runtime-byte acceptance is retained in `release/active-package-acceptance-2.11.3.json`; host metadata normalization is recorded separately from runtime bytes. Consumer snapshots prove compatibility only; they do not update consumers' vendored packages. See `release/evidence-2.11.3.json` and `docs/roadmap.md`.
+The source release is CDC 2.11.5. Personal-skill 2.11.3 remains the separately verified installed authority until explicit installed-byte acceptance. Personal-skill 2.11.3 runtime-byte acceptance is retained in `release/active-package-acceptance-2.11.3.json`; host metadata normalization is recorded separately from runtime bytes. Consumer snapshots prove compatibility only; they do not update consumers' vendored packages. See `release/evidence-2.11.3.json` and `docs/roadmap.md`.
 
 ## Recovery priority
 

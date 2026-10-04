@@ -445,3 +445,5 @@ Personal installation, live consumer adoption and Fleet/paused scheduler state a
 ## CDC 2.11.5 — minimum runtime 2.11.3 and obsolete-state cleanup
 
 Owner authorized on2026-10-04 and refined the floor to2.11.3. Developed under released2.11.4. Current runtime/default templates start at2.11.3; old records and immutable evidence remain readable for safe recovery.
+
+2.11.5 source-released with minimum runtime2.11.3. Exact candidate bbe5d8c8e4249ad27735245033b6dd6549539809, frozen source befbf85558e211397f9a257f69dfa56ca1474225, package 6e9fb338a83c532076a30e8feb0b6ce2ebbe4063, CI 37237125815 GREEN. 46 obsolete refs removed with retained Git objects and exact mappings. See release/published-2.11.5.json and release/branch-cleanup-2.11.5.json.
