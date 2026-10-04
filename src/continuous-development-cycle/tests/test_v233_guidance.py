@@ -7,12 +7,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class V233GuidanceTests(unittest.TestCase):
-    def test_version_and_manifest_are_consistent(self):
-        version = (ROOT / "VERSION").read_text().strip()
-        self.assertGreaterEqual(tuple(map(int, version.split("."))), (2, 3, 3))
-        manifest = json.loads((ROOT / "manifest.json").read_text())
-        self.assertEqual(manifest["version"], version)
-        self.assertIn("v" + version, (ROOT / "SKILL.md").read_text())
 
     def test_higher_compute_budget_is_capacity_not_retry_permission(self):
         core = (ROOT / "SKILL.md").read_text().lower()

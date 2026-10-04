@@ -114,7 +114,7 @@ REQUIRED = [
     'templates/recovery-snapshot.json', 'templates/budget-ledger.json',
     'tests/test_execution_lease.py', 'tests/test_recovery.py',
     'tests/test_budget.py', 'tests/test_orchestration_policy.py',
-    'tests/test_v233_guidance.py',
+    'tests/test_package_metadata.py', 'tests/test_v233_guidance.py',
     'scripts/watchdog_health.py', 'templates/watchdog-health.json',
     'tests/test_watchdog_health.py',
     'tests/test_v238_guidance.py',

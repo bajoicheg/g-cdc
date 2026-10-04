@@ -2,9 +2,6 @@ from pathlib import Path
 import json,unittest
 ROOT=Path(__file__).resolve().parents[1]
 class Tests(unittest.TestCase):
- def test_version_is_27(self):
-  v=tuple(map(int,(ROOT/"VERSION").read_text().strip().split(".")));self.assertGreaterEqual(v,(2,7,0))
-  self.assertEqual(json.loads((ROOT/"manifest.json").read_text())["version"],(ROOT/"VERSION").read_text().strip())
  def test_core_names_27_release_contracts(self):
   t=(ROOT/"SKILL.md").read_text().lower()
   for term in ("canonical source","independent release","consumer locks","candidate runtime","package git tree","self-hosting"): self.assertIn(term,t)

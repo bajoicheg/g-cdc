@@ -7,12 +7,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class V238GuidanceTests(unittest.TestCase):
-    def test_version_manifest_and_core_are_consistent(self):
-        version = (ROOT / "VERSION").read_text().strip()
-        self.assertGreaterEqual(tuple(map(int, version.split("."))), (2, 3, 8))
-        manifest = json.loads((ROOT / "manifest.json").read_text())
-        self.assertEqual(manifest["version"], version)
-        self.assertIn("v" + version, (ROOT / "SKILL.md").read_text())
 
     def test_announced_next_action_cannot_end_on_discovery(self):
         core = (ROOT / "SKILL.md").read_text().lower()

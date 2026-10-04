@@ -5,9 +5,6 @@ sys.path.insert(0,str(ROOT/"scripts"))
 import cost_router as m
 
 class Tests(unittest.TestCase):
- def test_version_is_272(self):
-  v=tuple(map(int,(ROOT/"VERSION").read_text().strip().split(".")));self.assertGreaterEqual(v,(2,7,2))
-  self.assertEqual(json.loads((ROOT/"manifest.json").read_text())["version"],(ROOT/"VERSION").read_text().strip())
  def test_cost_policy_is_codex_first_and_actions_expensive(self):
   p=json.loads((ROOT/"templates"/"cost-routing-policy.json").read_text())
   m.validate_policy(p)

@@ -2,9 +2,6 @@ from pathlib import Path
 import json,unittest
 ROOT=Path(__file__).resolve().parents[1]
 class T(unittest.TestCase):
- def test_version_is_281(self):
-  v=(ROOT/"VERSION").read_text().strip();self.assertGreaterEqual(tuple(map(int,v.split("."))),(2,8,1))
-  self.assertEqual(json.loads((ROOT/"manifest.json").read_text())["version"],v)
  def test_skill_names_operational_hardening(self):
   t=(ROOT/"SKILL.md").read_text().lower()
   for term in ("watchdog self-repair","ref hygiene","blocker proof","decision authority","evidence compaction","progress enforcement"):self.assertIn(term,t)
