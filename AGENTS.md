@@ -37,3 +37,7 @@ CDC 2.11.3 completes the currently authorized 2.11 source-release sequence and c
 ## CDC 2.11.4 release readback
 
 CDC 2.11.4 is independently reviewed and source-released at `refs/heads/release/v2.11.4`, metadata HEAD `5cd8202336500cd87d262c375c36f363a4a37fa2`, frozen source `725c90bb5b237e27bdeead5e6779cbb9b728902f`, package tree `1b64bd0aa5276c81c6939f8b2296757bf496dd48`. It was developed under released CDC 2.11.3. See `release/published-2.11.4.json`: exact final candidate CI, both ordered independent GREEN reviews, managed expected-head main publication, one-shot release-ref creation and immutable release receipts. Source release does not activate the personal skill or deploy live consumers. Schedulers remain owner-paused.
+
+## Minimum runtime and cleanup patch
+
+Owner instruction2026-10-04 sets the CDC runtime floor to2.11.3 and authorizes CDC2.11.5 maintenance cleanup under released2.11.4. This supersedes the earlier2.10.0 floor. Preserve2.11.3+ releases, active guarded work, rollback/provenance objects and append-only coordination. Historical producer/schema labels remain recovery data.

@@ -3,7 +3,7 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.11.4
+# Continuous Development Cycle v2.11.5
 
 ## Active execution contract — apply before recovery detail
 
@@ -17,6 +17,8 @@ A request to continue/develop/fix means execute the authorized scope through its
 6. Honor an explicit owner scheduler pause. Never enable paused watchdogs merely to make the system appear continuous. Continue eligible foreground work.
 
 These are cooperative agent/runtime controls. Python validators do not intercept ChatGPT's final-response channel or autonomously launch workers; the active executor must actually invoke them and obey the decision. Test the real lease path and agent behavior, not just words in a response.
+
+Minimum supported CDC runtime is **2.11.3**. Older executable runtime compatibility is retired. Historical checkpoint, lease, operation-intent and audit records remain readable as data for current-runtime recovery. Historical producer labels do not authorize executing an older runtime.
 
 Durable repository state is the project state. Sessions, agents and schedulers are disposable. Apply the instruction hierarchy, preserve the source/scope of existing user authorization, and reconcile repository policy. Live remote facts override stale checkpoint/chat claims. A spinner, lease or submitted request is not progress evidence.
 
@@ -363,3 +365,4 @@ Hosts may wrap this JSON contract as a ChatGPT plugin/tool, Work adapter, schedu
 ## Taskless submission recovery
 
 After an authenticated pre-acceptance GitHub 403 or an immutable cancellation-before-send barrier, use `scripts/submission_recovery.py` on an explicitly released v2 lease. Independently authenticate, persist and read back the exact provider, worker and parent-dispatcher evidence first. Empty provider results, a missing grant, elapsed time, a cancellation request or a lost reply alone never clear an operation. The canonical CAS preserves the original claim and release history, appends its resolution and grants no submission authority. Released records are sealed against ordinary rewrites; new ownership still requires the managed terminal capability. See `references/submission-recovery.md`.
+

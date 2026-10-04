@@ -1,8 +1,10 @@
 from __future__ import annotations
 from .canonical_source import semver
 def validate_matrix(d):
-    fields={"schema","target_version","developed_under_version","supported_from_versions","checkpoint_schemas","lease_schemas","resume_schemas","consumer_contract","migration"}
+    fields={"minimum_supported_version","schema","target_version","developed_under_version","supported_from_versions","checkpoint_schemas","lease_schemas","resume_schemas","consumer_contract","migration"}
     if not isinstance(d,dict) or set(d)!=fields or d["schema"]!="cdc-compatibility-matrix/v1": raise ValueError("invalid compatibility matrix")
+    if d["minimum_supported_version"]!="2.11.3":raise ValueError("minimum supported CDC version must be 2.11.3")
+    if any(semver(v)<(2,11,3) for v in d["supported_from_versions"]):raise ValueError("CDC runtime below 2.11.3 is unsupported")
     target=semver(d["target_version"]); driver=semver(d["developed_under_version"])
     minor=target[0]==driver[0] and target[1]==driver[1]+1 and target[2]==0
     patch=target[0]==driver[0] and target[1]==driver[1] and target[2]==driver[2]+1
@@ -12,3 +14,4 @@ def validate_matrix(d):
     expected={"requires_released_or_verified_quiescent_owner":True,"requires_reconciled_or_empty_guard":True,"preserve_budget_history":True,"preserve_validation_history":True,"preserve_audit_history":True}
     if d["migration"]!=expected: raise ValueError("migration safety weakened")
     return d
+

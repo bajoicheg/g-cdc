@@ -441,3 +441,7 @@ Owner authorization: “Добавляй”, 2026-10-01; defect-recovery continu
 Acceptance: 977 package tests, 37 independent bootstrap tests, package/layout/full-bootstrap and three archived consumer checks GREEN. Ordered independent specification and whole material-runtime quality reviews GREEN, no reused waivers. Exact source CI `37227563246` and final metadata CI `37228072427` GREEN. The one-shot submitted-CAS race is corrected with independent baseline RED and corrected GREEN. Real managed main publication and one-shot create-only release-ref transport were read back; see `release/published-2.11.4.json`.
 
 Personal installation, live consumer adoption and Fleet/paused scheduler state are separate evidence surfaces. Source release grants no scheduler wake.
+
+## CDC 2.11.5 — minimum runtime 2.11.3 and obsolete-state cleanup
+
+Owner authorized on2026-10-04 and refined the floor to2.11.3. Developed under released2.11.4. Current runtime/default templates start at2.11.3; old records and immutable evidence remain readable for safe recovery.

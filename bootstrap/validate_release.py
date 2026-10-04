@@ -13,6 +13,7 @@ def ver(v):
     return tuple(map(int,v.split(".")))
 def source_lock(d):
     target=ver(d["target_version"]);base=ver(d["development_driver_version"])
+    if min(target,base)<(2,11,3):raise ValueError("minimum supported CDC version is 2.11.3")
     if d.get("schema")!="cdc-source-lock/v1" or d.get("canonical_repository")!="bajoicheg/g-cdc":raise ValueError("canonical source lock invalid")
     minor=(target[0]==base[0] and target[1]==base[1]+1 and target[2]==0)
     patch=(target[0]==base[0] and target[1]==base[1] and target[2]==base[2]+1)
@@ -25,6 +26,8 @@ def source_lock(d):
     if d.get("direct_product_repo_development") is not False:raise ValueError("product repo cannot be canonical CDC source")
 def matrix(d):
     if d.get("schema")!="cdc-compatibility-matrix/v1" or d.get("developed_under_version") not in d.get("supported_from_versions",[]):raise ValueError("compatibility matrix invalid")
+    if d.get("minimum_supported_version")!="2.11.3":raise ValueError("minimum supported CDC version must be 2.11.3")
+    if any(ver(v)<(2,11,3) for v in d["supported_from_versions"]):raise ValueError("CDC runtime below 2.11.3 is unsupported")
     m=d.get("migration",{})
     for k in ("requires_released_or_verified_quiescent_owner","requires_reconciled_or_empty_guard","preserve_budget_history","preserve_validation_history","preserve_audit_history"):
         if m.get(k) is not True:raise ValueError("migration safety weakened: "+k)
@@ -51,3 +54,4 @@ def main(argv=None):
         print("BOOTSTRAP_RED:",e,file=sys.stderr);return 1
     print("BOOTSTRAP_GREEN: CDC independent bootstrap contract");return 0
 if __name__=="__main__":raise SystemExit(main())
+
