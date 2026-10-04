@@ -1,0 +1,36 @@
+{
+  "schema": "systematic-rca/v1",
+  "anomaly_id": "vendored-package-hidden-fixture-2026-09-30",
+  "material": true,
+  "anomaly_class": "product",
+  "fix_key": "vendored-package-self-contained-regressions",
+  "problem": "An exact released CDC package passed package validation but one retained packaged test failed in a clean consumer layout because it referenced a fixture outside the immutable package tree.",
+  "evidence_refs": [
+    "consumer-adoption:retained-suite-red",
+    "cdc-package-tree:7a7a7faa75b7fc9160d912d8fb507c6b9573d17f",
+    "test_v2110_guidance.py",
+    "fault-injection/scenarios.json"
+  ],
+  "hypotheses": [
+    {
+      "id": "package-drift",
+      "statement": "The transported package differed from release.",
+      "discriminating_test": "Compare vendored subtree with release package tree.",
+      "observed_result": "Exact tree matched.",
+      "supported": false
+    },
+    {
+      "id": "hidden-fixture",
+      "statement": "A packaged test depends on a canonical-repository fixture outside the package.",
+      "discriminating_test": "Run the suite from a consumer layout and inspect the failing path.",
+      "observed_result": "The only error was a missing repo-level fault-injection fixture; adding the exact fixture outside the package made all 866 tests pass.",
+      "supported": true
+    }
+  ],
+  "selected_hypothesis_id": "hidden-fixture",
+  "correction": "Make retained package regressions self-contained in the next patch line: package required fixtures under the immutable package tree or move such tests to release/bootstrap evidence.",
+  "defense_in_depth": "Execute the full packaged suite from a synthetic consumer layout containing only declared package/fixture inputs.",
+  "invariant": "Every test shipped inside CDC executes from a clean vendored consumer layout without undeclared canonical-repository files.",
+  "existing_fix_keys": [],
+  "sensitive_context_detected": false
+}
