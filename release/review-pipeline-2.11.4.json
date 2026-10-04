@@ -1,0 +1,26 @@
+{
+  "schema": "review-pipeline/v1",
+  "change_id": "cdc-2.11.4",
+  "material_change": true,
+  "spec_compliance": {
+    "state": "green",
+    "reviewer_ref": "independent-agent:spec-review",
+    "sequence": 1,
+    "evidence_refs": [
+      "docs/superpowers/reports/2026-10-04-cdc-2.11.4-spec.md",
+      "docs/superpowers/reports/2026-10-04-cdc-2.11.4-spec-correction.md",
+      "release/review-binding-2.11.4.json"
+    ],
+    "findings": []
+  },
+  "code_quality": {
+    "state": "green",
+    "reviewer_ref": "independent-agent:quality-review",
+    "sequence": 2,
+    "evidence_refs": [
+      "docs/superpowers/reports/2026-10-04-cdc-2.11.4-quality.md",
+      "release/review-binding-2.11.4.json"
+    ],
+    "findings": []
+  }
+}
