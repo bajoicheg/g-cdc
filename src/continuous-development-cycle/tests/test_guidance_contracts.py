@@ -1,13 +1,14 @@
 """Current guidance contracts grouped by capability."""
-from pathlib import Path
 import json
+import re
+import sys
 import unittest
+from pathlib import Path
+
 ROOT = Path(__file__).resolve().parents[1]
-import json, unittest
-import json, sys, unittest
 sys.path.insert(0, str(ROOT / 'scripts'))
 import cost_router as m
-import json, re, unittest
+
 
 class ComputeBudgetGuidanceTests(unittest.TestCase):
 
@@ -38,7 +39,7 @@ class ComputeBudgetGuidanceTests(unittest.TestCase):
         self.assertIn('larger compute budget tempts retries', scenarios)
         self.assertIn('heavy bootstrap repeats provider tools', scenarios)
 
-class ComputeRoutingGuidanceTests(unittest.TestCase):
+class CommitmentClosureGuidanceTests(unittest.TestCase):
 
     def test_announced_next_action_cannot_end_on_discovery(self):
         core = (ROOT / 'SKILL.md').read_text().lower()
@@ -133,7 +134,7 @@ class CanonicalReleaseGuidanceTests(unittest.TestCase):
             self.assertIn('workflow_dispatch', text)
             self.assertIn('capability gap', text)
 
-class PolicyContinuityGuidanceTests(unittest.TestCase):
+class CostRoutingGuidanceTests(unittest.TestCase):
 
     def test_cost_policy_is_codex_first_and_actions_expensive(self):
         p = json.loads((ROOT / 'templates' / 'cost-routing-policy.json').read_text())
@@ -158,7 +159,7 @@ class PolicyContinuityGuidanceTests(unittest.TestCase):
         for term in ('transient codex failure with expensive actions available', 'product failure on codex while actions is ready', 'expensive platform gate is genuinely required'):
             self.assertIn(term, t)
 
-class CostRoutingGuidanceTests(unittest.TestCase):
+class TerminalContinuationGuidanceTests(unittest.TestCase):
 
     def test_continue_means_terminal_state(self):
         t = (ROOT / 'SKILL.md').read_text().lower()
@@ -175,7 +176,7 @@ class CostRoutingGuidanceTests(unittest.TestCase):
         for term in ('repository visibility', 'public repositories', 'unmetered', 'private/internal'):
             self.assertIn(term, t)
 
-class ParallelGuidanceTests(unittest.TestCase):
+class AutonomyPublicationGuidanceTests(unittest.TestCase):
 
     def test_skill_enforces_no_idle_and_failover(self):
         t = (ROOT / 'SKILL.md').read_text().lower()
@@ -192,7 +193,7 @@ class ParallelGuidanceTests(unittest.TestCase):
         for term in ('control-plane isolation', 'leases', 'ledgers', 'public export'):
             self.assertIn(term, t)
 
-class AutonomousContinuationGuidanceTests(unittest.TestCase):
+class OperationalHardeningGuidanceTests(unittest.TestCase):
 
     def test_skill_names_operational_hardening(self):
         t = (ROOT / 'SKILL.md').read_text().lower()
@@ -208,7 +209,7 @@ class AutonomousContinuationGuidanceTests(unittest.TestCase):
         t = (ROOT / 'references' / 'decision-authority.md').read_text().lower()
         self.assertIn('never creates authority', t)
 
-class ReviewGuidanceTests(unittest.TestCase):
+class MaturityPublicationGuidanceTests(unittest.TestCase):
 
     def test_skill_names_p2_controls(self):
         t = (ROOT / 'SKILL.md').read_text().lower()
@@ -224,7 +225,7 @@ class ReviewGuidanceTests(unittest.TestCase):
         t = (ROOT / 'references' / 'fleet-and-publication-maturity.md').read_text().lower()
         self.assertIn('never release authority', t)
 
-class PublicationGuidanceTests(unittest.TestCase):
+class DistributionConvergenceGuidanceTests(unittest.TestCase):
 
     def test_skill_names_distribution_convergence_controls(self):
         t = (ROOT / 'SKILL.md').read_text().lower()
@@ -236,14 +237,14 @@ class PublicationGuidanceTests(unittest.TestCase):
         for term in ('least-privilege', 'exact package git tree', 'fails closed', 'no source change'):
             self.assertIn(term, t)
 
-class HardeningGuidanceTests(unittest.TestCase):
+class TransactionalPublicationGuidanceTests(unittest.TestCase):
 
     def test_skill_names_transactional_controls(self):
         t = (ROOT / 'SKILL.md').read_text().lower()
         for term in ('fresh head', 'schema-typed', 'detached tree', 'terminal-provider reconciliation'):
             self.assertIn(term, t)
 
-class MaturityGuidanceTests(unittest.TestCase):
+class TimestampGuidanceTests(unittest.TestCase):
 
     def test_timestamp_guidance(self):
         t = (ROOT / 'SKILL.md').read_text().lower()
