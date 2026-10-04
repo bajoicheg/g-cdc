@@ -97,5 +97,16 @@
   "removed_version_only_policy_tests": 6,
   "retained_current_policy_controls": 5,
   "legacy_data_and_audit_preserved": true,
-  "schedulers_changed": false
+  "schedulers_changed": false,
+  "runtime_floor_entry_points": [
+    "bootstrap source lock",
+    "bootstrap compatibility matrix",
+    "canonical source lock helper",
+    "compatibility matrix helper",
+    "adapter actual runtime"
+  ],
+  "runtime_floor_regression_tests": 1,
+  "retained_historical_policy_tests_run_under_current_runtime": true,
+  "active_template_floor": "2.11.3",
+  "bytecode_attack_fixture": "Explicit in-package cache with isolated child environment; attack and rejection assertions retained."
 }

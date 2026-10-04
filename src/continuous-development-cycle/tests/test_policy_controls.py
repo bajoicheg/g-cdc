@@ -40,3 +40,13 @@ class PolicyControlsTests(unittest.TestCase):
         d['progress_slo']['stalled_after_seconds'] = d['progress_slo']['degraded_after_seconds']
         with self.assertRaises(ContractError):
             validate_adapter(d, VERSION)
+
+    def test_runtime_floor_preserves_readable_older_policy(self):
+        data = self.template()
+        data['policy']['skill_min_version'] = '2.10.2'
+        data['convergence']['target_version'] = '2.10.2'
+        for version in ('2.11.3', VERSION):
+            with self.subTest(version=version):
+                validate_adapter(data, version)
+        with self.assertRaisesRegex(ContractError, 'minimum supported CDC runtime is 2.11.3'):
+            validate_adapter(data, '2.11.2')
