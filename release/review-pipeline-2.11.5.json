@@ -1,0 +1,32 @@
+{
+  "schema": "review-pipeline/v1",
+  "change_id": "cdc-2.11.5-minimum-runtime-cleanup",
+  "material_change": true,
+  "spec_compliance": {
+    "state": "green",
+    "reviewer_ref": "independent-agent:cleanup_spec_review",
+    "sequence": 1,
+    "evidence_refs": [
+      "docs/superpowers/reports/2026-10-04-cdc-2.11.5-spec.md",
+      "release/review-binding-2.11.5.json"
+    ],
+    "findings": []
+  },
+  "code_quality": {
+    "state": "green",
+    "reviewer_ref": "independent-agent:cleanup_quality_review",
+    "sequence": 2,
+    "evidence_refs": [
+      "docs/superpowers/reports/2026-10-04-cdc-2.11.5-quality.md",
+      "release/review-binding-2.11.5.json"
+    ],
+    "findings": [
+      {
+        "id": "guidance-class-labels-imports",
+        "summary": "Capability labels corrected and duplicate imports removed; all 48 assertions and method bodies preserved.",
+        "state": "resolved",
+        "resolution_ref": "docs/superpowers/reports/2026-10-04-cdc-2.11.5-quality.md"
+      }
+    ]
+  }
+}
