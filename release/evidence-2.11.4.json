@@ -4,7 +4,7 @@
   "canonical_repository": "bajoicheg/g-cdc",
   "candidate_source_commit": "725c90bb5b237e27bdeead5e6779cbb9b728902f",
   "package_tree": "1b64bd0aa5276c81c6939f8b2296757bf496dd48",
-  "status": "release_ready",
+  "status": "released",
   "development_driver": {
     "version": "2.11.3",
     "commit": "7f31544ffd80252587b7ff1bd76b9a3f38e019e5",
@@ -19,9 +19,14 @@
     "candidate_ci": {
       "run_id": 37227563246,
       "head_sha": "2f76e77e6c8fb929ab20a58c455a61fda84f460e",
-      "required_conclusion": "success"
+      "required_conclusion": "success",
+      "conclusion": "success"
     },
-    "final_metadata_ci": "must be authenticated externally at exact metadata HEAD before publication; no self-referential assertion"
+    "final_metadata_ci": {
+      "run_id": 37228072427,
+      "head_sha": "5cd8202336500cd87d262c375c36f363a4a37fa2",
+      "conclusion": "success"
+    }
   },
   "reviews": {
     "pipeline": "release/review-pipeline-2.11.4.json",
@@ -40,5 +45,6 @@
     "taskless terminal evidence reconciliation without replay",
     "one-shot publication submitted CAS; concurrent loser fails closed"
   ],
-  "release_ready": true
+  "release_ready": true,
+  "publication": "release/published-2.11.4.json"
 }

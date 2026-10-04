@@ -1,0 +1,22 @@
+{
+  "schema": "cdc-source-release-publication/v1",
+  "version": "2.11.4",
+  "release_ref": "refs/heads/release/v2.11.4",
+  "release_head": "5cd8202336500cd87d262c375c36f363a4a37fa2",
+  "source_commit": "725c90bb5b237e27bdeead5e6779cbb9b728902f",
+  "package_tree": "1b64bd0aa5276c81c6939f8b2296757bf496dd48",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "publication_attempt_ref": "git:74ef675358ff2a5eac9dd4fad793718b5417f02c",
+  "main_publication_ref": "git:74f552e3d6fe358caa7ba4a93ba0522e9188dc87",
+  "managed_invocation": "managed-terminal:a3bacd8353666a46a002e8d8044ededda7c35599978189805c96f3b189283f9b",
+  "hosted_validation": {
+    "run_id": 37228072427,
+    "head_sha": "5cd8202336500cd87d262c375c36f363a4a37fa2",
+    "conclusion": "success"
+  },
+  "ordered_reviews": "release/review-pipeline-2.11.4.json",
+  "scheduler_state": "owner-paused; zero scheduler mutations",
+  "personal_installation": "2.11.3 remains active pending separate exact-byte adoption",
+  "live_consumers": "compatibility snapshots only; live rollout not asserted",
+  "published_at_utc": "2026-10-04T19:31:51.275880Z"
+}

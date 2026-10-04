@@ -17,7 +17,7 @@ CDC 2.11 preserves staged bootstrap/release discipline:
 - develop 2.11.1 only after 2.11.0 is independently GREEN and released;
 - develop 2.11.2 only after 2.11.1 is independently GREEN and released.
 
-All four owner-authorized 2.11 stages are released. On 2026-10-01 the owner authorized the fourth patch stage, CDC 2.11.3, after live multi-subscription rollout exposed an orphan-lease/fleet-leadership integrity gap. No further 2.11 stage is authorized; a new version line requires explicit roadmap authorization.
+All four owner-authorized 2.11 stages are released. On 2026-10-01 the owner authorized the fourth patch stage, CDC 2.11.3, after live multi-subscription rollout exposed an orphan-lease/fleet-leadership integrity gap. On 2026-10-01 the owner additionally authorized CDC 2.11.4 Managed Host Bridge; it is source-released below. A new version line requires explicit roadmap authorization.
 
 ### 2.11.0 — Managed Executor Pool — P0 / RELEASED
 
@@ -433,3 +433,11 @@ Active recovery work:
 - PR consolidation: #20/#61/#62/#63/#64 preserve one historical pool implementation and its review/consumer attempts. All five PRs were closed as superseded after #67 merge and release readback; historical branches and review evidence remain retained.
 
 Schedulers are explicitly owner-paused. Neither liveness implementation nor backlog cleanup authorizes enabling or running them.
+
+## CDC 2.11.4 — Managed Host Bridge and taskless recovery — SOURCE RELEASED
+
+Owner authorization: “Добавляй”, 2026-10-01; defect-recovery continuation: “Делай”, 2026-10-04. Developed under released CDC 2.11.3. Frozen source `725c90bb5b237e27bdeead5e6779cbb9b728902f`, package tree `1b64bd0aa5276c81c6939f8b2296757bf496dd48`, immutable release ref `refs/heads/release/v2.11.4` at `5cd8202336500cd87d262c375c36f363a4a37fa2`.
+
+Acceptance: 977 package tests, 37 independent bootstrap tests, package/layout/full-bootstrap and three archived consumer checks GREEN. Ordered independent specification and whole material-runtime quality reviews GREEN, no reused waivers. Exact source CI `37227563246` and final metadata CI `37228072427` GREEN. The one-shot submitted-CAS race is corrected with independent baseline RED and corrected GREEN. Real managed main publication and one-shot create-only release-ref transport were read back; see `release/published-2.11.4.json`.
+
+Personal installation, live consumer adoption and Fleet/paused scheduler state are separate evidence surfaces. Source release grants no scheduler wake.

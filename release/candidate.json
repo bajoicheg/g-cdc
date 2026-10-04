@@ -5,7 +5,7 @@
   "canonical_repository": "bajoicheg/g-cdc",
   "source_commit": "725c90bb5b237e27bdeead5e6779cbb9b728902f",
   "package_tree": "1b64bd0aa5276c81c6939f8b2296757bf496dd48",
-  "status": "candidate",
+  "status": "released",
   "evidence": {
     "bootstrap": [
       "bootstrap/validate_release.py"
