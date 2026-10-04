@@ -370,6 +370,8 @@ class GitLaneIntegrationPublisher(GitLaneResultVerifier):
                 raise ValueError("durable publication attempt missing")
             self._assert_attempt_matches(attempt, item, intent)
             if attempt["status"] == target:
+                if target == "submitted":
+                    raise ValueError("publication submission claim was already consumed; transport cannot be replayed")
                 return copy.deepcopy(attempt)
             if attempt["status"] not in allowed:
                 raise ValueError("publication attempt state does not allow transition")
