@@ -59,7 +59,11 @@ def prompt(request):
     return ('CDC '+request['operation_key']+' '+request['attempt_id']+'\n'
             'Use this first line as the task title, including the exact operation and attempt.\n'
             'COMPUTE_ONLY: execute this exact read-only check plan once.\n'+_canonical(request)+'\n'
-            'Verify actual canonical repository identity, exact candidate_sha and clean checkout before running. '
+            'The submitting host independently verifies the canonical repository/environment association and source branch SHA. '
+            'Provider checkouts may omit Git remotes; absent origin alone is not an identity mismatch. '
+            'Verify any available repository identity without editing Git configuration; reject a conflicting configured remote. '
+            'Report whether identity is independently observed or host-bound; never describe a supplied expected value as observed. '
+            'Verify exact candidate_sha and clean checkout before running. '
             'Stop on mismatch; return typed observed SHA/cleanliness and checks: [] for NOT_RUN, without invented exit codes or logs. '
             'Run only the supplied argv arrays, separately, capturing stdout/stderr outside '
             'the repository, exit codes, actual unittest counts and SHA256 of each complete log. '
@@ -83,6 +87,10 @@ def _validate_report(request, task_id, report):
     passed=(all(report[key]==request['candidate_sha'] for key in ('head_before','head_after'))
             and report['clean_before'] and report['clean_after'])
     checks=report.get('checks')
+    if report.get('result')=='NOT_RUN':
+        if checks!=[]:raise ValueError('Cloud NOT_RUN contradicts command evidence')
+        return False  # A bound setup/identity preflight may fail on an unchanged clean SHA.
+    passed=passed and report.get('repository_identity_status')!='MISMATCH'
     if not passed and checks==[]:return False  # Exact-task preflight failed; commands NOT_RUN.
     if not isinstance(checks,list) or len(checks)!=len(request['checks']):raise ValueError('Cloud report checks incomplete')
     for planned,actual in zip(request['checks'],checks):

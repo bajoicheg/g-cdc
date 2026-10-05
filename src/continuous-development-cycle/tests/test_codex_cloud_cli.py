@@ -134,6 +134,27 @@ class CloudTests(unittest.TestCase):
         result=self.adapter.ingest_report(KEY,report,'provider:report/1')
         self.assertEqual(result['state'],'failed');self.assertEqual(result['report']['checks'],[])
         self.assertFalse(cloud.CodexCloudCLI(self.tmp.name,runner=self.runner).observe(KEY)['validation_passed'])
+    def test_identity_preflight_not_run_is_durable_with_matching_clean_source(self):
+        self.submit();self.adapter.observe(KEY);report=self.report()
+        report.update(result='NOT_RUN',checks=[],repository_identity_status='MISMATCH',
+                      repository_identity_detail="error: No such remote 'origin'")
+        result=self.adapter.ingest_report(KEY,report,'provider:actual-notrun/1')
+        self.assertEqual(result['state'],'failed');self.assertFalse(result['validation_passed'])
+        recovered=cloud.CodexCloudCLI(self.tmp.name,runner=self.runner).observe(KEY)
+        self.assertEqual(recovered['report'],report)
+        self.assertEqual(recovered['state'],'failed')
+        with self.assertRaises(ValueError):
+            self.adapter.ingest_report(KEY,self.report(),'provider:report/2')
+    def test_not_run_cannot_include_successful_command_evidence(self):
+        self.submit();self.adapter.observe(KEY);report=self.report();report['result']='NOT_RUN'
+        with self.assertRaises(ValueError):
+            self.adapter.ingest_report(KEY,report,'provider:contradictory-notrun/1')
+        self.assertEqual(self.adapter.observe(KEY)['state'],'waiting_report')
+    def test_explicit_identity_mismatch_cannot_pass_matching_checks(self):
+        self.submit();self.adapter.observe(KEY);report=self.report()
+        report['repository_identity_status']='MISMATCH'
+        result=self.adapter.ingest_report(KEY,report,'provider:identity-failed/1')
+        self.assertEqual(result['state'],'failed');self.assertFalse(result['validation_passed'])
     def test_report_mismatches_never_pass(self):
         self.submit();self.adapter.observe(KEY)
         changes=[('head_after','malformed'),('task_id','task_e_'+'f'*32),('environment_id','f'*32),('clean_after',1),('attempt_id','other'),('repository','other/repo')]

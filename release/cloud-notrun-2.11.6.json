@@ -1,0 +1,105 @@
+{
+  "schema": "cdc-cloud-notrun-rca/v1",
+  "candidate_head": "340ee1257717d925771971ea52b3927d5b3e89f7",
+  "task_id": "task_e_6ac34a61601483288185985bba627773",
+  "provider_report_ref": "git:078a3739c90c1703206f2b434e1c11466c6d0bb8",
+  "terminal_observation_ref": "git:a5b06acece93b6dd07bf26a90aaaeb75b93831c3",
+  "budget_ref": "git:68cc6e3d2ddfeba7be4163a8f81dddea7d590ae4",
+  "result": "NOT_RUN",
+  "commands_executed": 0,
+  "actual_observed_sha": "340ee1257717d925771971ea52b3927d5b3e89f7",
+  "actual_clean_checkout": true,
+  "actual_remotes": [],
+  "root_cause": "Provider checkout has no origin; prompt required local canonical identity, and matching-clean-SHA NOT_RUN report was rejected as incomplete.",
+  "correction": "Host verifies canonical repository/environment and source branch; absence of remote alone is no mismatch. Persist exact-task NOT_RUN as failed; reject contradictory evidence and explicit identity mismatch.",
+  "red": {
+    "job": 31,
+    "worktree": "/workspaces/managed-worktrees/2.11.6-cloud-lease-bridge-20261005-r2",
+    "results": [
+      {
+        "argv": [
+          "python",
+          "-B",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "src/continuous-development-cycle/tests",
+          "-p",
+          "test_codex_cloud_cli.py",
+          "-v"
+        ],
+        "exit_code": 1,
+        "log_sha256": "16a01cc407b73573d98837cb844525876cb599dc21a8e0df81f09b00cf811a9f",
+        "tail": "ver_pass (test_codex_cloud_cli.CloudTests.test_report_mismatches_never_pass) ... ok\ntest_report_requires_observed_provider_ready (test_codex_cloud_cli.CloudTests.test_report_requires_observed_provider_ready) ... ok\ntest_submit_once_across_reconnect (test_codex_cloud_cli.CloudTests.test_submit_once_across_reconnect) ... ok\ntest_unidentified_matching_marker_keeps_recovery_unknown (test_codex_cloud_cli.CloudTests.test_unidentified_matching_marker_keeps_recovery_unknown) ... ok\n\n======================================================================\nERROR: test_identity_preflight_not_run_is_durable_with_matching_clean_source (test_codex_cloud_cli.CloudTests.test_identity_preflight_not_run_is_durable_with_matching_clean_source)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/managed-worktrees/2.11.6-cloud-lease-bridge-20261005-r2/src/continuous-development-cycle/tests/test_codex_cloud_cli.py\", line 141, in test_identity_preflight_not_run_is_durable_with_matching_clean_source\n    result=self.adapter.ingest_report(KEY,report,'provider:actual-notrun/1')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspaces/managed-worktrees/2.11.6-cloud-lease-bridge-20261005-r2/src/continuous-development-cycle/scripts/codex_cloud_cli.py\", line 232, in ingest_report\n    passed=_validate_report(request,state['task_id'],report)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspaces/managed-worktrees/2.11.6-cloud-lease-bridge-20261005-r2/src/continuous-development-cycle/scripts/codex_cloud_cli.py\", line 87, in _validate_report\n    if not isinstance(checks,list) or len(checks)!=len(request['checks']):raise ValueError('Cloud report checks incomplete')\n                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nValueError: Cloud report checks incomplete\n\n======================================================================\nFAIL: test_explicit_identity_mismatch_cannot_pass_matching_checks (test_codex_cloud_cli.CloudTests.test_explicit_identity_mismatch_cannot_pass_matching_checks)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/managed-worktrees/2.11.6-cloud-lease-bridge-20261005-r2/src/continuous-development-cycle/tests/test_codex_cloud_cli.py\", line 157, in test_explicit_identity_mismatch_cannot_pass_matching_checks\n    self.assertEqual(result['state'],'failed');self.assertFalse(result['validation_passed'])\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'succeeded' != 'failed'\n- succeeded\n+ failed\n\n\n======================================================================\nFAIL: test_not_run_cannot_include_successful_command_evidence (test_codex_cloud_cli.CloudTests.test_not_run_cannot_include_successful_command_evidence)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/managed-worktrees/2.11.6-cloud-lease-bridge-20261005-r2/src/continuous-development-cycle/tests/test_codex_cloud_cli.py\", line 150, in test_not_run_cannot_include_successful_command_evidence\n    with self.assertRaises(ValueError):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n\n----------------------------------------------------------------------\nRan 23 tests in 0.303s\n\nFAILED (failures=2, errors=1)\n"
+      }
+    ],
+    "at_utc": "2026-10-05T07:24:06.744641Z"
+  },
+  "green": {
+    "job": 32,
+    "worktree": "/workspaces/managed-worktrees/2.11.6-cloud-lease-bridge-20261005-r2",
+    "results": [
+      {
+        "argv": [
+          "python",
+          "-B",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "src/continuous-development-cycle/tests",
+          "-p",
+          "test_codex_cloud_cli.py",
+          "-v"
+        ],
+        "exit_code": 0,
+        "log_sha256": "27ff02a0b3c7b4de20416cc63506c3252d2d872d221925e93f21b1d485038dca",
+        "tail": "test_ambiguous_marker_stays_unknown (test_codex_cloud_cli.CloudTests.test_ambiguous_marker_stays_unknown) ... ok\ntest_bound_insufficient_test_coverage_is_recorded_failed (test_codex_cloud_cli.CloudTests.test_bound_insufficient_test_coverage_is_recorded_failed) ... ok\ntest_bound_preflight_failure_can_report_checks_not_run (test_codex_cloud_cli.CloudTests.test_bound_preflight_failure_can_report_checks_not_run) ... ok\ntest_bound_source_or_cleanliness_failure_is_durable_and_immutable (test_codex_cloud_cli.CloudTests.test_bound_source_or_cleanliness_failure_is_durable_and_immutable) ... ok\ntest_cli_diagnostics_stay_outside_candidate_checkout (test_codex_cloud_cli.CloudTests.test_cli_diagnostics_stay_outside_candidate_checkout) ... ok\ntest_conflicting_attempt_context_rejected (test_codex_cloud_cli.CloudTests.test_conflicting_attempt_context_rejected) ... ok\ntest_corrupt_journal_cannot_claim_success_without_report (test_codex_cloud_cli.CloudTests.test_corrupt_journal_cannot_claim_success_without_report) ... ok\ntest_corrupt_persisted_report_cannot_pass_after_reconnect (test_codex_cloud_cli.CloudTests.test_corrupt_persisted_report_cannot_pass_after_reconnect) ... ok\ntest_exact_report_proves_success (test_codex_cloud_cli.CloudTests.test_exact_report_proves_success) ... ok\ntest_exact_report_replay_is_idempotent_but_changed_report_rejected (test_codex_cloud_cli.CloudTests.test_exact_report_replay_is_idempotent_but_changed_report_rejected) ... ok\ntest_explicit_identity_mismatch_cannot_pass_matching_checks (test_codex_cloud_cli.CloudTests.test_explicit_identity_mismatch_cannot_pass_matching_checks) ... ok\ntest_failed_check_report_proves_failure (test_codex_cloud_cli.CloudTests.test_failed_check_report_proves_failure) ... ok\ntest_identity_preflight_not_run_is_durable_with_matching_clean_source (test_codex_cloud_cli.CloudTests.test_identity_preflight_not_run_is_durable_with_matching_clean_source) ... ok\ntest_lost_reply_remains_unknown_and_never_restarts (test_codex_cloud_cli.CloudTests.test_lost_reply_remains_unknown_and_never_restarts) ... ok\ntest_missing_live_callback_never_dispatches (test_codex_cloud_cli.CloudTests.test_missing_live_callback_never_dispatches) ... ok\ntest_not_run_cannot_include_successful_command_evidence (test_codex_cloud_cli.CloudTests.test_not_run_cannot_include_successful_command_evidence) ... ok\ntest_pagination_locally_filters_environment_and_recovers_exact_marker (test_codex_cloud_cli.CloudTests.test_pagination_locally_filters_environment_and_recovers_exact_marker) ... ok\ntest_ready_without_report_is_not_pass (test_codex_cloud_cli.CloudTests.test_ready_without_report_is_not_pass) ... ok\ntest_repeated_cursor_stays_unknown (test_codex_cloud_cli.CloudTests.test_repeated_cursor_stays_unknown) ... ok\ntest_report_mismatches_never_pass (test_codex_cloud_cli.CloudTests.test_report_mismatches_never_pass) ... ok\ntest_report_requires_observed_provider_ready (test_codex_cloud_cli.CloudTests.test_report_requires_observed_provider_ready) ... ok\ntest_submit_once_across_reconnect (test_codex_cloud_cli.CloudTests.test_submit_once_across_reconnect) ... ok\ntest_unidentified_matching_marker_keeps_recovery_unknown (test_codex_cloud_cli.CloudTests.test_unidentified_matching_marker_keeps_recovery_unknown) ... ok\n\n----------------------------------------------------------------------\nRan 23 tests in 0.339s\n\nOK\n"
+      },
+      {
+        "argv": [
+          "python",
+          "-B",
+          "src/continuous-development-cycle/scripts/validate_package.py"
+        ],
+        "exit_code": 0,
+        "log_sha256": "04f99c8f9f71fb585be00205b1b52841bea976e98e3e3d6cedb3fdeb1e0c5337",
+        "tail": "PASS: continuous-development-cycle 2.11.6, 318 files and parsed templates\n"
+      },
+      {
+        "argv": [
+          "python",
+          "-B",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "bootstrap/tests",
+          "-v"
+        ],
+        "exit_code": 0,
+        "log_sha256": "e9a633bfc17f9565fbc61de3d36c48e6c0b2102a12064ad2beaab5068bbbf28a",
+        "tail": "t_hide_running_actions) ... ok\ntest_malformed_execution_state_is_rejected_explicitly (test_github_ci_state.GithubCIStateTests.test_malformed_execution_state_is_rejected_explicitly) ... ok\ntest_malformed_run_identity_is_rejected_explicitly (test_github_ci_state.GithubCIStateTests.test_malformed_run_identity_is_rejected_explicitly) ... ok\ntest_missing_or_partial_surfaces_are_unknown_not_no_ci (test_github_ci_state.GithubCIStateTests.test_missing_or_partial_surfaces_are_unknown_not_no_ci) ... ok\ntest_request_identity_is_validated (test_github_ci_state.GithubCIStateTests.test_request_identity_is_validated) ... ok\ntest_requests_cover_three_independent_github_surfaces (test_github_ci_state.GithubCIStateTests.test_requests_cover_three_independent_github_surfaces) ... ok\ntest_success_is_observed_workflow_result_not_release_readiness (test_github_ci_state.GithubCIStateTests.test_success_is_observed_workflow_result_not_release_readiness) ... ok\ntest_unrelated_commit_and_workflow_do_not_prove_candidate_execution (test_github_ci_state.GithubCIStateTests.test_unrelated_commit_and_workflow_do_not_prove_candidate_execution) ... ok\ntest_managed_pool_fault_regressions_are_retained (test_managed_pool_fault_inventory.ManagedPoolFaultInventory.test_managed_pool_fault_regressions_are_retained) ... ok\ntest_candidate_agrees_with_version_and_development_base (test_release_bindings.ReleaseBindingsTests.test_candidate_agrees_with_version_and_development_base) ... ok\ntest_candidate_and_snapshots_bind_actual_package (test_release_bindings.ReleaseBindingsTests.test_candidate_and_snapshots_bind_actual_package) ... ok\ntest_no_tests_hidden_below_non_packages (test_release_bindings.ReleaseBindingsTests.test_no_tests_hidden_below_non_packages) ... ok\ntest_prior_driver_is_the_recorded_git_package (test_release_bindings.ReleaseBindingsTests.test_prior_driver_is_the_recorded_git_package) ... ok\ntest_release_evidence_paths_exist (test_release_bindings.ReleaseBindingsTests.test_release_evidence_paths_exist) ... ok\ntest_canonical_sources_and_discovered_tests_are_allowed (test_repository_layout.RepositoryLayoutTests.test_canonical_sources_and_discovered_tests_are_allowed) ... ok\ntest_cli_fails_before_candidate_import (test_repository_layout.RepositoryLayoutTests.test_cli_fails_before_candidate_import) ... ok\ntest_nested_test_requires_tracked_package_markers (test_repository_layout.RepositoryLayoutTests.test_nested_test_requires_tracked_package_markers) ... ok\ntest_root_runtime_and_test_are_rejected_together (test_repository_layout.RepositoryLayoutTests.test_root_runtime_and_test_are_rejected_together) ... ok\ntest_same_discovery_rule_applies_to_bootstrap_tests (test_repository_layout.RepositoryLayoutTests.test_same_discovery_rule_applies_to_bootstrap_tests) ... ok\ntest_symlink_marker_does_not_prove_nested_discovery (test_repository_layout.RepositoryLayoutTests.test_symlink_marker_does_not_prove_nested_discovery) ... ok\ntest_symlink_test_is_not_a_regular_discoverable_module (test_repository_layout.RepositoryLayoutTests.test_symlink_test_is_not_a_regular_discoverable_module) ... ok\ntest_test_in_source_directory_is_not_discovered (test_repository_layout.RepositoryLayoutTests.test_test_in_source_directory_is_not_discovered) ... ok\ntest_undiscoverable_test_module_names_are_rejected (test_repository_layout.RepositoryLayoutTests.test_undiscoverable_test_module_names_are_rejected) ... ok\n\n----------------------------------------------------------------------\nRan 46 tests in 0.904s\n\nOK\n"
+      },
+      {
+        "argv": [
+          "python",
+          "-B",
+          "bootstrap/repository_layout.py"
+        ],
+        "exit_code": 0,
+        "log_sha256": "6ea34def212a8e57fc253b6fbdfa99f4fb867e8fa8f72828de68fd94f9c5256a",
+        "tail": "LAYOUT_GREEN: 497 tracked paths inspected\n"
+      }
+    ],
+    "at_utc": "2026-10-05T07:26:27.240117Z"
+  },
+  "guard_reconciled": true,
+  "source_main_unchanged": "8579c3495a6c7ffd3bfa55437760d4392f491fa5",
+  "budget_reset": false,
+  "current_cloud_start_charge": 1,
+  "current_cloud_start_cap": 1,
+  "release_ready": false,
+  "schedulers": "owner-paused"
+}
