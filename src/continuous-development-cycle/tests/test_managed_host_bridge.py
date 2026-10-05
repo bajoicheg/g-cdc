@@ -316,6 +316,47 @@ subprocess.run(['git','commit','-qm','managed closure'],check=True)
         self.assertEqual(again["release_receipt"], finished["release_receipt"])
         self.assertIsNone(again["published_commit"])
 
+    def test_failed_worker_needs_failure_evidence_instead_of_success_output_labels(self):
+        request=self.start_request();request['argv']=[sys.executable,'-c','raise SystemExit(7)']
+        handle=bridge.start(request);self.wait_for(handle,'awaiting_release')
+        finish=self.finish_request(handle)
+        finish.update(output_refs=['failure:actual-exit-7'],evidence_refs=['failure:actual-exit-7'])
+        finished=bridge.finish(finish)
+        self.assertEqual(finished['worker_status'],'failed')
+        self.assertFalse(finished['scope_complete'])
+        self.assertIsNone(finished['published_commit'])
+        self.assertTrue(finished['final_response_allowed'])
+        self.assertEqual(self.remote_head(),self.base)
+
+    def test_failed_worker_closes_while_preserving_exact_unresolved_guard_and_claims(self):
+        import copy
+        import operation_intent as op
+        request=self.start_request();request['argv']=[sys.executable,'-c','import time; time.sleep(.3); raise SystemExit(7)']
+        handle=bridge.start(request)
+        revision,record=self.lease_store.read()
+        intent=json.loads((ROOT/'templates/operation-intent.json').read_text())
+        intent['source_ref']=record['source_ref']
+        intent['binding']['repository']='test/project';intent['operation_key']=op.operation_key(intent['binding'])
+        receipt=op.verify_readback(intent,copy.deepcopy(intent),'git:'+'a'*40,bridge._utc())
+        intent=op.transition(intent,'submitting',bridge._utc(),receipt=receipt)
+        args=(handle['owner_id'],handle['generation'],handle['invocation_id'])
+        guarded=leasev2.set_guard(record,*args,bridge._utc(),intent,'git:'+'b'*40)
+        guarded_revision=self.lease_store.compare_and_swap(revision,guarded)
+        leasev2.claim_submission(self.lease_store,guarded_revision,'test/project','refs/heads/main',*args,
+            bridge._utc(),intent_digest=op._hash(intent))
+        self.wait_for(handle,'awaiting_release')
+        _,before=self.lease_store.read()
+        finished=bridge.finish(self.finish_request(handle))
+        _,after=self.lease_store.read()
+        self.assertIsNone(after['owner_id'])
+        self.assertEqual(after['external_guard'],before['external_guard'])
+        self.assertEqual(after['submission_claims'],before['submission_claims'])
+        self.assertEqual(after['last_release']['external_reconciliation'],'unknown_preserved')
+        self.assertFalse(finished['scope_complete'])
+        self.assertIsNone(finished['published_commit'])
+        self.assertTrue(finished['final_response_allowed'])
+        self.assertEqual(self.remote_head(),self.base)
+
     def test_cancelled_terminal_worker_releases_without_publishing(self):
         request = self.start_request()
         request["argv"] = [sys.executable, "-c", "import time; time.sleep(30)"]

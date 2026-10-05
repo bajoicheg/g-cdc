@@ -35,6 +35,38 @@ class CloudTests(unittest.TestCase):
         self.submit();cloud.CodexCloudCLI(self.tmp.name,runner=self.runner).submit(REQUEST,launch_authorized=lambda:self.fail('repeated authorization'))
         self.assertEqual(sum(a[2]=='exec' for a in self.runner.calls),1)
         self.assertEqual(self.runner.calls[0][1:9],['cloud','exec','--env',REQUEST['environment_id'],'--branch','cdc/candidate','--attempts','1'])
+    def test_gate_exception_persists_before_send_cancellation_without_cli_call(self):
+        def gate():raise AssertionError('saved environment became stale')
+        try:
+            state=self.adapter.submit(REQUEST,launch_authorized=gate)
+        except AssertionError:
+            self.fail('pre-dispatch gate escaped without recording cancellation')
+        self.assertEqual(state['state'],'not_submitted')
+        self.assertEqual(state['dispatch']['state'],'cancelled_before_send')
+        self.assertFalse(state['validation_passed'])
+        self.assertIsNone(state['task_id'])
+        self.assertFalse(self.runner.calls)
+        recovered=cloud.CodexCloudCLI(self.tmp.name,runner=self.runner)
+        self.assertEqual(recovered.observe(KEY),state)
+        self.assertEqual(recovered.submit(REQUEST,launch_authorized=lambda:self.fail('replayed gate')),state)
+        self.assertFalse(self.runner.calls)
+    def test_provider_boundary_is_durable_before_runner_and_lost_reply_is_not_cancelled(self):
+        def runner(argv,**kwargs):
+            state=json.loads(self.adapter._path(KEY).read_text())
+            self.assertEqual(state.get('dispatch',{}).get('state'),'started')
+            raise subprocess.TimeoutExpired(argv,1)
+        self.adapter.runner=runner
+        state=self.submit()
+        self.assertEqual(state['state'],'unknown')
+        self.assertEqual(state['dispatch']['state'],'started')
+    def test_cancelled_journal_cannot_hide_a_started_dispatch_or_task(self):
+        def gate():raise ValueError('ownership lost')
+        state=self.adapter.submit(REQUEST,launch_authorized=gate)
+        self.assertEqual(state['state'],'not_submitted')
+        for change in ({'task_id':TASK},{'dispatch':{'state':'started'}},{'validation_passed':True}):
+            bad=copy.deepcopy(state);bad.update(change)
+            self.adapter._path(KEY).write_text(json.dumps(bad))
+            with self.subTest(change=change),self.assertRaises(ValueError):self.adapter.observe(KEY)
     def test_cli_diagnostics_stay_outside_candidate_checkout(self):
         candidate=Path(self.tmp.name)/'candidate';candidate.mkdir()
         executable=Path(self.tmp.name)/'diagnostic-cli'
