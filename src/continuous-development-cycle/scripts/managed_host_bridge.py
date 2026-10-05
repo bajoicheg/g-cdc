@@ -815,6 +815,8 @@ def _finalize_release(session, runtime, lease_store, result_commit, checkpoint_r
         return recovered["release_marker"]["release_receipt"]
 
     at = _utc()
+    if session.get('worker_status') == 'succeeded' and record['external_guard'] is not None:
+        raise ValueError('successful managed worker cannot complete with unresolved external guard')
     if record["finalization"]["state"] in {"active", "failed"}:
         record = leasev2.begin_finalization(
             record, session["owner_id"], session["generation"], session["invocation_id"], at,
@@ -832,7 +834,7 @@ def _finalize_release(session, runtime, lease_store, result_commit, checkpoint_r
     if record["finalization"]["state"] == "checkpointed":
         record = leasev2.reconcile_finalization(
             record, session["owner_id"], session["generation"], session["invocation_id"], _utc(),
-            external_reconciliation=("unknown_preserved" if publication is None and record['external_guard'] is not None else "none"),
+            external_reconciliation=("unknown_preserved" if session.get('worker_status') in {'failed', 'cancelled', 'timed_out'} and publication is None and record['external_guard'] is not None else "none"),
         )
         revision = lease_store.compare_and_swap(revision, record)
     if record["finalization"]["state"] == "reconciled":

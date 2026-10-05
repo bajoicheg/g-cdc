@@ -89,9 +89,20 @@ class ManagedHostBridgeTests(unittest.TestCase):
             if not isinstance(pid, int):
                 continue
             try:
+                before = runtime_module._process(pid)
                 command = Path(f"/proc/{pid}/cmdline").read_bytes()
-                if str(self.root).encode() in command:
-                    os.killpg(pid, signal.SIGKILL)
+                if (before is not None and before['signal_pid'] is not None
+                        and str(self.root).encode() in command):
+                    os.killpg(before['signal_pid'], signal.SIGKILL)
+                    deadline = time.monotonic() + 2
+                    while time.monotonic() < deadline:
+                        current = runtime_module._process(pid)
+                        if (current is None or current['state'] in ('Z', 'X')
+                                or current['birth'] != before['birth']):
+                            break
+                        time.sleep(.01)
+                    else:
+                        self.fail('test supervisor did not stop before cleanup')
             except (OSError, ProcessLookupError):
                 pass
 
@@ -152,6 +163,33 @@ subprocess.run(['git','commit','-qm','managed closure'],check=True)
             text=True,
         ).strip()
         return row.split("\t", 1)[0]
+
+    def test_test_cleanup_waits_for_supervisor_stop_before_temp_directory_removal(self):
+        import threading
+        request=self.start_request();request['argv']=[sys.executable,'-c','raise SystemExit(7)']
+        handle=bridge.start(request);self.wait_for(handle,'awaiting_release')
+        receipt=json.loads(next((self.root/'journal').glob('**/receipt.json')).read_text())
+        pid=receipt['supervisor_proc_pid']
+        actual_kill=os.killpg
+        delivered=[]
+        def delayed_kill(group,sig):
+            def deliver():
+                time.sleep(.1)
+                try:actual_kill(group,sig)
+                except ProcessLookupError:pass
+            thread=threading.Thread(target=deliver);thread.start();delivered.append(thread)
+        with patch.object(os,'killpg',side_effect=delayed_kill):
+            self.stop_test_supervisors()
+            after=runtime_module._process(pid)
+        for thread in delivered:thread.join(1)
+        # Ensure this deliberately failing baseline fixture itself is drained.
+        end=time.monotonic()+2
+        while time.monotonic()<end:
+            current=runtime_module._process(pid)
+            if current is None or current['state'] in ('Z','X'):break
+            time.sleep(.01)
+        self.assertTrue(after is None or after['state'] in ('Z','X'),
+                        'cleanup returned before the actual supervisor stopped')
 
     def split_request(self):
         private = self.root / "private.git"
@@ -539,6 +577,33 @@ subprocess.run(['git','commit','-qm','managed closure'],check=True)
         again=bridge.finish(self.finish_request(handle,'evidence:compute-result'))
         self.assertIsNone(again['published_commit'])
         self.assertTrue(again['final_response_allowed'])
+
+    def test_read_only_success_cannot_complete_with_unresolved_claimed_guard(self):
+        import copy
+        import operation_intent as op
+        handle = bridge.start(self.read_only_request())
+        self.wait_for(handle, 'awaiting_release')
+        revision, record = self.lease_store.read()
+        intent = json.loads((ROOT/'templates/operation-intent.json').read_text())
+        intent['source_ref'] = record['source_ref']
+        intent['binding']['repository'] = 'test/project'
+        intent['operation_key'] = op.operation_key(intent['binding'])
+        receipt = op.verify_readback(intent, copy.deepcopy(intent), 'git:'+'a'*40, bridge._utc())
+        intent = op.transition(intent, 'submitting', bridge._utc(), receipt=receipt)
+        args = (handle['owner_id'], handle['generation'], handle['invocation_id'])
+        guarded = leasev2.set_guard(record, *args, bridge._utc(), intent, 'git:'+'b'*40)
+        guarded_revision = self.lease_store.compare_and_swap(revision, guarded)
+        leasev2.claim_submission(self.lease_store, guarded_revision, 'test/project',
+            'refs/heads/main', *args, bridge._utc(), intent_digest=op._hash(intent))
+        _, before = self.lease_store.read()
+        with self.assertRaisesRegex(ValueError, 'unresolved external guard'):
+            bridge.finish(self.finish_request(handle, 'evidence:compute-result'))
+        _, after = self.lease_store.read()
+        self.assertEqual(after['owner_id'], before['owner_id'])
+        self.assertEqual(after['external_guard'], before['external_guard'])
+        self.assertEqual(after['submission_claims'], before['submission_claims'])
+        self.assertIsNone(after['last_release'])
+        self.assertEqual(self.remote_head(), self.base)
 
     def read_only_recovery_after_finalization_state(self, state):
         handle=bridge.start(self.read_only_request())
