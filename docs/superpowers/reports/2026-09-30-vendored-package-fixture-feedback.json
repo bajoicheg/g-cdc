@@ -1,0 +1,17 @@
+{
+  "schema": "rca-feedback-disposition/v1",
+  "anomaly_id": "vendored-package-hidden-fixture-2026-09-30",
+  "fix_key": "vendored-package-self-contained-regressions",
+  "authorizes_roadmap_write": false,
+  "authorizes_product_write": false,
+  "action": "ADD_FIX_FORMULATION",
+  "roadmap_payload": {
+    "problem": "A packaged regression relied on a fixture outside the immutable package tree.",
+    "fix": "Keep packaged tests self-contained and add clean-consumer-layout validation.",
+    "invariant": "Packaged tests require no undeclared canonical-repository files.",
+    "evidence_refs": [
+      "consumer-adoption:866-test-suite",
+      "cdc-package-tree:7a7a7faa75b7fc9160d912d8fb507c6b9573d17f"
+    ]
+  }
+}

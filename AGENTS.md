@@ -45,3 +45,5 @@ Owner instruction2026-10-04 sets the CDC runtime floor to2.11.3 and authorizes C
 ## CDC 2.11.6 authorized patch
 
 Owner authorized implementation on 2026-10-05 under released CDC2.11.5 at refs/heads/release/v2.11.5, metadata bbe5d8c8e4249ad27735245033b6dd6549539809, frozen source befbf85558e211397f9a257f69dfa56ca1474225, package6e9fb338a83c532076a30e8feb0b6ce2ebbe4063. Minimum runtime remains2.11.3. Codex Cloud is preferred for eligible portable CDC compute, including public repositories; required platform/release CI remains separate. Personal installation and consumer adoption require their own immutable-byte readbacks. Schedulers remain owner-paused.
+
+For 2.11.6 and subsequent adoption, require observed clean consumer-layout GREEN from python -B bootstrap/consumer_package_checks.py on the frozen package, in addition to the configured canonical CI checks. Packaged regressions must have no undeclared canonical-repository fixture dependencies.

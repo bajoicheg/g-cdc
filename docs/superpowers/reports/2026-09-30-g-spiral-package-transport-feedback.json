@@ -1,0 +1,18 @@
+{
+  "schema": "rca-feedback-disposition/v1",
+  "anomaly_id": "g-spiral-cdc-2.11.2-package-transport-2026-09-30",
+  "fix_key": "carrier-neutral-package-transport",
+  "authorizes_roadmap_write": false,
+  "authorizes_product_write": false,
+  "action": "REINFORCE_EXISTING",
+  "roadmap_payload": {
+    "problem": "A consumer rollout declared package transport unavailable after one high-level write route failed even though an authorized low-level Git object route still worked.",
+    "fix": "Reinforce carrier-neutral package transport with explicit fallback reconciliation: direct contents/file write -> low-level Git blob/tree transport (when authorized) -> exact package-tree verification before ref movement; suppress unchanged retries and preserve exact rollback.",
+    "invariant": "Transport-channel failure is not package failure. Adoption advances only on exact canonical package-tree identity, and transport_unavailable is valid only after authorized carrier alternatives are exhausted.",
+    "evidence_refs": [
+      "g-spiral:cdc/coordination:continuity/cdc-2.11.2-transport-r2.json",
+      "g-spiral:main:679c4246a31f1912feff16c5a3eba912856ee0eb",
+      "g-spiral:actions:36774463901"
+    ]
+  }
+}
