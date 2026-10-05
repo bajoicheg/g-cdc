@@ -192,12 +192,22 @@ class CodexCloudCLI:
             try:
                 if state['task_id'] is None:
                     rows=self._inventory(request)
-                    def matches(task):
-                        title=task.get('title','');env=task.get('environment_id')
-                        return (isinstance(title,str) and (env==request['environment_id'] if env is not None else task.get('environment_label')==request['environment_label'])
+                    exact=[]
+                    for task in rows:
+                        title=task.get('title','')
+                        if not (isinstance(title,str)
                                 and re.search(r'(?<!\S)'+re.escape(operation_key)+r'(?!\S)',title)
-                                and re.search(r'(?<!\S)'+re.escape(request['attempt_id'])+r'(?!\S)',title))
-                    exact=[task for task in rows if matches(task)]
+                                and re.search(r'(?<!\S)'+re.escape(request['attempt_id'])+r'(?!\S)',title)):
+                            continue
+                        env=task.get('environment_id')
+                        if env is None:
+                            label=task.get('environment_label')
+                            _text(label)  # An unclassified marker could be a second task here.
+                            same_environment=label==request['environment_label']
+                        else:
+                            _text(env)
+                            same_environment=env==request['environment_id']
+                        if same_environment:exact.append(task)
                     if len(exact)!=1:raise ValueError('Cloud recovery requires one exact provider task marker/environment')
                     state['task_id']=exact[0]['id']
                 result=self._run(['status',state['task_id']])

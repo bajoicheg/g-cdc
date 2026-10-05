@@ -59,6 +59,23 @@ class CloudTests(unittest.TestCase):
     def test_ambiguous_marker_stays_unknown(self):
         self.runner.exec_error=True;self.submit();self.runner.pages=[{'tasks':[self.task(),self.task(id='task_e_'+'f'*32)],'cursor':None}]
         self.assertEqual(self.adapter.observe(KEY)['state'],'unknown')
+    def test_unidentified_matching_marker_keeps_recovery_unknown(self):
+        for identity in ({}, {'environment_id': None, 'environment_label': None},
+                         {'environment_id': None, 'environment_label': ''},
+                         {'environment_id': 7, 'environment_label': 'test-env'}):
+            with self.subTest(identity=identity), tempfile.TemporaryDirectory() as directory:
+                runner=Runner();runner.exec_error=True
+                adapter=cloud.CodexCloudCLI(directory,runner=runner)
+                adapter.submit(REQUEST,launch_authorized=lambda:None)
+                unidentified={'id':'task_e_'+'f'*32,'title':'CDC '+KEY+' compute-a1',**identity}
+                runner.pages=[{'tasks':[self.task()], 'cursor':'page2'},
+                              {'tasks':[unidentified], 'cursor':None}]
+                observed=adapter.observe(KEY)
+                self.assertEqual(observed['state'],'unknown')
+                self.assertIsNone(observed['task_id'])
+                self.assertFalse(any(call[2]=='status' for call in runner.calls))
+                adapter.submit(REQUEST,launch_authorized=lambda:self.fail('repeated launch'))
+                self.assertEqual(sum(call[2]=='exec' for call in runner.calls),1)
     def test_ready_without_report_is_not_pass(self):
         self.submit();observed=self.adapter.observe(KEY)
         self.assertEqual(observed['state'],'waiting_report');self.assertFalse(observed['validation_passed'])
