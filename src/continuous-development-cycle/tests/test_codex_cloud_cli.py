@@ -82,14 +82,36 @@ class CloudTests(unittest.TestCase):
     def test_failed_check_report_proves_failure(self):
         self.submit();self.adapter.observe(KEY);report=self.report();report['checks'][0]['exit_code']=1
         self.assertEqual(self.adapter.ingest_report(KEY,report,'provider:report/1')['state'],'failed')
+    def test_bound_source_or_cleanliness_failure_is_durable_and_immutable(self):
+        for field,value in [('head_before','f'*40),('head_after','f'*40),('clean_before',False),('clean_after',False)]:
+            with self.subTest(field=field),tempfile.TemporaryDirectory() as directory:
+                adapter=cloud.CodexCloudCLI(directory,runner=self.runner)
+                adapter.submit(REQUEST,launch_authorized=lambda:None);adapter.observe(KEY)
+                report=self.report();report[field]=value
+                result=adapter.ingest_report(KEY,report,'provider:report/1')
+                self.assertEqual(result['state'],'failed');self.assertFalse(result['validation_passed'])
+                recovered=cloud.CodexCloudCLI(directory,runner=self.runner).observe(KEY)
+                self.assertEqual(recovered['report'],report)
+                with self.assertRaises(ValueError):adapter.ingest_report(KEY,self.report(),'provider:report/2')
+    def test_bound_insufficient_test_coverage_is_recorded_failed(self):
+        self.submit();self.adapter.observe(KEY);report=self.report();report['checks'][0]['test_count']=3
+        result=self.adapter.ingest_report(KEY,report,'provider:report/1')
+        self.assertEqual(result['state'],'failed');self.assertFalse(result['validation_passed'])
+        self.assertEqual(self.adapter.observe(KEY)['report'],report)
+    def test_bound_preflight_failure_can_report_checks_not_run(self):
+        self.submit();self.adapter.observe(KEY);report=self.report()
+        report.update(head_before='f'*40,head_after='f'*40,checks=[])
+        result=self.adapter.ingest_report(KEY,report,'provider:report/1')
+        self.assertEqual(result['state'],'failed');self.assertEqual(result['report']['checks'],[])
+        self.assertFalse(cloud.CodexCloudCLI(self.tmp.name,runner=self.runner).observe(KEY)['validation_passed'])
     def test_report_mismatches_never_pass(self):
         self.submit();self.adapter.observe(KEY)
-        changes=[('head_after','f'*40),('task_id','task_e_'+'f'*32),('environment_id','f'*32),('clean_before',False),('clean_after',1),('attempt_id','other'),('repository','other/repo')]
+        changes=[('head_after','malformed'),('task_id','task_e_'+'f'*32),('environment_id','f'*32),('clean_after',1),('attempt_id','other'),('repository','other/repo')]
         for field,value in changes:
             with self.subTest(field=field):
                 report=self.report();report[field]=value
                 with self.assertRaises(ValueError):self.adapter.ingest_report(KEY,report,'provider:report/1')
-        for change in ({'argv':['echo','pass']},{'log_sha256':'bad'},{'test_count':3},{'exit_code':False}):
+        for change in ({'argv':['echo','pass']},{'log_sha256':'bad'},{'test_count':False},{'exit_code':False}):
             report=self.report();report['checks'][0].update(change)
             with self.assertRaises(ValueError):self.adapter.ingest_report(KEY,report,'provider:report/1')
     def test_report_requires_observed_provider_ready(self):

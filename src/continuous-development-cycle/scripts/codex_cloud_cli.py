@@ -60,7 +60,8 @@ def prompt(request):
             'Use this first line as the task title, including the exact operation and attempt.\n'
             'COMPUTE_ONLY: execute this exact read-only check plan once.\n'+_canonical(request)+'\n'
             'Verify actual canonical repository identity, exact candidate_sha and clean checkout before running. '
-            'Stop on mismatch. Run only the supplied argv arrays, separately, capturing stdout/stderr outside '
+            'Stop on mismatch; return typed observed SHA/cleanliness and checks: [] for NOT_RUN, without invented exit codes or logs. '
+            'Run only the supplied argv arrays, separately, capturing stdout/stderr outside '
             'the repository, exit codes, actual unittest counts and SHA256 of each complete log. '
             'Do not edit, fix, commit, push, apply diffs, delegate, acquire a lease, install dependencies or launch CI. '
             'After checks verify unchanged exact HEAD and clean checkout. Platform gates are NOT_RUN. '
@@ -75,19 +76,23 @@ def _validate_report(request, task_id, report):
     for key in ('operation_key','attempt_id','repository','environment_id','environment_label'):
         if report.get(key)!=request[key]:raise ValueError('Cloud report binding mismatch: '+key)
     if report.get('task_id')!=task_id:raise ValueError('Cloud report task mismatch')
-    if any(report.get(key)!=request['candidate_sha'] for key in ('head_before','head_after')):raise ValueError('Cloud report source SHA mismatch')
-    if report.get('clean_before') is not True or report.get('clean_after') is not True:raise ValueError('Cloud report requires unchanged clean source')
+    for key in ('head_before','head_after'):
+        if not isinstance(report.get(key),str) or not HEX.fullmatch(report[key]):raise ValueError('Cloud report source SHA invalid')
+    if any(type(report.get(key)) is not bool for key in ('clean_before','clean_after')):
+        raise ValueError('Cloud report cleanliness observation invalid')
+    passed=(all(report[key]==request['candidate_sha'] for key in ('head_before','head_after'))
+            and report['clean_before'] and report['clean_after'])
     checks=report.get('checks')
+    if not passed and checks==[]:return False  # Exact-task preflight failed; commands NOT_RUN.
     if not isinstance(checks,list) or len(checks)!=len(request['checks']):raise ValueError('Cloud report checks incomplete')
-    passed=True
     for planned,actual in zip(request['checks'],checks):
         if not isinstance(actual,dict) or actual.get('id')!=planned['id'] or actual.get('argv')!=planned['argv']:raise ValueError('Cloud report command mismatch')
         if type(actual.get('exit_code')) is not int:raise ValueError('Cloud report exit code missing/invalid')
         if not isinstance(actual.get('log_sha256'),str) or not re.fullmatch(r'[0-9a-f]{64}',actual['log_sha256']):raise ValueError('Cloud report log digest invalid')
         count=actual.get('test_count');minimum=planned['minimum_test_count']
         if count is not None and (type(count) is not int or count<0):raise ValueError('Cloud report test count invalid')
-        if minimum is not None and (count is None or (actual['exit_code']==0 and count<minimum)):raise ValueError('Cloud report test count below required bound')
-        passed=passed and actual['exit_code']==0
+        if minimum is not None and count is None:raise ValueError('Cloud report test count missing')
+        passed=passed and actual['exit_code']==0 and (minimum is None or count>=minimum)
     return passed
 
 class CodexCloudCLI:
