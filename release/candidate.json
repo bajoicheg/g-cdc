@@ -3,15 +3,16 @@
   "version": "2.11.6",
   "developed_under_version": "2.11.5",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "d9171a1cc72903aa6aa0893aab9d6c5dbaf21bf9",
-  "package_tree": "323fc9098d75c7e35b2851c78eee5fe660f593da",
+  "source_commit": "4be1f9746157fe360ed5ad21140b52a37d833ee4",
+  "package_tree": "88ea9ed388ccd5f6bef0dc2918af5e7ac315a50f",
   "status": "candidate",
   "evidence": {
     "bootstrap": [
       "bootstrap/validate_release.py"
     ],
     "package": [
-      "src/continuous-development-cycle/scripts/validate_package.py"
+      "src/continuous-development-cycle/scripts/validate_package.py",
+      "bootstrap/consumer_package_checks.py"
     ],
     "compatibility": [
       "compatibility/matrix.json"
