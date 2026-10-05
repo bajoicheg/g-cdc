@@ -685,6 +685,9 @@ def _read_only_result(session, runtime):
         raise ValueError("read_only worker checkout must remain clean")
     if _git(cwd, "rev-parse", "HEAD")[0] != base:
         raise ValueError("read_only worker changed its Git head")
+    branch, code = _git(cwd, "symbolic-ref", "-q", "HEAD", check=False)
+    if code != 1 or branch:
+        raise ValueError("read_only worker checkout must remain detached")
     _require_read_only_reflog(cwd)
     history = _git(cwd, "reflog", "show", "--format=%H", "HEAD")[0].splitlines()
     if not history or any(sha != base for sha in history):

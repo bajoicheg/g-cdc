@@ -506,6 +506,14 @@ subprocess.run(['git','commit','-qm','managed closure'],check=True)
             bridge.finish(self.finish_request(handle,'evidence:compute-result'))
         self.assertEqual(self.remote_head(),self.base)
 
+    def test_read_only_attached_branch_cannot_finish(self):
+        code='import subprocess;subprocess.run(["git","checkout","-qb","unexpected-readonly-branch"],check=True)'
+        handle=bridge.start(self.read_only_request(code))
+        self.wait_for(handle,"awaiting_release")
+        with self.assertRaisesRegex(ValueError,'detached'):
+            bridge.finish(self.finish_request(handle,'checkpoint:read-only'))
+        self.assertEqual(self.remote_head(),self.base)
+        self.assertEqual(self.lease_store.read()[1]['owner_id'],handle['owner_id'])
     def test_read_only_disabled_reflog_is_rejected_before_worker_launch(self):
         self.git('config','core.logAllRefUpdates','false')
         with self.assertRaisesRegex(ValueError,'reflog'):
