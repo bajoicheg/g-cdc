@@ -3,8 +3,8 @@
   "version": "2.11.6",
   "developed_under_version": "2.11.5",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "fcd04573decaba6e20569602cd8115e3417cc43b",
-  "package_tree": "98369d4748b1022cff496b0119e11f6ca832d57f",
+  "source_commit": "5805b76cbac23f3cc139b55ebd82fcc6c22755cc",
+  "package_tree": "1c43c13daa1ab34747e328d14654e1d365becc45",
   "status": "candidate",
   "evidence": {
     "bootstrap": [
