@@ -905,7 +905,13 @@ def finish(request):
     # Read the exact terminal observation before recovering ownership. A failed
     # attempt supplies failure evidence; successful output labels cannot be
     # required for its no-publication release. Nonterminal/unknown stays strict.
-    observed_status = session.get('worker_status') if session.get('release_receipt') is not None else _runtime(session).observe(session['task_id'],session['attempt_id']).get('pending_terminal_status')
+    if session.get('release_receipt') is not None:
+        observed_status = session.get('worker_status')
+    else:
+        prevalidation_observation = _runtime(session).observe(session['task_id'], session['attempt_id'])
+        observed_status = prevalidation_observation.get('pending_terminal_status')
+        if observed_status is None and prevalidation_observation.get('status') in {'failed', 'cancelled', 'timed_out'}:
+            observed_status = prevalidation_observation['status']
     if observed_status not in {'failed','cancelled','timed_out'}:
         if not set(task["expected_outputs"]) <= set(output_refs):
             raise ValueError("worker result missing expected outputs")

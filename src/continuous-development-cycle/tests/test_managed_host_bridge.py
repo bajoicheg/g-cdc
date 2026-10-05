@@ -395,6 +395,42 @@ subprocess.run(['git','commit','-qm','managed closure'],check=True)
         self.assertTrue(finished['final_response_allowed'])
         self.assertEqual(self.remote_head(),self.base)
 
+    def test_failed_worker_failure_refs_recover_after_release_before_session_save(self):
+        request = self.start_request()
+        request['argv'] = [sys.executable, '-c', 'raise SystemExit(7)']
+        handle = bridge.start(request)
+        self.wait_for(handle, 'awaiting_release')
+        finish = self.finish_request(handle)
+        finish.update(output_refs=['failure:exit-7'], evidence_refs=['failure:actual-worker'])
+        original = bridge._save_session
+        def crash_after_release(session):
+            if session.get('release_receipt') is not None:
+                raise RuntimeError('interrupted after release before session save')
+            return original(session)
+        with patch.object(bridge, '_save_session', side_effect=crash_after_release):
+            with self.assertRaisesRegex(RuntimeError, 'after release'):
+                bridge.finish(finish)
+        session = bridge._load_session(str(self.root/'handles'), handle['handle_id'])
+        self.assertIsNone(session.get('release_receipt'))
+        self.assertEqual(session['worker_status'], 'failed')
+        runtime = bridge._runtime(session)
+        deadline = time.monotonic() + 8
+        while time.monotonic() < deadline:
+            observation = runtime.observe(session['task_id'], session['attempt_id'])
+            if observation.get('status') == 'failed' and observation.get('quiescent') is True:
+                break
+            time.sleep(.025)
+        else:
+            self.fail('actual failed worker did not become quiescent after release')
+        self.assertIsNone(observation.get('pending_terminal_status'))
+        recovered = bridge.finish(finish)
+        self.assertFalse(recovered['scope_complete'])
+        self.assertTrue(recovered['final_response_allowed'])
+        self.assertEqual(recovered['worker_status'], 'failed')
+        self.assertIsNone(recovered['published_commit'])
+        self.assertEqual(self.remote_head(), self.base)
+        self.assertIsNone(self.lease_store.read()[1]['owner_id'])
+
     def test_cancelled_terminal_worker_releases_without_publishing(self):
         request = self.start_request()
         request["argv"] = [sys.executable, "-c", "import time; time.sleep(30)"]
