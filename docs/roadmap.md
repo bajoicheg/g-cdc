@@ -135,7 +135,7 @@ Authority boundary: Fleet leadership is control-plane only; it never grants proj
 
 Tracking: issue #82; systemic RCA #81. Design: `docs/superpowers/specs/2026-10-01-multi-subscription-coordination-design.md`; plan: `docs/superpowers/plans/2026-10-01-cdc-2.11.3.md`.\n\nRelease: `refs/heads/release/v2.11.3`, frozen source `7f31544ffd80252587b7ff1bd76b9a3f38e019e5`, package tree `39f733127ac130de4f647cf9e5ec55afcca0769c`. Candidate validation is GREEN with 950/950 package tests, 37/37 independent bootstrap, package validator 331 files/templates, full bootstrap binding and 3/3 archived consumers. Historical Stage 1 RED remains truthful with all findings remediated; the exact-candidate fresh Stage 1 re-review and independent Stage 2 requirement were each skipped once by explicit owner waiver and are not relabeled GREEN. Release finalization retains a separate exact-head hosted CI gate before immutable ref creation. Schedulers remain owner-paused and this release performs no live consumer deployment.
 
-## CDC 2.11.4 — Managed Host Bridge — P0 / IN PROGRESS
+## CDC 2.11.4 — Managed Host Bridge — archived released plan
 
 Owner authorization on 2026-10-01: add the missing host-facing bridge exposed by the live 2.11.3 rollout. The 2.11.3 ownership restriction remains intact: unmanaged Chat/Work/Codex/watchdog/API surfaces stay observer/orchestrator-only. This patch adds a package-owned transport-neutral lifecycle adapter so a host/plugin can dispatch a real ManagedExecutorRuntime task and receive a durable handle without ever receiving the non-serializable lease capability.
 
@@ -426,10 +426,11 @@ Remaining feature: **registry-driven watchdog target resolution**, included in 2
 Active recovery work:
 - 2.11.0: released with real execution, exact parent finalization and independently verified corrections. Active installation passed runtime-byte readback; see release/active-package-acceptance-2.11.0.json.
 - 2.11.1: combine target resolution, persistent liveness and bounded Fleet recovery; fresh explicit owner pause takes precedence.
-- 2.11.2: released cooperative lanes with portable conflict exclusion, one integrator, durable integration provenance and watchdog survivability.\n- 2.11.3: released multi-subscription ownership integrity with Fleet leader/effect fencing, truthful execution liveness, fail-closed final response and atomic consumer adoption.
+- 2.11.2: released cooperative lanes with portable conflict exclusion, one integrator, durable integration provenance and watchdog survivability.
+- 2.11.3: released multi-subscription ownership integrity with Fleet leader/effect fencing, truthful execution liveness, fail-closed final response and atomic consumer adoption.
 - Chat command timestamping dogfood defect — RCA reinforcement 2026-09-30: a live CDC-managed chat emitted zero per-command timestamps even though the rule was present. Reinforce existing fix key `chat-command-timestamping` with a missing-timestamp RED→GREEN pressure scenario and fail-closed first-response timestamp cardinality preflight/ledger; see the retained RCA/feedback reports.
 - Independent review backend resilience — RCA 2026-09-30: a documented Copilot review request on a non-draft exact-head PR produced no reviewer/review/thread/comment, repeating an earlier no-op. Add fix key `independent-review-backend-fallback`: request acceptance is submission evidence only; require concrete reviewer identity + durable review artifact, classify non-materializing backends unavailable, suppress unchanged retries, and route to an alternate authorized reviewer or exact blocker.
-- Consumer adoption: g-ad-control adopted2.10.3 and released generation42 at verified coordination794e152; g-supervisor, g-pc-health-check and g-switcher require current-owner release or independently established quiescence. Re-read live refs before every mutation.
+- Historical adoption snapshot (2026-09-29; re-read live refs): g-ad-control adopted2.10.3 and released generation42 at verified coordination794e152; g-supervisor, g-pc-health-check and g-switcher require current-owner release or independently established quiescence. Re-read live refs before every mutation.
 - PR consolidation: #20/#61/#62/#63/#64 preserve one historical pool implementation and its review/consumer attempts. All five PRs were closed as superseded after #67 merge and release readback; historical branches and review evidence remain retained.
 
 Schedulers are explicitly owner-paused. Neither liveness implementation nor backlog cleanup authorizes enabling or running them.
@@ -447,3 +448,10 @@ Personal installation, live consumer adoption and Fleet/paused scheduler state a
 Owner authorized on2026-10-04 and refined the floor to2.11.3. Developed under released2.11.4. Current runtime/default templates start at2.11.3; old records and immutable evidence remain readable for safe recovery.
 
 2.11.5 source-released with minimum runtime2.11.3. Exact candidate bbe5d8c8e4249ad27735245033b6dd6549539809, frozen source befbf85558e211397f9a257f69dfa56ca1474225, package 6e9fb338a83c532076a30e8feb0b6ce2ebbe4063, CI 37237125815 GREEN. 46 obsolete refs removed with retained Git objects and exact mappings. See release/published-2.11.5.json and release/branch-cleanup-2.11.5.json.
+
+
+## CDC 2.11.6 — coordination preservation and preferred Cloud compute
+
+Owner authorized implementation on 2026-10-05. Developed under immutable released 2.11.5; minimum runtime remains 2.11.3. Scope: issue86 multi-document lease CAS, read_only managed closure, supported Cloud CLI recovery/report intake, portable Cloud-first routing. Source candidate and validation/review/release/adoption evidence are separate gates. See docs/superpowers/specs/2026-10-05-cdc-2.11.6.md and the corresponding plan. Schedulers remain owner-paused.
+
+RCA consolidation for 2.11.6: PR79 hidden-fixture evidence remains reproducible after guidance-test consolidation and is corrected by independent-bootstrap placement plus a clean consumer-layout release gate. PR80 carrier-neutral transport RCA remains retained evidence for the existing exact-blob/tree adoption controls; its old live-rollout statuses are historical, not current authority. Preserve both original RCA/feedback reports in this candidate before closing their superseded documentation PRs.

@@ -1,0 +1,45 @@
+{
+  "schema": "systematic-rca/v1",
+  "anomaly_id": "g-spiral-cdc-2.11.2-package-transport-2026-09-30",
+  "material": true,
+  "anomaly_class": "execution_channel",
+  "fix_key": "carrier-neutral-package-transport",
+  "problem": "CDC 2.11.2 adoption in g-spiral initially stalled because direct high-level writes of the canonical SKILL.md were rejected by the available write channel. The source was restored to exact 2.11.1, but the rollout was incorrectly classified transport_unavailable before probing an authorized low-level Git object transport.",
+  "evidence_refs": [
+    "g-spiral:cdc/coordination:continuity/cdc-2.11.2-transport-r2.json",
+    "g-spiral:git-blob:6379e80f7e1819550e58b4763113b7b4d12620ed",
+    "g-spiral:main:679c4246a31f1912feff16c5a3eba912856ee0eb",
+    "g-spiral:actions:36774463901"
+  ],
+  "hypotheses": [
+    {
+      "id": "canonical-package-invalid",
+      "statement": "The released CDC 2.11.2 package could not be adopted because its bytes/tree were invalid or incomplete.",
+      "discriminating_test": "Assemble the canonical delta as Git blobs/tree and validate the resulting package plus full test suite.",
+      "observed_result": "The target package tree assembled exactly to 7a7a7faa75b7fc9160d912d8fb507c6b9573d17f; package validator passed 316 files/templates and the full vendored suite passed 866/866.",
+      "supported": false
+    },
+    {
+      "id": "target-repo-rejects-git-objects",
+      "statement": "The target repository rejected all Git object writes, so no repository-side transport was possible.",
+      "discriminating_test": "Create the canonical SKILL.md as an opaque base64 Git blob without moving a ref.",
+      "observed_result": "The low-level create_blob path succeeded and returned the exact canonical blob SHA 6379e80f7e1819550e58b4763113b7b4d12620ed.",
+      "supported": false
+    },
+    {
+      "id": "fallback-selection-stopped-too-early",
+      "statement": "The execution channel classified transport unavailable after the high-level file-write path failed, without probing the lower-level carrier-neutral Git blob/tree transport that remained authorized and functional.",
+      "discriminating_test": "Retry the same exact package using base64 Git blob creation, exact tree assembly and one non-force ref update.",
+      "observed_result": "All canonical blobs transferred with identical SHA, the exact package tree was reproduced before ref movement, the source advanced in one fast-forward commit, and validation run 36774463901 completed GREEN.",
+      "supported": true
+    }
+  ],
+  "selected_hypothesis_id": "fallback-selection-stopped-too-early",
+  "correction": "Reinforce carrier-neutral package transport recovery: when a high-level contents/file write fails, classify the channel failure precisely and probe other authorized package carriers—especially low-level Git blob/tree assembly—before declaring transport unavailable. Build and verify the exact package tree before shared-ref movement; publish package+lock+policy atomically or restore the prior exact tree.",
+  "defense_in_depth": "Retain the canonical per-path blob/mode manifest, verify every transported blob SHA, require exact final package-tree equality, use non-force ref movement, preserve an exact rollback tree, and keep transport failures separate from package-validation failures.",
+  "invariant": "A consumer adoption may report transport unavailable only after all authorized carrier-neutral transports available to that invocation are reconciled. No transport strategy may publish a mixed vendored package or grant adoption authority without exact canonical package-tree identity.",
+  "existing_fix_keys": [
+    "carrier-neutral-package-transport"
+  ],
+  "sensitive_context_detected": false
+}

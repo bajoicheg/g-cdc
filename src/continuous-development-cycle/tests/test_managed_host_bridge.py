@@ -478,5 +478,113 @@ subprocess.run(['git','commit','-qm','managed closure'],check=True)
         self.assertTrue(self.wait_for(handle, "succeeded")["quiescent"])
 
 
+    def read_only_request(self, code='print("COMPUTE_ONLY_COMPLETE")'):
+        self.plan['tasks'][0].update(role='read_only', branch=None, worktree=None, write_paths=[])
+        request=self.start_request()
+        request['argv']=[sys.executable,'-B','-c',code]
+        return request
+
+    def test_read_only_success_releases_without_publication_or_result_commit(self):
+        handle=bridge.start(self.read_only_request())
+        self.wait_for(handle,'awaiting_release')
+        finished=bridge.finish(self.finish_request(handle,'evidence:compute-result'))
+        self.assertIsNone(finished['published_commit'])
+        self.assertTrue(finished['scope_complete'])
+        self.assertTrue(finished['final_response_allowed'])
+        self.assertEqual(self.remote_head(),self.base)
+        self.assertIsNone(self.lease_store.read()[1]['owner_id'])
+        state=GitManagedExecutorStore(self.repo,'origin',self.plan['coordination_ref'],self.plan).read()[1]
+        self.assertTrue(state['tasks'][0]['integrated'])
+        again=bridge.finish(self.finish_request(handle,'evidence:compute-result'))
+        self.assertIsNone(again['published_commit'])
+        self.assertTrue(again['final_response_allowed'])
+
+    def read_only_recovery_after_finalization_state(self, state):
+        handle=bridge.start(self.read_only_request())
+        self.wait_for(handle,'awaiting_release')
+        finish=self.finish_request(handle,'evidence:compute-result')
+        original=GitLeaseStore.compare_and_swap
+        def crash_after_cas(store, expected, record):
+            revision=original(store,expected,record)
+            if (record.get('owner_id')==handle['owner_id']
+                    and (record.get('finalization') or {}).get('state')==state):
+                raise RuntimeError('controller interrupted after '+state+' CAS')
+            return revision
+        with patch.object(GitLeaseStore,'compare_and_swap',crash_after_cas):
+            with self.assertRaisesRegex(RuntimeError,'interrupted'):
+                bridge.finish(finish)
+        durable=self.lease_store.read()[1]
+        self.assertEqual(durable['finalization']['state'],state)
+        self.assertEqual(durable['generation'],handle['generation'])
+        recovered=bridge.finish(finish)
+        self.assertEqual(recovered['handle_id'],handle['handle_id'])
+        self.assertIsNone(recovered['published_commit'])
+        self.assertTrue(recovered['scope_complete'])
+        self.assertTrue(recovered['final_response_allowed'])
+        self.assertEqual(self.remote_head(),self.base)
+        released=self.lease_store.read()[1]
+        self.assertIsNone(released['owner_id'])
+        self.assertEqual(released['generation'],handle['generation'])
+        self.assertEqual(len(list(self.root.glob('journal/**/receipt.json'))),1)
+        self.assertTrue(self.wait_for(handle,'succeeded')['quiescent'])
+
+    def test_read_only_recovery_after_draining_cas(self):
+        self.read_only_recovery_after_finalization_state('draining')
+
+    def test_read_only_recovery_after_checkpointed_cas(self):
+        self.read_only_recovery_after_finalization_state('checkpointed')
+
+    def test_read_only_recovery_after_reconciled_cas(self):
+        self.read_only_recovery_after_finalization_state('reconciled')
+
+    def test_read_only_recovery_after_ready_cas(self):
+        self.read_only_recovery_after_finalization_state('ready')
+
+    def test_read_only_dirty_checkout_cannot_finish(self):
+        handle=bridge.start(self.read_only_request('from pathlib import Path;Path("unexpected").write_text("mutation")'))
+        self.wait_for(handle,'awaiting_release')
+        with self.assertRaisesRegex(ValueError,'clean'):
+            bridge.finish(self.finish_request(handle,'evidence:compute-result'))
+        self.assertEqual(self.remote_head(),self.base)
+
+    def test_read_only_attached_branch_cannot_finish(self):
+        code='import subprocess;subprocess.run(["git","checkout","-qb","unexpected-readonly-branch"],check=True)'
+        handle=bridge.start(self.read_only_request(code))
+        self.wait_for(handle,"awaiting_release")
+        with self.assertRaisesRegex(ValueError,'detached'):
+            bridge.finish(self.finish_request(handle,'checkpoint:read-only'))
+        self.assertEqual(self.remote_head(),self.base)
+        self.assertEqual(self.lease_store.read()[1]['owner_id'],handle['owner_id'])
+    def test_read_only_disabled_reflog_is_rejected_before_worker_launch(self):
+        self.git('config','core.logAllRefUpdates','false')
+        with self.assertRaisesRegex(ValueError,'reflog'):
+            bridge.start(self.read_only_request())
+        self.assertIsNone(self.lease_store.read()[1]['owner_id'])
+        self.assertEqual(self.remote_head(),self.base)
+
+    def test_read_only_missing_reflog_cannot_finish(self):
+        code='import subprocess;subprocess.run(["git","reflog","expire","--expire=all","HEAD"],check=True)'
+        handle=bridge.start(self.read_only_request(code))
+        self.wait_for(handle,'awaiting_release')
+        with self.assertRaisesRegex(ValueError,'history'):
+            bridge.finish(self.finish_request(handle,'evidence:compute-result'))
+        self.assertEqual(self.remote_head(),self.base)
+
+    def test_read_only_commit_and_reset_cannot_finish(self):
+        code='import subprocess;from pathlib import Path;Path("unexpected").write_text("mutation");subprocess.run(["git","add","unexpected"],check=True);subprocess.run(["git","commit","-qm","forbidden"],check=True);subprocess.run(["git","reset","--hard","'+self.base+'"],check=True)'
+        handle=bridge.start(self.read_only_request(code))
+        self.wait_for(handle,'awaiting_release')
+        with self.assertRaisesRegex(ValueError,'history'):
+            bridge.finish(self.finish_request(handle,'evidence:compute-result'))
+        self.assertEqual(self.remote_head(),self.base)
+
+    def test_read_only_source_drift_cannot_finish(self):
+        handle=bridge.start(self.read_only_request())
+        self.wait_for(handle,'awaiting_release')
+        (self.repo/'seed').write_text('new-source');self.git('add','seed');self.git('commit','-qm','new source');self.git('push','-q','origin','main')
+        with self.assertRaisesRegex(ValueError,'source HEAD'):
+            bridge.finish(self.finish_request(handle,'evidence:compute-result'))
+
+
 if __name__ == "__main__":
     unittest.main()
