@@ -2,51 +2,17 @@
   "schema": "cdc-review-binding/v1",
   "version": "2.11.6",
   "minimum_supported_version": "2.11.3",
-  "candidate_head": "208f33423b4d91ca62d37670927d4a3d126004de",
-  "source_commit": "14f28b5a9c78328ab155b45172cf8f2ec395602e",
-  "package_tree": "53da252dc08872f18584311133c5c6b4949163d1",
+  "candidate_head": "fcd04573decaba6e20569602cd8115e3417cc43b",
+  "source_commit": "fcd04573decaba6e20569602cd8115e3417cc43b",
+  "package_tree": "98369d4748b1022cff496b0119e11f6ca832d57f",
   "baseline_head": "8579c3495a6c7ffd3bfa55437760d4392f491fa5",
-  "development_driver": {
-    "version": "2.11.5",
-    "release_head": "bbe5d8c8e4249ad27735245033b6dd6549539809",
-    "package_tree": "6e9fb338a83c532076a30e8feb0b6ce2ebbe4063"
-  },
-  "reviewed_material_diff": {
-    "changed_files": 38,
-    "sha256": "a4fb5458d0a5664dc62d7b15c67931f8d31b7269fc7941e5d1897d10901ab8b5"
-  },
-  "raw_reports": {
-    "spec": {
-      "path": "docs/superpowers/reports/2026-10-05-cdc-2.11.6-spec.md",
-      "sha256": "e6b7632806cf25106e302a83c9066a805f70cfa7cf7461989cca611cb77140d4"
-    },
-    "quality": {
-      "path": "docs/superpowers/reports/2026-10-05-cdc-2.11.6-quality.md",
-      "sha256": "7d05eb462266743efa6ccc790f2936e2eea082393b7801bd328c584118350cea"
-    }
-  },
-  "ordered_reviews": [
-    "independent-agent:cdc2116_spec_review_r6",
-    "independent-agent:cdc2116_quality_review_r6"
-  ],
-  "spec": "GREEN",
-  "quality": "GREEN",
-  "open_material_findings": 0,
+  "status": "fresh ordered review pending after actual NOT_RUN correction",
+  "previous_review_binding_ref": "git:340ee1257717d925771971ea52b3927d5b3e89f7:release/review-binding-2.11.6.json",
+  "previous_review_head": "208f33423b4d91ca62d37670927d4a3d126004de",
+  "spec": "NOT_RUN",
+  "quality": "NOT_RUN",
   "waivers": [],
-  "focused_managed_validation": {
-    "evidence_ref": "git:9ebd4f892847ac75153c27e5d83201566d79f899",
-    "candidate_head": "208f33423b4d91ca62d37670927d4a3d126004de",
-    "package_tree": "53da252dc08872f18584311133c5c6b4949163d1",
-    "test_counts": {
-      "git_multidocument": 9,
-      "managed_bridge": 32,
-      "cloud_cli": 20,
-      "independent_bootstrap": 46
-    },
-    "complete_log_sha256": "97dfbfd04cdee21b10ae991bf915efe45a7fe21098ae1b06f40d384e4bc9ffe0"
-  },
-  "metadata_boundary": "This commit only records ordered reviews and plan/progress metadata; reviewed source and package bytes are unchanged. Exact Cloud and configured CI bind the subsequent final metadata HEAD independently.",
-  "exact_native_cloud": "pending",
+  "exact_native_cloud": "initial NOT_RUN; corrected start requires remaining admission",
   "clean_consumer_layout_acceptance": "pending",
   "configured_final_ci": "pending",
   "personal_installation": "pending",
