@@ -1,5 +1,17 @@
 # Priority Codex Compute
 
+## Supported Codex Cloud CLI transport (2.11.6)
+
+Use `CodexCloudCLI` from `scripts/codex_cloud_cli.py` with the authenticated official CLI. Version 0.160.0 was verified through the authorized Codespace on 2026-10-05. Supported commands are `cloud exec --env ID --branch BRANCH --attempts 1 QUERY`, `cloud list --json --limit 20 --cursor CURSOR`, and `cloud status TASK_ID`. The adapter never reads credentials, calls private HTTP endpoints or applies diffs. Official command definitions: https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/cloud-tasks/src/cli.rs.
+
+Construct `codex-cloud-cli-request/v1` with operation_key, attempt_id, canonical repository, exact candidate_sha, environment_id, environment_label, source_branch and checks (`id`, exact `argv`, `minimum_test_count`, nullable for non-test commands). Use the existing operation-intent binding and durable budget/guard protocol before submission. Provide `submit(request, launch_authorized=callback)` with an in-memory callback checking the fresh exact claimed guard/grant, reservation and remote branch SHA immediately before exec. The callback is not persisted, restored or inferred from a Boolean. The transport's local lock/journal prevents repeats in this host; caller coordination provides cross-host admission. Restored submitting/unknown state is observation-only. Do not erase a journal or invent a new operation key to retry an uncertain dispatch.
+
+Observe through `observe(operation_key)`. Unknown reply recovery inventories every cursor page and filters locally: CLI 0.160.0 was observed returning other environments despite --env. Require one exact operation/attempt title marker and matching environment ID (or the explicitly verified label when provider omits IDs). Conflicting rows, ambiguity, repeated cursors or exhausted page bounds remain unknown. Provider titles may omit the marker; this is a recovery capability gap, not permission to resubmit. Preserve the external guard and reconcile the actual task/report through an authorized host.
+
+Provider READY yields waiting_report and validation_passed=false. The CLI has no supported machine export of the completed assistant report. An observing host reads the report through the official TUI and persists it with the exact task ID from CLI; it must distinguish observed fields from supplied expected bindings. Call `ingest_report(operation_key, report, evidence_ref)` only after observed READY. `codex-cloud-cli-report/v1` binds task_id, operation_key, attempt_id, repository, environment_id/label, head_before/head_after, clean_before/clean_after and checks. Each check supplies exact id/argv, actual integer exit_code, observed test_count and SHA256 of its complete log. The adapter checks these bindings and refuses rewritten terminal reports. Successful transport submission or READY is never package/platform/release GREEN. Log digests identify observed logs; they do not imply that full logs were downloaded.
+
+The default `portable_primary_preferred=true` cost policy implements the owner's CDC Cloud preference even when public Actions are configured as unmetered. Recover/wait for transient primary failure. Older policies lacking this optional field retain their previous cost ordering. Required platform/release CI remains separate.
+
 ## Contents
 
 - Eligibility and authority

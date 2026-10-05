@@ -478,5 +478,49 @@ subprocess.run(['git','commit','-qm','managed closure'],check=True)
         self.assertTrue(self.wait_for(handle, "succeeded")["quiescent"])
 
 
+    def read_only_request(self, code='print("COMPUTE_ONLY_COMPLETE")'):
+        self.plan['tasks'][0].update(role='read_only', branch=None, worktree=None, write_paths=[])
+        request=self.start_request()
+        request['argv']=[sys.executable,'-B','-c',code]
+        return request
+
+    def test_read_only_success_releases_without_publication_or_result_commit(self):
+        handle=bridge.start(self.read_only_request())
+        self.wait_for(handle,'awaiting_release')
+        finished=bridge.finish(self.finish_request(handle,'evidence:compute-result'))
+        self.assertIsNone(finished['published_commit'])
+        self.assertTrue(finished['scope_complete'])
+        self.assertTrue(finished['final_response_allowed'])
+        self.assertEqual(self.remote_head(),self.base)
+        self.assertIsNone(self.lease_store.read()[1]['owner_id'])
+        state=GitManagedExecutorStore(self.repo,'origin',self.plan['coordination_ref'],self.plan).read()[1]
+        self.assertTrue(state['tasks'][0]['integrated'])
+        again=bridge.finish(self.finish_request(handle,'evidence:compute-result'))
+        self.assertIsNone(again['published_commit'])
+        self.assertTrue(again['final_response_allowed'])
+
+    def test_read_only_dirty_checkout_cannot_finish(self):
+        handle=bridge.start(self.read_only_request('from pathlib import Path;Path("unexpected").write_text("mutation")'))
+        self.wait_for(handle,'awaiting_release')
+        with self.assertRaisesRegex(ValueError,'clean'):
+            bridge.finish(self.finish_request(handle,'evidence:compute-result'))
+        self.assertEqual(self.remote_head(),self.base)
+
+    def test_read_only_commit_and_reset_cannot_finish(self):
+        code='import subprocess;from pathlib import Path;Path("unexpected").write_text("mutation");subprocess.run(["git","add","unexpected"],check=True);subprocess.run(["git","commit","-qm","forbidden"],check=True);subprocess.run(["git","reset","--hard","'+self.base+'"],check=True)'
+        handle=bridge.start(self.read_only_request(code))
+        self.wait_for(handle,'awaiting_release')
+        with self.assertRaisesRegex(ValueError,'history'):
+            bridge.finish(self.finish_request(handle,'evidence:compute-result'))
+        self.assertEqual(self.remote_head(),self.base)
+
+    def test_read_only_source_drift_cannot_finish(self):
+        handle=bridge.start(self.read_only_request())
+        self.wait_for(handle,'awaiting_release')
+        (self.repo/'seed').write_text('new-source');self.git('add','seed');self.git('commit','-qm','new source');self.git('push','-q','origin','main')
+        with self.assertRaisesRegex(ValueError,'source HEAD'):
+            bridge.finish(self.finish_request(handle,'evidence:compute-result'))
+
+
 if __name__ == "__main__":
     unittest.main()

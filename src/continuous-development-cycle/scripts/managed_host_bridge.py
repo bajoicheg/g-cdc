@@ -163,8 +163,8 @@ def _task(plan, task_id):
     row = next((item for item in plan["tasks"] if item["id"] == task_id), None)
     if row is None:
         raise ValueError("managed host task_id is not in the plan")
-    if row["role"] != "writer" or not row["required"]:
-        raise ValueError("managed host v1 requires one required writer task")
+    if row["role"] not in {"writer", "read_only"} or not row["required"]:
+        raise ValueError("managed host v1 requires one required writer or read_only task")
     return row
 
 
@@ -665,6 +665,22 @@ def _result(session, runtime):
     return result_commit, changed, request
 
 
+def _read_only_result(session, runtime):
+    request = runtime._request(session["task_id"], session["attempt_id"])
+    if request is None:
+        raise ValueError("managed host worker request is unavailable")
+    cwd = request["cwd"]
+    base = session["plan"]["base_sha"]
+    if _git(cwd, "status", "--porcelain", "--untracked-files=all")[0]:
+        raise ValueError("read_only worker checkout must remain clean")
+    if _git(cwd, "rev-parse", "HEAD")[0] != base:
+        raise ValueError("read_only worker changed its Git head")
+    if any(sha != base for sha in _git(cwd, "reflog", "show", "--format=%H", "HEAD")[0].splitlines()):
+        raise ValueError("read_only worker changed its Git history")
+    if _remote_head(session["repo_root"], session["remote"], session["lease_source_ref"]) != base:
+        raise ValueError("read_only source HEAD drifted from the plan base")
+
+
 def _publish(session, result_commit):
     repo = Path(session["repo_root"])
     source_ref = session["lease_source_ref"]
@@ -714,7 +730,9 @@ def _publish(session, result_commit):
 
 
 def _continuity(session, result_commit, checkpoint_ref, publication, *, released):
-    progress = ["git:" + result_commit]
+    read_only = _task(session["plan"], session["task_id"])["role"] == "read_only"
+    progress = (["managed-host:result:" + session["handle_id"], checkpoint_ref]
+                if read_only else ["git:" + result_commit])
     completion = ["managed-host:worker:" + str(session["runtime_launch_id"])]
     if publication is not None:
         completion.append("managed-host:publication:" + publication["evidence_ref"])
@@ -722,7 +740,7 @@ def _continuity(session, result_commit, checkpoint_ref, publication, *, released
         "schema": "terminal-state/v2",
         "invocation_id": session["invocation_id"],
         "scope_id": session["plan"]["change_id"],
-        "observed_head": result_commit,
+        "observed_head": session["plan"]["base_sha"] if read_only else result_commit,
         "decision": "COMPLETE",
         "runnable_actions": [],
         "pending_external": None,
@@ -748,7 +766,7 @@ def _continuity(session, result_commit, checkpoint_ref, publication, *, released
         "lease_released": released,
         "terminal_state": terminal,
     }
-    if publication is None:
+    if session.get("worker_status") != "succeeded":
         # A failed attempt is resumable, never project-scope completion. The
         # exact supervisor still holds the lease until this BLOCKED transaction
         # has persisted the terminal observation and release receipt.
@@ -889,13 +907,21 @@ def finish(request):
             raise ValueError("managed host finish requires a terminal worker awaiting managed lease release")
         session["worker_status"] = status
         if status == "succeeded":
-            if session.get("publication") is None:
+            if task["role"] == "read_only":
+                if request["checkpoint_ref"] is None:
+                    raise ValueError("read_only finish requires a persisted result checkpoint")
+                _renew_for_result(session, lease_store, observation)
+                _read_only_result(session, runtime)
+                result_commit, publication = None, None
+                default_checkpoint = request["checkpoint_ref"]
+            elif session.get("publication") is None:
                 _renew_for_result(session, lease_store, observation)
                 result_commit, changed_paths, _ = _result(session, runtime)
                 publication = _publish(session, result_commit)
             else:
                 result_commit, publication = session["result_commit"], session["publication"]
-            default_checkpoint = "git:" + session["lease_source_ref"] + "@" + result_commit
+            if task["role"] == "writer":
+                default_checkpoint = "git:" + session["lease_source_ref"] + "@" + result_commit
         else:
             result_commit, publication = session["plan"]["base_sha"], None
             default_checkpoint = "managed-host:terminal:" + session["handle_id"] + ":" + status
