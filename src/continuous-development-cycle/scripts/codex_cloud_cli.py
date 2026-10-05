@@ -130,7 +130,7 @@ class CodexCloudCLI:
         if not isinstance(state,dict) or state.get('schema')!='codex-cloud-cli-journal/v1':
             raise ValueError('Cloud journal schema invalid')
         validate_request(state.get('request'))
-        if state.get('state') not in {'submitting','submitted','unknown','running','waiting_report','succeeded','failed'} or type(state.get('validation_passed')) is not bool:
+        if state.get('state') not in {'submitting','submitted','unknown','running','waiting_report','succeeded','failed','not_submitted'} or type(state.get('validation_passed')) is not bool:
             raise ValueError('Cloud journal state invalid')
         if state.get('request_digest')!=_digest(state['request']) or self._path(state['request']['operation_key'])!=path:
             raise ValueError('Cloud journal binding mismatch')
@@ -139,6 +139,23 @@ class CodexCloudCLI:
             raise ValueError('Cloud journal task invalid')
         if state['state'] in {'submitted','running','waiting_report','succeeded','failed'} and task is None:
             raise ValueError('Cloud journal state requires exact task')
+        dispatch=state.get('dispatch')
+        if dispatch is not None:
+            if (not isinstance(dispatch,dict) or set(dispatch)!={'state','at_utc','request_digest'}
+                    or dispatch['state'] not in {'pre_dispatch','started','cancelled_before_send'}
+                    or dispatch['request_digest']!=state['request_digest']):
+                raise ValueError('Cloud dispatch boundary binding invalid')
+            stamp=dispatch['at_utc']
+            if not isinstance(stamp,str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z',stamp):
+                raise ValueError('Cloud dispatch boundary timestamp invalid')
+            if datetime.fromisoformat(stamp.replace('Z','+00:00')) < datetime.fromisoformat(state['attempted_at_utc'].replace('Z','+00:00')):
+                raise ValueError('Cloud dispatch boundary predates attempt')
+            if (dispatch['state']=='cancelled_before_send') != (state['state']=='not_submitted'):
+                raise ValueError('Cloud cancellation contradicts dispatch state')
+        if state['state']=='not_submitted' and (dispatch is None or task is not None
+                or state.get('report') is not None or state['validation_passed']
+                or state.get('reason')!='gate_rejected_before_send'):
+            raise ValueError('Cloud cancellation requires durable taskless before-send barrier')
         report=state.get('report')
         if report is not None:
             _text(state.get('evidence_ref'))
@@ -164,14 +181,27 @@ class CodexCloudCLI:
             if not callable(launch_authorized):raise ValueError('Cloud dispatch requires a live caller gate callback')
             state={'schema':'codex-cloud-cli-journal/v1','request':copy.deepcopy(request),'request_digest':_digest(request),
                    'state':'submitting','task_id':None,'validation_passed':False,'attempted_at_utc':_utc()}
+            state['dispatch']={'state':'pre_dispatch','at_utc':state['attempted_at_utc'],'request_digest':state['request_digest']}
             self._save(path,state)
             try:
                 launch_authorized()
+            except Exception:
+                # The host callback checks authority only. It must never dispatch
+                # provider work itself. The runner boundary has not been entered.
+                state.update(state='not_submitted',reason='gate_rejected_before_send')
+                state['dispatch'].update(state='cancelled_before_send',at_utc=_utc())
+                self._save(path,state)
+                return copy.deepcopy(state)
+            # Persist uncertainty before entering any caller-supplied runner: it
+            # may send before raising, including from its own last-minute gate.
+            state['dispatch'].update(state='started',at_utc=_utc())
+            self._save(path,state)
+            try:
                 result=self._run(['exec','--env',request['environment_id'],'--branch',request['source_branch'],'--attempts','1',prompt(request)],120)
                 matches=re.findall(r'https://chatgpt\.com/codex/tasks/(task_[A-Za-z0-9_]+)',result.stdout)
                 if result.returncode!=0 or len(set(matches))!=1:raise ValueError('unconfirmed Cloud submission')
                 state.update(state='submitted',task_id=matches[0])
-            except (OSError,ValueError,subprocess.SubprocessError):
+            except Exception:
                 state.update(state='unknown',reason='dispatch_reply_or_gate_unconfirmed')
             self._save(path,state);return copy.deepcopy(state)
     def _inventory(self,request):
@@ -196,7 +226,7 @@ class CodexCloudCLI:
     def observe(self,operation_key):
         with self._locked(operation_key) as path:
             state=self._load(path);request=state['request']
-            if state['state'] in {'succeeded','failed'}:return copy.deepcopy(state)
+            if state['state'] in {'succeeded','failed','not_submitted'}:return copy.deepcopy(state)
             try:
                 if state['task_id'] is None:
                     rows=self._inventory(request)

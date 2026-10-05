@@ -832,7 +832,7 @@ def _finalize_release(session, runtime, lease_store, result_commit, checkpoint_r
     if record["finalization"]["state"] == "checkpointed":
         record = leasev2.reconcile_finalization(
             record, session["owner_id"], session["generation"], session["invocation_id"], _utc(),
-            external_reconciliation="none",
+            external_reconciliation=("unknown_preserved" if publication is None and record['external_guard'] is not None else "none"),
         )
         revision = lease_store.compare_and_swap(revision, record)
     if record["finalization"]["state"] == "reconciled":
@@ -900,10 +900,15 @@ def finish(request):
         _text(request["checkpoint_ref"], "checkpoint_ref")
     session = _load_session(request["handle_root"], request["handle_id"])
     task = _task(session["plan"], session["task_id"])
-    if not set(task["expected_outputs"]) <= set(output_refs):
-        raise ValueError("worker result missing expected outputs")
-    if not set(task["expected_evidence"]) <= set(evidence_refs):
-        raise ValueError("worker result missing expected evidence")
+    # Read the exact terminal observation before recovering ownership. A failed
+    # attempt supplies failure evidence; successful output labels cannot be
+    # required for its no-publication release. Nonterminal/unknown stays strict.
+    observed_status = session.get('worker_status') if session.get('release_receipt') is not None else _runtime(session).observe(session['task_id'],session['attempt_id']).get('pending_terminal_status')
+    if observed_status not in {'failed','cancelled','timed_out'}:
+        if not set(task["expected_outputs"]) <= set(output_refs):
+            raise ValueError("worker result missing expected outputs")
+        if not set(task["expected_evidence"]) <= set(evidence_refs):
+            raise ValueError("worker result missing expected evidence")
     session, runtime, lease_store = _recover_session(request["handle_root"], request["handle_id"])
     if session.get("release_receipt") is not None and (session.get("final_response_gate") or {}).get("final_response_allowed") is True:
         return {
@@ -922,6 +927,8 @@ def finish(request):
             raise ValueError("managed host finish requires a terminal worker awaiting managed lease release")
         session["worker_status"] = status
         if status == "succeeded":
+            if not set(task["expected_outputs"]) <= set(output_refs) or not set(task["expected_evidence"]) <= set(evidence_refs):
+                raise ValueError('successful worker result missing expected outputs/evidence')
             if task["role"] == "read_only":
                 if request["checkpoint_ref"] is None:
                     raise ValueError("read_only finish requires a persisted result checkpoint")

@@ -13,6 +13,8 @@ The initial local transport exposes four JSON actions:
 - `cancel` — request cancellation of that exact worker. Cancellation acknowledgement is not release; call `finish` once the exact worker reaches the managed terminal hold.
 - `finish` — validate the checkpoint and required output/evidence references before recovery, lease mutation or publication. For a successful writer in `awaiting_release`, verify exact branch/result ancestry and portable write scope, conditionally publish the result to the exact observed source HEAD using a durable publication journal, transactionally finalize/release the managed lease, wait for supervisor quiescence, accept/integrate the pool result, and run the exact release-receipt final-response gate. Failed, cancelled and timed-out workers use the same transactional release without publishing or accepting a successful result; their response reports `scope_complete=false` and a resumable BLOCKED boundary.
 
+Success requires the plan's expected output/evidence labels. A positively observed failed/cancelled/timed-out attempt supplies nonempty failure references instead. Its no-publication finalization preserves an unresolved external guard as `unknown_preserved`, including all original claims, while releasing only that exact stopped invocation. This does not resolve the external operation, clear its guard, complete project scope or permit a replacement submission. A successful worker with an unresolved guard remains blocked from publication.
+
 A ChatGPT plugin, Work adapter, scheduler adapter or other host service can wrap these same actions. The package contains no claim that such a host transport is installed merely because the script exists.
 
 ## Worker gate

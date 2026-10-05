@@ -449,6 +449,14 @@ Owner authorized on2026-10-04 and refined the floor to2.11.3. Developed under re
 
 2.11.5 source-released with minimum runtime2.11.3. Exact candidate bbe5d8c8e4249ad27735245033b6dd6549539809, frozen source befbf85558e211397f9a257f69dfa56ca1474225, package 6e9fb338a83c532076a30e8feb0b6ce2ebbe4063, CI 37237125815 GREEN. 46 obsolete refs removed with retained Git objects and exact mappings. See release/published-2.11.5.json and release/branch-cleanup-2.11.5.json.
 
+## CDC 2.11.6 — control-plane and native Cloud recovery correction — IN DEVELOPMENT
+
+Owner corrective instruction «Исправляй», 2026-10-05, continues the authorized 2.11.6 work under released 2.11.5. The frozen original candidate and its native Cloud attempt lineage remain retained; main, release and installed authority are separate gates.
+
+RCA corrective scope: keep the Git multi-document CAS, read-only managed-host and supported official Cloud CLI corrections already in the frozen candidate; persist truthful transport cancellation before send; narrowly support taskless COMPUTE_ONLY recovery with the entire original execution binding; and finalize unsuccessful managed workers while preserving unresolved guards and original claims. Slow pagination precedes the grant, and callback/runner boundaries remain explicit. See [design](superpowers/specs/2026-10-05-taskless-compute-recovery.md) and [execution plan](superpowers/plans/2026-10-05-taskless-compute-recovery.md).
+
+The original a3 lacks a committed cancellation barrier and remains unknown. Its history is not rewritten by this implementation. No additional Cloud retry, budget reset, main integration, release, installed activation, consumer deployment or scheduler wake is inferred from local tests or a source correction. Continue all non-conflicting authorized implementation/review/hosted-validation work; dependent main/release gates require genuine reconciliation evidence.
+
 
 ## CDC 2.11.6 — coordination preservation and preferred Cloud compute
 
