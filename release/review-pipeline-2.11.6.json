@@ -3,17 +3,23 @@
   "change_id": "cdc-2.11.6-coordination-and-cloud",
   "material_change": true,
   "spec_compliance": {
-    "state": "not_run",
-    "reviewer_ref": null,
-    "sequence": null,
-    "evidence_refs": [],
+    "state": "green",
+    "reviewer_ref": "independent-agent:cdc2116_spec_review_r7",
+    "sequence": 1,
+    "evidence_refs": [
+      "docs/superpowers/reports/2026-10-05-cdc-2.11.6-spec.md",
+      "release/review-binding-2.11.6.json"
+    ],
     "findings": []
   },
   "code_quality": {
-    "state": "not_run",
-    "reviewer_ref": null,
-    "sequence": null,
-    "evidence_refs": [],
+    "state": "green",
+    "reviewer_ref": "independent-agent:cdc2116_quality_review_r7",
+    "sequence": 2,
+    "evidence_refs": [
+      "docs/superpowers/reports/2026-10-05-cdc-2.11.6-quality.md",
+      "release/review-binding-2.11.6.json"
+    ],
     "findings": []
   }
 }
