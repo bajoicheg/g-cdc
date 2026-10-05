@@ -1,13 +1,13 @@
 {
   "schema": "cdc-source-lock/v1",
   "canonical_repository": "bajoicheg/g-cdc",
-  "target_version": "2.11.5",
-  "development_driver_version": "2.11.4",
+  "target_version": "2.11.6",
+  "development_driver_version": "2.11.5",
   "base_validation_repository": "bajoicheg/g-cdc",
-  "base_validation_commit": "5cd8202336500cd87d262c375c36f363a4a37fa2",
-  "base_package_tree": "1b64bd0aa5276c81c6939f8b2296757bf496dd48",
-  "base_validation_run_id": 0,
+  "base_validation_commit": "bbe5d8c8e4249ad27735245033b6dd6549539809",
+  "base_package_tree": "6e9fb338a83c532076a30e8feb0b6ce2ebbe4063",
+  "base_validation_run_id": 37237125815,
   "bootstrap_contract": "cdc-bootstrap/v1",
   "direct_product_repo_development": false,
-  "base_validation_evidence_ref": "release/evidence-2.11.4.json"
+  "base_validation_evidence_ref": null
 }
