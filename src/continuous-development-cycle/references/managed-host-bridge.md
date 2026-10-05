@@ -33,6 +33,8 @@ The v1 bridge accepts one required writer or read_only task. A writer changes on
 
 CDC 2.11.6 also accepts `role: read_only`, with `branch: null`, `worktree: null` and `write_paths: []`. The runtime creates its own detached checkout at the exact plan base. Successful finish requires a non-null persisted result checkpoint, required output/evidence refs, clean unchanged HEAD/history, and unchanged remote source HEAD. It performs the same managed lease finalization, supervisor quiescence, pool acceptance and final-response gate. Both `published_commit` and the nonwriter pool `result_commit` are null. It never invokes the source publisher. This supports a managed orchestrator invoking COMPUTE_ONLY Cloud checks with separate durable external intent/budget/guard; the Cloud child itself receives no persistent lease.
 
+Read-only admission requires enabled Git reflog recording. The runtime verifies initial exact-base history before executing the worker; closure rejects missing or changed history and disabled recording. A repository with inherited `core.logAllRefUpdates=false` is rejected before launch. These remain cooperative checks, not an adversarial Git sandbox.
+
 The bridge then runs `active -> draining -> checkpointed -> reconciled -> ready -> release` and records the immutable `execution-release-receipt/v1`. The worker supervisor does not become quiescent before the release marker exists. If the controller dies after the authoritative release CAS, recovery repairs the supervisor marker from exact lease history and completes pool acceptance before reporting completion.
 
 ## Host authorization

@@ -1,0 +1,216 @@
+[2026-10-05T05:09:51.072652296+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:09:51.074087253+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:09:51.078133220+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:09:51.100119663+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:09:52.422151194+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:09:52.426873044+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:09:53.590131795+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:09:54.027775877+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:09:54.731704227+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=<none> cursor_out=+RID:~G4U-AJOIzhmWD90DAAiaDA==#RT:1#TRC:20#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMeqzsXEzcfEyczQzcrOx8XN087OxM7O//qKnYuTn5mfyJ2cxpqYys7My5nOxsvMxpzKncycmZrKnZuczsjFyMn/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:09:54.773187568+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:09:54.773241194+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:09:54.773271097+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:09:54.787484657+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:09:55.784458654+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:09:55.784523629+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:09:56.981799485+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:09:57.303068315+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:09:57.943644038+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhmWD90DAAiaDA==#RT:1#TRC:20#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMeqzsXEzcfEyczQzcrOx8XN087OxM7O//qKnYuTn5mfyJ2cxpqYys7My5nOxsvMxpzKncycmZrKnZuczsjFyMn/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhlPCN0DAAiaDA==#RT:2#TRC:40#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMeqzsbEy83Ey8jQxsbJxsbM087OxM7O//qKnYuTn5mfyJ2cxprKyMaZzMXGxsvMxsaazZiaycmYzJnJzcrJx83/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:09:57.979808705+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:09:57.979870219+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:09:57.979902279+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:09:57.996419021+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:09:59.086555292+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:09:59.086620219+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:10:00.208444979+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:00.597032703+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:01.346307905+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhlPCN0DAAiaDA==#RT:2#TRC:40#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMeqzsbEy83Ey8jQxsbJxsbM087OxM7O//qKnYuTn5mfyJ2cxprKyMaZzMXGxsvMxsaazZiaycmYzJnJzcrJx83/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhnV+NwDAAiaDA==#RT:3#TRC:60#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMeqzsjEycrEycjQycrLzsrH087OxM7O//qKnYuTn5mfyJ2cxpyam87GnZrGxsvMxp2ZnMnNycnIx83Ims3Ixpr/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:10:01.394500798+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:10:01.394566383+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:01.394600374+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:01.409757590+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:10:02.859590146+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:02.859664434+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:10:03.997247014+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:04.344194168+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:05.049231274+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhnV+NwDAAiaDA==#RT:3#TRC:60#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMeqzsjEycrEycjQycrLzsrH087OxM7O//qKnYuTn5mfyJ2cxpyam87GnZrGxsvMxp2ZnMnNycnIx83Ims3Ixpr/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhke8twDAAiaDA==#RT:4#TRC:80#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMeqzsjEzsbEyc3Qy8zNxsjJ087OxM7O//qKnYuTn5mfyJ2cxpzMmMvJzMybxsvMxsXKyM7KmpqZmseYmcedyc7/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:10:05.086085453+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:10:05.086142744+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:05.086174381+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:05.100929147+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:10:06.270218552+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:06.270288943+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:10:07.475935720+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:07.827218876+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:08.476785626+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhke8twDAAiaDA==#RT:4#TRC:80#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMeqzsjEzsbEyc3Qy8zNxsjJ087OxM7O//qKnYuTn5mfyJ2cxpzMmMvJzMybxsvMxsXKyM7KmpqZmseYmcedyc7/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhlt2twDAAiaDA==#RT:5#TRC:100#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMeqzsvEzsXEzcrQy8fOzs3N087OxM7O//qKnYuTn5mfyJ2cxsbGmp3JmcXOxsvMxp3MxsfNmMvNzs3Hxc3Nzcz/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:10:08.512668201+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:10:08.512727369+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:08.512760167+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:08.534080101+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:10:10.061870234+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:10.061937950+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:10:11.042810725+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:11.829445029+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:12.265133329+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhlt2twDAAiaDA==#RT:5#TRC:100#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMeqzsvEzsXEzcrQy8fOzs3N087OxM7O//qKnYuTn5mfyJ2cxsbGmp3JmcXOxsvMxp3MxsfNmMvNzs3Hxc3Nzcz/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhmGvtwDAAiaDA==#RT:6#TRC:120#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMiqzMzEycbEzMfQxcvHy83G087OxM7O//qKnYuTn5mfyJ2cxsqZzcuZmJvKxsvMxsXNnZ2czZjIm8rHzcjOnZ3/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:10:12.301083458+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:10:12.301137894+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:12.301169544+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:12.316027016+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:10:13.471810942+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:13.471890278+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:10:14.581558656+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:14.884822067+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:15.562605574+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhmGvtwDAAiaDA==#RT:6#TRC:120#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMiqzMzEycbEzMfQxcvHy83G087OxM7O//qKnYuTn5mfyJ2cxsqZzcuZmJvKxsvMxsXNnZ2czZjIm8rHzcjOnZ3/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhnztNwDAAiaDA==#RT:7#TRC:140#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMiqzMzEzsvEzMnQzcXKy87G087OxM7O//qKnYuTn5mfyJ2cxsrNzJrLzcXKxsvMxpzGzpyYnJzJmJrMms3Ox5j/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:10:15.598776293+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:10:15.598832936+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:15.598863446+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:15.614176882+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:10:16.894173857+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:16.894231617+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:10:18.390849424+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:18.697858321+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:19.419033734+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhnztNwDAAiaDA==#RT:7#TRC:140#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMiqzMzEzsvEzMnQzcXKy87G087OxM7O//qKnYuTn5mfyJ2cxsrNzJrLzcXKxsvMxpzGzpyYnJzJmJrMms3Ox5j/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhm4btwDAAiaDA==#RT:8#TRC:160#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMiqzcnEzsXEy8rQxsnOzMfN087OxM7O//qKnYuTn5mfyJ2cx5nOzJmaxcbKxsvMxpyamM7Lx5jOm5zFzMvKx83/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:10:19.465897532+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:10:19.465965481+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:19.466008823+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:19.481050464+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:10:20.763216264+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:20.763285450+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:10:21.987671368+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:22.334513310+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:22.982972680+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhm4btwDAAiaDA==#RT:8#TRC:160#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMiqzcnEzsXEy8rQxsnOzMfN087OxM7O//qKnYuTn5mfyJ2cx5nOzJmaxcbKxsvMxpyamM7Lx5jOm5zFzMvKx83/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhkbYNsDAAiaDA==#RT:9#TRC:180#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMmqzcfEycfEzcnQzMnHxczN087OxM7O//qKnYuTn5mfyJ2cyJzJmJzKzZvKxsvMxsXIx86cxZrLnMjOzsWZzs3/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:10:23.019650752+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:10:23.019728814+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:23.019780024+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:23.040685949+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:10:24.221487944+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:24.221559795+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:10:25.645729184+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:25.986857170+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:26.722633861+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhkbYNsDAAiaDA==#RT:9#TRC:180#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMmqzcfEycfEzcnQzMnHxczN087OxM7O//qKnYuTn5mfyJ2cyJzJmJzKzZvKxsvMxsXIx86cxZrLnMjOzsWZzs3/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhlYz9gDAAiaDA==#RT:10#TRC:200#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMuqzcnEzMjEzcXQxcjMzMzN087OxM7O//qKnYuTn5mfyJ2cy5mYxZyYyMybxsvMxsXHnMzJzpzJzpzGx5nMzM7/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:10:26.763913220+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:10:26.763972321+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:26.764008449+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:26.778478907+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:10:38.263502129+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:38.263581702+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:10:39.389386565+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:39.706223907+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:40.451800826+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhlYz9gDAAiaDA==#RT:10#TRC:200#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMuqzcnEzMjEzcXQxcjMzMzN087OxM7O//qKnYuTn5mfyJ2cy5mYxZyYyMybxsvMxsXHnMzJzpzJzpzGx5nMzM7/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhkUlNgDAAiaDA==#RT:11#TRC:220#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMuqzc7EysXEzsXQzcnFycvN087OxM7O//qKnYuTn5mfyJ2cy52ZncnMxsfOxsvMxsWdxp3KxsuYm8fIzZmayJr/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:10:40.499153677+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:10:40.499210320+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:40.499246435+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:40.523010437+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:10:41.749033119+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:41.749115105+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:10:42.957992060+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:43.272425152+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:43.988784015+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhkUlNgDAAiaDA==#RT:11#TRC:220#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMuqzc7EysXEzsXQzcnFycvN087OxM7O//qKnYuTn5mfyJ2cy52ZncnMxsfOxsvMxsWdxp3KxsuYm8fIzZmayJr/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhm1bdgDAAiaDA==#RT:12#TRC:240#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMuqzsfEzczEyczQxsvNycrO087OxM7O//qKnYuTn5mfyJ2cy8ecmMqaypzOxsvMxpzOypucy8qYy5mdncrFzs7/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:10:44.037951126+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:10:44.038013103+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:44.038048949+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:44.053604119+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:10:44.898219107+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:44.898290140+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:10:46.001800813+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:46.358312400+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:47.088376805+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhm1bdgDAAiaDA==#RT:12#TRC:240#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMuqzsfEzczEyczQxsvNycrO087OxM7O//qKnYuTn5mfyJ2cy8ecmMqaypzOxsvMxpzOypucy8qYy5mdncrFzs7/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhmgktcDAAiaDA==#RT:13#TRC:260#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMyqzcnEy8XEzcfQzMrJycnK087OxM7O//qKnYuTn5mfyJ2czJ3NzMnLmcabxsvMxpzHycbOyZ3FyM2dnMrMmZz/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:10:47.128453610+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:10:47.128530568+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:47.128574261+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:47.149721651+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:10:48.601187354+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:48.601260142+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:10:50.013084998+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:50.413920428+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:51.083382833+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhmgktcDAAiaDA==#RT:13#TRC:260#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMyqzcnEy8XEzcfQzMrJycnK087OxM7O//qKnYuTn5mfyJ2czJ3NzMnLmcabxsvMxpzHycbOyZ3FyM2dnMrMmZz/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhm6ZNcDAAiaDA==#RT:14#TRC:280#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMyqzczEzcXEzcfQzsrNx8nN087OxM7O//qKnYuTn5mfyJ2czMfMysnOncebxsvMxpzIys3KnM7Hx8mcxZzNy5r/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:10:51.121553532+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:10:51.121610788+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:51.121643268+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:51.145869287+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:10:52.331985329+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:52.332054747+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:10:53.574933691+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:53.876734409+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:54.546297244+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhm6ZNcDAAiaDA==#RT:14#TRC:280#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzMyqzczEzcXEzcfQzsrNx8nN087OxM7O//qKnYuTn5mfyJ2czMfMysnOncebxsvMxpzIys3KnM7Hx8mcxZzNy5r/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhl2mNYDAAiaDA==#RT:15#TRC:300#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzM2qzcbEy8jEycrQzc7Ix8bN087OxM7O//qKnYuTn5mfyJ2czcfFysjNnM7GxsvMxp2dys6ayJnMmZmbx8iYx8r/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:10:54.582059264+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:10:54.582114761+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:54.582149233+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:54.596532920+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:10:55.852149194+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:55.852217454+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:10:56.660707813+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:56.979493173+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:57.658884965+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhl2mNYDAAiaDA==#RT:15#TRC:300#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzM2qzcbEy8jEycrQzc7Ix8bN087OxM7O//qKnYuTn5mfyJ2czcfFysjNnM7GxsvMxp2dys6ayJnMmZmbx8iYx8r/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhm5XtYDAAiaDA==#RT:16#TRC:320#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzM2qzcrEycrEycvQzsXLy8nG087OxM7O//qKnYuTn5mfyJ2czcrJy5rNx5ybxsvMxpybxsXJncqYyMrJycfLxsf/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:10:57.696673856+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:10:57.696725893+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:57.696758815+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:10:57.712256179+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:10:58.863708848+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:10:58.863782826+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:11:00.781957943+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:01.110205858+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:01.790075123+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhm5XtYDAAiaDA==#RT:16#TRC:320#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzM2qzcrEycrEycvQzsXLy8nG087OxM7O//qKnYuTn5mfyJ2czcrJy5rNx5ybxsvMxpybxsXJncqYyMrJycfLxsf/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhmZQNYDAAiaDA==#RT:17#TRC:340#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzM2qzczEyszEy8zQy8rHyMvG087OxM7O//qKnYuTn5mfyJ2czczIy8bJxpybxsvMxp3ImMjHyMnGyc3Hy5nIy8z/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:11:01.829682657+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:11:01.829752452+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:11:01.829795026+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:11:01.848785457+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:11:03.023756281+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:03.023831747+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:11:04.291304352+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:04.622372612+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:05.281125410+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhmZQNYDAAiaDA==#RT:17#TRC:340#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzM2qzczEyszEy8zQy8rHyMvG087OxM7O//qKnYuTn5mfyJ2czczIy8bJxpybxsvMxp3ImMjHyMnGyc3Hy5nIy8z/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhnj9tQDAAiaDA==#RT:18#TRC:360#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzM2qzsfEy8vEy8jQysvIx8zN087OxM7O//qKnYuTn5mfyJ2czpqams7ImMfGxsvMxsbKxsvKxcfGxczFmp2azpj/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:11:05.316241766+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:11:05.316296218+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:11:05.316328772+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:11:05.340147192+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:11:05.995437731+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:05.995504267+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:11:06.721550878+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:07.054053651+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:07.712325707+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhnj9tQDAAiaDA==#RT:18#TRC:360#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzM2qzsfEy8vEy8jQysvIx8zN087OxM7O//qKnYuTn5mfyJ2czpqams7ImMfGxsvMxsbKxsvKxcfGxczFmp2azpj/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhk9QNQDAAiaDA==#RT:19#TRC:380#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzM6qzcrEzcnEysvQyMbGy8nI087OxM7O//qKnYuTn5mfyJ2dmJmdxpidmJnGxsvMxp3Lm8iYnMXLxp3LzJyYmsr/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:11:07.770570933+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:11:07.770628615+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:11:07.770663501+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:11:07.790083933+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:11:09.072219602+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:09.072293942+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:11:10.232999124+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:10.619502476+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:11.428880123+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhk9QNQDAAiaDA==#RT:19#TRC:380#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzM6qzcrEzcnEysvQyMbGy8nI087OxM7O//qKnYuTn5mfyJ2dmJmdxpidmJnGxsvMxp3Lm8iYnMXLxp3LzJyYmsr/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhn+G9QDAAiaDA==#RT:20#TRC:400#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzM6qzc3EzcnEzsrQx87Jx8rN087OxM7O//qKnYuTn5mfyJ2dmJvOy8acysfGxsvMxp3Jy83Hm82dxcfMm8bHmsj/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:11:11.470999817+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:11:11.471054132+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:11:11.471088455+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:11:11.485571592+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:11:12.164139545+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:12.164204045+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:11:13.356965024+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:13.973313019+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:14.676591846+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhn+G9QDAAiaDA==#RT:20#TRC:400#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzM6qzc3EzcnEzsrQx87Jx8rN087OxM7O//qKnYuTn5mfyJ2dmJvOy8acysfGxsvMxp3Jy83Hm82dxcfMm8bHmsj/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhmx99EDAAiaDA==#RT:21#TRC:420#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzcWqzsXEysfEzcXQyM3KysbL087OxM7O//qKnYuTn5mfyJ2dmcmdzMfFms3KxsvMxp3KzMnMy8zGnZjKzpuZmM7/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:11:14.730125142+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:11:14.730195879+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:11:14.730228462+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:11:14.748215920+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:11:15.881545882+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:15.881608088+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:11:16.757743780+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:17.135257535+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:17.786970610+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhmx99EDAAiaDA==#RT:21#TRC:420#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzcWqzsXEysfEzcXQyM3KysbL087OxM7O//qKnYuTn5mfyJ2dmcmdzMfFms3KxsvMxp3KzMnMy8zGnZjKzpuZmM7/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhkUb9EDAAiaDA==#RT:22#TRC:440#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzcaqzM7EzcrEzsnQzczNyczL087OxM7O//qKnYuTn5mfyJ2dmsWcxprNmZmbxsvMxpydx83OxZzImMnGxprLx8b/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:11:17.827838738+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:11:17.827904117+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:11:17.827947876+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:11:17.845934726+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:11:18.751094210+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:18.751151883+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:11:19.489704822+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:20.039200433+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:20.737912835+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhkUb9EDAAiaDA==#RT:22#TRC:440#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzcaqzM7EzcrEzsnQzczNyczL087OxM7O//qKnYuTn5mfyJ2dmsWcxprNmZmbxsvMxpydx83OxZzImMnGxprLx8b/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=+RID:~G4U-AJOIzhlnU9EDAAiaDA==#RT:23#TRC:460#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzcaqzcfEysvEzcXQzM7KzcfL087OxM7O//qKnYuTn5mfyJ2dmsfGy8fLys3KxsvMxsXHnMXIzcycy5ubyMrFzMz/#ISV:2#IEO:65567#QCF:8#CID:2 items=20
+[2026-10-05T05:11:20.775954138+00:00] startup: base_url=https://chatgpt.com/backend-api path_style=wham
+[2026-10-05T05:11:20.776016264+00:00] auth: mode=ChatGPT account_id=fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:11:20.776056173+00:00] auth: set ChatGPT-Account-Id header: fbcf3e39-1447-4cd6-b8b9-0c9eaf5c8b12
+[2026-10-05T05:11:20.790565259+00:00] env: parsed HTTP GitHub origin => bajoicheg/codex-compute
+[2026-10-05T05:11:21.878293555+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:21.878399887+00:00] env: parsed HTTP GitHub origin => bajoicheg/g-cdc
+[2026-10-05T05:11:22.573309157+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:22.996663085+00:00] env: status=200 OK content-type=application/json
+[2026-10-05T05:11:23.360399887+00:00] http.list_tasks: env=6ac0bebb1cf081919ee76181088dbd7d limit=20 cursor_in=+RID:~G4U-AJOIzhlnU9EDAAiaDA==#RT:23#TRC:460#RTD:FFMNeBmc06hP2994zep3KwV2dGZzLkpoSW02TmRKSWZPe2hsQ1Rae09LZHY2YgAFdnRmcy5KaEltNk5kSklmT3tobENUWntPS2R2NmIABUJkZHB2b3VWdGZzVXBEdnNzZm91RHBlZlVidGxGeXVmc29ibQAD+szOzMjRzsXRzcaqzcfEysvEzcXQzM7KzcfL087OxM7O//qKnYuTn5mfyJ2dmsfGy8fLys3KxsvMxsXHnMXIzcycy5ubyMrFzMz/#ISV:2#IEO:65567#QCF:8#CID:2 cursor_out=<none> items=11

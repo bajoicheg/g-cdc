@@ -70,6 +70,26 @@ def prompt(request):
             'Each check includes id, exact argv, exit_code, test_count (null for non-test commands), and log_sha256. '
             'Use observed facts; never infer PASS from provider READY. Include output tails separately.')
 
+def _validate_report(request, task_id, report):
+    if not isinstance(report,dict) or report.get('schema')!='codex-cloud-cli-report/v1':raise ValueError('Cloud report schema invalid')
+    for key in ('operation_key','attempt_id','repository','environment_id','environment_label'):
+        if report.get(key)!=request[key]:raise ValueError('Cloud report binding mismatch: '+key)
+    if report.get('task_id')!=task_id:raise ValueError('Cloud report task mismatch')
+    if any(report.get(key)!=request['candidate_sha'] for key in ('head_before','head_after')):raise ValueError('Cloud report source SHA mismatch')
+    if report.get('clean_before') is not True or report.get('clean_after') is not True:raise ValueError('Cloud report requires unchanged clean source')
+    checks=report.get('checks')
+    if not isinstance(checks,list) or len(checks)!=len(request['checks']):raise ValueError('Cloud report checks incomplete')
+    passed=True
+    for planned,actual in zip(request['checks'],checks):
+        if not isinstance(actual,dict) or actual.get('id')!=planned['id'] or actual.get('argv')!=planned['argv']:raise ValueError('Cloud report command mismatch')
+        if type(actual.get('exit_code')) is not int:raise ValueError('Cloud report exit code missing/invalid')
+        if not isinstance(actual.get('log_sha256'),str) or not re.fullmatch(r'[0-9a-f]{64}',actual['log_sha256']):raise ValueError('Cloud report log digest invalid')
+        count=actual.get('test_count');minimum=planned['minimum_test_count']
+        if count is not None and (type(count) is not int or count<0):raise ValueError('Cloud report test count invalid')
+        if minimum is not None and (count is None or (actual['exit_code']==0 and count<minimum)):raise ValueError('Cloud report test count below required bound')
+        passed=passed and actual['exit_code']==0
+    return passed
+
 class CodexCloudCLI:
     def __init__(self,journal_root,executable='codex',runner=None,max_pages=1000):
         self.root=Path(journal_root).resolve();self.root.mkdir(parents=True,exist_ok=True)
@@ -93,10 +113,31 @@ class CodexCloudCLI:
         try:os.fsync(fd)
         finally:os.close(fd)
     def _load(self,path):
-        state=json.loads(path.read_text());validate_request(state['request'])
+        state=json.loads(path.read_text())
+        if not isinstance(state,dict) or state.get('schema')!='codex-cloud-cli-journal/v1':
+            raise ValueError('Cloud journal schema invalid')
+        validate_request(state.get('request'))
+        if state.get('state') not in {'submitting','submitted','unknown','running','waiting_report','succeeded','failed'} or type(state.get('validation_passed')) is not bool:
+            raise ValueError('Cloud journal state invalid')
         if state.get('request_digest')!=_digest(state['request']) or self._path(state['request']['operation_key'])!=path:
             raise ValueError('Cloud journal binding mismatch')
-        if state.get('task_id') is not None and not TASK.fullmatch(state['task_id']):raise ValueError('Cloud journal task invalid')
+        task=state.get('task_id')
+        if task is not None and (not isinstance(task,str) or not TASK.fullmatch(task)):
+            raise ValueError('Cloud journal task invalid')
+        if state['state'] in {'submitted','running','waiting_report','succeeded','failed'} and task is None:
+            raise ValueError('Cloud journal state requires exact task')
+        report=state.get('report')
+        if report is not None:
+            _text(state.get('evidence_ref'))
+            if state.get('report_digest')!=_digest(report) or state.get('provider_status')!='READY':
+                raise ValueError('Cloud journal report evidence invalid')
+            passed=_validate_report(state['request'],task,report)
+            if state['state']!=('succeeded' if passed else 'failed') or state['validation_passed']!=passed:
+                raise ValueError('Cloud journal conclusion differs from report')
+        elif state['state']=='succeeded' or state['validation_passed']:
+            raise ValueError('Cloud journal success requires validated report')
+        elif state['state']=='failed' and (state.get('reason')!='provider_error' or state.get('provider_status')!='ERROR'):
+            raise ValueError('Cloud journal failure requires report or provider error')
         return state
     def _run(self,args,timeout=60):
         return self.runner([self.executable,'cloud',*args],capture_output=True,text=True,timeout=timeout)
@@ -173,22 +214,6 @@ class CodexCloudCLI:
                 if state['report']!=report or state['evidence_ref']!=evidence_ref:raise ValueError('Cloud terminal report cannot be rewritten')
                 return copy.deepcopy(state)
             if state['state']!='waiting_report':raise ValueError('Cloud report requires observed provider READY')
-            if not isinstance(report,dict) or report.get('schema')!='codex-cloud-cli-report/v1':raise ValueError('Cloud report schema invalid')
-            for key in ('operation_key','attempt_id','repository','environment_id','environment_label'):
-                if report.get(key)!=request[key]:raise ValueError('Cloud report binding mismatch: '+key)
-            if report.get('task_id')!=state['task_id']:raise ValueError('Cloud report task mismatch')
-            if any(report.get(key)!=request['candidate_sha'] for key in ('head_before','head_after')):raise ValueError('Cloud report source SHA mismatch')
-            if report.get('clean_before') is not True or report.get('clean_after') is not True:raise ValueError('Cloud report requires unchanged clean source')
-            checks=report.get('checks')
-            if not isinstance(checks,list) or len(checks)!=len(request['checks']):raise ValueError('Cloud report checks incomplete')
-            passed=True
-            for planned,actual in zip(request['checks'],checks):
-                if not isinstance(actual,dict) or actual.get('id')!=planned['id'] or actual.get('argv')!=planned['argv']:raise ValueError('Cloud report command mismatch')
-                if type(actual.get('exit_code')) is not int:raise ValueError('Cloud report exit code missing/invalid')
-                if not isinstance(actual.get('log_sha256'),str) or not re.fullmatch(r'[0-9a-f]{64}',actual['log_sha256']):raise ValueError('Cloud report log digest invalid')
-                count=actual.get('test_count');minimum=planned['minimum_test_count']
-                if count is not None and (type(count) is not int or count<0):raise ValueError('Cloud report test count invalid')
-                if minimum is not None and (count is None or (actual['exit_code']==0 and count<minimum)):raise ValueError('Cloud report test count below required bound')
-                passed=passed and actual['exit_code']==0
+            passed=_validate_report(request,state['task_id'],report)
             state.update(state='succeeded' if passed else 'failed',validation_passed=passed,report=copy.deepcopy(report),evidence_ref=evidence_ref,report_digest=_digest(report))
             self._save(path,state);return copy.deepcopy(state)

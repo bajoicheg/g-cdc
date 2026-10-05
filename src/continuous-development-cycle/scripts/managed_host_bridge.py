@@ -148,6 +148,14 @@ def _remote_head(repo, remote, source_ref):
     return parts[0]
 
 
+def _require_read_only_reflog(repo):
+    value, code = _git(repo, 'config', '--get', 'core.logAllRefUpdates', check=False)
+    if code == 1 and _git(repo, 'rev-parse', '--is-bare-repository')[0] == 'false':
+        return  # Git enables reflogs by default for a non-bare repository.
+    if code or value.lower() not in {'true', 'yes', 'on', '1', 'always'}:
+        raise ValueError('read_only execution requires enabled reflog history recording')
+
+
 def _isolated_path(path, repo, name):
     value = Path(path)
     if not value.is_absolute():
@@ -391,6 +399,8 @@ def _start_locked(request, repo, journal_root, handle_root, handle_id):
         session = existing
     if _remote_head(repo, request["remote"], request["lease_source_ref"]) != plan["base_sha"]:
         raise ValueError("source HEAD drifted from managed host plan base")
+    if _task(plan, request['task_id'])['role'] == 'read_only':
+        _require_read_only_reflog(repo)
     _save_session(session)
 
     gate = _gate_paths(session)
@@ -675,7 +685,9 @@ def _read_only_result(session, runtime):
         raise ValueError("read_only worker checkout must remain clean")
     if _git(cwd, "rev-parse", "HEAD")[0] != base:
         raise ValueError("read_only worker changed its Git head")
-    if any(sha != base for sha in _git(cwd, "reflog", "show", "--format=%H", "HEAD")[0].splitlines()):
+    _require_read_only_reflog(cwd)
+    history = _git(cwd, "reflog", "show", "--format=%H", "HEAD")[0].splitlines()
+    if not history or any(sha != base for sha in history):
         raise ValueError("read_only worker changed its Git history")
     if _remote_head(session["repo_root"], session["remote"], session["lease_source_ref"]) != base:
         raise ValueError("read_only source HEAD drifted from the plan base")

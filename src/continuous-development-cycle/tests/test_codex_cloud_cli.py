@@ -62,6 +62,19 @@ class CloudTests(unittest.TestCase):
     def test_ready_without_report_is_not_pass(self):
         self.submit();observed=self.adapter.observe(KEY)
         self.assertEqual(observed['state'],'waiting_report');self.assertFalse(observed['validation_passed'])
+    def test_corrupt_journal_cannot_claim_success_without_report(self):
+        self.submit();path=self.adapter._path(KEY);state=json.loads(path.read_text())
+        state.update(state='succeeded',validation_passed=True);path.write_text(json.dumps(state))
+        with self.assertRaises(ValueError):self.adapter.observe(KEY)
+        self.assertEqual(sum(a[2]=='exec' for a in self.runner.calls),1)
+    def test_corrupt_persisted_report_cannot_pass_after_reconnect(self):
+        self.submit();self.adapter.observe(KEY);self.adapter.ingest_report(KEY,self.report(),'provider:report/1')
+        path=self.adapter._path(KEY);original=json.loads(path.read_text())
+        for update_digest in (False,True):
+            state=copy.deepcopy(original);state['report']['head_after']='f'*40
+            if update_digest:state['report_digest']=cloud._digest(state['report'])
+            path.write_text(json.dumps(state))
+            with self.assertRaises(ValueError):cloud.CodexCloudCLI(self.tmp.name,runner=self.runner).observe(KEY)
     def test_exact_report_proves_success(self):
         self.submit();self.adapter.observe(KEY)
         result=self.adapter.ingest_report(KEY,self.report(),'provider:report/1')

@@ -41,6 +41,25 @@ class MultiDocumentLeaseTests(unittest.TestCase):
         self.assertEqual(self.git('rev-parse',after+'^'),before)
     def test_historical_multidocument_record_is_readable(self):
         before=self.topology();self.assertEqual(self.store.read_revision(before),self.record)
+    def assert_raw_neighbor_preserved(self,name):
+        blob=self.git('hash-object','-w','--stdin',input='neighbor\n').encode('ascii')
+        leaseblob=self.git('hash-object','-w','--stdin',input=json.dumps(self.record)).encode('ascii')
+        rows=[b'100644 blob '+leaseblob+b'\tlease.json',b'100644 blob '+blob+b'\t'+name]
+        def raw(*args,input=None):
+            return subprocess.check_output(['git','-C',str(self.repo),*args],input=input,stderr=subprocess.PIPE)
+        tree=raw('mktree','-z',input=b'\0'.join(rows)+b'\0').decode('ascii').strip()
+        before=self.git('commit-tree',tree,'-p',self.initial,input='Binary filename neighbor\n')
+        self.git('push','-q','origin',before+':'+self.store.ref)
+        revision,record=self.store.read();after=self.store.compare_and_swap(revision,record)
+        def neighbors(revision):
+            return sorted(row for row in raw('ls-tree','-z',revision).split(b'\0')
+                          if row and row.split(b'\t',1)[1]!=b'lease.json')
+        self.assertEqual(neighbors(before),neighbors(after))
+        self.assertEqual(self.store.read_revision(before),self.record)
+    def test_cas_preserves_carriage_return_filename_bytes(self):
+        self.assert_raw_neighbor_preserved(b'name\rwith-cr\r\n')
+    def test_cas_preserves_non_utf8_filename_bytes(self):
+        self.assert_raw_neighbor_preserved(b'name\xffnon-utf8')
     def test_stale_cas_cannot_delete_competing_documents(self):
         before=self.topology()
         with self.assertRaisesRegex(ValueError,'stale'):

@@ -156,30 +156,30 @@ class GitLeaseStore:
         if remote_identity(self.repo, self.remote) != self.store_id:
             raise ValueError('lease coordination remote identity drift')
 
-    def _git(self, *args, input=None):
+    def _git(self, *args, input=None, raw=False):
         environment = git_object_environment(GIT_TERMINAL_PROMPT='0',
                            GIT_AUTHOR_NAME='CDC coordination', GIT_AUTHOR_EMAIL='cdc@example.invalid',
                            GIT_COMMITTER_NAME='CDC coordination', GIT_COMMITTER_EMAIL='cdc@example.invalid')
         try:
             result = subprocess.run(['git', '-C', str(self.repo), *args], input=input,
-                                    text=True, capture_output=True, env=environment, check=False)
+                                    text=not raw, capture_output=True, env=environment, check=False)
         except OSError as exc:
             raise ValueError('Git coordination unavailable') from exc
         if result.returncode:
             # Do not echo transport stderr: URLs or helper diagnostics may contain credentials.
             raise ValueError(f'Git coordination {args[0]} failed (exit {result.returncode})')
-        return result.stdout.strip()
+        return result.stdout if raw else result.stdout.strip()
 
     def _lease_entry(self, revision):
-        rows = self._git('ls-tree', '-z', revision, '--', 'lease.json').split('\0')
+        rows = self._git('ls-tree', '-z', revision, '--', 'lease.json', raw=True).split(b'\0')
         rows = [row for row in rows if row]
         if len(rows) != 1:
             raise ValueError('coordination tree requires one regular lease.json')
-        metadata, name = rows[0].split('\t', 1)
-        mode, kind, blob = metadata.split(' ')
-        if name != 'lease.json' or mode not in {'100644', '100755'} or kind != 'blob':
+        metadata, name = rows[0].split(b'\t', 1)
+        mode, kind, blob = metadata.split(b' ')
+        if name != b'lease.json' or mode not in {b'100644', b'100755'} or kind != b'blob':
             raise ValueError('coordination lease.json must be a regular file')
-        return mode, blob
+        return mode.decode('ascii'), blob.decode('ascii')
 
     def _read_record(self, revision):
         _, blob = self._lease_entry(revision)
@@ -278,11 +278,11 @@ class GitLeaseStore:
         neighbors = []
         if current is not None:
             mode, _ = self._lease_entry(current)
-            # NUL delimiters preserve tabs/newlines and Git quoting is disabled.
-            neighbors = [row for row in self._git('ls-tree', '-z', current).split('\0')
-                         if row and row.split('\t', 1)[1] != 'lease.json']
-        entries = neighbors + [f'{mode} blob {blob}\tlease.json']
-        tree = self._git('mktree', '-z', input='\0'.join(entries) + '\0')
+            # Git names are bytes: text decoding also normalizes CR/LF sequences.
+            neighbors = [row for row in self._git('ls-tree', '-z', current, raw=True).split(b'\0')
+                         if row and row.split(b'\t', 1)[1] != b'lease.json']
+        entries = neighbors + [f'{mode} blob {blob}\tlease.json'.encode('ascii')]
+        tree = self._git('mktree', '-z', input=b'\0'.join(entries) + b'\0', raw=True).decode('ascii').strip()
         parent = ['-p', expected_revision] if expected_revision else []
         commit = self._git('commit-tree', tree, *parent,
                            input='Update cooperative execution ownership\n\nCAS proposal: ' + secrets.token_hex(32) + '\n')

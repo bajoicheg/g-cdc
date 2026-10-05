@@ -506,6 +506,21 @@ subprocess.run(['git','commit','-qm','managed closure'],check=True)
             bridge.finish(self.finish_request(handle,'evidence:compute-result'))
         self.assertEqual(self.remote_head(),self.base)
 
+    def test_read_only_disabled_reflog_is_rejected_before_worker_launch(self):
+        self.git('config','core.logAllRefUpdates','false')
+        with self.assertRaisesRegex(ValueError,'reflog'):
+            bridge.start(self.read_only_request())
+        self.assertIsNone(self.lease_store.read()[1]['owner_id'])
+        self.assertEqual(self.remote_head(),self.base)
+
+    def test_read_only_missing_reflog_cannot_finish(self):
+        code='import subprocess;subprocess.run(["git","reflog","expire","--expire=all","HEAD"],check=True)'
+        handle=bridge.start(self.read_only_request(code))
+        self.wait_for(handle,'awaiting_release')
+        with self.assertRaisesRegex(ValueError,'history'):
+            bridge.finish(self.finish_request(handle,'evidence:compute-result'))
+        self.assertEqual(self.remote_head(),self.base)
+
     def test_read_only_commit_and_reset_cannot_finish(self):
         code='import subprocess;from pathlib import Path;Path("unexpected").write_text("mutation");subprocess.run(["git","add","unexpected"],check=True);subprocess.run(["git","commit","-qm","forbidden"],check=True);subprocess.run(["git","reset","--hard","'+self.base+'"],check=True)'
         handle=bridge.start(self.read_only_request(code))
