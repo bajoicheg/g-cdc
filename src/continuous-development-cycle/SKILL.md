@@ -3,7 +3,7 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v2.11.7
+# Continuous Development Cycle v2.11.8
 
 ## Active execution contract — apply before recovery detail
 
@@ -371,3 +371,7 @@ After an authenticated pre-acceptance GitHub 403 or an immutable cancellation-be
 ## Compatible managed finish recovery
 
 For the verified 2.11.6 stale-finish defect, follow references/managed-host-finish-recovery.md. A verified immutable corrected controller may finish the same held handle without replacing the consumer package or owner. Ordinary atomic adoption remains gated on release and quiescence.
+
+## Codex Cloud Development and transitioned guards
+
+Cloud Development is a separate scoped editing contract returning an existing managed handoff; COMPUTE_ONLY remains read-only. Provider READY waits for an observed report. Unknown submissions retain guards and reservations. The conditional lease store binds a terminal resolution to the original consumed claim digest and terminal evidence to the current transitioned guard digest, while retaining full canonical clear_guard equality, immutable history and unrelated-field rejection. See references/codex-compute.md.

@@ -1,0 +1,19 @@
+{
+  "schema": "cdc-cloud8-integration/v1",
+  "source_base": "f261ddec3ec1595bf171c27f2be366102484813e",
+  "development_driver": "released7 C74/tree96d5; root personal7 strict330 acceptance",
+  "accepted_cloud_source": "a3d4998dae7487109cc2c5a24ea2267647ce60a1",
+  "accepted_pilot_task": "task_e_6ac56ee4275483289b098914a11d3cb1",
+  "task1_process": "8a0b6a3d34266b4754f1279c3d8850ec67d7fb11",
+  "approved_plan_preserved_exactly": true,
+  "systemic_fix_patch_sha256": "9fad10858365606fa8a469f5cc307c25a01437a74fdd338ee7b1d670f2e9830f",
+  "original_maintenance_candidate": "43f09bc9301e162892b709a77369586dc5a132f1",
+  "functional_pilot": "qualified; no repeat",
+  "savings": "unproven;4percentage-point quota delta includes concurrent activity, not attributed money",
+  "full_candidate_checks": "NOT_RUN until actual freeze/check ledger",
+  "required8_CI": "NOT_RUN",
+  "installation8": "NOT_RUN; root owned after immutable release",
+  "live_adoption8": "NOT_RUN; per-consumer ownership/platform/access gates",
+  "new_provider_dispatches": 0,
+  "scheduler_billing_auth_changes": 0
+}

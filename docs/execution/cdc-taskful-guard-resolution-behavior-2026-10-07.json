@@ -1,0 +1,26 @@
+{
+  "case": {
+    "schema": "behavioral-eval-case/v1",
+    "scenario_id": "taskful-store-error-bounded-corrected-recovery",
+    "scenario_type": "unchanged_recovery_retry",
+    "facts": {
+      "failed_strategy": "obsolete-claim-guard-digest-equality"
+    },
+    "baseline_trace": [
+      "failure:obsolete-claim-guard-digest-equality"
+    ],
+    "corrected_trace": [
+      "failure:obsolete-claim-guard-digest-equality",
+      "retry:reviewed-taskful-canonical-control-repair"
+    ]
+  },
+  "baseline": "RED",
+  "corrected": "GREEN",
+  "provenance": [
+    "git:3c0717be9b574603db90364014180469feb6fab9",
+    "git:f4223b8f8387a5f7d898b09dfed99383c699f83d",
+    "sha256:c2dacf9c651f35db355ef3c20ef2745ecfee440c987f82a4a99b4c846d1c4b27",
+    "sha256:801524188e3685c494b3302dea7d76f2ce5465f79ea7636b33023966f00965f1"
+  ],
+  "retry_meaning": "one reviewed corrected control-record CAS; zero provider dispatches/CI starts; no old-claim replay"
+}

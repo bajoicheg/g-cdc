@@ -1,3 +1,7 @@
+## Current authorized sequence — 2026-10-07
+
+Maintenance CDC2.11.7 is source-released at refs/heads/release/v2.11.7, exact tested commit74c75a7b81323a3c278dcd3efd84e33ed8478d50, package96d5ab0a225afe96a5de92a781734a3b3bc16836. Separate main metadataf261ddec3ec1595bf171c27f2be366102484813e does not receive the candidate CI claim. Root independently accepted personal7 archive/loader/330 runtime files with strict byte/mode equality. Cloud Development2.11.8 is now the authorized next scope under verified released7; it is not released yet. Preserve maintenance43f09 and all guards, claims, pools and charges. No repeat provider pilot, billing or scheduler mutation is authorized by this sequencing.
+
 ## Current maintenance candidate — 2026-10-06
 
 CDC 2.11.7 is the bounded finish-retry candidate authorized in docs/roadmap.md. Development authority remains verified immutable 2.11.6. Exact-SHA CI, source release, personal installation and live adoption are separate gates; these candidate strings prove none of them. Existing 2.11.6 release/personal records below remain immutable historical evidence.
