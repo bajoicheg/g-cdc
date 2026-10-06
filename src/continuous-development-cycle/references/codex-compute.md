@@ -91,3 +91,23 @@ Before submitting, follow `references/external-operations.md` to persist/read ba
 Native CLI subprocesses execute in the caller-selected journal directory so provider diagnostic files cannot contaminate an ambient candidate checkout. Keep that directory outside the frozen checkout. Explicit environment and source-branch arguments retain provider binding; changing command working directory creates no launch authority.
 
 On 2026-10-05 an actual native Cloud checkout had the exact requested clean SHA but no configured Git remotes. The submitting host verifies the canonical repository/environment association and exact remote branch before launch. Absence of origin inside that provider checkout is not itself conflicting identity and must not stop portable tests. Inspect available identity without changing Git configuration; reject a conflicting configured remote. Report host-bound identity separately from independent observations. Preserve the failed initial task/report and charge when correcting this preflight contract; a retry needs a fresh reviewed correction and remaining admission budget.
+
+### Isolated development transport
+
+`scripts/codex_cloud_development.py` implements a separate development request
+using `templates/codex-cloud-development-request.json`. It does not change the
+COMPUTE_ONLY contract. A parent supplies a live authority callback which checks
+its exact lease, guard, immutable source/branch bindings, reserved budget and
+one-use submission claim immediately before official CLI dispatch.
+
+The durable journal records dispatch uncertainty before invoking `cloud exec`.
+Restarting never recreates authority or dispatches again. Recovery fully paginates
+official inventory and requires unique exact operation/attempt/environment
+association; a previously independently verified environment label is usable
+when official metadata omits the ID. READY means waiting_result, not acceptance.
+
+Official `cloud diff TASK --attempt 1` exports actual bytes with a SHA256 digest.
+The export is untrusted evidence: its base_sha is the request binding, not an
+independently observed worker HEAD. Parent report/base/scope/log validation and
+the existing managed handoff/integrator remain mandatory before publication.
+The transport never applies, commits, pushes, cancels or clears a guard.
