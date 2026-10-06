@@ -111,3 +111,23 @@ The export is untrusted evidence: its base_sha is the request binding, not an
 independently observed worker HEAD. Parent report/base/scope/log validation and
 the existing managed handoff/integrator remain mandatory before publication.
 The transport never applies, commits, pushes, cancels or clears a guard.
+
+### Development admission and handoff
+
+`scripts/codex_development_bridge.py` accepts parent-observed released runtime
+lease/pool snapshots and durable budget-ledger evidence. All seven named
+controller capability checks must pass. A free ready writer slot, matching
+base/branch/scope, fresh owned lease and accepted exact reservation are required.
+Snapshot validation is not launch authority: the caller must refresh official
+inventory before its short-lived claim and recheck the exact live guard, source,
+claim and budget in the transport callback immediately before dispatch.
+Unknown outcomes remain charged and permit observation only. Unsupported cancel
+does not prove provider quiescence and never clears an external guard.
+
+The bridge requires the exact observed report task/attempt/environment/base,
+complete planned argv/exits/counts/log hashes and actual patch scope. Exported
+bytes are resolved and hashed by the existing managed handoff validator; Git
+parses their path manifest. The returned content_artifact handoff grants no
+publication permissions. The parent imports it only into its assigned isolated
+branch, then uses existing validate_publication_proof plus live lease/source
+checks before publishing. Cloud unit success cannot satisfy platform gates.
