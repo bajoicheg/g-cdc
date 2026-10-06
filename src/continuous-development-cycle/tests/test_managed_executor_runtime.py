@@ -288,7 +288,8 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
         self.assertEqual(final["status"],"succeeded");self.assertTrue(final["quiescent"])
 
     def test_owned_marker_is_recovered_after_controller_crash_post_acquire_cas(self):
-        self.launch("a", self.worker("a", 2.0))
+        barrier = self.root / "acquire-recovery-worker-go"
+        self.launch("a", self.worker("a", 0, barrier=barrier))
         end=time.monotonic()+4
         while time.monotonic()<end:
             observed=self.rt.observe("a","a1")
@@ -309,6 +310,7 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
             lease_store,lease_revision,"test/project","refs/heads/integration",owner,at,
             terminal_capability=capability)
         invocation_id=acquired["invocation"]["invocation_id"]
+        barrier.touch()
         paths=runtime._terminal_hold_paths(self.rt._terminal_hold_directory("a","a1"))
         self.assertFalse(paths["owned"].exists())
 
@@ -375,7 +377,8 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
         self.assertEqual(final["status"],"succeeded");self.assertTrue(final["quiescent"])
 
     def test_release_marker_is_recovered_after_controller_crash_post_release_cas(self):
-        self.launch("a", self.worker("a", 2.0))
+        barrier = self.root / "release-recovery-worker-go"
+        self.launch("a", self.worker("a", 0, barrier=barrier))
         end=time.monotonic()+4
         while time.monotonic()<end:
             observed=self.rt.observe("a","a1")
@@ -391,6 +394,7 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
         acquired=self.rt.acquire_execution_lease(
             lease_store,lease_revision,"test/project","refs/heads/integration",owner,"a","a1",at)
         invocation_id=acquired["invocation"]["invocation_id"]
+        barrier.touch()
         revision=acquired["revision"];record=acquired["record"]
 
         end=time.monotonic()+4
