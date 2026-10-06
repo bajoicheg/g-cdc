@@ -700,16 +700,29 @@ subprocess.run(["git","commit","-qm","worker result"],check=True)
 
 
     def test_worker_exit_does_not_end_descendant_observation(self):
-        self.plan["tasks"][0]["max_runtime_seconds"] = .4
-        self.configure_fresh_pool()
+        # Observe root exit while a detached descendant is still live. A tiny
+        # timeout races slow observers against correct descendant termination;
+        # the separate timeout regression covers that termination path.
         marker = self.root / "root-exited-child-writing"
         argv = self.descendant_worker(marker)
         argv[2] = argv[2].replace("; time.sleep(60)", "")
         self.launch("a", argv)
         self.wait_file(marker)
+        receipt_path = next((self.root / "journal").glob("*/receipt.json"))
+        end = time.monotonic() + 4
+        while time.monotonic() < end:
+            receipt = json.loads(receipt_path.read_text())
+            worker_pid = receipt.get("worker_pid")
+            if worker_pid is not None and not Path("/proc", str(worker_pid)).exists():
+                break
+            time.sleep(.01)
+        else:
+            self.fail("root worker did not exit before descendant observation")
         observed = self.rt.observe("a", "a1")
         self.assertFalse(observed["quiescent"])
-        self.assertEqual(self.wait("a")["status"], "timed_out")
+        self.assertEqual(observed["status"], "running")
+        self.rt.cancel("a", "a1")
+        self.assertEqual(self.wait("a")["status"], "cancelled")
         before = marker.read_text()
         time.sleep(.1)
         self.assertEqual(marker.read_text(), before)
