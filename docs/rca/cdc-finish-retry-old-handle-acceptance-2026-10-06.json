@@ -1,0 +1,23 @@
+{
+  "schema": "cdc-old-handle-recovery-acceptance/v1",
+  "old_version": "2.11.6",
+  "old_package_tree": "79257a06c40de6f514f9b059be05d610885a50e7",
+  "candidate_package_changed_paths": [
+    "tests/test_managed_host_bridge.py",
+    "scripts/managed_host_bridge.py"
+  ],
+  "same_handle": "9844d708-ef73-54d5-a2ea-26563a0de042",
+  "same_identity": [
+    "99999999-9999-4999-8999-999999999999",
+    1,
+    "managed-terminal:28b2fb6606ede9dffac58d6fadaad5c7c3b9465d399abeb47f4dcfc3fb2f7dda"
+  ],
+  "same_supervisor": "sha256:4aeec975a0a98731740266cc3e41d0db1d723d3bf49d85c48e0ed1a6b56cef2f",
+  "delayed_retry_seconds": 601,
+  "claims_preserved": true,
+  "released": true,
+  "quiescent": true,
+  "repeat_finish_no_new_effects": true,
+  "candidate_bridge_sha256": "e14ae42a37ec580056147de2a8e599c0e3fa31a2bae637ebf967600a274b47e4",
+  "candidate_only": true
+}

@@ -1,3 +1,7 @@
+## Current maintenance candidate — 2026-10-06
+
+CDC 2.11.7 is the bounded finish-retry candidate authorized in docs/roadmap.md. Development authority remains verified immutable 2.11.6. Exact-SHA CI, source release, personal installation and live adoption are separate gates; these candidate strings prove none of them. Existing 2.11.6 release/personal records below remain immutable historical evidence.
+
 ## Current release and adoption state — 2026-10-06
 
 CDC **2.11.6 is source-released** at immutable `refs/heads/release/v2.11.6`, exact release commit `b3b517fb70e2deea4006e265f708f29881377885`, 329-file package tree `79257a06c40de6f514f9b059be05d610885a50e7`. It was developed under independently released CDC 2.11.5; this post-release process work uses the verified released 2.11.6 runtime. The minimum runtime floor remains 2.11.3. Source main may advance with status-only documentation; that does not retarget the immutable release or transfer exact-SHA CI evidence to a later documentation commit.

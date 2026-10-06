@@ -1,7 +1,17 @@
 name: CDC Release Validation
+run-name: CDC release / ${{ inputs.cdc_attempt_id || github.run_id }} / ${{ inputs.cdc_operation_key || github.sha }}
 
 on:
   workflow_dispatch:
+    inputs:
+      cdc_operation_key:
+        description: Durable CDC operation key
+        required: false
+        type: string
+      cdc_attempt_id:
+        description: Durable CDC attempt identifier
+        required: false
+        type: string
   pull_request:
     branches: [main]
 
