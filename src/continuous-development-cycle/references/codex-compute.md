@@ -131,3 +131,9 @@ parses their path manifest. The returned content_artifact handoff grants no
 publication permissions. The parent imports it only into its assigned isolated
 branch, then uses existing validate_publication_proof plus live lease/source
 checks before publishing. Cloud unit success cannot satisfy platform gates.
+
+Capability qualification is specific to the verified repository, environment
+ID/label and supported stable CLI version. Mismatched or blocked receipts are
+rejected even if their check booleans claim success. Diff evidence is installed
+from a complete fsynced temporary inode; an interrupted export can restart
+without a partial final artifact or any second provider submission.

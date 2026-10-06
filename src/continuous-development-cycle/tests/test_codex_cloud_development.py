@@ -71,6 +71,28 @@ class TransportTests(unittest.TestCase):
             r=request();t.submit(r,launch_authorized=lambda:None)
             with self.assertRaises(ContractError):t.export_diff(r["operation_key"],evidence_root=Path(root)/"evidence")
 
+    def test_interrupted_export_restarts_without_dispatch(self):
+        from unittest import mock
+        import codex_cloud_development as module
+        calls=[];payload=b'diff --git a/docs/result.md b/docs/result.md\n+result\n'
+        def runner(argv,**kw):
+            calls.append(argv)
+            if argv[2]=='exec':return SimpleNamespace(returncode=0,stdout='https://chatgpt.com/codex/tasks/task_exact',stderr='')
+            if argv[2]=='status':return SimpleNamespace(returncode=0,stdout='[READY]',stderr='')
+            return SimpleNamespace(returncode=0,stdout=payload,stderr=b'')
+        with tempfile.TemporaryDirectory() as root:
+            r=request();t=CodexCloudDevelopment(Path(root)/'journal',runner=runner);t.submit(r,launch_authorized=lambda:None);t.observe(r['operation_key'])
+            with mock.patch.object(module.os,'link',side_effect=OSError('interrupted install')):
+                with self.assertRaises(OSError):t.export_diff(r['operation_key'],evidence_root=Path(root)/'evidence')
+            exported=CodexCloudDevelopment(Path(root)/'journal',runner=runner).export_diff(r['operation_key'],evidence_root=Path(root)/'evidence')
+            self.assertEqual(Path(exported['artifact_ref']['path']).read_bytes(),payload)
+            self.assertEqual(sum(argv[2]=='exec' for argv in calls),1)
+    def test_prompt_report_fields_match_strict_bridge_schema(self):
+        from codex_cloud_development import prompt
+        # Canonical report fields are the approved protocol, not a mirror of parser internals.
+        self.assertIn('repository, environment_id, base_sha, head_before',prompt(request()))
+        self.assertNotIn('environment_id, environment_label, base_sha',prompt(request()))
+
     def test_gate_denial_has_no_cli_effect(self):
         with tempfile.TemporaryDirectory() as root:
             def denied():raise PermissionError("budget denied")

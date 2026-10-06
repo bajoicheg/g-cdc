@@ -52,7 +52,7 @@ class BridgeTests(unittest.TestCase):
         ledger=budget.apply_event(ledger,event)
         p=plan(self.r['base_sha']);p['tasks']=p['tasks'][:1];p['max_parallel']=1;p['tasks'][0].update(branch='cdc/development',write_paths=['docs/result.md'])
         state=pool.initial_state(p,parallel_capable=False)
-        cap={'schema':'cdc-codex-controller-capabilities/v1','qualified':True,'checks':{name:{'status':'passed','evidence_refs':['fixture:validator-only']} for name in ['git_native','coordination_cas','submit','observe','diff_export','validation_report','provider_quiescence']}}
+        cap={'schema':'cdc-codex-controller-capabilities/v1','repository':'org/repo','environment_id':'env-verified','environment_label':'org/repo','cli_version':'0.160.0','verdict':'qualified','qualified':True,'checks':{name:{'status':'passed','evidence_refs':['fixture:validator-only']} for name in ['git_native','coordination_cas','submit','observe','diff_export','validation_report','provider_quiescence']}}
         a={'lease_record':lr,'owner_id':owner,'generation':1,'invocation_id':'fixture','at_utc':at,'ledger':ledger,'reservation':event,'pool_plan':p,'pool_state':state,'task_id':'a','evidence_refs':[self.r['budget_ref'],'fixture:trusted-parent-snapshot']}
         return cap,a
     def test_existing_reserved_budget_and_free_writer_validate(self):
@@ -74,5 +74,38 @@ class BridgeTests(unittest.TestCase):
         cap,a=self.admission_fixture();a['pool_plan']['base_sha']='f'*40
         with self.assertRaises(ContractError):admit_development(self.r,capability_receipt=cap,admission=a)
 
-if __name__=='__main__':unittest.main()
+    def test_capability_receipt_must_match_repository_environment_and_cli(self):
+        for key,value in [('repository','different/repository'),('environment_id','other-env'),('environment_label','other-label'),('cli_version','unsupported'),('verdict','blocked')]:
+            cap,a=self.admission_fixture();cap[key]=value
+            with self.subTest(key=key),self.assertRaises(ContractError):admit_development(self.r,capability_receipt=cap,admission=a)
 
+    def test_unsupported_cancel_without_terminal_evidence_keeps_guard(self):
+        import operation_intent as op, execution_lease_v2 as lease
+        cap,a=self.admission_fixture();lr=a['lease_record'];at=a['at_utc']
+        binding={'repository':'org/repo','candidate_sha':self.r['base_sha'],'backend':'codex_cloud_cli','mode':'DEVELOPMENT','environment_id':'env-verified','check_suite_fingerprint':'sha256:'+'1'*64,'check_plan_digest':'sha256:'+'2'*64,'environment_fingerprint':'sha256:'+'3'*64}
+        intent=op.prepare(binding,'dev-a1','refs/heads/main',at);proof=op.verify_readback(intent,copy.deepcopy(intent),'git:'+'4'*40,at);intent=op.transition(intent,'submitting',at,receipt=proof)
+        guarded=lease.set_guard(lr,a['owner_id'],1,'fixture',at,intent,'git:'+'4'*40);before=copy.deepcopy(guarded)
+        observation={'schema':'operation-observation/v1','operation_key':intent['operation_key'],'lookup_complete':True,'observed_at_utc':at,'tasks':[{'task_id':'task_exact','task_url':'https://chatgpt.com/codex/tasks/task_exact','operation_key':intent['operation_key'],'attempt_id':'dev-a1','binding':binding,'state':'unknown','conclusion':None,'evidence_refs':['cancel:unsupported;quiescence:unobserved']}]}
+        with self.assertRaises(ValueError):lease.clear_guard(guarded,a['owner_id'],1,'fixture',at,observation,'fixture:no-terminal-proof')
+        self.assertEqual(guarded,before);self.assertTrue(op.decide(intent,observation)['external_guard'])
+    def test_head_drift_prevents_existing_publication_proof(self):
+        from test_managed_executor_handoff import T
+        fixture=T('runTest');fixture.setUp()
+        try:
+            h,path,payload=fixture.artifact_handoff();r=request();r.update(repository=fixture.repo_id,base_sha=fixture.base,source_branch='worker-a',allowed_paths=['src/a.txt'])
+            report=copy.deepcopy(self.report);report.update(repository=fixture.repo_id,base_sha=fixture.base,head_before=fixture.base,changed_paths=['src/a.txt'])
+            exported=copy.deepcopy(self.exported);exported.update(base_sha=fixture.base,artifact_ref={'path':str(path),'sha256':hashlib.sha256(payload).hexdigest(),'format':'unified_diff'})
+            context=copy.deepcopy(self.context);context.update(assigned_branch='worker-a',publication_repository=fixture.repo_id,publication_remote_id=fixture.remote_id)
+            adapted=build_development_handoff(r,exported,report,context=context,evidence_root=fixture.repo)
+            proof=fixture.proof(adapted);self.assertTrue(fixture.validate(proof,adapted,evidence_root=fixture.repo)['result_verified'])
+            fixture.push_worker(source=fixture.base)
+            with self.assertRaises(ValueError):fixture.validate(proof,adapted,evidence_root=fixture.repo)
+        finally:fixture.tearDown()
+    def test_lease_loss_blocks_parent_publication_gate_after_handoff(self):
+        import execution_lease_v2 as lease
+        adapted=self.build();self.assertEqual(handoff.publication_plan(adapted,self.root)['action'],'IMPORT_CONTENT_ARTIFACT_TO_ASSIGNED_BRANCH')
+        cap,a=self.admission_fixture();before=copy.deepcopy(a['lease_record'])
+        with self.assertRaises(ValueError):lease.check_record(a['lease_record'],'22222222-2222-4222-8222-222222222222',1,'fixture',a['at_utc'],action='product_write')
+        self.assertEqual(a['lease_record'],before)
+
+if __name__=='__main__':unittest.main()

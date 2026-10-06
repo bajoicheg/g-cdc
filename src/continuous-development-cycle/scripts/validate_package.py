@@ -84,6 +84,8 @@ from consumer_adoption import assess as assess_consumer_adoption
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
+    "scripts/codex_development_bridge.py",
+    "tests/test_codex_development_bridge.py",
     "scripts/codex_cloud_development.py",
     "tests/test_codex_cloud_development.py",
     "templates/codex-cloud-development-request.json",

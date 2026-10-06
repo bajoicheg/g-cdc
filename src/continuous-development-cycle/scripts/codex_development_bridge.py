@@ -35,6 +35,9 @@ existing runtime/store APIs and supplies their durable evidence references.
     try:
         cap=capability_receipt
         if not isinstance(cap,dict) or cap.get('schema')!='cdc-codex-controller-capabilities/v1' or cap.get('qualified') is not True or set(cap.get('checks',{}))!=CHECKS:raise ContractError('qualified capability receipt required')
+        if cap.get('verdict')!='qualified' or cap.get('cli_version')!='0.160.0':raise ContractError('qualified supported CLI receipt required')
+        for field in ('repository','environment_id','environment_label'):
+            if cap.get(field)!=r[field]:raise ContractError('capability identity mismatch: '+field)
         for check in cap['checks'].values():
             if check.get('status')!='passed':raise ContractError('capability check not passed')
             _refs(check.get('evidence_refs'))

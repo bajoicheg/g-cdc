@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import tempfile
 from codex_cloud_cli import CodexCloudCLI, KEY, HEX, TASK, _text, _digest, _utc, validate_request
 from parallel_task_planner import portable_path_key
 
@@ -50,7 +51,7 @@ def prompt(request):
         'apply, open PR, run CI, install, change auth/network/settings, delegate, or acquire leases. '
         'Run only checks argv separately; capture complete logs outside repository and hash actual bytes. '
         'Return observed JSON schema codex-cloud-development-report/v1 with task_id, provider_attempt=1, '
-        'operation_key, attempt_id, repository, environment_id, environment_label, base_sha, head_before, '
+        'operation_key, attempt_id, repository, environment_id, base_sha, head_before, '
         'changed_paths, checks and evidence_refs. Each check: id, argv, exit_code, test_count, log_sha256. '
         'Report unavailable observations explicitly; never invent commands, logs or PASS. '
         'Do not alter HEAD. Platform gates NOT_RUN. Provider READY is not validation.')
@@ -127,14 +128,19 @@ class CodexCloudDevelopment(CodexCloudCLI):
             if result.returncode!=0 or not isinstance(result.stdout,bytes) or not result.stdout:raise ContractError('official diff unavailable')
             data=result.stdout;digest=hashlib.sha256(data).hexdigest();root=Path(evidence_root).resolve();root.mkdir(parents=True,exist_ok=True)
             target=root/(operation_key.removeprefix('sha256:')+'-attempt1-'+digest+'.diff')
+            # Publish only a complete fsynced inode. A crash leaves at most an
+            # orphan temp file, never a partial digest-named final artifact.
+            fd,temp=tempfile.mkstemp(prefix='.diff-',suffix='.tmp',dir=root)
             try:
-                fd=os.open(target,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
-            except FileExistsError:
-                if target.is_symlink() or target.read_bytes()!=data:raise ContractError('diff evidence collision')
-            else:
-                with os.fdopen(fd,'wb') as stream:stream.write(data);stream.flush();os.fsync(stream.fileno())
-                fd=os.open(root,os.O_DIRECTORY)
-                try:os.fsync(fd)
-                finally:os.close(fd)
+                with os.fdopen(fd,'wb') as stream:
+                    stream.write(data);stream.flush();os.fsync(stream.fileno())
+                try:os.link(temp,target,follow_symlinks=False)
+                except FileExistsError:
+                    if target.is_symlink() or target.read_bytes()!=data:raise ContractError('diff evidence collision')
+                directory_fd=os.open(root,os.O_DIRECTORY)
+                try:os.fsync(directory_fd)
+                finally:os.close(directory_fd)
+            finally:
+                os.unlink(temp)
             exported={'task_id':state['task_id'],'provider_attempt':1,'base_sha':state['request']['base_sha'],'artifact_ref':{'path':str(target),'sha256':digest,'format':'unified_diff'}}
             state.update(state='result_exported',exported=exported);self._save(path,state);return copy.deepcopy(exported)
