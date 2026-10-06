@@ -12,6 +12,20 @@ def request():
     return {"schema":"codex-cloud-development-request/v1", "operation_key":"sha256:"+"a"*64, "attempt_id":"dev-a1", "repository":"org/repo", "environment_id":"env-verified", "environment_label":"org/repo", "source_branch":"cdc/development", "base_sha":"b"*40, "allowed_paths":["docs/result.md"], "acceptance_criteria":["Write a bounded result"], "checks":[{"id":"layout", "argv":["python", "-B", "layout.py"], "minimum_test_count":None}], "budget_ref":"git:"+"c"*40}
 
 class TransportTests(unittest.TestCase):
+    def test_official_status_exit_semantics_survive_restart(self):
+        for status, exit_code, expected in [('READY',0,'waiting_result'),('PENDING',1,'running'),('ERROR',1,'failed'),('PENDING',2,'unknown'),('READY',1,'unknown')]:
+            with self.subTest(status=status,exit_code=exit_code), tempfile.TemporaryDirectory() as root:
+                calls=[]
+                def runner(argv,**kw):
+                    calls.append(argv)
+                    if argv[2]=='exec':return SimpleNamespace(returncode=0,stdout='https://chatgpt.com/codex/tasks/task_exact',stderr='')
+                    return SimpleNamespace(returncode=exit_code,stdout='['+status+']',stderr='')
+                r=request();CodexCloudDevelopment(root,runner=runner).submit(r,launch_authorized=lambda:None)
+                observed=CodexCloudDevelopment(root,runner=runner).observe(r['operation_key'])
+                self.assertEqual(observed['state'],expected)
+                if expected=='failed':self.assertEqual(observed['reason'],'provider_error')
+                self.assertEqual(sum(argv[2]=='exec' for argv in calls),1)
+
     def test_unknown_fields_and_invalid_base_rejected(self):
         for field,value in [("extra",True),("base_sha","not-a-sha"),("environment_id",""),("allowed_paths",["../outside"]),("allowed_paths",[])]:
             with self.subTest(field=field,value=value):

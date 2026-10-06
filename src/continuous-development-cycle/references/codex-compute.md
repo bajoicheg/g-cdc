@@ -137,3 +137,5 @@ ID/label and supported stable CLI version. Mismatched or blocked receipts are
 rejected even if their check booleans claim success. Diff evidence is installed
 from a complete fsynced temporary inode; an interrupted export can restart
 without a partial final artifact or any second provider submission.
+
+Development transport interprets official stable 0.160 status exit codes with their typed status: READY exits 0; PENDING and ERROR exit 1. Other status/exit combinations remain unknown. PENDING is running, while ERROR records provider failure without redispatch.

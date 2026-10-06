@@ -109,7 +109,7 @@ class CodexCloudDevelopment(CodexCloudCLI):
                     if len(exact)!=1:raise ContractError('one exact task/environment required')
                     state['task_id']=exact[0]['id']
                 result=self._run(['status',state['task_id']]);status=re.match(r'^\[(READY|PENDING|ERROR)\]',result.stdout.strip())
-                if result.returncode!=0 or status is None:raise ContractError('status unavailable')
+                if status is None or result.returncode!=(0 if status[1]=='READY' else 1):raise ContractError('status unavailable')
                 state.update(provider_status=status[1],observed_at_utc=_utc())
                 if status[1]=='READY':state['state']='waiting_result'
                 elif status[1]=='PENDING':state['state']='running'
