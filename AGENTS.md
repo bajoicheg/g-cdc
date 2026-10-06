@@ -1,3 +1,17 @@
+## Current release and adoption state — 2026-10-06
+
+CDC **2.11.6 is source-released** at immutable `refs/heads/release/v2.11.6`, exact release commit `b3b517fb70e2deea4006e265f708f29881377885`, 329-file package tree `79257a06c40de6f514f9b059be05d610885a50e7`. It was developed under independently released CDC 2.11.5; this post-release process work uses the verified released 2.11.6 runtime. The minimum runtime floor remains 2.11.3. Source main may advance with status-only documentation; that does not retarget the immutable release or transfer exact-SHA CI evidence to a later documentation commit.
+
+Exact release validation is GREEN: Cloud 46 bootstrap tests and consumer-layout 1,027 full-package tests; GitHub Actions run `37445250452`, job `112208387345`, all 13 steps successful at the exact release SHA. Both ordered independent reviews and actual managed publication/release passed. Archived consumer compatibility checks do not deploy live consumers.
+
+The personal skill loads the immutable 2.11.6 archive; strict actual verification reports all 329 files byte/mode/tree identical. Installation commit `1b071c9f69429c261b6ff0c7ae94460592257178` was pushed/read back. Host normalization commit `50469cf42f9047c84aeba234c1ce5bc8e9aaa2d1` changes only the outer icon, preserving loader/VERSION/manifest/archive. See `release/active-package-acceptance-2.11.6.json`. Issue #88 is closed after verified historical 2.11.3 and current 2.11.6 activation.
+
+Live adoption remains a separate scope. GAD: Adopted atomically at `4a5dafd8a5c119da478587c589bb8d40897ffedf`; exact package/tree readback and actual managed release verified. GPC and Supervisor have prepared process documents but their native Git receive-pack access from the source environment returned HTTP403; no write authority is inferred from successful reads. Fleet target 2.11.6 is prepared, strictly validated and unpublished; the live target remains 2.11.3. All 4 registered projects, including Switcher 2.0.1, remain registered, with unchanged SLO and assessment age. Do not claim complete Fleet convergence.
+
+Preserve the owner scheduler pause and all product budgets, unresolved historical spending/guards, platform/security/review gates and product blockers. GAD task 1.4 remains open with the retest artifact unavailable and real-domain evidence missing. GPC requires its managed-Windows retest gate. Supervisor's historical Android GREEN remains valid for its exact source; real Gmail-send evidence or a proven external wait remains separate. No new CI/Cloud start or scheduler mutation is part of this status reconciliation.
+
+Earlier state statements below are historical where they conflict with this current section. A completed source/personal milestone does not terminate authorized runnable consumer work.
+
 # CDC canonical development instructions
 
 This repository develops CDC itself.
