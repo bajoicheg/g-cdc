@@ -8,15 +8,17 @@
   "integrator_id": "root",
   "coordination_ref": "refs/heads/cdc/parallel-maintenance-final-review-20261007",
   "coordination_store_id": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
-  "revision": 0,
+  "revision": 1,
   "execution_mode": "sequential_fallback",
   "tasks": [
     {
       "id": "final-review",
-      "status": "planned",
-      "attempt_ids": [],
-      "active_attempt_id": null,
-      "reservation_token": null,
+      "status": "queued",
+      "attempt_ids": [
+        "final-review-a1"
+      ],
+      "active_attempt_id": "final-review-a1",
+      "reservation_token": "final-review:a1",
       "accepted_result_ref": null,
       "integrated": false,
       "discarded": false,
