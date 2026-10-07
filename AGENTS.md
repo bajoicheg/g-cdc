@@ -1,3 +1,11 @@
+## CDC2.11.9 bounded maintenance admission — 2026-10-07
+
+Root explicitly authorized the necessary live-target-split-release-evidence-binding correction through normal release/installation/adoption gates. This scoped maintenance admission selects next patch2.11.9 under independently verified immutable released+installed8 R977/package38a05; sourcebase98f947f7261e6e383f646924cb488bd1eacc90a1 and absent official release9 were freshly observed before the actual bounded managed45 scope. This is candidate development, not a release or version convergence claim. See docs/superpowers/specs/2026-10-07-live-target-split-evidence-design.md, its matching plan and docs/execution/cdc-live-target-2119-queue.json.
+
+Implement explicit pinned canonical evidence provenance with strict legacy compatibility and real behavioral RED→GREEN; freeze, independent bootstrap/package/cleanconsumer/fault/3consumer checks, ordered reviews and exact CI remain required. Each actual external effect needs fresh bounded intent/budget/claim/live callback; no oldgrant, repeated probe/pilot or scheduler start. Immutable8 and original approved Cloud spec/plan remain preserved. Root owns personal installation. GADowner, product approvals/platform history and all charges remain preserved; Fleet writes require genuine leader plus verified provenance.
+
+Earlier current-state and roadmap statements below retain exact history.
+
 ## Current verified CDC8 state — 2026-10-07
 
 CDC2.11.8 is immutable source-released at refs/heads/release/v2.11.8, tested97706dd78a82cfb9ff9e1ce9191d21a42222db37, package38a05d37af38d8a42f30e9e59dfa8af8d985d40e/335files. Root accepted strict personal8 activation; active native process authority is independently byte-verified released8. CI95 run37551052697/job112566349908 succeeded; reported97706 and actual checkout83cf2d8b02cb38759b0380b650b5d3bd99073d5a have identical root a259cb3c6a359c1c9de1fff1011e2fd47a0d7b89. Separate main evidence34511538f583774efe21f50f70ff0519cfb9f649 and later process docs do not acquire exact-SHA CI claims. Maintenance7/43f09 and all historical failures/claims/charges remain preserved.
