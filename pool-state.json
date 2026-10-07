@@ -8,12 +8,12 @@
   "integrator_id": "root",
   "coordination_ref": "refs/heads/cdc/parallel-maintenance-final-review-20261007",
   "coordination_store_id": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
-  "revision": 1,
+  "revision": 2,
   "execution_mode": "sequential_fallback",
   "tasks": [
     {
       "id": "final-review",
-      "status": "queued",
+      "status": "running",
       "attempt_ids": [
         "final-review-a1"
       ],
