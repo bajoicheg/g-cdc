@@ -236,6 +236,23 @@
         "tokens": null,
         "elapsed_seconds": null
       }
+    },
+    {
+      "type": "reserve",
+      "event_id": "agent-final-review-a1",
+      "task_id": "cdc-parallel-maintenance",
+      "wake_id": "work-20261007-parallel-resume-2035",
+      "at_utc": "2026-10-07T17:40:55.899921Z",
+      "operation_key": "sha256:0cb7d1e70bb5e25f25385f6abd7ef76de0cb677181d2c95dd0d1fc89f1593061",
+      "attempt_id": "final-review-a1",
+      "kind": "agent_start",
+      "scope": "work/parallel/final-review",
+      "recovery_ref": null,
+      "cost": {
+        "tool_calls": 1,
+        "tokens": null,
+        "elapsed_seconds": null
+      }
     }
   ],
   "policy": {
