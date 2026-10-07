@@ -1,0 +1,195 @@
+test_changed_environment_blocks_terminal_claim (test_evidence_reuse.GateReuseTests.test_changed_environment_blocks_terminal_claim) ... ok
+test_duplicate_check_ids_rejected (test_evidence_reuse.GateReuseTests.test_duplicate_check_ids_rejected) ... ok
+test_overlap_with_direct_checks_rejected (test_evidence_reuse.GateReuseTests.test_overlap_with_direct_checks_rejected) ... ok
+test_reuse_cannot_bypass_fresh_source_or_ownership (test_evidence_reuse.GateReuseTests.test_reuse_cannot_bypass_fresh_source_or_ownership) ... ok
+test_reuse_gate_accepts_explicit_equivalence (test_evidence_reuse.GateReuseTests.test_reuse_gate_accepts_explicit_equivalence) ... ok
+test_wrong_target_blocks (test_evidence_reuse.GateReuseTests.test_wrong_target_blocks) ... ok
+test_argv_must_be_nonempty_list_in_original_or_current_inputs (test_evidence_reuse.ReuseTests.test_argv_must_be_nonempty_list_in_original_or_current_inputs) ... ok
+test_changed_dependency_parameters_environment_or_command_invalidates (test_evidence_reuse.ReuseTests.test_changed_dependency_parameters_environment_or_command_invalidates) ... ok
+test_empty_and_whitespace_argument_changes_invalidate_reuse (test_evidence_reuse.ReuseTests.test_empty_and_whitespace_argument_changes_invalidate_reuse) ... 
+  test_empty_and_whitespace_argument_changes_invalidate_reuse (test_evidence_reuse.ReuseTests.test_empty_and_whitespace_argument_changes_invalidate_reuse) (original='', current=' ') ... FAIL
+  test_empty_and_whitespace_argument_changes_invalidate_reuse (test_evidence_reuse.ReuseTests.test_empty_and_whitespace_argument_changes_invalidate_reuse) (original=' ', current='') ... FAIL
+  test_empty_and_whitespace_argument_changes_invalidate_reuse (test_evidence_reuse.ReuseTests.test_empty_and_whitespace_argument_changes_invalidate_reuse) (original=' \t', current='\t ') ... FAIL
+test_empty_and_whitespace_arguments_allow_reuse_without_normalization (test_evidence_reuse.ReuseTests.test_empty_and_whitespace_arguments_allow_reuse_without_normalization) ... 
+  test_empty_and_whitespace_arguments_allow_reuse_without_normalization (test_evidence_reuse.ReuseTests.test_empty_and_whitespace_arguments_allow_reuse_without_normalization) (argv=['']) ... FAIL
+  test_empty_and_whitespace_arguments_allow_reuse_without_normalization (test_evidence_reuse.ReuseTests.test_empty_and_whitespace_arguments_allow_reuse_without_normalization) (argv=[' \t\n']) ... FAIL
+  test_empty_and_whitespace_arguments_allow_reuse_without_normalization (test_evidence_reuse.ReuseTests.test_empty_and_whitespace_arguments_allow_reuse_without_normalization) (argv=['python', 'test.py', '', ' \t\n', ' value ']) ... FAIL
+test_exact_candidate_gate_rejects_cross_sha (test_evidence_reuse.ReuseTests.test_exact_candidate_gate_rejects_cross_sha) ... ok
+test_failed_source_cannot_be_reused (test_evidence_reuse.ReuseTests.test_failed_source_cannot_be_reused) ... ok
+test_missing_coverage_or_dependencies_rejected (test_evidence_reuse.ReuseTests.test_missing_coverage_or_dependencies_rejected) ... ok
+test_non_json_parameters_rejected (test_evidence_reuse.ReuseTests.test_non_json_parameters_rejected) ... ok
+test_nonstring_arguments_rejected_in_original_or_current_inputs (test_evidence_reuse.ReuseTests.test_nonstring_arguments_rejected_in_original_or_current_inputs) ... ok
+test_unchanged_inputs_allow_reuse_between_shas (test_evidence_reuse.ReuseTests.test_unchanged_inputs_allow_reuse_between_shas) ... ok
+
+======================================================================
+FAIL: test_empty_and_whitespace_argument_changes_invalidate_reuse (test_evidence_reuse.ReuseTests.test_empty_and_whitespace_argument_changes_invalidate_reuse) (original='', current=' ')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/tests/test_evidence_reuse.py", line 42, in test_empty_and_whitespace_argument_changes_invalidate_reuse
+    try:r=reuse.evaluate(d)
+          ^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 44, in evaluate
+    validate(data);blockers=[]
+    ^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 40, in validate
+    _inputs(data['original_inputs']);_inputs(data['current_inputs'])
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 24, in _inputs
+    for arg in data['argv']:text(arg,'argv item')
+                            ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/quality_levels.py", line 22, in text
+    raise ValueError(name + ' must be nonempty text')
+ValueError: argv item must be nonempty text
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/tests/test_evidence_reuse.py", line 43, in test_empty_and_whitespace_argument_changes_invalidate_reuse
+    except ValueError as exc:self.fail('valid string argv rejected: '+str(exc))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: valid string argv rejected: argv item must be nonempty text
+
+======================================================================
+FAIL: test_empty_and_whitespace_argument_changes_invalidate_reuse (test_evidence_reuse.ReuseTests.test_empty_and_whitespace_argument_changes_invalidate_reuse) (original=' ', current='')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/tests/test_evidence_reuse.py", line 42, in test_empty_and_whitespace_argument_changes_invalidate_reuse
+    try:r=reuse.evaluate(d)
+          ^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 44, in evaluate
+    validate(data);blockers=[]
+    ^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 40, in validate
+    _inputs(data['original_inputs']);_inputs(data['current_inputs'])
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 24, in _inputs
+    for arg in data['argv']:text(arg,'argv item')
+                            ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/quality_levels.py", line 22, in text
+    raise ValueError(name + ' must be nonempty text')
+ValueError: argv item must be nonempty text
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/tests/test_evidence_reuse.py", line 43, in test_empty_and_whitespace_argument_changes_invalidate_reuse
+    except ValueError as exc:self.fail('valid string argv rejected: '+str(exc))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: valid string argv rejected: argv item must be nonempty text
+
+======================================================================
+FAIL: test_empty_and_whitespace_argument_changes_invalidate_reuse (test_evidence_reuse.ReuseTests.test_empty_and_whitespace_argument_changes_invalidate_reuse) (original=' \t', current='\t ')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/tests/test_evidence_reuse.py", line 42, in test_empty_and_whitespace_argument_changes_invalidate_reuse
+    try:r=reuse.evaluate(d)
+          ^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 44, in evaluate
+    validate(data);blockers=[]
+    ^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 40, in validate
+    _inputs(data['original_inputs']);_inputs(data['current_inputs'])
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 24, in _inputs
+    for arg in data['argv']:text(arg,'argv item')
+                            ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/quality_levels.py", line 22, in text
+    raise ValueError(name + ' must be nonempty text')
+ValueError: argv item must be nonempty text
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/tests/test_evidence_reuse.py", line 43, in test_empty_and_whitespace_argument_changes_invalidate_reuse
+    except ValueError as exc:self.fail('valid string argv rejected: '+str(exc))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: valid string argv rejected: argv item must be nonempty text
+
+======================================================================
+FAIL: test_empty_and_whitespace_arguments_allow_reuse_without_normalization (test_evidence_reuse.ReuseTests.test_empty_and_whitespace_arguments_allow_reuse_without_normalization) (argv=[''])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/tests/test_evidence_reuse.py", line 29, in test_empty_and_whitespace_arguments_allow_reuse_without_normalization
+    try:r=reuse.evaluate(d)
+          ^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 44, in evaluate
+    validate(data);blockers=[]
+    ^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 40, in validate
+    _inputs(data['original_inputs']);_inputs(data['current_inputs'])
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 24, in _inputs
+    for arg in data['argv']:text(arg,'argv item')
+                            ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/quality_levels.py", line 22, in text
+    raise ValueError(name + ' must be nonempty text')
+ValueError: argv item must be nonempty text
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/tests/test_evidence_reuse.py", line 30, in test_empty_and_whitespace_arguments_allow_reuse_without_normalization
+    except ValueError as exc:self.fail('valid string argv rejected: '+str(exc))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: valid string argv rejected: argv item must be nonempty text
+
+======================================================================
+FAIL: test_empty_and_whitespace_arguments_allow_reuse_without_normalization (test_evidence_reuse.ReuseTests.test_empty_and_whitespace_arguments_allow_reuse_without_normalization) (argv=[' \t\n'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/tests/test_evidence_reuse.py", line 29, in test_empty_and_whitespace_arguments_allow_reuse_without_normalization
+    try:r=reuse.evaluate(d)
+          ^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 44, in evaluate
+    validate(data);blockers=[]
+    ^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 40, in validate
+    _inputs(data['original_inputs']);_inputs(data['current_inputs'])
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 24, in _inputs
+    for arg in data['argv']:text(arg,'argv item')
+                            ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/quality_levels.py", line 22, in text
+    raise ValueError(name + ' must be nonempty text')
+ValueError: argv item must be nonempty text
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/tests/test_evidence_reuse.py", line 30, in test_empty_and_whitespace_arguments_allow_reuse_without_normalization
+    except ValueError as exc:self.fail('valid string argv rejected: '+str(exc))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: valid string argv rejected: argv item must be nonempty text
+
+======================================================================
+FAIL: test_empty_and_whitespace_arguments_allow_reuse_without_normalization (test_evidence_reuse.ReuseTests.test_empty_and_whitespace_arguments_allow_reuse_without_normalization) (argv=['python', 'test.py', '', ' \t\n', ' value '])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/tests/test_evidence_reuse.py", line 29, in test_empty_and_whitespace_arguments_allow_reuse_without_normalization
+    try:r=reuse.evaluate(d)
+          ^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 44, in evaluate
+    validate(data);blockers=[]
+    ^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 40, in validate
+    _inputs(data['original_inputs']);_inputs(data['current_inputs'])
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/evidence_reuse.py", line 24, in _inputs
+    for arg in data['argv']:text(arg,'argv item')
+                            ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/scripts/quality_levels.py", line 22, in text
+    raise ValueError(name + ' must be nonempty text')
+ValueError: argv item must be nonempty text
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/scratch/e2ee56ab7844/cdc-parallel-source/.worktrees/argv/src/continuous-development-cycle/tests/test_evidence_reuse.py", line 30, in test_empty_and_whitespace_arguments_allow_reuse_without_normalization
+    except ValueError as exc:self.fail('valid string argv rejected: '+str(exc))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: valid string argv rejected: argv item must be nonempty text
+
+----------------------------------------------------------------------
+Ran 16 tests in 0.007s
+
+FAILED (failures=6)

@@ -1,0 +1,194 @@
+{
+  "schema": "cdc-parallel-maintenance-execution/v1",
+  "recorded_at": "2026-10-07T16:46:50.109624+00:00",
+  "phase": "candidate_pre_ci_snapshot",
+  "base_sha": "b72435542f40ec3f5b195f357c968c2346ab4f8f",
+  "candidate_sha": "d709c0cb886113463b501924b33c39c9282416b5",
+  "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+  "pool_ref": "refs/heads/cdc/parallel-maintenance-pool-20261007",
+  "budget_ref": "refs/heads/cdc/parallel-maintenance-budget-20261007",
+  "native_backend": "Work subagents",
+  "max_parallel": 3,
+  "tasks": [
+    {
+      "task": "argv",
+      "reservation_at": "2026-10-07T16:10:28Z",
+      "acceptance_observed_at": "2026-10-07T16:14:53Z",
+      "elapsed_reservation_to_acceptance_seconds": 264.77401796100094,
+      "result_commit": "5effbaa996361530613016c7bf0ee7ed6434715e",
+      "changed_paths": [
+        "src/continuous-development-cycle/scripts/evidence_reuse.py",
+        "src/continuous-development-cycle/tests/test_evidence_reuse.py"
+      ],
+      "token_usage": null,
+      "cost_usage": null,
+      "native_task_name": "/root/argv"
+    },
+    {
+      "task": "transport",
+      "reservation_at": "2026-10-07T16:10:57Z",
+      "acceptance_observed_at": "2026-10-07T16:12:49Z",
+      "elapsed_reservation_to_acceptance_seconds": 112.56633215299735,
+      "result_commit": "99a3538cfcf619e7f161e4ae00c8ca5c4acaa937",
+      "changed_paths": [
+        "src/continuous-development-cycle/templates/package-transport.json",
+        "src/continuous-development-cycle/tests/test_package_transport.py"
+      ],
+      "token_usage": null,
+      "cost_usage": null,
+      "native_task_name": "/root/transport"
+    },
+    {
+      "task": "audit",
+      "reservation_at": "2026-10-07T16:11:27Z",
+      "acceptance_observed_at": "2026-10-07T16:16:27Z",
+      "elapsed_reservation_to_acceptance_seconds": 299.98109815000134,
+      "result_commit": null,
+      "changed_paths": [],
+      "token_usage": null,
+      "cost_usage": null,
+      "native_task_name": "/root/audit"
+    },
+    {
+      "task": "spec",
+      "reservation_at": "2026-10-07T16:21:11Z",
+      "acceptance_observed_at": "2026-10-07T16:27:13Z",
+      "elapsed_reservation_to_acceptance_seconds": 362.09764401600114,
+      "result_commit": null,
+      "changed_paths": [],
+      "token_usage": null,
+      "cost_usage": null,
+      "native_task_name": "/root/spec"
+    },
+    {
+      "task": "quality",
+      "reservation_at": "2026-10-07T16:28:23Z",
+      "acceptance_observed_at": "2026-10-07T16:33:25Z",
+      "elapsed_reservation_to_acceptance_seconds": 301.63963327599777,
+      "result_commit": null,
+      "changed_paths": [],
+      "token_usage": null,
+      "cost_usage": null,
+      "native_task_name": "/root/quality"
+    }
+  ],
+  "metrics": {
+    "separated_dependency_wait_seconds": null,
+    "separated_provider_wait_seconds": null,
+    "unknown_wait_reason": "not separately instrumented; elapsed reservation-to-acceptance includes orchestration",
+    "tokens": null,
+    "cost": null,
+    "unknown_usage_reason": "runtime does not expose actual aggregate usage",
+    "integration_conflicts": 0,
+    "integration_rework": [
+      {
+        "kind": "root version metadata correction",
+        "reason": "initial full suite found SKILL heading2.12.0 while VERSION2.12.1",
+        "correction_commit": "a717db0f1cc327a2dd7c5a323c3e4104c43b923c"
+      }
+    ],
+    "comparative_sequential_baseline": null,
+    "speedup_claim": null,
+    "processing_only_seconds": null,
+    "elapsed_to_all_worker_acceptances_seconds": null
+  },
+  "validation_cycles": [
+    {
+      "candidate_sha": "cf383f6574adbf492b0f9f2d6d6a842485e99357",
+      "package_tree": "a16346eb0d56e6ab6d8668acc696eca38acbb0d2",
+      "start_at": "2026-10-07T16:21:09.913331+00:00",
+      "environment": "local clean consumer layout",
+      "command": [
+        "python",
+        "-B",
+        "bootstrap/consumer_package_checks.py"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 605.0492000579834,
+      "finish_at": "2026-10-07T16:31:14.958818+00:00",
+      "log_sha256": "fd32e7861b9d22f5f3ba8ffc997657429615539966c4cf09e47d53732f470dbb",
+      "tests": 1121
+    },
+    {
+      "number": 2,
+      "state": "GREEN",
+      "result": {
+        "candidate_sha": "d709c0cb886113463b501924b33c39c9282416b5",
+        "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+        "start_at": "2026-10-07T16:34:55.823288+00:00",
+        "environment": "local clean consumer layout",
+        "command": [
+          "python",
+          "-B",
+          "bootstrap/consumer_package_checks.py"
+        ],
+        "validation_cycle": 2,
+        "exit_code": 0,
+        "elapsed_seconds": 575.4122626781464,
+        "finish_at": "2026-10-07T16:44:31.232177+00:00",
+        "log_sha256": "49d555e592ca423fea236dbb965f882adebc847a5542454721f7cc57e9f0def5",
+        "tests": 1121
+      },
+      "repeat_justification": {
+        "schema": "validation-cycle/v1",
+        "cycle_number": 2,
+        "max_validation_cycles": 2,
+        "changed_inputs": [
+          "package:SKILL.md exact patch heading",
+          "package:runtime-routing-and-subagents.md cheap metadata preflight guidance"
+        ],
+        "risk_reason": "Corrected candidate package metadata must agree before release validation",
+        "prior_evidence_insufficient_reason": "Primary clean-consumer suite failed test_package_metadata: heading2.12.0 versus VERSION2.12.1; failed whole-suite evidence cannot be reused as GREEN",
+        "strategy_revision_ref": null,
+        "budget_observation": {
+          "time_seconds": 605.0492000579834,
+          "tokens": null,
+          "external_starts": 1,
+          "time_limit_seconds": null,
+          "token_limit": null,
+          "external_start_limit": 4,
+          "unknown_reason": "host exposes no token/cost measurement; CodeSpace transport1 start recorded"
+        }
+      }
+    }
+  ],
+  "scope_boundaries": {
+    "source_release": "not_performed",
+    "personal_installation": "not_performed",
+    "live_adoption": "not_performed",
+    "GAD": "separate owner; no mutation",
+    "schedulers": "owner pause preserved"
+  },
+  "reviews": {
+    "spec": {
+      "reviewed_sha": "cf383f6574adbf492b0f9f2d6d6a842485e99357",
+      "state": "GREEN"
+    },
+    "quality": {
+      "reviewed_sha": "cf383f6574adbf492b0f9f2d6d6a842485e99357",
+      "state": "GREEN"
+    },
+    "final_sha_independent_rereview": "NOT_RUN",
+    "metadata_correction": "root verifies observed failure correction; do not retarget review SHA"
+  },
+  "final_CI": {
+    "state": "not_run"
+  },
+  "bootstrap": {
+    "tests": 46,
+    "state": "GREEN",
+    "log_sha256": "b27807e85bf8b1e3de63640fa0cf305b78514feb9d5b2bcff47a6a89f78d97ea"
+  },
+  "preflight_errors": [
+    "Initial verification commands used scratch cwd; corrected to repository cwd",
+    "Initial version admission preceded candidate binding; two bootstrap binding failures corrected",
+    "Direct checkpoint API was passed Markdown rather than parsed mapping; CLI validation passed",
+    "Native driver verification found newly generated Python caches; removed only generated caches and reran with -B",
+    "codex-compute dry-run write403; existing authorized g-cdc coordination endpoint used instead"
+  ],
+  "accounting": {
+    "external_starts": "five native Work agents and one resumed Codespace transport recorded",
+    "provider_usage": "unknown; start-reservation tool calls are not total orchestration/child tool usage",
+    "provider_quota": "unknown; not inferred from local counters"
+  }
+}

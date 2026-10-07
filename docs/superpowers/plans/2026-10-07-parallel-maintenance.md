@@ -52,7 +52,7 @@
 - [x] Audit existing machinery and recorded release/status without duplicating subsystems.
 - [x] Integrate both exact-base commits after changed-history containment checks.
 - [x] Persist the operating recipe, candidate admission and factual status reconciliation.
-- [ ] Freeze candidate; run bootstrap, package, clean consumer FULL and three archived consumer checks.
-- [ ] Obtain independent ordered spec then code-quality review.
+- [x] Freeze candidate; run bootstrap, package, clean consumer FULL and three archived consumer checks.
+- [x] Obtain independent ordered spec then code-quality review on cf383f6; root verified the subsequent patch-heading correction. Final exact-SHA rereview remains NOT_RUN.
 - [ ] Publish the isolated candidate, obtain required CI and record exact checkout provenance.
 - [ ] Retain the concrete candidate and evidence for normal source-release acceptance; never infer installation/adoption.
