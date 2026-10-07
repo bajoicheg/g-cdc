@@ -190,5 +190,42 @@
     "external_starts": "five native Work agents and one resumed Codespace transport recorded",
     "provider_usage": "unknown; start-reservation tool calls are not total orchestration/child tool usage",
     "provider_quota": "unknown; not inferred from local counters"
-  }
+  },
+  "log_artifacts": [
+    {
+      "path": "docs/execution/parallel-maintenance-20261007/transport-red.log.gz",
+      "raw_sha256": "ab0dcfe16067d9e4f154d79e5bb616f1ff4522d0e94c7a159771d73fccc6a048",
+      "compressed_sha256": "e9aa0899a3e08d642fbdb2b3aa67e7b9cef7206622a6e7ccc88414444b82a8e7"
+    },
+    {
+      "path": "docs/execution/parallel-maintenance-20261007/argv-red.log.gz",
+      "raw_sha256": "cae0586a0e0faa4d1f1158b208d4ac841ba87bc568c45945412dc0766921923a",
+      "compressed_sha256": "ff98b14089669aa59d875cd57e55ba4ebdd23ed8c19a3ed5892e2a02241c490b"
+    },
+    {
+      "path": "docs/execution/parallel-maintenance-20261007/bootstrap-corrected.log.gz",
+      "raw_sha256": "b27807e85bf8b1e3de63640fa0cf305b78514feb9d5b2bcff47a6a89f78d97ea",
+      "compressed_sha256": "216bcc18541f733dc5e47d337340d92188ae29a4ca9409dbc9c8e0ed4886ac95"
+    },
+    {
+      "path": "docs/execution/parallel-maintenance-20261007/transport-green.log.gz",
+      "raw_sha256": "ea1e5ff8ad9cf92a0731cecabf53030c93142c7f292e4ceb108a7287aa33c809",
+      "compressed_sha256": "61769bc652ef15bbb75dfcc23a035961fad68e8e1f6ae70f618e6eea2d873400"
+    },
+    {
+      "path": "docs/execution/parallel-maintenance-20261007/argv-green.log.gz",
+      "raw_sha256": "bb32a9785ae9cffce86e77fcfa9496f4178f1a8e18195d3b7b0cefdfb74d1b54",
+      "compressed_sha256": "4e2e11f4ca2d2e702d574baaa175c7aca6b8975cdfb4c514b74508679d2a9e01"
+    },
+    {
+      "path": "docs/execution/parallel-maintenance-20261007/consumer-full.log.gz",
+      "raw_sha256": "fd32e7861b9d22f5f3ba8ffc997657429615539966c4cf09e47d53732f470dbb",
+      "compressed_sha256": "8bc1a21867634e3b8a446358183cbba80632ea788fc961be6344edef5a46ef76"
+    },
+    {
+      "path": "docs/execution/parallel-maintenance-20261007/consumer-corrected-full.log.gz",
+      "raw_sha256": "49d555e592ca423fea236dbb965f882adebc847a5542454721f7cc57e9f0def5",
+      "compressed_sha256": "5c330c2462ad2935dc8dae69f64b8afd962845e9328b00b45c639ec88e4b99ba"
+    }
+  ]
 }
