@@ -1,0 +1,72 @@
+{
+  "schema": "cdc-fleet-rollout-report/v1",
+  "version": "2.11.3",
+  "release": {
+    "schema": "live-target-release/v1",
+    "version": "2.11.3",
+    "canonical_repository": "bajoicheg/g-cdc",
+    "release_ref": "refs/heads/release/v2.11.3",
+    "release_commit": "ed8256d1b80cc3f5424890e5488d5fbbcb57a304",
+    "package_tree": "39f733127ac130de4f647cf9e5ec55afcca0769c"
+  },
+  "projects": [
+    {
+      "repository": "bajoicheg-private/g-supervisor",
+      "source_ref": "refs/heads/design/0.1.0-android-local-first",
+      "source_head": "2164c2654c12f46694f88ebe60cedac08d712eeb",
+      "coordination_revision": "3ffdc80e0ea81ce6df5e9c0f5471c1ad92751a39",
+      "lease_generation": 83,
+      "owner_active": false,
+      "guard_present": false,
+      "status": "eligible_safe_boundary"
+    },
+    {
+      "repository": "bajoicheg-private/g-ad-control",
+      "source_ref": "refs/heads/codex/build-0.2.0-engineer-attribute-workflow",
+      "source_head": "4fc14f54ade2f902ce5d94b0b301f6979986444d",
+      "coordination_revision": "ff59cbc4b5924a533bfa3fb5fa14826ebbcb2411",
+      "lease_generation": 58,
+      "owner_active": true,
+      "guard_present": true,
+      "status": "blocked_active_owner_and_external_guard",
+      "blocker": "generation 58 invocation chat-20261001-first-run-progress-gap remains active with submitting operation first-run-progress-windows-r4a; no takeover/adoption authorized"
+    },
+    {
+      "repository": "bajoicheg/g-pc-health-check",
+      "source_ref": "refs/heads/design/0.17.0-security-posture",
+      "source_head": "f86cdd5a68b99df08d1907c68a1216bfd9dc3bbf",
+      "coordination_revision": "d1fb4b42314c4827bd57bffdbcefa503c65a4fc6",
+      "lease_generation": 16,
+      "owner_active": false,
+      "guard_present": false,
+      "status": "eligible_safe_boundary"
+    },
+    {
+      "repository": "bajoicheg/g-switcher",
+      "source_ref": "refs/heads/release/2.0.1",
+      "source_head": "35356edb2c114a931c7c692af06321d838d17695",
+      "coordination_revision": "84c5058633feb02264519f0cbbcd721ed9fb06e6",
+      "lease_generation": 9,
+      "owner_active": false,
+      "guard_present": false,
+      "status": "eligible_safe_boundary"
+    },
+    {
+      "repository": "bajoicheg/g-spiral",
+      "source_ref": "refs/heads/main",
+      "source_head": "679c4246a31f1912feff16c5a3eba912856ee0eb",
+      "coordination_revision": "9dbe68172d62fd7b0e0dc9ee93caaaca04c0d823",
+      "lease_generation": 4,
+      "owner_active": false,
+      "guard_present": false,
+      "status": "eligible_safe_boundary"
+    }
+  ],
+  "not_all_integrated": true,
+  "scheduler_mutations": 0,
+  "status": "TARGET_PUBLISHING",
+  "observed_at_utc": "2026-10-01T15:33:00Z",
+  "scheduler_observation": "Owner scheduler pause remains authoritative; rollout performs no scheduler mutation.",
+  "next_action": "Publish exact 2.11.3 fleet target atomically, adopt eligible consumers at fresh safe boundaries, keep g-ad-control blocked until exact generation-58 owner/guard reconciliation.",
+  "verification_scope": "CDC package/lock/policy/checkpoint/coordination convergence only; no product completion claim."
+}

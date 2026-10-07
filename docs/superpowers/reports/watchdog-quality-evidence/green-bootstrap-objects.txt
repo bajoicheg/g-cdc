@@ -1,6 +1,0 @@
-test_release_binding_reader_uses_genuine_commit_bytes (test_git_object_integrity.BootstrapGitObjectIntegrityTests.test_release_binding_reader_uses_genuine_commit_bytes) ... ok
-
-----------------------------------------------------------------------
-Ran 1 test in 0.021s
-
-OK

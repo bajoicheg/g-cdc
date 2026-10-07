@@ -1,0 +1,397 @@
+[
+  {
+    "input": {
+      "schema": "verification-gate/v1",
+      "claim_id": "cdc2112-bajoicheg-private/g-supervisor",
+      "claim_kind": "INTEGRATED",
+      "expected_head": "2164c2654c12f46694f88ebe60cedac08d712eeb",
+      "observed_head": "2164c2654c12f46694f88ebe60cedac08d712eeb",
+      "authoritative_source_fresh": true,
+      "required_checks": [
+        {
+          "id": "exact_package_subtree",
+          "state": "success",
+          "candidate_sha": "2164c2654c12f46694f88ebe60cedac08d712eeb",
+          "evidence_ref": "https://github.com/bajoicheg-private/g-supervisor/blob/3ffdc80e0ea81ce6df5e9c0f5471c1ad92751a39/adoptions/cdc-2.11.2.json"
+        },
+        {
+          "id": "strict_adapter",
+          "state": "success",
+          "candidate_sha": "2164c2654c12f46694f88ebe60cedac08d712eeb",
+          "evidence_ref": "https://github.com/bajoicheg-private/g-supervisor/blob/3ffdc80e0ea81ce6df5e9c0f5471c1ad92751a39/adoptions/cdc-2.11.2.json"
+        },
+        {
+          "id": "checkpoint_v4",
+          "state": "success",
+          "candidate_sha": "2164c2654c12f46694f88ebe60cedac08d712eeb",
+          "evidence_ref": "https://github.com/bajoicheg-private/g-supervisor/blob/3ffdc80e0ea81ce6df5e9c0f5471c1ad92751a39/adoptions/cdc-2.11.2.json"
+        },
+        {
+          "id": "process_only_scope",
+          "state": "success",
+          "candidate_sha": "2164c2654c12f46694f88ebe60cedac08d712eeb",
+          "evidence_ref": "https://github.com/bajoicheg-private/g-supervisor/blob/3ffdc80e0ea81ce6df5e9c0f5471c1ad92751a39/adoptions/cdc-2.11.2.json"
+        }
+      ],
+      "checkpoint": {
+        "required": true,
+        "valid": true,
+        "policy_current": true,
+        "evidence_ref": "https://github.com/bajoicheg-private/g-supervisor/blob/2164c2654c12f46694f88ebe60cedac08d712eeb/docs/work-status/current.md"
+      },
+      "ownership": {
+        "authoritative_source": "coordination",
+        "lease_state": "released",
+        "guard_state": "none",
+        "evidence_ref": "https://github.com/bajoicheg-private/g-supervisor/blob/3ffdc80e0ea81ce6df5e9c0f5471c1ad92751a39/lease.json"
+      },
+      "artifacts": [
+        {
+          "id": "consumer_lock",
+          "required": true,
+          "verified": true,
+          "candidate_sha": "2164c2654c12f46694f88ebe60cedac08d712eeb",
+          "evidence_ref": "https://github.com/bajoicheg-private/g-supervisor/blob/2164c2654c12f46694f88ebe60cedac08d712eeb/docs/cdc-consumer-lock.json"
+        }
+      ],
+      "clean_state": {
+        "required": false,
+        "clean": true,
+        "evidence_ref": "https://github.com/bajoicheg-private/g-supervisor/blob/3ffdc80e0ea81ce6df5e9c0f5471c1ad92751a39/adoptions/cdc-2.11.2.json"
+      },
+      "completion_evidence_refs": [
+        "https://github.com/bajoicheg-private/g-supervisor/blob/3ffdc80e0ea81ce6df5e9c0f5471c1ad92751a39/adoptions/cdc-2.11.2.json"
+      ]
+    },
+    "result": {
+      "schema": "verification-gate-result/v1",
+      "claim_id": "cdc2112-bajoicheg-private/g-supervisor",
+      "claim_kind": "INTEGRATED",
+      "allowed": true,
+      "final_claim_allowed": true,
+      "blockers": [],
+      "authorizes_product_write": false,
+      "authorizes_takeover": false,
+      "authorizes_external_start": false,
+      "authorizes_merge": false,
+      "authorizes_release": false,
+      "authorizes_scope_expansion": false
+    }
+  },
+  {
+    "input": {
+      "schema": "verification-gate/v1",
+      "claim_id": "cdc2112-bajoicheg-private/g-ad-control",
+      "claim_kind": "INTEGRATED",
+      "expected_head": "df2eaa9e16aa1c526f89aab244a08b2b9a19895a",
+      "observed_head": "df2eaa9e16aa1c526f89aab244a08b2b9a19895a",
+      "authoritative_source_fresh": true,
+      "required_checks": [
+        {
+          "id": "exact_package_subtree",
+          "state": "success",
+          "candidate_sha": "df2eaa9e16aa1c526f89aab244a08b2b9a19895a",
+          "evidence_ref": "https://github.com/bajoicheg-private/g-ad-control/blob/7b0b438978a42198fc26907ed536c4002eb24478/adoptions/cdc-2.11.2.json"
+        },
+        {
+          "id": "strict_adapter",
+          "state": "success",
+          "candidate_sha": "df2eaa9e16aa1c526f89aab244a08b2b9a19895a",
+          "evidence_ref": "https://github.com/bajoicheg-private/g-ad-control/blob/7b0b438978a42198fc26907ed536c4002eb24478/adoptions/cdc-2.11.2.json"
+        },
+        {
+          "id": "checkpoint_v4",
+          "state": "success",
+          "candidate_sha": "df2eaa9e16aa1c526f89aab244a08b2b9a19895a",
+          "evidence_ref": "https://github.com/bajoicheg-private/g-ad-control/blob/7b0b438978a42198fc26907ed536c4002eb24478/adoptions/cdc-2.11.2.json"
+        },
+        {
+          "id": "process_only_scope",
+          "state": "success",
+          "candidate_sha": "df2eaa9e16aa1c526f89aab244a08b2b9a19895a",
+          "evidence_ref": "https://github.com/bajoicheg-private/g-ad-control/blob/7b0b438978a42198fc26907ed536c4002eb24478/adoptions/cdc-2.11.2.json"
+        }
+      ],
+      "checkpoint": {
+        "required": true,
+        "valid": true,
+        "policy_current": true,
+        "evidence_ref": "https://github.com/bajoicheg-private/g-ad-control/blob/df2eaa9e16aa1c526f89aab244a08b2b9a19895a/docs/work-status/current.md"
+      },
+      "ownership": {
+        "authoritative_source": "coordination",
+        "lease_state": "released",
+        "guard_state": "none",
+        "evidence_ref": "https://github.com/bajoicheg-private/g-ad-control/blob/7b0b438978a42198fc26907ed536c4002eb24478/lease.json"
+      },
+      "artifacts": [
+        {
+          "id": "consumer_lock",
+          "required": true,
+          "verified": true,
+          "candidate_sha": "df2eaa9e16aa1c526f89aab244a08b2b9a19895a",
+          "evidence_ref": "https://github.com/bajoicheg-private/g-ad-control/blob/df2eaa9e16aa1c526f89aab244a08b2b9a19895a/docs/cdc-consumer-lock.json"
+        }
+      ],
+      "clean_state": {
+        "required": false,
+        "clean": true,
+        "evidence_ref": "https://github.com/bajoicheg-private/g-ad-control/blob/7b0b438978a42198fc26907ed536c4002eb24478/adoptions/cdc-2.11.2.json"
+      },
+      "completion_evidence_refs": [
+        "https://github.com/bajoicheg-private/g-ad-control/blob/7b0b438978a42198fc26907ed536c4002eb24478/adoptions/cdc-2.11.2.json"
+      ]
+    },
+    "result": {
+      "schema": "verification-gate-result/v1",
+      "claim_id": "cdc2112-bajoicheg-private/g-ad-control",
+      "claim_kind": "INTEGRATED",
+      "allowed": true,
+      "final_claim_allowed": true,
+      "blockers": [],
+      "authorizes_product_write": false,
+      "authorizes_takeover": false,
+      "authorizes_external_start": false,
+      "authorizes_merge": false,
+      "authorizes_release": false,
+      "authorizes_scope_expansion": false
+    }
+  },
+  {
+    "input": {
+      "schema": "verification-gate/v1",
+      "claim_id": "cdc2112-bajoicheg/g-pc-health-check",
+      "claim_kind": "INTEGRATED",
+      "expected_head": "f86cdd5a68b99df08d1907c68a1216bfd9dc3bbf",
+      "observed_head": "f86cdd5a68b99df08d1907c68a1216bfd9dc3bbf",
+      "authoritative_source_fresh": true,
+      "required_checks": [
+        {
+          "id": "exact_package_subtree",
+          "state": "success",
+          "candidate_sha": "f86cdd5a68b99df08d1907c68a1216bfd9dc3bbf",
+          "evidence_ref": "https://github.com/bajoicheg/g-pc-health-check/blob/d1fb4b42314c4827bd57bffdbcefa503c65a4fc6/adoptions/cdc-2.11.2.json"
+        },
+        {
+          "id": "strict_adapter",
+          "state": "success",
+          "candidate_sha": "f86cdd5a68b99df08d1907c68a1216bfd9dc3bbf",
+          "evidence_ref": "https://github.com/bajoicheg/g-pc-health-check/blob/d1fb4b42314c4827bd57bffdbcefa503c65a4fc6/adoptions/cdc-2.11.2.json"
+        },
+        {
+          "id": "checkpoint_v4",
+          "state": "success",
+          "candidate_sha": "f86cdd5a68b99df08d1907c68a1216bfd9dc3bbf",
+          "evidence_ref": "https://github.com/bajoicheg/g-pc-health-check/blob/d1fb4b42314c4827bd57bffdbcefa503c65a4fc6/adoptions/cdc-2.11.2.json"
+        },
+        {
+          "id": "process_only_scope",
+          "state": "success",
+          "candidate_sha": "f86cdd5a68b99df08d1907c68a1216bfd9dc3bbf",
+          "evidence_ref": "https://github.com/bajoicheg/g-pc-health-check/blob/d1fb4b42314c4827bd57bffdbcefa503c65a4fc6/adoptions/cdc-2.11.2.json"
+        }
+      ],
+      "checkpoint": {
+        "required": true,
+        "valid": true,
+        "policy_current": true,
+        "evidence_ref": "https://github.com/bajoicheg/g-pc-health-check/blob/f86cdd5a68b99df08d1907c68a1216bfd9dc3bbf/docs/work-status/current.md"
+      },
+      "ownership": {
+        "authoritative_source": "coordination",
+        "lease_state": "released",
+        "guard_state": "none",
+        "evidence_ref": "https://github.com/bajoicheg/g-pc-health-check/blob/d1fb4b42314c4827bd57bffdbcefa503c65a4fc6/lease.json"
+      },
+      "artifacts": [
+        {
+          "id": "consumer_lock",
+          "required": true,
+          "verified": true,
+          "candidate_sha": "f86cdd5a68b99df08d1907c68a1216bfd9dc3bbf",
+          "evidence_ref": "https://github.com/bajoicheg/g-pc-health-check/blob/f86cdd5a68b99df08d1907c68a1216bfd9dc3bbf/docs/cdc-consumer-lock.json"
+        }
+      ],
+      "clean_state": {
+        "required": false,
+        "clean": true,
+        "evidence_ref": "https://github.com/bajoicheg/g-pc-health-check/blob/d1fb4b42314c4827bd57bffdbcefa503c65a4fc6/adoptions/cdc-2.11.2.json"
+      },
+      "completion_evidence_refs": [
+        "https://github.com/bajoicheg/g-pc-health-check/blob/d1fb4b42314c4827bd57bffdbcefa503c65a4fc6/adoptions/cdc-2.11.2.json"
+      ]
+    },
+    "result": {
+      "schema": "verification-gate-result/v1",
+      "claim_id": "cdc2112-bajoicheg/g-pc-health-check",
+      "claim_kind": "INTEGRATED",
+      "allowed": true,
+      "final_claim_allowed": true,
+      "blockers": [],
+      "authorizes_product_write": false,
+      "authorizes_takeover": false,
+      "authorizes_external_start": false,
+      "authorizes_merge": false,
+      "authorizes_release": false,
+      "authorizes_scope_expansion": false
+    }
+  },
+  {
+    "input": {
+      "schema": "verification-gate/v1",
+      "claim_id": "cdc2112-bajoicheg/g-switcher",
+      "claim_kind": "INTEGRATED",
+      "expected_head": "35356edb2c114a931c7c692af06321d838d17695",
+      "observed_head": "35356edb2c114a931c7c692af06321d838d17695",
+      "authoritative_source_fresh": true,
+      "required_checks": [
+        {
+          "id": "exact_package_subtree",
+          "state": "success",
+          "candidate_sha": "35356edb2c114a931c7c692af06321d838d17695",
+          "evidence_ref": "https://github.com/bajoicheg/g-switcher/blob/84c5058633feb02264519f0cbbcd721ed9fb06e6/adoptions/cdc-2.11.2.json"
+        },
+        {
+          "id": "strict_adapter",
+          "state": "success",
+          "candidate_sha": "35356edb2c114a931c7c692af06321d838d17695",
+          "evidence_ref": "https://github.com/bajoicheg/g-switcher/blob/84c5058633feb02264519f0cbbcd721ed9fb06e6/adoptions/cdc-2.11.2.json"
+        },
+        {
+          "id": "checkpoint_v4",
+          "state": "success",
+          "candidate_sha": "35356edb2c114a931c7c692af06321d838d17695",
+          "evidence_ref": "https://github.com/bajoicheg/g-switcher/blob/84c5058633feb02264519f0cbbcd721ed9fb06e6/adoptions/cdc-2.11.2.json"
+        },
+        {
+          "id": "process_only_scope",
+          "state": "success",
+          "candidate_sha": "35356edb2c114a931c7c692af06321d838d17695",
+          "evidence_ref": "https://github.com/bajoicheg/g-switcher/blob/84c5058633feb02264519f0cbbcd721ed9fb06e6/adoptions/cdc-2.11.2.json"
+        }
+      ],
+      "checkpoint": {
+        "required": true,
+        "valid": true,
+        "policy_current": true,
+        "evidence_ref": "https://github.com/bajoicheg/g-switcher/blob/35356edb2c114a931c7c692af06321d838d17695/docs/work-status/current.md"
+      },
+      "ownership": {
+        "authoritative_source": "coordination",
+        "lease_state": "released",
+        "guard_state": "none",
+        "evidence_ref": "https://github.com/bajoicheg/g-switcher/blob/84c5058633feb02264519f0cbbcd721ed9fb06e6/lease.json"
+      },
+      "artifacts": [
+        {
+          "id": "consumer_lock",
+          "required": true,
+          "verified": true,
+          "candidate_sha": "35356edb2c114a931c7c692af06321d838d17695",
+          "evidence_ref": "https://github.com/bajoicheg/g-switcher/blob/35356edb2c114a931c7c692af06321d838d17695/docs/cdc-consumer-lock.json"
+        }
+      ],
+      "clean_state": {
+        "required": false,
+        "clean": true,
+        "evidence_ref": "https://github.com/bajoicheg/g-switcher/blob/84c5058633feb02264519f0cbbcd721ed9fb06e6/adoptions/cdc-2.11.2.json"
+      },
+      "completion_evidence_refs": [
+        "https://github.com/bajoicheg/g-switcher/blob/84c5058633feb02264519f0cbbcd721ed9fb06e6/adoptions/cdc-2.11.2.json"
+      ]
+    },
+    "result": {
+      "schema": "verification-gate-result/v1",
+      "claim_id": "cdc2112-bajoicheg/g-switcher",
+      "claim_kind": "INTEGRATED",
+      "allowed": true,
+      "final_claim_allowed": true,
+      "blockers": [],
+      "authorizes_product_write": false,
+      "authorizes_takeover": false,
+      "authorizes_external_start": false,
+      "authorizes_merge": false,
+      "authorizes_release": false,
+      "authorizes_scope_expansion": false
+    }
+  },
+  {
+    "input": {
+      "schema": "verification-gate/v1",
+      "claim_id": "cdc2112-bajoicheg/g-spiral",
+      "claim_kind": "INTEGRATED",
+      "expected_head": "679c4246a31f1912feff16c5a3eba912856ee0eb",
+      "observed_head": "679c4246a31f1912feff16c5a3eba912856ee0eb",
+      "authoritative_source_fresh": true,
+      "required_checks": [
+        {
+          "id": "exact_package_subtree",
+          "state": "success",
+          "candidate_sha": "679c4246a31f1912feff16c5a3eba912856ee0eb",
+          "evidence_ref": "https://github.com/bajoicheg/g-spiral/blob/9dbe68172d62fd7b0e0dc9ee93caaaca04c0d823/adoptions/cdc-2.11.2.json"
+        },
+        {
+          "id": "strict_adapter",
+          "state": "success",
+          "candidate_sha": "679c4246a31f1912feff16c5a3eba912856ee0eb",
+          "evidence_ref": "https://github.com/bajoicheg/g-spiral/blob/9dbe68172d62fd7b0e0dc9ee93caaaca04c0d823/adoptions/cdc-2.11.2.json"
+        },
+        {
+          "id": "checkpoint_v4",
+          "state": "success",
+          "candidate_sha": "679c4246a31f1912feff16c5a3eba912856ee0eb",
+          "evidence_ref": "https://github.com/bajoicheg/g-spiral/blob/9dbe68172d62fd7b0e0dc9ee93caaaca04c0d823/adoptions/cdc-2.11.2.json"
+        },
+        {
+          "id": "process_only_scope",
+          "state": "success",
+          "candidate_sha": "679c4246a31f1912feff16c5a3eba912856ee0eb",
+          "evidence_ref": "https://github.com/bajoicheg/g-spiral/blob/9dbe68172d62fd7b0e0dc9ee93caaaca04c0d823/adoptions/cdc-2.11.2.json"
+        }
+      ],
+      "checkpoint": {
+        "required": true,
+        "valid": true,
+        "policy_current": true,
+        "evidence_ref": "https://github.com/bajoicheg/g-spiral/blob/679c4246a31f1912feff16c5a3eba912856ee0eb/docs/work-status/current.md"
+      },
+      "ownership": {
+        "authoritative_source": "coordination",
+        "lease_state": "released",
+        "guard_state": "none",
+        "evidence_ref": "https://github.com/bajoicheg/g-spiral/blob/9dbe68172d62fd7b0e0dc9ee93caaaca04c0d823/lease.json"
+      },
+      "artifacts": [
+        {
+          "id": "consumer_lock",
+          "required": true,
+          "verified": true,
+          "candidate_sha": "679c4246a31f1912feff16c5a3eba912856ee0eb",
+          "evidence_ref": "https://github.com/bajoicheg/g-spiral/blob/679c4246a31f1912feff16c5a3eba912856ee0eb/docs/cdc-consumer-lock.json"
+        }
+      ],
+      "clean_state": {
+        "required": false,
+        "clean": true,
+        "evidence_ref": "https://github.com/bajoicheg/g-spiral/blob/9dbe68172d62fd7b0e0dc9ee93caaaca04c0d823/adoptions/cdc-2.11.2.json"
+      },
+      "completion_evidence_refs": [
+        "https://github.com/bajoicheg/g-spiral/blob/9dbe68172d62fd7b0e0dc9ee93caaaca04c0d823/adoptions/cdc-2.11.2.json"
+      ]
+    },
+    "result": {
+      "schema": "verification-gate-result/v1",
+      "claim_id": "cdc2112-bajoicheg/g-spiral",
+      "claim_kind": "INTEGRATED",
+      "allowed": true,
+      "final_claim_allowed": true,
+      "blockers": [],
+      "authorizes_product_write": false,
+      "authorizes_takeover": false,
+      "authorizes_external_start": false,
+      "authorizes_merge": false,
+      "authorizes_release": false,
+      "authorizes_scope_expansion": false
+    }
+  }
+]

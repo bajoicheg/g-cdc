@@ -1,0 +1,47 @@
+{
+  "schema": "execution-continuity/v1",
+  "invocation_id": "work-20260928-cdc2111-fleet-recovery",
+  "current_state": "COMPLETE",
+  "requested_terminal_outcome": "scope_complete",
+  "runnable_next_action": false,
+  "meaningful_progress_refs": [
+    "https://github.com/bajoicheg-private/g-supervisor/commit/0e4ff66735d0ae73e4caad8289e96669ad5ee880",
+    "https://github.com/bajoicheg-private/g-ad-control/commit/02dd322c37ae48b579b03febd43429b1b14fdf3a",
+    "https://github.com/bajoicheg/g-switcher/commit/938a98957e44e0d4a8ebce735486e140ca1922fc",
+    "https://github.com/bajoicheg/g-pc-health-check/commit/7aba823fd6103f416b291a944cd012eea78687b0",
+    "https://github.com/bajoicheg/g-spiral/commit/1d528dc1d12d5cf0784399627c7250b73bce90e1"
+  ],
+  "primitive_steps": [],
+  "external_binding": null,
+  "blocker": null,
+  "checkpoint_ref": "https://github.com/bajoicheg-private/g-supervisor/blob/cdc/fleet/fleet/rollout-2.11.1.json",
+  "next_action": null,
+  "lease_release_required": false,
+  "lease_released": true,
+  "terminal_state": {
+    "schema": "terminal-state/v2",
+    "invocation_id": "work-20260928-cdc2111-fleet-recovery",
+    "scope_id": "CDC 2.11.1 adoption across five active consumer projects",
+    "observed_head": "e48ca544a20ca3ff4484e8696a6f540535580892",
+    "decision": "COMPLETE",
+    "runnable_actions": [],
+    "pending_external": null,
+    "blocker": null,
+    "meaningful_progress_refs": [
+      "https://github.com/bajoicheg-private/g-supervisor/commit/0e4ff66735d0ae73e4caad8289e96669ad5ee880",
+      "https://github.com/bajoicheg-private/g-ad-control/commit/02dd322c37ae48b579b03febd43429b1b14fdf3a",
+      "https://github.com/bajoicheg/g-switcher/commit/938a98957e44e0d4a8ebce735486e140ca1922fc",
+      "https://github.com/bajoicheg/g-pc-health-check/commit/7aba823fd6103f416b291a944cd012eea78687b0",
+      "https://github.com/bajoicheg/g-spiral/commit/1d528dc1d12d5cf0784399627c7250b73bce90e1"
+    ],
+    "completion_evidence_refs": [
+      "https://github.com/bajoicheg-private/g-supervisor/blob/6694ea41f8e766af60d42be92f4de88c4af7a446/adoptions/cdc-2.11.1.json",
+      "https://github.com/bajoicheg-private/g-ad-control/blob/d6a3af2179e62d4e42c7d137c93ef17854426116/adoptions/cdc-2.11.1.json",
+      "https://github.com/bajoicheg/g-switcher/blob/9e6a84c105f2a6e9a2127012fedc45e482710f9f/adoptions/cdc-2.11.1.json",
+      "https://github.com/bajoicheg/g-pc-health-check/blob/65ca780575375d504c8ed266ea7b5074f22f1462/adoptions/cdc-2.11.1.json",
+      "https://github.com/bajoicheg/g-spiral/blob/57ebd683a8a1c5adb90854f3b349ba9e6ea6a8e7/adoptions/cdc-2.11.1.json"
+    ],
+    "checkpoint_ref": "https://github.com/bajoicheg-private/g-supervisor/blob/cdc/fleet/fleet/rollout-2.11.1.json",
+    "lease_released": true
+  }
+}

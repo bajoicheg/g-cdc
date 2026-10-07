@@ -1,0 +1,16 @@
+{
+  "schema": "blocked-state-proof/v1",
+  "dependency_id": "cdc-2.11.2-active-consumer-owners",
+  "category": "concurrent_writer",
+  "observed_at_utc": "2026-09-30T21:41:40Z",
+  "max_age_seconds": 3600,
+  "evidence_refs": [
+    "fleet/rollout-2.11.2.json@d3d25561ac9c7c77cfdd36c2c4247adf8dca536f",
+    "bajoicheg-private/g-supervisor:cdc/coordination@a6dc3e7619e0d1d849005e2dc886e169bd437bab",
+    "bajoicheg/g-pc-health-check:cdc/coordination@f0e48ebaf0b746acfc33cd195d5a703ede9604c7",
+    "bajoicheg/g-switcher:cdc/coordination@57191f53ff813355e76307f49d7200030928e2bd"
+  ],
+  "next_action": "Let the exact existing adoption owners claim the queued policy_changed events and finish/release their CDC 2.11.2 adoption. Do not take over from lease expiry alone. After releases materialize, refresh convergence vectors and publish final fleet rollout evidence.",
+  "recheck_trigger": "Any of the three continuation events is claimed/acked, any exact owner lease is released or changes generation/owner, or new quiescence evidence independently proves an owner stopped.",
+  "same_invocation_work_exhausted": true
+}

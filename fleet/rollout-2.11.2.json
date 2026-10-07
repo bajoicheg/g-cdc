@@ -1,0 +1,94 @@
+{
+  "schema": "cdc-fleet-rollout-report/v1",
+  "version": "2.11.2",
+  "release": {
+    "schema": "live-target-release/v1",
+    "version": "2.11.2",
+    "canonical_repository": "bajoicheg/g-cdc",
+    "release_ref": "refs/heads/release/v2.11.2",
+    "release_commit": "48e637b230e7640d0dcd13da60d712f38f59a2b6",
+    "package_tree": "7a7a7faa75b7fc9160d912d8fb507c6b9573d17f"
+  },
+  "projects": [
+    {
+      "repository": "bajoicheg-private/g-supervisor",
+      "source_ref": "refs/heads/design/0.1.0-android-local-first",
+      "source_head": "2164c2654c12f46694f88ebe60cedac08d712eeb",
+      "status": "applied_verified_released",
+      "candidate_package_tree": "7a7a7faa75b7fc9160d912d8fb507c6b9573d17f",
+      "policy_digest": "e3221dc110bbd902378f9030c606622fa62e14be4a747a999071bdf9883155d4",
+      "coordination_revision": "3ffdc80e0ea81ce6df5e9c0f5471c1ad92751a39",
+      "lease_generation": 83,
+      "owner_active": false,
+      "guard_present": false,
+      "completion_evidence_ref": "https://github.com/bajoicheg-private/g-supervisor/blob/cdc/coordination/adoptions/cdc-2.11.2.json"
+    },
+    {
+      "repository": "bajoicheg-private/g-ad-control",
+      "source_ref": "refs/heads/codex/build-0.2.0-engineer-attribute-workflow",
+      "source_head": "df2eaa9e16aa1c526f89aab244a08b2b9a19895a",
+      "status": "applied_verified_released",
+      "candidate_package_tree": "7a7a7faa75b7fc9160d912d8fb507c6b9573d17f",
+      "policy_digest": "3c228ef39ccf0095033cfc74f96b1e1cfc61b8bc6b4edd34df5a375288582893",
+      "coordination_revision": "7b0b438978a42198fc26907ed536c4002eb24478",
+      "lease_generation": 55,
+      "owner_active": false,
+      "guard_present": false,
+      "completion_evidence_ref": "https://github.com/bajoicheg-private/g-ad-control/blob/cdc/coordination/adoptions/cdc-2.11.2.json"
+    },
+    {
+      "repository": "bajoicheg/g-pc-health-check",
+      "source_ref": "refs/heads/design/0.17.0-security-posture",
+      "source_head": "f86cdd5a68b99df08d1907c68a1216bfd9dc3bbf",
+      "status": "applied_verified_released",
+      "candidate_package_tree": "7a7a7faa75b7fc9160d912d8fb507c6b9573d17f",
+      "policy_digest": "77b0da8bf1930862064fcc24e676395b1e2e949e0ebfe7ed0b0b39a256c1d5ab",
+      "coordination_revision": "d1fb4b42314c4827bd57bffdbcefa503c65a4fc6",
+      "lease_generation": 16,
+      "owner_active": false,
+      "guard_present": false,
+      "completion_evidence_ref": "https://github.com/bajoicheg/g-pc-health-check/blob/cdc/coordination/adoptions/cdc-2.11.2.json"
+    },
+    {
+      "repository": "bajoicheg/g-switcher",
+      "source_ref": "refs/heads/release/2.0.1",
+      "source_head": "35356edb2c114a931c7c692af06321d838d17695",
+      "status": "applied_verified_released",
+      "candidate_package_tree": "7a7a7faa75b7fc9160d912d8fb507c6b9573d17f",
+      "policy_digest": "43fb931928738c33b7b20e500bb31a90be3b9e49536f58498735720dd4070b1f",
+      "coordination_revision": "84c5058633feb02264519f0cbbcd721ed9fb06e6",
+      "lease_generation": 9,
+      "owner_active": false,
+      "guard_present": false,
+      "completion_evidence_ref": "https://github.com/bajoicheg/g-switcher/blob/cdc/coordination/adoptions/cdc-2.11.2.json"
+    },
+    {
+      "repository": "bajoicheg/g-spiral",
+      "source_ref": "refs/heads/main",
+      "source_head": "679c4246a31f1912feff16c5a3eba912856ee0eb",
+      "status": "applied_verified_released",
+      "candidate_package_tree": "7a7a7faa75b7fc9160d912d8fb507c6b9573d17f",
+      "policy_digest": "118c57ea352e32b5666b763956eb3deaae20be9abe9606ae45ed5c4c2fc20f11",
+      "coordination_revision": "9dbe68172d62fd7b0e0dc9ee93caaaca04c0d823",
+      "lease_generation": 4,
+      "owner_active": false,
+      "guard_present": false,
+      "completion_evidence_ref": "https://github.com/bajoicheg/g-spiral/blob/cdc/coordination/adoptions/cdc-2.11.2.json"
+    }
+  ],
+  "not_all_integrated": false,
+  "scheduler_mutations": 0,
+  "external_starts": 1,
+  "scope_exclusions": [
+    "Historical mirror and backup repositories",
+    "Empty codex-compute execution repository"
+  ],
+  "canonical_project": "Released CDC 2.11.2 is the live Fleet target; all four required registered projects plus manual g-spiral are exact-tree converged and explicitly released.",
+  "installed_skill": "Personal skill activation/readback remains a separate non-project rollout stage.",
+  "manual_project": "g-spiral has no scheduled watchdog; generation 4 completed exact CDC 2.11.2 adoption after base64 Git-blob transport recovery, with validation run 36774463901 GREEN (316-file package validator, 866/866 tests, adapter/checkpoint/lock PASS).",
+  "observed_at_utc": "2026-09-30T22:36:00Z",
+  "status": "COMPLETE",
+  "scheduler_observation": "Owner scheduler pause remains authoritative; no scheduler mutation was performed during project convergence recovery.",
+  "next_action": "No remaining project rollout work. Follow canonical CDC issue #81 for orphan-lease runtime enforcement; personal skill activation/readback is separate from project convergence.",
+  "verification_scope": "CDC package/lock/policy/checkpoint/coordination convergence only; no product completion claim."
+}

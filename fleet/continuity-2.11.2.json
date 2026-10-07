@@ -1,0 +1,38 @@
+{
+  "schema": "execution-continuity/v1",
+  "invocation_id": "chat-20261001-cdc2112-fleet-rollout-continuation",
+  "current_state": "COMPLETE",
+  "requested_terminal_outcome": "scope_complete",
+  "runnable_next_action": false,
+  "meaningful_progress_refs": [
+    "fleet/rollout-2.11.2.json@d56564a338162478b016c11a84b923e880d44409",
+    "fleet/convergence-2.11.2.json@d56564a338162478b016c11a84b923e880d44409"
+  ],
+  "primitive_steps": [],
+  "external_binding": null,
+  "blocker": null,
+  "checkpoint_ref": "fleet/rollout-2.11.2.json@d56564a338162478b016c11a84b923e880d44409",
+  "next_action": null,
+  "lease_release_required": false,
+  "lease_released": true,
+  "terminal_state": {
+    "schema": "terminal-state/v2",
+    "invocation_id": "chat-20261001-cdc2112-fleet-rollout-continuation",
+    "scope_id": "CDC 2.11.2 project fleet rollout",
+    "observed_head": "d56564a338162478b016c11a84b923e880d44409",
+    "decision": "COMPLETE",
+    "runnable_actions": [],
+    "pending_external": null,
+    "blocker": null,
+    "meaningful_progress_refs": [
+      "fleet/rollout-2.11.2.json@d56564a338162478b016c11a84b923e880d44409",
+      "fleet/convergence-2.11.2.json@d56564a338162478b016c11a84b923e880d44409"
+    ],
+    "completion_evidence_refs": [
+      "fleet/verification-2.11.2.json@d56564a338162478b016c11a84b923e880d44409",
+      "https://github.com/bajoicheg/g-cdc/issues/81"
+    ],
+    "checkpoint_ref": "fleet/rollout-2.11.2.json@d56564a338162478b016c11a84b923e880d44409",
+    "lease_released": true
+  }
+}

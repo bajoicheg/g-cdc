@@ -1,0 +1,143 @@
+{
+  "schema": "cdc-fleet-rollout-readback/v1",
+  "target_version": "2.11.6",
+  "release_commit": "b3b517fb70e2deea4006e265f708f29881377885",
+  "package_tree": "79257a06c40de6f514f9b059be05d610885a50e7",
+  "schedulers": "owner-paused",
+  "convergence_complete": false,
+  "projects": [
+    {
+      "repository": "bajoicheg-private/g-supervisor",
+      "source_ref": "refs/heads/design/0.1.0-android-local-first",
+      "watchdog_id": "6ab138b960dc8191935b0379f17cbb49",
+      "required": true,
+      "head": "f6554a8bd29af05ce12112f8b5215fd60c4c2145",
+      "version": "2.11.6",
+      "package_tree": "79257a06c40de6f514f9b059be05d610885a50e7",
+      "lock": {
+        "schema": "cdc-consumer-lock/v1",
+        "canonical_repository": "bajoicheg/g-cdc",
+        "version": "2.11.6",
+        "release_ref": "refs/heads/release/v2.11.6",
+        "release_commit": "b3b517fb70e2deea4006e265f708f29881377885",
+        "package_tree": "79257a06c40de6f514f9b059be05d610885a50e7",
+        "checkpoint_schema": "development-work-status/v4",
+        "safe_boundary_required": true,
+        "local_core_modifications_allowed": false
+      },
+      "owner": null,
+      "generation": 85,
+      "guard_present": false,
+      "last_release": {
+        "at_utc": "2026-10-06T12:49:11.394387Z",
+        "checkpoint_ref": "git:71b5cff3525dbfe9fbf871d9db0cea61c4a981d1",
+        "completion_reason": "scope_complete",
+        "external_reconciliation": "none",
+        "generation": 85,
+        "invocation_id": "managed-terminal:1b2ecbc84801635d82118902c2afb2b3f538dbdc7005148d024b330af625b1a0",
+        "owner_id": "b5d092fe-3dff-42e5-922f-1eb03506f3fe"
+      },
+      "observed_at_utc": "2026-10-06T13:19:26.796Z"
+    },
+    {
+      "repository": "bajoicheg-private/g-ad-control",
+      "source_ref": "refs/heads/codex/build-0.2.0-engineer-attribute-workflow",
+      "watchdog_id": "6aafa54141308191ac114c8079d15b95",
+      "required": true,
+      "head": "4a5dafd8a5c119da478587c589bb8d40897ffedf",
+      "version": "2.11.6",
+      "package_tree": "79257a06c40de6f514f9b059be05d610885a50e7",
+      "lock": {
+        "schema": "cdc-consumer-lock/v1",
+        "canonical_repository": "bajoicheg/g-cdc",
+        "version": "2.11.6",
+        "release_ref": "refs/heads/release/v2.11.6",
+        "release_commit": "b3b517fb70e2deea4006e265f708f29881377885",
+        "package_tree": "79257a06c40de6f514f9b059be05d610885a50e7",
+        "checkpoint_schema": "development-work-status/v4",
+        "safe_boundary_required": true,
+        "local_core_modifications_allowed": false
+      },
+      "owner": null,
+      "generation": 65,
+      "guard_present": false,
+      "last_release": {
+        "at_utc": "2026-10-06T11:19:41.962184Z",
+        "checkpoint_ref": "git:c52637a8ffc852d47e29fc273e83535088689071",
+        "completion_reason": "scope_complete",
+        "external_reconciliation": "none",
+        "generation": 65,
+        "invocation_id": "managed-terminal:c77e3ae341a544a4e1478be0ae348cf74664b92bf51da274ee5f15aa697e472d",
+        "owner_id": "e6b62cd9-4704-4d92-8f17-da2a85cb5579"
+      },
+      "observed_at_utc": "2026-10-06T13:19:27.873Z"
+    },
+    {
+      "repository": "bajoicheg/g-pc-health-check",
+      "source_ref": "refs/heads/design/0.17.0-security-posture",
+      "watchdog_id": "6ab37bf252d4819198b17c4f8679f693",
+      "required": true,
+      "head": "813162ebb5f0fa574d7d8d0a6bf1ad1026d108bb",
+      "version": "2.11.6",
+      "package_tree": "79257a06c40de6f514f9b059be05d610885a50e7",
+      "lock": {
+        "schema": "cdc-consumer-lock/v1",
+        "canonical_repository": "bajoicheg/g-cdc",
+        "version": "2.11.6",
+        "release_ref": "refs/heads/release/v2.11.6",
+        "release_commit": "b3b517fb70e2deea4006e265f708f29881377885",
+        "package_tree": "79257a06c40de6f514f9b059be05d610885a50e7",
+        "checkpoint_schema": "development-work-status/v4",
+        "safe_boundary_required": true,
+        "local_core_modifications_allowed": false
+      },
+      "owner": null,
+      "generation": 19,
+      "guard_present": false,
+      "last_release": {
+        "at_utc": "2026-10-06T12:37:45.069746Z",
+        "checkpoint_ref": "git:3c781eb136eef58f1130eaa009ee506dcde93251",
+        "completion_reason": "scope_complete",
+        "external_reconciliation": "none",
+        "generation": 19,
+        "invocation_id": "managed-terminal:4cb9807abad17368d3f9694408c46a37f1d3d5c1942fbd9f49986346d9145860",
+        "owner_id": "d588de81-b427-44a6-b428-e5ddc799dcdd"
+      },
+      "observed_at_utc": "2026-10-06T13:19:28.829Z"
+    },
+    {
+      "repository": "bajoicheg/g-switcher",
+      "source_ref": "refs/heads/release/2.0.1",
+      "watchdog_id": "6ab6b1dd613081919ed34717c02a672d",
+      "required": true,
+      "head": "e7be220ee37d924cacf84edcd8ad1ba32bcb2f62",
+      "version": "2.11.5",
+      "package_tree": "6e9fb338a83c532076a30e8feb0b6ce2ebbe4063",
+      "lock": {
+        "schema": "cdc-consumer-lock/v1",
+        "canonical_repository": "bajoicheg/g-cdc",
+        "version": "2.11.5",
+        "release_ref": "refs/heads/release/v2.11.5",
+        "release_commit": "bbe5d8c8e4249ad27735245033b6dd6549539809",
+        "package_tree": "6e9fb338a83c532076a30e8feb0b6ce2ebbe4063",
+        "checkpoint_schema": "development-work-status/v4",
+        "safe_boundary_required": true,
+        "local_core_modifications_allowed": false
+      },
+      "owner": null,
+      "generation": 13,
+      "guard_present": false,
+      "last_release": {
+        "at_utc": "2026-10-05T05:12:14.225419Z",
+        "checkpoint_ref": "https://github.com/bajoicheg/g-switcher/blob/e7be220ee37d924cacf84edcd8ad1ba32bcb2f62/docs/work-status/current.md",
+        "completion_reason": "scope_complete",
+        "external_reconciliation": "none",
+        "generation": 13,
+        "invocation_id": "managed-terminal:40d108a3cef95d9f7d67b117b8b818a62ae29d726d04159cf3540e5888416c37",
+        "owner_id": "1fbecc10-ea6f-4472-95aa-fcbc8aa33bfd"
+      },
+      "observed_at_utc": "2026-10-06T13:19:30.776Z"
+    }
+  ],
+  "assessment": "Three consumers exact-package-bound; Switcher adoption remains pending. Product platform gates are separate."
+}
