@@ -84,7 +84,9 @@ def evaluate_cycle(data: dict) -> dict:
         if not data['prior_evidence_insufficient_reason'].strip():blockers.append('prior_evidence_not_invalidated')
     if data['cycle_number']>data['max_validation_cycles'] and data['strategy_revision_ref'] is None:
         blockers.append('strategy_revision_required')
-    for used,limit in (('time_seconds','time_limit_seconds'),('tokens','token_limit'),('external_starts','external_start_limit')):
+    # Local validation does not consume an external start. External admission
+    # remains independently guarded; retain its observed quota without granting it.
+    for used,limit in (('time_seconds','time_limit_seconds'),('tokens','token_limit')):
         if budget[used] is not None and budget[limit] is not None and budget[used]>=budget[limit]:
             blockers.append('budget_exhausted:'+used)
     return {'schema':'validation-cycle-result/v1','validation_recommended':not blockers,

@@ -22,6 +22,15 @@ class Cycles(unittest.TestCase):
                            prior_evidence_insufficient_reason='old code failed');return d
     def test_first_cycle_allowed_without_authority(self):
         r=self.result(cycle());self.assertTrue(r['validation_recommended']);self.assertFalse(r['authorizes_external_start'])
+    def test_external_start_limit_does_not_block_local_validation(self):
+        for used in (0,1):
+            with self.subTest(used=used):
+                d=cycle();d['budget_observation'].update(external_starts=used,external_start_limit=used)
+                r=self.result(d)
+                self.assertTrue(r['validation_recommended'])
+                self.assertEqual(r['action'],'VALIDATE')
+                self.assertEqual(r['budget_observation'],d['budget_observation'])
+                self.assertFalse(r['authorizes_external_start'])
     def test_unchanged_repeat_not_recommended(self):
         self.assertFalse(self.result(cycle(2))['validation_recommended'])
     def test_third_cycle_requires_strategy_revision(self):
