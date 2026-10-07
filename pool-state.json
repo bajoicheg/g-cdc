@@ -1,0 +1,36 @@
+{
+  "schema": "managed-executor-pool-state/v1",
+  "plan_digest": "sha256:aebd1fcc6711ad267659c3a0ff33f845d2151d319f34cc85bdb6220226fc2dad",
+  "pool_id": "cdc-parallel-final-review-20261007",
+  "change_id": "cdc-parallel-maintenance-final-review",
+  "parent_invocation_id": "work-20261007-parallel-resume-2035",
+  "base_sha": "9516aa1fafd32fcf7fcb239e96fa1e6b4d141d3a",
+  "integrator_id": "root",
+  "coordination_ref": "refs/heads/cdc/parallel-maintenance-final-review-20261007",
+  "coordination_store_id": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
+  "revision": 0,
+  "execution_mode": "sequential_fallback",
+  "tasks": [
+    {
+      "id": "final-review",
+      "status": "planned",
+      "attempt_ids": [],
+      "active_attempt_id": null,
+      "reservation_token": null,
+      "accepted_result_ref": null,
+      "integrated": false,
+      "discarded": false,
+      "runtime_seconds": 0,
+      "cost_units": 0
+    }
+  ],
+  "runtime_consumed_seconds": 0,
+  "cost_consumed_units": 0,
+  "authorizes_worker_launch": false,
+  "authorizes_shared_branch_write": false,
+  "authorizes_merge": false,
+  "authorizes_release": false,
+  "authorizes_scope_expansion": false,
+  "authorizes_scheduler_mutation": false,
+  "authorizes_user_approval": false
+}
