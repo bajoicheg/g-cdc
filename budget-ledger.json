@@ -253,6 +253,37 @@
         "tokens": null,
         "elapsed_seconds": null
       }
+    },
+    {
+      "type": "outcome",
+      "event_id": "agent-final-review-a1-closed",
+      "task_id": "cdc-parallel-maintenance",
+      "wake_id": "work-20261007-parallel-resume-2035",
+      "at_utc": "2026-10-07T17:44:30.762025Z",
+      "reservation_id": "agent-final-review-a1",
+      "status": "succeeded",
+      "usage": {
+        "tokens": null,
+        "elapsed_seconds": null
+      },
+      "failure": null
+    },
+    {
+      "type": "outcome",
+      "event_id": "transport-codespace-2-closed",
+      "task_id": "cdc-parallel-maintenance",
+      "wake_id": "work-20261007-parallel-resume-2035",
+      "at_utc": "2026-10-07T17:44:30.762025Z",
+      "reservation_id": "transport-codespace-2",
+      "status": "setup_failed",
+      "usage": {
+        "tokens": null,
+        "elapsed_seconds": null
+      },
+      "failure": {
+        "signature": "codespaces-402-billing-payment-method-missing-zero-budget",
+        "category": "configuration"
+      }
     }
   ],
   "policy": {
