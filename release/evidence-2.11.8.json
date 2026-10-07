@@ -1,0 +1,69 @@
+{
+  "schema": "cdc-release-evidence/v1",
+  "version": "2.11.8",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "release_ref": "refs/heads/release/v2.11.8",
+  "candidate_source_commit": "97706dd78a82cfb9ff9e1ce9191d21a42222db37",
+  "release_commit": "97706dd78a82cfb9ff9e1ce9191d21a42222db37",
+  "preserved_maintenance_commit": "43f09bc9301e162892b709a77369586dc5a132f1",
+  "original_frozen_source_commit": "af5f652e65c7af42122816397743e990c2992ee4",
+  "package_tree": "38a05d37af38d8a42f30e9e59dfa8af8d985d40e",
+  "status": "released",
+  "development_driver": {
+    "version": "2.11.7",
+    "commit": "74c75a7b81323a3c278dcd3efd84e33ed8478d50",
+    "package_tree": "96d5ab0a225afe96a5de92a781734a3b3bc16836"
+  },
+  "release_validation": {
+    "CI": {
+      "run_id": 37551052697,
+      "job_id": 112566349908,
+      "attempt": 1,
+      "event": "pull_request",
+      "request_id": 95,
+      "reported_head_sha": "97706dd78a82cfb9ff9e1ce9191d21a42222db37",
+      "actual_checkout_sha": "83cf2d8b02cb38759b0380b650b5d3bd99073d5a",
+      "candidate_and_checkout_complete_root_tree": "a259cb3c6a359c1c9de1fff1011e2fd47a0d7b89",
+      "all_steps": 13,
+      "status": "completed",
+      "conclusion": "success",
+      "full_log_bytes": 231416,
+      "full_log_sha256": "1b37c1e0ca7780027c74f83ed522705ee4e788f6976b6221d1e5906f42b43c43",
+      "log_provenance": "root independently decoded and retained complete original official log; not a native raw-log copy",
+      "bootstrap_tests": 46,
+      "package_tests": 1057,
+      "package_test_seconds": 301.948,
+      "three_consumers": "GREEN; archived compatibility only"
+    },
+    "clean_consumer": {
+      "tests": 1057,
+      "status": "GREEN",
+      "evidence": "docs/execution/cdc-cloud-development-2.11.8-candidate.json"
+    },
+    "bootstrap": "independent46 tests and fullbinding GREEN",
+    "compatibility": "three archived consumer adapters/checkpoints exact package/version binding GREEN",
+    "fault_injection": "included actual1057 package tests",
+    "metadata_invariant": {
+      "tested_candidate": "97706dd78a82cfb9ff9e1ce9191d21a42222db37",
+      "actual_ci_checkout": "83cf2d8b02cb38759b0380b650b5d3bd99073d5a",
+      "same_tested_complete_tree": "a259cb3c6a359c1c9de1fff1011e2fd47a0d7b89",
+      "new_metadata_paths": [
+        "release/evidence-2.11.8.json",
+        "release/published-2.11.8.json",
+        "docs/execution/cdc-maintenance-2.11.8-release.json"
+      ],
+      "protected_code_bootstrap_workflow_consumer_bytes": "must match exact tested candidate",
+      "metadata_checks": "record actual command ledger; no exact metadata-SHA CI claimed"
+    }
+  },
+  "reviews": {
+    "spec": "GREEN",
+    "quality": "GREEN",
+    "cloud_binding": "R977/package38a05 exact frozen checks and ordered reviews; metadata separately reviewed"
+  },
+  "managed_publication_required": true,
+  "scheduler_state": "owner-paused; unchanged",
+  "installation": "separate root-owned exact released-byte readback required",
+  "consumer_deployment": "archived compatibility only; no live rollout inferred",
+  "publication": "release/published-2.11.8.json"
+}
