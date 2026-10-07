@@ -1,3 +1,7 @@
+## CDC 2.12.0 — authorized quality levels (2026-10-07)
+
+Owner approved the written FAST/MEDIUM/FULL spec and inline implementation plan. Develop under immutable released CDC 2.11.9 (62cd32e91446675799d42247eac2a0312c33d363; package 6867b012d01d776c2c0236b110980ba2c1292c26). MEDIUM is the new-project default; legacy consumers retain existing requirements until explicit migration. Critical risk raises quality to FULL. Preserve ownership, budgets, platform/release gates, historical evidence and paused schedulers. Do not contend with the active GAdControl portable-build chat. This is candidate development, not release/adoption evidence. See docs/superpowers/specs/2026-10-07-quality-levels-design.md and docs/superpowers/plans/2026-10-07-quality-levels.md.
+
 ## CDC2.11.9 bounded maintenance admission — 2026-10-07
 
 Root explicitly authorized the necessary live-target-split-release-evidence-binding correction through normal release/installation/adoption gates. This scoped maintenance admission selects next patch2.11.9 under independently verified immutable released+installed8 R977/package38a05; sourcebase98f947f7261e6e383f646924cb488bd1eacc90a1 and absent official release9 were freshly observed before the actual bounded managed45 scope. This is candidate development, not a release or version convergence claim. See docs/superpowers/specs/2026-10-07-live-target-split-evidence-design.md, its matching plan and docs/execution/cdc-live-target-2119-queue.json.
