@@ -219,6 +219,23 @@
         "signature": "github-coordination-internal-server-error",
         "category": "infrastructure"
       }
+    },
+    {
+      "type": "reserve",
+      "event_id": "transport-codespace-2",
+      "task_id": "cdc-parallel-maintenance",
+      "wake_id": "work-20261007-parallel-resume-2035",
+      "at_utc": "2026-10-07T17:36:22.493273Z",
+      "operation_key": "sha256:149cffc01bd68e76bb0b2671758a38de9e3dab1fc7eeeef7dd31b8213dea225e",
+      "attempt_id": "transport-codespace-2",
+      "kind": "compute_start",
+      "scope": "github/codespaces/cdc-cautious-recovery",
+      "recovery_ref": null,
+      "cost": {
+        "tool_calls": 1,
+        "tokens": null,
+        "elapsed_seconds": null
+      }
     }
   ],
   "policy": {
@@ -252,6 +269,7 @@
   "schema": "budget-ledger/v1",
   "task_id": "cdc-parallel-maintenance",
   "wake_ids": [
-    "work-20261007-parallel"
+    "work-20261007-parallel",
+    "work-20261007-parallel-resume-2035"
   ]
 }
