@@ -1,0 +1,85 @@
+{
+  "case": {
+    "schema": "behavioral-eval-case/v1",
+    "scenario_id": "split-release-evidence-stable-ref-under-moving-main",
+    "scenario_type": "unchanged_recovery_retry",
+    "facts": {
+      "failed_strategy": "implicit-colocated-evidence-at-tested-release"
+    },
+    "baseline_trace": [
+      "failure:implicit-colocated-evidence-at-tested-release"
+    ],
+    "corrected_trace": [
+      "failure:implicit-colocated-evidence-at-tested-release",
+      "retry:explicit-pinned-canonical-evidence"
+    ]
+  },
+  "result": {
+    "scenario_id": "split-release-evidence-stable-ref-under-moving-main",
+    "scenario_type": "unchanged_recovery_retry",
+    "baseline": "RED",
+    "baseline_reason": "unchanged_failed_strategy_retried",
+    "corrected": "GREEN",
+    "corrected_reason": "strategy_changed_or_bounded_block",
+    "regression_passed": true
+  },
+  "observed_baseline": {
+    "phase": "baseline",
+    "argv": [
+      "/workspace/.setup/cdc-venv/bin/python",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "src/continuous-development-cycle/tests",
+      "-p",
+      "test_live_target.py",
+      "-v"
+    ],
+    "exit": 1,
+    "tests": 31,
+    "log_path": "/workspace/.setup/live-target-2119-integration-g-cdc-87a096f15e444726962826c941c2de09/baseline-live-target.log",
+    "log_bytes": 15736,
+    "log_sha256": "ad8eb9f1b28aac26608e4b65ef6eded6ff23d222fcfaf931ccead5ca61e27544",
+    "seconds": 11.408176910001202,
+    "resolver_sha256": "3e8af4e82264b5366fe7ad0026fb52f4a82fbec6cab3cb0f822db4b1036ee52c"
+  },
+  "observed_corrected": {
+    "argv": [
+      "/workspace/.setup/cdc-venv/bin/python",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "src/continuous-development-cycle/tests",
+      "-p",
+      "test_live_target.py",
+      "-v"
+    ],
+    "exit": 0,
+    "log_path": "/workspace/.setup/live-target-2119-integration-g-cdc-87a096f15e444726962826c941c2de09/focused-final.log",
+    "log_bytes": 5000,
+    "log_sha256": "f39f612147371e690334447728314df0736d23fe611d40cfc4f448e9e676d667",
+    "tests": 32
+  },
+  "moving_main_baseline": {
+    "argv": [
+      "/workspace/.setup/cdc-venv/bin/python",
+      "-B",
+      "-c",
+      "import sys,importlib.util,unittest;sys.path.insert(0,sys.argv[1]);import live_target;spec=importlib.util.spec_from_file_location('pressure',sys.argv[2]);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);result=unittest.TextTestRunner(verbosity=2).run(unittest.TestSuite([m.LiveTargetTests('test_split_evidence_stable_ref_survives_main_advancement')]));sys.exit(0 if result.wasSuccessful() else 1)",
+      "/workspace/.setup/cloud-development-2118-release-2b21f70ed5b749c6a5beba1965293c4f/immutable8-byte-observation/scripts",
+      "/workspace/.setup/live-target-2119-integration-g-cdc-87a096f15e444726962826c941c2de09/candidate/src/continuous-development-cycle/tests/test_live_target.py"
+    ],
+    "exit": 1,
+    "tests": 1,
+    "baseline": "RED",
+    "log_path": "/workspace/.setup/live-target-2119-integration-g-cdc-87a096f15e444726962826c941c2de09/moving-main-stable8-baseline.log",
+    "log_bytes": 1677,
+    "log_sha256": "1945031de7d429d9acfebfc016a08f48b5eba80505cb2038e20a819c60fca6a2",
+    "facts": "main advances independently; stable evidence ref pinned; unchanged immutable8 resolver"
+  },
+  "trace_semantics": "Logical read-only resolver strategy correction observed against real Git fixtures; no provider retry or fabricated executor observation"
+}

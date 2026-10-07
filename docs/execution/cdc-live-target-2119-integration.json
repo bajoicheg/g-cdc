@@ -1,0 +1,17 @@
+{
+  "schema": "cdc-live-target-maintenance-integration/v1",
+  "base": "98f947f7261e6e383f646924cb488bd1eacc90a1",
+  "driver_release": "97706dd78a82cfb9ff9e1ce9191d21a42222db37",
+  "driver_package": "38a05d37af38d8a42f30e9e59dfa8af8d985d40e",
+  "candidate_version": "2.11.9",
+  "candidate_package": "6867b012d01d776c2c0236b110980ba2c1292c26",
+  "baseline": "observed RED",
+  "corrected": "observed focused GREEN",
+  "full_frozen_checks": "NOT_RUN",
+  "required_CI": "NOT_RUN",
+  "release": "NOT_RUN",
+  "installation": "Root-owned pending immutable release",
+  "live_adoption": "separate actual gates; GAD preserved while owned",
+  "probe_pilot_repeats": 0,
+  "scheduler_billing_auth_changes": 0
+}

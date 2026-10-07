@@ -1,1 +1,87 @@
-{"schema":"spec-plan-queue/v1","change_id":"live-target-split-release-evidence-binding-2.11.9","material_change":true,"ambiguity_state":"clear","brainstorming_ref":null,"approved_spec_ref":"user:Root-2026-10-07-bounded-correction-authorized;docs/superpowers/specs/2026-10-07-live-target-split-evidence-design.md","plan_ref":"docs/superpowers/plans/2026-10-07-live-target-split-evidence.md","tasks":[{"id":"task1","spec_refs":["R1","R2","R3","R4"],"expected_evidence":["evidence:task1"],"dependencies":[],"state":"pending","evidence_refs":[]},{"id":"task2","spec_refs":["R5"],"expected_evidence":["evidence:task2"],"dependencies":["task1"],"state":"pending","evidence_refs":[]},{"id":"task3","spec_refs":["R6"],"expected_evidence":["evidence:task3"],"dependencies":["task2"],"state":"pending","evidence_refs":[]},{"id":"task4","spec_refs":["R7"],"expected_evidence":["evidence:task4"],"dependencies":["task3"],"state":"pending","evidence_refs":[]}],"continuation_queue":[{"task_id":"task1","action":" admission: fresh source/released44/quiescence/version-absence checks; durable bounded nativepool/reservation, actualgate+lease; write spec/plan/queue and canonicalroadmap maintenance9 admission before product changes.","state":"queued"},{"task_id":"task2","action":" TDD: add real Git splitmetadata/mismatch/movement/legacy fixtures to existing test_live_target.py, observe stable candidate baseline failure and save full log/hash. Implement only explicit v2 pinned binding; run focused regression suite; emit actual baseline/corrected behavioral traces under existing8 behavioral_eval and deduplicated systematic_rca disposition.","state":"queued"},{"task_id":"task3","action":" freeze/validation: update truthful9/driver8 metadata, reference8 source release/CI95. Commit bounded correction, freeze exact source/package, update3consumer fingerprints. Run cheap layout/bootstrap/package then actual full suite and separatecleanconsumer/fault/3consumer bindings once frozen. Ordered independent SPEC\u2192QUALITY review; findings corrected with RED\u2192GREEN before final exact freeze.","state":"queued"},{"task_id":"task4","action":" release/adopt: freshbounded CI invocation/one-use intent/guard/claim, Root exact guarded connectorPR once, actual terminalrun/job/log checkout bindings; clear transitioned guard with released8 supported corrected validator (no externalexception). Transactionally release/q/accept. Fresh source-release authority; immutable9 points testedcandidate, evidence metadata distinct; Root installs strict9. Adopt availableconsumers under actualownership onebyone, GAD excluded whileowned; establish actualFleetleader before any target/ref mutation and require corrected strict resolver observedGREEN. No new probe/pilot/scheduler starts.","state":"queued"}]}
+{
+  "schema": "spec-plan-queue/v1",
+  "change_id": "live-target-split-release-evidence-binding-2.11.9",
+  "material_change": true,
+  "ambiguity_state": "clear",
+  "brainstorming_ref": null,
+  "approved_spec_ref": "user:Root-2026-10-07-bounded-correction-authorized;docs/superpowers/specs/2026-10-07-live-target-split-evidence-design.md",
+  "plan_ref": "docs/superpowers/plans/2026-10-07-live-target-split-evidence.md",
+  "tasks": [
+    {
+      "id": "task1",
+      "spec_refs": [
+        "R1",
+        "R2",
+        "R3",
+        "R4"
+      ],
+      "expected_evidence": [
+        "evidence:task1"
+      ],
+      "dependencies": [],
+      "state": "complete",
+      "evidence_refs": [
+        "git:06fe0973f622e64e77a99d14e068cd26177e22df"
+      ]
+    },
+    {
+      "id": "task2",
+      "spec_refs": [
+        "R5"
+      ],
+      "expected_evidence": [
+        "evidence:task2"
+      ],
+      "dependencies": [
+        "task1"
+      ],
+      "state": "complete",
+      "evidence_refs": [
+        "sha256:ad8eb9f1b28aac26608e4b65ef6eded6ff23d222fcfaf931ccead5ca61e27544",
+        "sha256:f39f612147371e690334447728314df0736d23fe611d40cfc4f448e9e676d667",
+        "git:97706dd78a82cfb9ff9e1ce9191d21a42222db37",
+        "git:34511538f583774efe21f50f70ff0519cfb9f649"
+      ]
+    },
+    {
+      "id": "task3",
+      "spec_refs": [
+        "R6"
+      ],
+      "expected_evidence": [
+        "evidence:task3"
+      ],
+      "dependencies": [
+        "task2"
+      ],
+      "state": "in_progress",
+      "evidence_refs": []
+    },
+    {
+      "id": "task4",
+      "spec_refs": [
+        "R7"
+      ],
+      "expected_evidence": [
+        "evidence:task4"
+      ],
+      "dependencies": [
+        "task3"
+      ],
+      "state": "pending",
+      "evidence_refs": []
+    }
+  ],
+  "continuation_queue": [
+    {
+      "task_id": "task3",
+      "action": " freeze/validation: update truthful9/driver8 metadata, reference8 source release/CI95. Commit bounded correction, freeze exact source/package, update3consumer fingerprints. Run cheap layout/bootstrap/package then actual full suite and separatecleanconsumer/fault/3consumer bindings once frozen. Ordered independent SPEC\u2192QUALITY review; findings corrected with RED\u2192GREEN before final exact freeze.",
+      "state": "queued"
+    },
+    {
+      "task_id": "task4",
+      "action": " release/adopt: freshbounded CI invocation/one-use intent/guard/claim, Root exact guarded connectorPR once, actual terminalrun/job/log checkout bindings; clear transitioned guard with released8 supported corrected validator (no externalexception). Transactionally release/q/accept. Fresh source-release authority; immutable9 points testedcandidate, evidence metadata distinct; Root installs strict9. Adopt availableconsumers under actualownership onebyone, GAD excluded whileowned; establish actualFleetleader before any target/ref mutation and require corrected strict resolver observedGREEN. No new probe/pilot/scheduler starts.",
+      "state": "queued"
+    }
+  ]
+}
