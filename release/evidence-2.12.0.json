@@ -1,0 +1,77 @@
+{
+  "schema": "cdc-release-evidence/v1",
+  "version": "2.12.0",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "release_ref": "refs/heads/release/v2.12.0",
+  "candidate_source_commit": "540d42b5a8b06b11d7aeae78585cffbff99da231",
+  "release_commit": "540d42b5a8b06b11d7aeae78585cffbff99da231",
+  "package_tree": "247facf39eadf073883c5f1fe3b4a291278da7f8",
+  "status": "released",
+  "development_driver": {
+    "version": "2.11.9",
+    "commit": "62cd32e91446675799d42247eac2a0312c33d363",
+    "package_tree": "6867b012d01d776c2c0236b110980ba2c1292c26"
+  },
+  "release_validation": {
+    "CI": {
+      "run_id": 37610915069,
+      "job_id": 112757678726,
+      "attempt": 1,
+      "reported_head_sha": "540d42b5a8b06b11d7aeae78585cffbff99da231",
+      "actual_checkout_sha": "1fc3ee06ff558cb2362a9f1fd3f0bed7d9c577fd",
+      "candidate_root_tree": "a89014cadd044ad2412709c22184f455b37446c1",
+      "checkout_root_tree": "a89014cadd044ad2412709c22184f455b37446c1",
+      "full_log_bytes": 241784,
+      "full_log_sha256": "f1f143ecc5e375796a6129eae250783e1701c9d9c9b6112b938f9386dc1fe39b",
+      "bootstrap_tests": 46,
+      "full_tests": 1116,
+      "run_status": "completed",
+      "run_conclusion": "success",
+      "job_status": "completed",
+      "job_conclusion": "success",
+      "actual_step_count": 13,
+      "three_consumers_green": true,
+      "request_id": 97,
+      "event": "pull_request",
+      "log_provenance": "Managed native official complete GitHub log; independently checked by Root"
+    },
+    "clean_consumer": {
+      "candidate_sha": "397ba19aae37d260cccaf917ce167b39aa8256ba",
+      "tests": 1116,
+      "status": "GREEN",
+      "log_sha256": "0f0d4c3f132968fa9714961287e9717bc3cae07fe06aa54b88bcf808d3452261",
+      "reuse_invariant": "package/bootstrap/workflow/consumer bytes unchanged; sole three-line validation-route document"
+    },
+    "bootstrap": "independent46 and full binding GREEN",
+    "compatibility": "three archived consumer snapshots GREEN; live adoption separate",
+    "fault_injection": "actual full1116 suite GREEN",
+    "metadata_invariant": {
+      "tested_candidate": "540d42b5a8b06b11d7aeae78585cffbff99da231",
+      "actual_ci_checkout": "1fc3ee06ff558cb2362a9f1fd3f0bed7d9c577fd",
+      "new_metadata_paths": [
+        "release/evidence-2.12.0.json"
+      ],
+      "protected_bytes": "Package/bootstrap/workflow/consumer identical to tested candidate",
+      "metadata_exact_SHA_CI": "NOT_RUN; not retargeted"
+    }
+  },
+  "reviews": {
+    "spec": "Independent ordered GREEN on introduced history",
+    "quality": "Independent RED with one Important finding; corrected with actual RED/GREEN and full1116 regression pass, Root accepted without artificial rereview",
+    "reviewed_head": "12ea9e8832f23396974407615f1cf1bdc6a0f1be",
+    "deferred_minor": [
+      "Identical empty/whitespace argv reuse rejected conservatively",
+      "One-file transport example label mismatch: never used as release bytes"
+    ],
+    "final_sha_independent_rereview": "NOT_RUN"
+  },
+  "canonical_evidence_publication": {
+    "ref": "refs/heads/cdc/release-evidence/v2.12.0",
+    "commit": "Exact separate metadata commit must be resolved/read back; never current-main substitution",
+    "path": "release/evidence-2.12.0.json"
+  },
+  "scheduler_state": "owner-paused unchanged",
+  "installation": "separate strict immutable byte acceptance required",
+  "consumer_deployment": "not inferred from archived checks",
+  "at_utc": "2026-10-07T11:28:26.536649Z"
+}
