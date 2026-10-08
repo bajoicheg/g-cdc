@@ -1,0 +1,191 @@
+{
+  "schema": "cdc-consumer-adoption-review-ready/v1",
+  "scope": "2026-10-08T09:04:33Z",
+  "implementation_candidate": "4e1a389a8d5fa6812c87431be9b9cb8f6f55bad9",
+  "live_publication_hold": "independent SPEC then independent QUALITY required",
+  "preparation": {
+    "repository": "bajoicheg/g-cdc",
+    "source_ref": "refs/heads/cdc/fleet",
+    "base": "cf58922a7165dc63fbe819db7911e428a22b9a2e",
+    "candidate": "4e1a389a8d5fa6812c87431be9b9cb8f6f55bad9",
+    "root_tree": "b5cce1540f25d496be98cc2b62fd0ac2adbdc867",
+    "changed_paths": [
+      "fleet/registry.json",
+      "fleet/target-release.json",
+      "fleet/target.json"
+    ],
+    "manifest": [
+      {
+        "path": "fleet/registry.json",
+        "object_type": "blob",
+        "object_sha1": "e92ee85fba164243dc3084f86d3b4584febcb17a"
+      },
+      {
+        "path": "fleet/target-release.json",
+        "object_type": "blob",
+        "object_sha1": "98e8f0e3fff36a003fc18e17e9bb3bfb6742fb3c"
+      },
+      {
+        "path": "fleet/target.json",
+        "object_type": "blob",
+        "object_sha1": "f533317c7f3d1c403f3d7c44ffe89b9219be82a8"
+      }
+    ],
+    "target": {
+      "schema": "version-convergence-target/v1",
+      "target_version": "2.12.1",
+      "target_package_fingerprint": "git-tree:9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+      "checkpoint_schema": "development-work-status/v4",
+      "safe_boundary_required": true
+    },
+    "release_binding": {
+      "schema": "live-target-release/v2",
+      "version": "2.12.1",
+      "canonical_repository": "bajoicheg/g-cdc",
+      "release_ref": "refs/heads/release/v2.12.1",
+      "release_commit": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+      "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+      "evidence_binding": {
+        "schema": "canonical-release-evidence-binding/v1",
+        "source_identity": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
+        "ref": "refs/heads/cdc/release-evidence/v2.12.1",
+        "commit": "9dece125d09956d4546721bceb9142856bf786d3",
+        "path": "release/evidence-2.12.1.json"
+      }
+    },
+    "registry_projects_preserved": true,
+    "retired_supervisor_unchanged": true,
+    "SLO_and_age_unchanged": true,
+    "scheduler_mutations": false,
+    "quality_level": "FULL",
+    "schema_checks": "GREEN",
+    "publication_prerequisite": "actual canonical fleet-supervisor leader+one-use effect claim and ordered reviews; no authority from preparation"
+  },
+  "proofs": {
+    "review-ready-publication.json": {
+      "candidate_ref": "refs/heads/cdc/adopt2121-fleet-candidate-20261008",
+      "candidate": "4e1a389a8d5fa6812c87431be9b9cb8f6f55bad9",
+      "native_argv": [
+        "git",
+        "push",
+        "origin",
+        "4e1a389a8d5fa6812c87431be9b9cb8f6f55bad9:refs/heads/cdc/adopt2121-fleet-candidate-20261008"
+      ],
+      "exit_code": 0,
+      "readback": "4e1a389a8d5fa6812c87431be9b9cb8f6f55bad9",
+      "source_base_unchanged": "cf58922a7165dc63fbe819db7911e428a22b9a2e",
+      "claim": {
+        "revision": "1ee6ddee26f2f0185ddf7d613ce11215d3390342",
+        "grant": {
+          "grant_id": "073650d2-eab6-46b4-828b-c5960ab80914",
+          "owner_id": "0137dabb-fc20-4cdf-8d96-d35d469932f7",
+          "generation": 1,
+          "operation_key": "sha256:364e6d285c0a41bcc344c2da4a44d078d817365dcfe317427f5d18aa4efb1ef5",
+          "attempt_id": "adopt2121-fleet-a1-review-publication",
+          "intent_digest": "sha256:ee480a0fbac854526ada89f378555860436a45f1de5ccaa458a1792fe3b26f5e",
+          "claimed_at_utc": "2026-10-08T09:39:28.028945Z"
+        }
+      },
+      "guard_resolution_revision": "64703c7b31c4b5309d4bdd5a0946acf01e979b90",
+      "at_utc": "2026-10-08T09:40:06.322898Z"
+    },
+    "start-receipt.json": {
+      "schema": "managed-host-handle/v1",
+      "handle_id": "9e221d00-55ad-53a4-9e03-b6b378d31a16",
+      "state": "running",
+      "task_id": "fleet-target",
+      "attempt_id": "adopt2121-fleet-a1",
+      "owner_id": "0137dabb-fc20-4cdf-8d96-d35d469932f7",
+      "generation": 1,
+      "invocation_id": "managed-terminal:2558aad5710f4598b92a3814da53b6ce0e3042611b90246140e9d6a144fb32c7",
+      "lease_revision": "cd70dd4ada6d130fa514bc5c213dbc4b569633b3",
+      "publication_ref": "refs/heads/cdc/managed-host-publish-9e221d0055ad53a49e03b6b378d31a16"
+    },
+    "live-target-preflight.json": {
+      "schema": "live-target-resolution/v1",
+      "observed_at_utc": "2026-10-08T09:40:40.384671Z",
+      "registry_source_identity": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
+      "registry_ref": "refs/heads/cdc/adopt2121-fleet-candidate-20261008",
+      "registry_revision": "4e1a389a8d5fa6812c87431be9b9cb8f6f55bad9",
+      "registry_observed_at_utc": "2026-10-08T09:40:31.185798Z",
+      "canonical_source_identity": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
+      "release_observed_at_utc": "2026-10-08T09:40:33.160002Z",
+      "registry": {
+        "assessment_max_age_seconds": 900,
+        "projects": [
+          {
+            "repository": "bajoicheg-private/g-ad-control",
+            "required": true,
+            "source_ref": "refs/heads/codex/build-0.2.0-engineer-attribute-workflow",
+            "watchdog_id": "6aafa54141308191ac114c8079d15b95"
+          },
+          {
+            "repository": "bajoicheg/g-pc-health-check",
+            "required": true,
+            "source_ref": "refs/heads/design/0.17.0-security-posture",
+            "watchdog_id": "6ab37bf252d4819198b17c4f8679f693"
+          },
+          {
+            "repository": "bajoicheg/g-switcher",
+            "required": true,
+            "source_ref": "refs/heads/release/2.0.1",
+            "watchdog_id": "6ab6b1dd613081919ed34717c02a672d"
+          }
+        ],
+        "schema": "fleet-registry/v1",
+        "slo_policy": {
+          "blocked_pauses_clock": true,
+          "degraded_after_seconds": 1200,
+          "primitive_activity_is_progress": false,
+          "schema": "progress-slo-policy/v1",
+          "stalled_after_seconds": 3600,
+          "waiting_external_pauses_clock": true
+        },
+        "target": {
+          "schema": "version-convergence-target/v1",
+          "target_version": "2.12.1",
+          "target_package_fingerprint": "git-tree:9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+          "checkpoint_schema": "development-work-status/v4",
+          "safe_boundary_required": true
+        }
+      },
+      "target": {
+        "schema": "version-convergence-target/v1",
+        "target_version": "2.12.1",
+        "target_package_fingerprint": "git-tree:9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+        "checkpoint_schema": "development-work-status/v4",
+        "safe_boundary_required": true
+      },
+      "release": {
+        "schema": "live-target-release/v2",
+        "version": "2.12.1",
+        "canonical_repository": "bajoicheg/g-cdc",
+        "release_ref": "refs/heads/release/v2.12.1",
+        "release_commit": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+        "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+        "evidence_binding": {
+          "schema": "canonical-release-evidence-binding/v1",
+          "source_identity": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
+          "ref": "refs/heads/cdc/release-evidence/v2.12.1",
+          "commit": "9dece125d09956d4546721bceb9142856bf786d3",
+          "path": "release/evidence-2.12.1.json"
+        }
+      },
+      "authorizes_adoption": false,
+      "authorizes_scheduler_write": false,
+      "evidence_observation": {
+        "source_identity": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
+        "ref": "refs/heads/cdc/release-evidence/v2.12.1",
+        "revision": "9dece125d09956d4546721bceb9142856bf786d3",
+        "observed_at_utc": "2026-10-08T09:40:35.242438Z"
+      }
+    },
+    "fleet-leader-admission-preflight.json": {
+      "capability_available": false,
+      "actual_error": "managed attempt is not live",
+      "canonical_leader_acquired": false,
+      "required_next_action": "Finish preparation handle normally, then admit a live local managed Fleet publication worker after ordered reviews; issue genuine capability while runtime running. No new provider task or second canonical leader."
+    },
+    "prior_quiescence_provenance": "fresh canonical released unowned source lease before actual admission"
+  }
+}
