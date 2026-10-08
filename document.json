@@ -1,13 +1,13 @@
 {
-  "CI": "NOT_RUN",
+  "CI": "GREEN",
   "FULL_rerun": false,
-  "PR": null,
+  "PR": 99,
   "attempt_id": "cloud-continuation-a1",
   "authorization": "User directly requested Cloud execution and corrective completion. This record transfers orchestration context only; it creates no execution-lease/v2 or release/CI authority.",
   "budget_commit": "7f1a4808407ef1871edfb777e0e0dc1805cf1c0a",
   "budget_terminal_commit": "815582c587aa01128d5d26049d52d25b41154203",
   "bundle_sha256": "d09ba012602171ac50391bd6d2855db115a70bdcc262534314071c7f24b666cf",
-  "candidate_sha": "9516aa1fafd32fcf7fcb239e96fa1e6b4d141d3a",
+  "candidate_sha": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
   "cloud_worktree": "/workspace/work/cloud-continuation-a1-9516aa1",
   "continuations": [
     {
@@ -141,27 +141,81 @@
       "provider_task_reused": true,
       "CI_started": false,
       "cloud_report": "work/cloud-continuation-a1/recovery-20261008/access-repair-published-report.json"
+    },
+    {
+      "scope": "history normalization and exact-head CI",
+      "observed_at_utc": "2026-10-08T06:30:55.794Z",
+      "candidate_sha": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+      "old_candidate_sha": "9516aa1fafd32fcf7fcb239e96fa1e6b4d141d3a",
+      "root_tree": "49e3db723a8703c89f9e535fcab373b3ff128a06",
+      "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+      "history": {
+        "one_parent": "b72435542f40ec3f5b195f357c968c2346ab4f8f",
+        "commit_count": 1,
+        "changed_paths": 35,
+        "touched_paths": 35,
+        "old_new_diff_bytes": 0,
+        "released_writer_result_gate": "PASS",
+        "old_history_preserved": true
+      },
+      "reviews": {
+        "spec": {
+          "commit": "c4a1c1a1dc42642df98adcf339726fdbd3467ef0",
+          "report_sha256": "7a069a4c470655626a24d1c8d1081dac812080b0fc9875f4cef1037b7d6e2f0b"
+        },
+        "quality": {
+          "commit": "44b822a6ca9cc15b66e2511ec8191210f58ed6bc",
+          "path": "quality-normalized-20261008.md",
+          "report_sha256": "93cab9d03bc9f276d0dc8707a9c31ad82ef10b2932a31b038de834719ee036a3"
+        },
+        "ordered_independent": "GREEN"
+      },
+      "CI": {
+        "PR": 99,
+        "run": 37737459242,
+        "job": 113180161046,
+        "status": "completed",
+        "conclusion": "success",
+        "all_steps_success": 13,
+        "reported_head": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+        "actual_checkout": "d7dee676a81777c837234a4a699d720074d775b3",
+        "checkout_root_tree": "49e3db723a8703c89f9e535fcab373b3ff128a06",
+        "official_log_sha256": "e87ea031a508cecee807761b66c6f9eb79c154a2a62f5ba3c3f5342703374c99",
+        "official_log_utf8_bytes": 245728,
+        "bootstrap_tests": 46,
+        "full_tests": 1121,
+        "full_seconds": 246.057,
+        "three_archived_consumers": "GREEN",
+        "managed_finish": "pending observation"
+      },
+      "source_release": false,
+      "personal_installation": false,
+      "local_FULL_rerun": false,
+      "remaining": [
+        "CI managed finish/readback and quiescence",
+        "normal managed source main/release/metadata publication",
+        "personal installation and exact 352-file acceptance"
+      ],
+      "root_owned_lease": null
     }
   ],
   "continuity": {
     "schema": "execution-continuity/v1",
-    "current_state": "READY",
-    "invocation_id": "work-20261008-access-repair",
-    "checkpoint_ref": "refs/heads/cdc/parallel-maintenance-cloud-handover-20261007:document.json",
+    "invocation_id": "work-20261008-finish",
+    "current_state": "VALIDATE",
+    "requested_terminal_outcome": "continue",
     "runnable_next_action": true,
-    "next_action": "In each Cloud turn request actual network.enabled=true grant, retaining sandbox and restricted allowlist. Refresh budget/pool/lease and reconcile old ci-a1 original receipt, then obtain managed admission for one exact-candidate CI. Available GitHub connectors avoid expanding shell API domain.",
-    "lease_release_required": false,
-    "lease_released": true,
     "meaningful_progress_refs": [
-      "git:c19367477d8eefb8506308ca258ae4b5b6b513d1"
+      "git:44b822a6ca9cc15b66e2511ec8191210f58ed6bc",
+      "github-actions:37737459242"
     ],
-    "scope_completion": {
-      "scope_id": "cdc-cloud-access-repair",
-      "state": "COMPLETE",
-      "evidence_refs": [
-        "git:c19367477d8eefb8506308ca258ae4b5b6b513d1"
-      ]
-    }
+    "primitive_steps": [],
+    "external_binding": null,
+    "blocker": null,
+    "checkpoint_ref": "refs/heads/cdc/parallel-maintenance-cloud-handover-20261007:document.json",
+    "next_action": "Observe CI3 bridge finish/release/quiescence, then normal source publication and immutable release readback; install pinned archive only after source acceptance.",
+    "lease_release_required": false,
+    "lease_released": true
   },
   "corrected_prior_claims": [
     "Cloud continuation was already authorized; user Send handoff was unnecessary.",
@@ -183,35 +237,35 @@
   "final_gate_lease_input_provenance": "Absent dedicated CI lease freshly observed404. Initialized empty schema is a validator input only, no remote lease was created or acquired.",
   "historical_validation_log_hashes_verified": 7,
   "installed": false,
-  "invocation_id": "work-20261008-cloud-recheck",
+  "invocation_id": "work-20261008-finish",
   "layout": {
     "exit_code": 0,
     "provenance": "Observed Cloud assistant report; complete Cloud logs remain at /workspace/work/cloud-transfer-a1/results/",
     "tracked_paths": 578
   },
-  "next_action": "Actual Cloud managed admission and independently guarded required CI in separate read_only pool; old journal remains forensic history. Install only after immutable source release.",
-  "observed_at_utc": "2026-10-08T05:31:10.356Z",
+  "next_action": "Observe CI3 bridge finish/release/quiescence, then normal source publication and immutable release readback; install pinned archive only after source acceptance.",
+  "observed_at_utc": "2026-10-08T06:30:55.794Z",
   "observed_surface": "Actual Cloud grant/read/write/readback and independent authenticated GitHub readback",
   "operation_key": "sha256:191e4f9d1c0480663004a0a60c02148a8e89e87ecb97045715ef91c513fd5c00",
-  "ordered_review_head": "b17a9beb3ab5308023b5369d6db7924e35e518e6",
+  "ordered_review_head": "44b822a6ca9cc15b66e2511ec8191210f58ed6bc",
   "ordered_review_ref": "refs/heads/cdc/parallel-final-quality-20261008",
   "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
-  "project_conclusion": "access_restored_required_CI_pending",
+  "project_conclusion": "exact_final_CI_GREEN_release_installation_pending",
   "provider_task_id": "01a1181d-1149-7327-90b1-446ff15650e5",
   "provider_url": "https://chatgpt.com/local/01a1181d-1149-7327-90b1-446ff15650e5",
   "release": false,
-  "remaining_gate": "Real managed admission and one guarded exact-candidate required CI through a working authenticated write transport. Old ci-a1 receipt/pool reconciliation remains separate.",
+  "remaining_gate": "Actual managed CI closure, source release, personal installation",
   "repository": "bajoicheg/g-cdc",
   "root_owned_lease": null,
   "schema": "owner-directed-cloud-handover/v1",
-  "scope_conclusion": "Cloud_Git_access_repair_COMPLETE",
-  "source_ref": "refs/heads/cdc/parallel-maintenance-20261007",
-  "state": "ready",
+  "scope_conclusion": "reviews_and_provider_CI_complete_managed_closure_pending",
+  "source_ref": "refs/heads/cdc/parallel-maintenance-normalized-20261008",
+  "state": "continuing",
   "submitted": true,
   "task_id": "cdc-parallel-maintenance",
   "transport": "authenticated Codex Cloud UI",
   "unknown_requires_observe": true,
-  "verified_head": "9516aa1fafd32fcf7fcb239e96fa1e6b4d141d3a",
+  "verified_head": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
   "verified_package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
   "historical_terminal_assessments": [
     {
