@@ -78,7 +78,7 @@
         "authorization": {
           "at_utc": "2026-10-06T14:43:32Z",
           "source": "Retrieved exact owner instruction for CDC",
-          "text": "\u0412\u0441\u0451 \u0434\u0435\u043b\u0430\u0439. \u0412\u0441\u0451 \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0430\u044e. \u0415\u0441\u043b\u0438 \u043d\u0435 \u0445\u0432\u0430\u0442\u0438\u0442 \u043b\u0438\u043c\u0438\u0442\u043e\u0432 - \u0434\u043e\u0431\u0430\u0432\u043b\u044f\u0439"
+          "text": "Всё делай. Всё подтверждаю. Если не хватит лимитов - добавляй"
         },
         "budget_revision": "e15b64cd7a6cc019c4f450b3bec106b81c0c7bb0",
         "migration": "One additional final reviewer only; prior charges preserved; CI/compute limits unchanged.",
@@ -111,109 +111,76 @@
         "result": "GREEN"
       },
       "state": "terminal"
+    },
+    {
+      "scope": "Cloud Git access repair",
+      "state": "COMPLETE",
+      "candidate_sha": "9516aa1fafd32fcf7fcb239e96fa1e6b4d141d3a",
+      "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+      "proof_ref": "refs/heads/cdc/access-repair-20261008",
+      "proof_sha": "c19367477d8eefb8506308ca258ae4b5b6b513d1",
+      "independent_github_readback": true,
+      "grant": {
+        "permissions": {
+          "network": {
+            "enabled": true
+          }
+        },
+        "scope": "turn"
+      },
+      "sandbox": "use_default",
+      "allowlist_unchanged": true,
+      "full_access": false,
+      "git_ls_remote_exit": 0,
+      "git_push_dry_run_exit": 0,
+      "actual_nonforce_push_exit": 0,
+      "remote_readback_exit": 0,
+      "initial_push_rejection": "GH007 private commit email; corrected with existing repository noreply identity without changing auth/config",
+      "transient_http503_preserved_in_cloud_report": true,
+      "source_main_budget_lease_unchanged": true,
+      "provider_task_reused": true,
+      "CI_started": false,
+      "cloud_report": "work/cloud-continuation-a1/recovery-20261008/access-repair-published-report.json"
     }
   ],
   "continuity": {
-    "blocker": "Required CI has no authenticated managed Git write transport: Cloud injected proxy socket EPERM and no host repair capability; root Git dry-run exit128 missing username credentials. Ordered final SPEC and QUALITY reviews completed.",
-    "blocker_proof": {
-      "category": "external-host-and-authentication",
-      "dependency_id": "managed-authenticated-write-transport",
-      "evidence_refs": [
-        "git:b17a9beb3ab5308023b5369d6db7924e35e518e6",
-        "git:815582c587aa01128d5d26049d52d25b41154203",
-        "cloud:01a1181d-1149-7327-90b1-446ff15650e5/20261008-host-repair-capability",
-        "root:20261008T051747Z-git-push-dry-run-exit128-credentials-unavailable"
-      ],
-      "max_age_seconds": 300,
-      "next_action": "After provider restores the existing permitted Cloud shell\u2192proxy path, execute timeout15s git ls-remote and authenticated dry-run; refresh source/pool/budget/lease, reconcile original ci-a1, then admit exactly one guarded required CI via the real managed host bridge.",
-      "observed_at_utc": "2026-10-08T05:17:47Z",
-      "recheck_trigger": "provider-network/auth restoration or explicit continuation after cooldown",
-      "same_invocation_work_exhausted": true,
-      "schema": "blocked-state-proof/v1"
-    },
+    "schema": "execution-continuity/v1",
+    "current_state": "READY",
+    "invocation_id": "work-20261008-access-repair",
     "checkpoint_ref": "refs/heads/cdc/parallel-maintenance-cloud-handover-20261007:document.json",
-    "current_state": "BLOCKED",
-    "external_binding": null,
-    "invocation_id": "work-20261008-cloud-recheck",
+    "runnable_next_action": true,
+    "next_action": "In each Cloud turn request actual network.enabled=true grant, retaining sandbox and restricted allowlist. Refresh budget/pool/lease and reconcile old ci-a1 original receipt, then obtain managed admission for one exact-candidate CI. Available GitHub connectors avoid expanding shell API domain.",
     "lease_release_required": false,
     "lease_released": true,
     "meaningful_progress_refs": [
-      "git:b17a9beb3ab5308023b5369d6db7924e35e518e6"
+      "git:c19367477d8eefb8506308ca258ae4b5b6b513d1"
     ],
-    "next_action": "After provider restores the existing permitted Cloud shell\u2192proxy path, execute timeout15s git ls-remote and authenticated dry-run; refresh source/pool/budget/lease, reconcile original ci-a1, then admit exactly one guarded required CI via the real managed host bridge.",
-    "primitive_steps": [
-      "status_read",
-      "lease_check"
-    ],
-    "requested_terminal_outcome": "blocked",
-    "runnable_next_action": false,
-    "schema": "execution-continuity/v1",
-    "terminal_state": {
-      "blocker": {
-        "code": "managed-authenticated-write-transport",
-        "evidence_refs": [
-          "git:b17a9beb3ab5308023b5369d6db7924e35e518e6",
-          "git:815582c587aa01128d5d26049d52d25b41154203",
-          "cloud:01a1181d-1149-7327-90b1-446ff15650e5/20261008-host-repair-capability",
-          "root:20261008T051747Z-git-push-dry-run-exit128-credentials-unavailable"
-        ],
-        "next_action": "After provider restores the existing permitted Cloud shell\u2192proxy path, execute timeout15s git ls-remote and authenticated dry-run; refresh source/pool/budget/lease, reconcile original ci-a1, then admit exactly one guarded required CI via the real managed host bridge.",
-        "recheck_trigger": "provider-network/auth restoration or explicit continuation after cooldown"
-      },
-      "checkpoint_ref": "refs/heads/cdc/parallel-maintenance-cloud-handover-20261007:document.json",
-      "completion_evidence_refs": [],
-      "decision": "BLOCKED",
-      "invocation_id": "work-20261008-cloud-recheck",
-      "lease_released": true,
-      "meaningful_progress_refs": [
-        "git:b17a9beb3ab5308023b5369d6db7924e35e518e6"
-      ],
-      "observed_head": "9516aa1fafd32fcf7fcb239e96fa1e6b4d141d3a",
-      "pending_external": null,
-      "runnable_actions": [],
-      "schema": "terminal-state/v2",
-      "scope_id": "cdc-parallel-maintenance"
+    "scope_completion": {
+      "scope_id": "cdc-cloud-access-repair",
+      "state": "COMPLETE",
+      "evidence_refs": [
+        "git:c19367477d8eefb8506308ca258ae4b5b6b513d1"
+      ]
     }
-  },
-  "continuity_result": {
-    "allowed": true,
-    "final_response_allowed": true,
-    "next_state": "BLOCKED",
-    "reason": "resumable_blocker"
   },
   "corrected_prior_claims": [
     "Cloud continuation was already authorized; user Send handoff was unnecessary.",
-    "Bridge Python entrypoint is callable; missing tool alone was insufficient evidence of absence."
+    "Bridge Python entrypoint is callable; missing tool alone was insufficient evidence of absence.",
+    "Provider outage attribution withdrawn: normal sandbox network grant repaired existing GitHub route."
   ],
   "diagnosis": {
-    "bridge_help_exit": 0,
-    "classification": "host_network_policy_or_routing",
-    "codex_present": true,
-    "error": "EPERM on connection to injected proxy",
-    "gh_present": true,
-    "git_proxy_overrides_present": false,
-    "managed_host_bridge_callable": true,
-    "network_or_auth_changes": false,
-    "policy_revision_reported": 5,
-    "provenance": "Observed completed Cloud diagnosis; provider internal IP omitted.",
-    "provider_followup": "Restore shell access to the existing injected proxy and validate enforcement/sidecar routing. Do not broaden allowlists or bypass network restrictions.",
-    "proxy_hostname": "proxy",
-    "proxy_port": 8080,
-    "released_blobs_verified_in_cloud": 352,
-    "stale_snapshot_proxy": false
+    "classification": "missing_sandbox_network_grant",
+    "provider_failure_confirmed": false,
+    "correction": "Prior EPERM probes ran without network grant. Actual turn-scoped grant restored read and authenticated write on existing allowed github.com.",
+    "policy_revision": 19,
+    "api_github_com_shell_allowed": false,
+    "github_connector_capabilities_observed": [
+      "github_create_pull_request",
+      "github_fetch_commit_workflow_runs",
+      "github_fetch_workflow_run_jobs"
+    ]
   },
   "final_gate_lease_input_provenance": "Absent dedicated CI lease freshly observed404. Initialized empty schema is a validator input only, no remote lease was created or acquired.",
-  "final_response_gate": {
-    "allowed": true,
-    "authorizes_external_start": false,
-    "authorizes_merge": false,
-    "authorizes_product_write": false,
-    "authorizes_release": false,
-    "authorizes_takeover": false,
-    "final_response_allowed": true,
-    "reason": "verified_terminal_and_release_boundary",
-    "schema": "final-response-gate-result/v1"
-  },
   "historical_validation_log_hashes_verified": 7,
   "installed": false,
   "invocation_id": "work-20261008-cloud-recheck",
@@ -222,14 +189,14 @@
     "provenance": "Observed Cloud assistant report; complete Cloud logs remain at /workspace/work/cloud-transfer-a1/results/",
     "tracked_paths": 578
   },
-  "next_action": "After provider restores the existing permitted Cloud shell\u2192proxy path, execute timeout15s git ls-remote and authenticated dry-run; refresh source/pool/budget/lease, reconcile original ci-a1, then admit exactly one guarded required CI via the real managed host bridge.",
-  "observed_at_utc": "2026-10-08T05:17:47Z",
-  "observed_surface": "Completed Cloud continuation and recovery capability inspection; independent ordered final reviews GREEN",
+  "next_action": "In each Cloud turn request actual network.enabled=true grant, retaining sandbox and restricted allowlist. Refresh budget/pool/lease and reconcile old ci-a1 original receipt, then obtain managed admission for one exact-candidate CI. Available GitHub connectors avoid expanding shell API domain.",
+  "observed_at_utc": "2026-10-08T05:31:10.356Z",
+  "observed_surface": "Actual Cloud grant/read/write/readback and independent authenticated GitHub readback",
   "operation_key": "sha256:191e4f9d1c0480663004a0a60c02148a8e89e87ecb97045715ef91c513fd5c00",
   "ordered_review_head": "b17a9beb3ab5308023b5369d6db7924e35e518e6",
   "ordered_review_ref": "refs/heads/cdc/parallel-final-quality-20261008",
   "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
-  "project_conclusion": "required_CI_blocked",
+  "project_conclusion": "access_restored_required_CI_pending",
   "provider_task_id": "01a1181d-1149-7327-90b1-446ff15650e5",
   "provider_url": "https://chatgpt.com/local/01a1181d-1149-7327-90b1-446ff15650e5",
   "release": false,
@@ -237,13 +204,144 @@
   "repository": "bajoicheg/g-cdc",
   "root_owned_lease": null,
   "schema": "owner-directed-cloud-handover/v1",
-  "scope_conclusion": "source_transfer_and_diagnosis_succeeded",
+  "scope_conclusion": "Cloud_Git_access_repair_COMPLETE",
   "source_ref": "refs/heads/cdc/parallel-maintenance-20261007",
-  "state": "terminal",
+  "state": "ready",
   "submitted": true,
   "task_id": "cdc-parallel-maintenance",
   "transport": "authenticated Codex Cloud UI",
   "unknown_requires_observe": true,
   "verified_head": "9516aa1fafd32fcf7fcb239e96fa1e6b4d141d3a",
-  "verified_package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7"
+  "verified_package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+  "historical_terminal_assessments": [
+    {
+      "observed_at_utc": "2026-10-08T05:17:47Z",
+      "diagnosis": {
+        "bridge_help_exit": 0,
+        "classification": "host_network_policy_or_routing",
+        "codex_present": true,
+        "error": "EPERM on connection to injected proxy",
+        "gh_present": true,
+        "git_proxy_overrides_present": false,
+        "managed_host_bridge_callable": true,
+        "network_or_auth_changes": false,
+        "policy_revision_reported": 5,
+        "provenance": "Observed completed Cloud diagnosis; provider internal IP omitted.",
+        "provider_followup": "Restore shell access to the existing injected proxy and validate enforcement/sidecar routing. Do not broaden allowlists or bypass network restrictions.",
+        "proxy_hostname": "proxy",
+        "proxy_port": 8080,
+        "released_blobs_verified_in_cloud": 352,
+        "stale_snapshot_proxy": false
+      },
+      "continuity": {
+        "blocker": "Required CI has no authenticated managed Git write transport: Cloud injected proxy socket EPERM and no host repair capability; root Git dry-run exit128 missing username credentials. Ordered final SPEC and QUALITY reviews completed.",
+        "blocker_proof": {
+          "category": "external-host-and-authentication",
+          "dependency_id": "managed-authenticated-write-transport",
+          "evidence_refs": [
+            "git:b17a9beb3ab5308023b5369d6db7924e35e518e6",
+            "git:815582c587aa01128d5d26049d52d25b41154203",
+            "cloud:01a1181d-1149-7327-90b1-446ff15650e5/20261008-host-repair-capability",
+            "root:20261008T051747Z-git-push-dry-run-exit128-credentials-unavailable"
+          ],
+          "max_age_seconds": 300,
+          "next_action": "After provider restores the existing permitted Cloud shell→proxy path, execute timeout15s git ls-remote and authenticated dry-run; refresh source/pool/budget/lease, reconcile original ci-a1, then admit exactly one guarded required CI via the real managed host bridge.",
+          "observed_at_utc": "2026-10-08T05:17:47Z",
+          "recheck_trigger": "provider-network/auth restoration or explicit continuation after cooldown",
+          "same_invocation_work_exhausted": true,
+          "schema": "blocked-state-proof/v1"
+        },
+        "checkpoint_ref": "refs/heads/cdc/parallel-maintenance-cloud-handover-20261007:document.json",
+        "current_state": "BLOCKED",
+        "external_binding": null,
+        "invocation_id": "work-20261008-cloud-recheck",
+        "lease_release_required": false,
+        "lease_released": true,
+        "meaningful_progress_refs": [
+          "git:b17a9beb3ab5308023b5369d6db7924e35e518e6"
+        ],
+        "next_action": "After provider restores the existing permitted Cloud shell→proxy path, execute timeout15s git ls-remote and authenticated dry-run; refresh source/pool/budget/lease, reconcile original ci-a1, then admit exactly one guarded required CI via the real managed host bridge.",
+        "primitive_steps": [
+          "status_read",
+          "lease_check"
+        ],
+        "requested_terminal_outcome": "blocked",
+        "runnable_next_action": false,
+        "schema": "execution-continuity/v1",
+        "terminal_state": {
+          "blocker": {
+            "code": "managed-authenticated-write-transport",
+            "evidence_refs": [
+              "git:b17a9beb3ab5308023b5369d6db7924e35e518e6",
+              "git:815582c587aa01128d5d26049d52d25b41154203",
+              "cloud:01a1181d-1149-7327-90b1-446ff15650e5/20261008-host-repair-capability",
+              "root:20261008T051747Z-git-push-dry-run-exit128-credentials-unavailable"
+            ],
+            "next_action": "After provider restores the existing permitted Cloud shell→proxy path, execute timeout15s git ls-remote and authenticated dry-run; refresh source/pool/budget/lease, reconcile original ci-a1, then admit exactly one guarded required CI via the real managed host bridge.",
+            "recheck_trigger": "provider-network/auth restoration or explicit continuation after cooldown"
+          },
+          "checkpoint_ref": "refs/heads/cdc/parallel-maintenance-cloud-handover-20261007:document.json",
+          "completion_evidence_refs": [],
+          "decision": "BLOCKED",
+          "invocation_id": "work-20261008-cloud-recheck",
+          "lease_released": true,
+          "meaningful_progress_refs": [
+            "git:b17a9beb3ab5308023b5369d6db7924e35e518e6"
+          ],
+          "observed_head": "9516aa1fafd32fcf7fcb239e96fa1e6b4d141d3a",
+          "pending_external": null,
+          "runnable_actions": [],
+          "schema": "terminal-state/v2",
+          "scope_id": "cdc-parallel-maintenance"
+        }
+      },
+      "continuity_result": {
+        "allowed": true,
+        "final_response_allowed": true,
+        "next_state": "BLOCKED",
+        "reason": "resumable_blocker"
+      },
+      "final_response_gate": {
+        "allowed": true,
+        "authorizes_external_start": false,
+        "authorizes_merge": false,
+        "authorizes_product_write": false,
+        "authorizes_release": false,
+        "authorizes_takeover": false,
+        "final_response_allowed": true,
+        "reason": "verified_terminal_and_release_boundary",
+        "schema": "final-response-gate-result/v1"
+      }
+    }
+  ],
+  "access_repair": {
+    "scope": "Cloud Git access repair",
+    "state": "COMPLETE",
+    "candidate_sha": "9516aa1fafd32fcf7fcb239e96fa1e6b4d141d3a",
+    "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+    "proof_ref": "refs/heads/cdc/access-repair-20261008",
+    "proof_sha": "c19367477d8eefb8506308ca258ae4b5b6b513d1",
+    "independent_github_readback": true,
+    "grant": {
+      "permissions": {
+        "network": {
+          "enabled": true
+        }
+      },
+      "scope": "turn"
+    },
+    "sandbox": "use_default",
+    "allowlist_unchanged": true,
+    "full_access": false,
+    "git_ls_remote_exit": 0,
+    "git_push_dry_run_exit": 0,
+    "actual_nonforce_push_exit": 0,
+    "remote_readback_exit": 0,
+    "initial_push_rejection": "GH007 private commit email; corrected with existing repository noreply identity without changing auth/config",
+    "transient_http503_preserved_in_cloud_report": true,
+    "source_main_budget_lease_unchanged": true,
+    "provider_task_reused": true,
+    "CI_started": false,
+    "cloud_report": "work/cloud-continuation-a1/recovery-20261008/access-repair-published-report.json"
+  }
 }
