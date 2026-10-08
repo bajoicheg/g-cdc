@@ -1,0 +1,710 @@
+{
+  "schema": "cdc-targeted-recovery-review/v1",
+  "status": "REVIEW_READY",
+  "same_handle": {
+    "schema": "managed-host-handle/v1",
+    "handle_id": "11bb2af3-3500-5f56-8af4-dd0725c2fc85",
+    "state": "running",
+    "task_id": "fleet-target",
+    "attempt_id": "adopt2121-fleet-publication-a1",
+    "owner_id": "aaf9ee05-c853-4bc3-8b74-4ab8a10df119",
+    "generation": 1,
+    "invocation_id": "managed-terminal:dc87a493078b731a63edab074bab26f681eff19fe06a06ecce12a692295187fe",
+    "lease_revision": "db1684ed85297a883f8f91e19578a9974f68e0db",
+    "publication_ref": "refs/heads/cdc/managed-host-publish-11bb2af335005f568af4dd0725c2fc85"
+  },
+  "canonical_leader_generation": 2,
+  "base": "cf58922a7165dc63fbe819db7911e428a22b9a2e",
+  "candidate": "4e1a389a8d5fa6812c87431be9b9cb8f6f55bad9",
+  "unchanged_reviewed_driver_sha256": "509bb95c9fd9b8e7a51d0b3db97d121870d7a3c6a6d3153cbb87d39348454602",
+  "plain_sources": {
+    "resume-fleet-live.py": "\"\"\"Canonical single-leader Fleet publication; no scheduler or provider starts.\"\"\"\nimport importlib.util\nimport json\nimport pathlib\nimport subprocess\nimport sys\nimport time\n\nROOT = pathlib.Path('/workspace/work/adopt2121-20261008')\nspec = importlib.util.spec_from_file_location('adapter_common', ROOT / 'publish-consumer-live.py')\ncommon = importlib.util.module_from_spec(spec)\nspec.loader.exec_module(common)\nfrom git_document_store import GitDocumentStore\nfrom git_remote_identity import remote_identity\nimport fleet_supervisor_control as fleet\nimport live_target\n\n\ndef main():\n    prep = common.read(ROOT / 'fleet-adapter/preparation.json')\n    accepted = common.verify_reviews('fleet', prep['candidate'])\n    assert 'publish-fleet-live.py' in accepted['operational_source_sha256']\n    root = ROOT / 'fleet-publication-adapter'\n    import hashlib\n    quality = common.read(ROOT / 'fleet-recovery-quality.json')\n    assert quality['status'] == 'GREEN' and quality['reviewer'] != 'Cloud implementer'\n    assert quality['source_sha256'] == hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest()\n    request, handle = common.read(root / 'start-request.json'), common.read(root / 'start-receipt.json')\n    assert not (root / 'native-publication-receipt.json').exists(), 'Existing submission is observed, never replayed'\n    session, runtime, terminal_store = common.bridge._recover_session(request['handle_root'], handle['handle_id'])\n    repo = request['repo_root']\n    identity = remote_identity(repo, 'origin')\n    canonical = GitDocumentStore(repo, 'origin', 'refs/heads/cdc/fleet-supervisor', identity)\n    revision, before = canonical.read()\n    fleet.validate(before)\n    admitted = common.read(root / 'leader-admission-receipt.json')\n    owner, generation, invocation = handle['owner_id'], admitted['generation'], handle['invocation_id']\n    assert before['lease']['owner_id'] == owner and before['lease']['generation'] == generation\n    assert before['lease']['invocation']['invocation_id'] == invocation\n    assert before['lease']['external_guard'] is None and before['lease']['finalization']['state'] == 'active'\n    assert all(effect['state'] == 'terminal' for effect in before['effects'])\n    tr, terminal = terminal_store.read()\n    assert terminal['owner_id'] == owner and terminal['generation'] == handle['generation']\n    assert terminal['invocation']['invocation_id'] == invocation and terminal['external_guard'] is None\n    assert session.get('publication') is None\n    intents_probe = GitDocumentStore(repo, 'origin', 'refs/heads/cdc/adopt2121-fleet-live-operation-20261008', identity)\n    assert intents_probe.read() == (None, None), 'An existing intent requires reconciliation, never replay'\n    common.lease.check_record(before['lease'], owner, generation, invocation, common.now(), action='observe')\n    common.lease.check_record(terminal, owner, handle['generation'], invocation, common.now(), action='observe')\n    deadline = time.monotonic() + 60\n    while True:\n        observation = runtime.observe(request['task_id'], request['attempt_id'])\n        if observation['status'] == 'awaiting_release':\n            assert observation['pending_terminal_status'] == 'succeeded'\n            break\n        assert observation['status'] in {'running', 'starting'} and time.monotonic() < deadline\n        time.sleep(0.2)\n    common.bridge._renew_for_result(session, terminal_store, observation)\n    result, paths, _ = common.bridge._result(session, runtime)\n    assert result == prep['candidate'] and set(paths) == set(prep['changed_paths'])\n    source = live_target.GitSource(repo, 'origin', identity)\n    resolved = live_target.resolve_live_target(source, source, registry_ref='refs/heads/cdc/adopt2121-fleet-candidate-20261008', canonical_repository='bajoicheg/g-cdc', target_path='fleet/target.json')\n    assert resolved['release']['release_commit'] == '9b38bd4d9f5fb113ec10bdbca9fbe33908619a54'\n    assert resolved['release']['evidence_binding']['commit'] == '9dece125d09956d4546721bceb9142856bf786d3'\n    binding = {'repository': 'bajoicheg/g-cdc', 'candidate_sha': result, 'backend': 'native_git', 'mode': 'FLEET_ATOMIC_TARGET',\n               'environment_id': 'cloud-continuation-a1', 'check_suite_fingerprint': common.operation._hash(accepted),\n               'environment_fingerprint': common.operation._hash({'source_identity': identity}), 'check_plan_digest': common.operation._hash(prep)}\n    intent = common.operation.prepare(binding, request['attempt_id'] + '-live', request['lease_source_ref'], common.now())\n    intents = GitDocumentStore(repo, 'origin', 'refs/heads/cdc/adopt2121-fleet-live-operation-20261008', identity)\n    ir, previous = intents.read()\n    assert ir is None, 'Unknown submission never replay'\n    ir = intents.compare_and_swap(None, intent)\n    rr, actual = intents.read()\n    assert rr == ir\n    receipt = common.operation.verify_readback(intent, actual, 'git:' + ir + ':document.json', common.now())\n    intent = common.operation.transition(intent, 'submitting', common.now(), receipt=receipt)\n    ir = intents.compare_and_swap(ir, intent)\n    spec = importlib.util.spec_from_file_location('budget_update', '/workspace/work/normalize2121-adapter/budget-update.py')\n    bu = importlib.util.module_from_spec(spec)\n    spec.loader.exec_module(bu)\n    wake = 'cloud-adopt2121-20261008'\n    event = {'type': 'reserve', 'event_id': 'adopt2121-fleet-live-publication', 'task_id': 'cdc-parallel-maintenance', 'wake_id': wake,\n             'at_utc': common.now(), 'kind': 'tool_call', 'operation_key': intent['operation_key'], 'attempt_id': intent['attempt_id'],\n             'scope': 'fleet-target/live-publication', 'recovery_ref': None, 'cost': {'tool_calls': 1, 'tokens': None, 'elapsed_seconds': None}}\n    budget_revision = bu.update([event], wake, str(root / 'publication-budget.json'))\n    lr, record = terminal_store.read()\n    lr = terminal_store.compare_and_swap(lr, common.lease.set_guard(record, handle['owner_id'], handle['generation'], handle['invocation_id'], common.now(), intent, 'git:' + ir + ':document.json'))\n    common.verify_reviews('fleet', result)\n    assert common.git(repo, 'ls-remote', 'origin', request['lease_source_ref']).split()[0] == prep['base']\n    assert common.git(repo, 'ls-remote', 'origin', 'refs/heads/cdc/parallel-maintenance-budget-20261007').split()[0] == budget_revision\n    fresh = live_target.resolve_live_target(source, source, registry_ref='refs/heads/cdc/adopt2121-fleet-candidate-20261008', canonical_repository='bajoicheg/g-cdc', target_path='fleet/target.json')\n    assert fresh['registry_revision'] == result\n    fr, state = canonical.read()\n    effect = fleet.claim_effect_cas(canonical, fr, owner, generation, invocation, common.now(), prep['base'],\n                                  {'kind': 'fleet_write', 'target': 'bajoicheg/g-cdc@refs/heads/cdc/fleet', 'observed_fleet_head': prep['base'], 'intent': intent})\n    assert effect['action'] == 'SUBMIT_ONCE' and effect['authorizes_effect'] is True\n    common.save(root / 'canonical-effect-claim.json', effect)\n    lr, record = terminal_store.read()\n    common.lease.check_record(record, handle['owner_id'], handle['generation'], handle['invocation_id'], common.now(), action='external_start', intent_digest=common.operation._hash(intent))\n    grant = common.lease.claim_submission(terminal_store, lr, request['lease_repository'], request['lease_source_ref'], handle['owner_id'], handle['generation'], handle['invocation_id'], common.now(), intent_digest=common.operation._hash(intent))\n    common.save(root / 'terminal-submission-grant.json', grant)\n    fr, state = canonical.read()\n    fleet.update_effect_cas(canonical, fr, owner, generation, invocation, common.now(), effect['effect']['effect_id'], 'submitted', 'git:' + ir + ':document.json')\n    # Released native conditional FF publisher maintains its durable no-replay journal.\n    publication = common.bridge._publish(session, result)\n    common.save(root / 'native-publication-receipt.json', publication)\n    assert publication['conditional_update'] is True\n    assert common.git(repo, 'ls-remote', 'origin', request['lease_source_ref']).split()[0] == result\n    final_target = live_target.resolve_live_target(source, source, registry_ref=request['lease_source_ref'], canonical_repository='bajoicheg/g-cdc', target_path='fleet/target.json')\n    assert final_target['registry_revision'] == result and final_target['target']['target_version'] == '2.12.1'\n    common.save(root / 'live-target-readback.json', final_target)\n    task = {'task_id': result, 'task_url': 'https://github.com/bajoicheg/g-cdc/tree/' + result, 'operation_key': intent['operation_key'],\n            'attempt_id': intent['attempt_id'], 'binding': intent['binding'], 'state': 'terminal', 'conclusion': 'succeeded', 'evidence_refs': [publication['evidence_ref']]}\n    observation = {'schema': 'operation-observation/v1', 'operation_key': intent['operation_key'], 'lookup_complete': True, 'observed_at_utc': common.now(), 'tasks': [task]}\n    lr, record = terminal_store.read()\n    terminal_store.compare_and_swap(lr, common.lease.clear_guard(record, handle['owner_id'], handle['generation'], handle['invocation_id'], common.now(), observation, publication['evidence_ref']))\n    ir, actual = intents.read()\n    intents.compare_and_swap(ir, common.operation.transition(actual, 'terminal', common.now(), task=task))\n    fr, state = canonical.read()\n    fleet.update_effect_cas(canonical, fr, owner, generation, invocation, common.now(), effect['effect']['effect_id'], 'terminal', publication['evidence_ref'], outcome='succeeded')\n    session.update(state='published', worker_status='succeeded', result_commit=result, publication=publication)\n    common.bridge._save_session(session)\n    checkpoint = publication['evidence_ref']\n    fr, _ = canonical.read()\n    fleet.begin_finalization_cas(canonical, fr, owner, generation, invocation, common.now(), pending_shared_writes=False)\n    fr, _ = canonical.read()\n    fleet.record_checkpoint_cas(canonical, fr, owner, generation, invocation, common.now(), checkpoint_ref=checkpoint)\n    fr, _ = canonical.read()\n    fleet.reconcile_finalization_cas(canonical, fr, owner, generation, invocation, common.now(), external_reconciliation='none')\n    continuity = common.bridge._continuity(session, result, checkpoint, publication, released=False)\n    continuity['invocation_id'] = invocation\n    continuity['terminal_state']['invocation_id'] = invocation\n    fr, _ = canonical.read()\n    fleet.mark_ready_cas(canonical, fr, owner, generation, invocation, common.now(), continuity_state=continuity)\n    fr, _ = canonical.read()\n    released = fleet.release_leader_cas(canonical, fr, owner, generation, invocation, common.now())\n    common.save(root / 'canonical-leader-release.json', released)\n    task_plan = request['plan']['tasks'][0]\n    finish = {'schema': 'managed-host-finish/v1', 'handle_root': request['handle_root'], 'handle_id': handle['handle_id'],\n              'output_refs': task_plan['expected_outputs'], 'evidence_refs': task_plan['expected_evidence'], 'checkpoint_ref': checkpoint}\n    finished = common.bridge.finish(finish)\n    common.save(root / 'finish-receipt.json', finished)\n    assert finished['scope_complete'] and finished['state'] == 'released'\n    terminal = runtime.observe(request['task_id'], request['attempt_id'])\n    common.save(root / 'supervisor-terminal.json', terminal)\n    assert terminal['quiescent'] is True\n    fr, state = canonical.read()\n    assert state['lease']['owner_id'] is None and state['lease']['external_guard'] is None\n    print(json.dumps({'candidate': result, 'canonical_release_revision': fr, 'managed_finish': finished}))\n\n\nif __name__ == '__main__':\n    main()\n",
+    "diagnose-fleet-live-target.py": "\"\"\"One read-only instrumented execution of the released GitSource route.\"\"\"\nimport importlib.util, json, pathlib, re, subprocess\nROOT=pathlib.Path('/workspace/work/adopt2121-20261008')\ns=importlib.util.spec_from_file_location('common',ROOT/'publish-consumer-live.py');c=importlib.util.module_from_spec(s);s.loader.exec_module(c)\nimport live_target\nfrom git_object_integrity import git_object_environment\nfrom git_remote_identity import remote_identity\nrows=[]\ndef sanitize(value):\n value=re.sub(r'https://[^/@\\s]+@','https://[redacted]@',value)\n value=re.sub(r'(?:gh[pousr]_[A-Za-z0-9]+|github_pat_[A-Za-z0-9_]+)','[redacted]',value)\n return re.sub(r'\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b','[redacted-IP]',value)\nclass DiagnosticGitSource(live_target.GitSource):\n def _git(self,*args,allow_nonancestor=False):\n  argv=['git','-C',str(self.repo),*args];start=c.now()\n  try:\n   result=subprocess.run(argv,text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,\n                         env=git_object_environment(GIT_TERMINAL_PROMPT='0'),timeout=30)\n  except (OSError,subprocess.SubprocessError) as error:\n   rows.append({'argv':argv,'at_utc':start,'exit_code':None,'exception':type(error).__name__});raise ValueError('Git source transport unavailable') from None\n  rows.append({'argv':argv,'at_utc':start,'exit_code':result.returncode,'stderr':sanitize(result.stderr),\n               'stdout_utf8_bytes':len(result.stdout.encode())})\n  if result.returncode and not (allow_nonancestor and result.returncode==1):raise ValueError('Git source operation failed')\n  return result.returncode,result.stdout.rstrip('\\n')\nrepo='/workspace/g-cdc';identity=remote_identity(repo,'origin');source=DiagnosticGitSource(repo,'origin',identity)\nreport={'schema':'cdc-live-target-readonly-diagnostic/v1','environment':'same native transport; exact git_object_environment, sandbox/grant/allowlist unchanged',\n        'nonsecret_overrides':{'GIT_TERMINAL_PROMPT':'0','GIT_NO_REPLACE_OBJECTS':'1','GIT_GRAFT_FILE':'/dev/null'},\n        'original_failure':'released _git suppressed stderr; not reconstructed','stages':rows}\ntry:\n report['resolved']=live_target.resolve_live_target(source,source,registry_ref='refs/heads/cdc/adopt2121-fleet-candidate-20261008',canonical_repository='bajoicheg/g-cdc',target_path='fleet/target.json')\n report['exit_code']=0\nexcept Exception as error:\n report['exit_code']=1;report['exception']=sanitize(str(error))\nfinally:\n c.save(ROOT/'fleet-publication-adapter/live-target-diagnostic.json',report)\n print(json.dumps({'exit_code':report['exit_code'],'stage_count':len(rows),'failures':[x for x in rows if x['exit_code']!=0]}))\nraise SystemExit(report['exit_code'])\n",
+    "snapshot-facts.py": "\"\"\"Read authenticated Git facts; no publication, scheduler or product effects.\"\"\"\nimport datetime\nimport importlib.util\nimport json\nimport pathlib\nimport tempfile\n\nROOT = pathlib.Path('/workspace/work/adopt2121-20261008')\nspec = importlib.util.spec_from_file_location('common', ROOT / 'publish-consumer-live.py')\ncommon = importlib.util.module_from_spec(spec)\nspec.loader.exec_module(common)\nfrom contracts import load_yaml\nfrom consumer_lock import validate as validate_lock\nfrom validate_adapter import validate_adapter\nfrom validate_checkpoint_24 import validate_checkpoint_24\nfrom convergence_vector import normalize\nfrom fleet_supervisor import validate_snapshot\nfrom progress_slo import validate_observation\nfrom git_lease_store import GitLeaseStore\n\n\ndef facts(name, watchdog):\n    request = common.read(ROOT / (name + '-adapter/start-request.json'))\n    prep = common.read(ROOT / (name + '-adapter/preparation.json'))\n    repo, ref = request['repo_root'], request['lease_source_ref']\n    head = common.git(repo, 'ls-remote', 'origin', ref).split()[0]\n    assert head == prep['candidate'], 'Source changed; replan, never overwrite'\n    common.git(repo, 'fetch', '--no-tags', 'origin', ref)\n    package = common.git(repo, 'rev-parse', head + ':.agents/skills/continuous-development-cycle')\n    assert package == '9c45d98c3254e9658d452c505d8c97698e3fc9a7'\n    count = len(common.git(repo, 'ls-tree', '-r', '--name-only', package).splitlines())\n    assert count == 352\n    lock = json.loads(common.git(repo, 'show', head + ':docs/cdc-consumer-lock.json'))\n    validate_lock(lock)\n    assert lock['release_commit'] == '9b38bd4d9f5fb113ec10bdbca9fbe33908619a54'\n    assert lock['version'] == '2.12.1' and lock['package_tree'] == package\n    with tempfile.TemporaryDirectory(dir=ROOT) as directory:\n        p = pathlib.Path(directory)\n        for path, filename in [('docs/development-cycle.yaml', 'adapter.yaml'), ('docs/work-status/current.md', 'checkpoint.md')]:\n            (p / filename).write_text(common.git(repo, 'show', head + ':' + path) + '\\n')\n        adapter = load_yaml(p / 'adapter.yaml')\n        checkpoint = load_yaml(p / 'checkpoint.md', frontmatter=True)\n        binding = validate_adapter(adapter, '2.12.1')\n        validate_checkpoint_24(checkpoint, adapter)\n    store = GitLeaseStore(repo, 'origin', 'refs/heads/cdc/coordination')\n    revision, lease = store.read()\n    assert lease['owner_id'] is None and lease['external_guard'] is None and lease['finalization'] is None\n    assert lease['last_release']['completion_reason'] == 'scope_complete'\n    now = common.now()\n    observed = datetime.datetime.fromisoformat(watchdog['observed_at_utc'].replace('Z', '+00:00'))\n    assert 0 <= (datetime.datetime.now(datetime.timezone.utc) - observed).total_seconds() <= 300\n    assert watchdog['repository'] == request['lease_repository'] and watchdog['source_ref'] == ref\n    assert watchdog['is_enabled'] is False and watchdog['source'] == 'actual automations.peek receipt'\n    progress = {'schema': 'progress-observation/v1', 'observed_at_utc': now,\n                'last_meaningful_progress_at_utc': None,\n                'last_activity_at_utc': checkpoint['observed_at_utc'],\n                'primitive_steps_since_progress': checkpoint['execution_continuity']['primitive_steps_since_progress'],\n                'blocker': checkpoint['blocker'].strip().lower() not in {'none', 'no blocker', 'n/a', '-', ''},\n                'waiting_external': checkpoint['waiting_external_kind'] is not None,\n                'phase': checkpoint['phase'], 'evidence_refs': ['git:' + head + ':docs/work-status/current.md']}\n    validate_observation(progress)\n    snapshot = {'schema': 'fleet-project-snapshot/v1', 'repository': request['lease_repository'], 'source_ref': ref,\n                'observed_at_utc': now, 'product_head': head, 'cdc_version': '2.12.1',\n                'package_fingerprint': 'git-tree:' + package, 'checkpoint_schema': checkpoint['schema'],\n                'policy_revision': binding['policy_revision'],\n                'watchdog': {'enabled': False, 'last_run_at_utc': watchdog['last_run_at_utc']},\n                'coordination': {'lease_schema': lease['schema'], 'generation': lease['generation'], 'owner_active': False, 'guard_present': False},\n                'progress': progress}\n    validate_snapshot(snapshot)\n    digest = 'sha256:' + binding['policy_digest']\n    convergence = {'schema': 'cdc-convergence-observation/v1', 'repository': request['lease_repository'],\n                   'source_ref': ref, 'source_head': head, 'cdc_version': '2.12.1', 'package_tree': package,\n                   'consumer_lock': {k: lock[k] for k in ['version', 'release_commit', 'package_tree']},\n                   'policy_digest': digest,\n                   'checkpoint': {'valid': True, 'source_head': head, 'policy_digest': digest},\n                   'lease': {'state': 'released'}, 'guard': {'state': 'none'}, 'adoption_state': 'integrated'}\n    vector = normalize(convergence)\n    assert vector['adoption_state'] == 'integrated'\n    return {'snapshot': snapshot, 'convergence_observation': convergence, 'convergence_vector': vector,\n            'source_head': head, 'coordination_revision': revision, 'lease': lease, 'consumer_lock': lock,\n            'checkpoint_blob': common.git(repo, 'rev-parse', head + ':docs/work-status/current.md'),\n            'checkpoint_git_binding_explanation': 'source_head is the actual Git object containing the validated checkpoint, not a rewritten product implementation/candidate SHA',\n            'product_checkpoint': checkpoint,\n            'meaningful_progress_time_provenance': 'unknown; process adoption does not fabricate product progress',\n            'watchdog_receipt': watchdog}\n",
+    "publish-fleet-recovery-review.py": "\"\"\"Detached recovery-review evidence using the existing admitted owner only.\"\"\"\nimport hashlib, importlib.util, json, os, pathlib, subprocess\nROOT=pathlib.Path('/workspace/work/adopt2121-20261008')\ns=importlib.util.spec_from_file_location('common',ROOT/'publish-consumer-live.py');c=importlib.util.module_from_spec(s);s.loader.exec_module(c)\nfrom git_document_store import GitDocumentStore\nfrom git_remote_identity import remote_identity\nimport fleet_supervisor_control as fleet\nroot=ROOT/'fleet-publication-adapter';req=c.read(root/'start-request.json');h=c.read(root/'start-receipt.json');prep=c.read(ROOT/'fleet-adapter/preparation.json')\nrepo=req['repo_root'];rid=remote_identity(repo,'origin');session,runtime,ls=c.bridge._recover_session(req['handle_root'],h['handle_id'])\nobs=runtime.observe(req['task_id'],req['attempt_id']);assert obs['status']=='awaiting_release' and obs['pending_terminal_status']=='succeeded'\nc.bridge._renew_for_result(session,ls,obs);head,paths,_=c.bridge._result(session,runtime);assert head==prep['candidate']\ncs=GitDocumentStore(repo,'origin','refs/heads/cdc/fleet-supervisor',rid);fr,fs=cs.read();admitted=c.read(root/'leader-admission-receipt.json');gen=admitted['generation'];inv=h['invocation_id']\nfleet.leader_binding(fs,h['owner_id'],gen,inv,c.now(),prep['base'])\nassert all(e['state']=='terminal' for e in fs['effects'])\nassert GitDocumentStore(repo,'origin','refs/heads/cdc/adopt2121-fleet-live-operation-20261008',rid).read()==(None,None)\ndiag=c.read(root/'live-target-diagnostic.json');assert diag['exit_code']==0 and all(x['exit_code']==0 for x in diag['stages'])\nsources={n:(ROOT/n).read_text() for n in ['resume-fleet-live.py','diagnose-fleet-live-target.py','snapshot-facts.py','publish-fleet-recovery-review.py']}\nreport={'schema':'cdc-targeted-recovery-review/v1','status':'REVIEW_READY','same_handle':h,'canonical_leader_generation':gen,\n        'base':prep['base'],'candidate':prep['candidate'],'unchanged_reviewed_driver_sha256':hashlib.sha256((ROOT/'publish-fleet-live.py').read_bytes()).hexdigest(),\n        'plain_sources':sources,'source_sha256':{n:hashlib.sha256(s.encode()).hexdigest() for n,s in sources.items()},\n        'read_only_diagnostic':diag,'original_failure':c.read(root/'preflight-failure.json'),\n        'review_scope':'resume-fleet-live.py only: same real owner, no restart/acquire or existing submission replay; original checks/intent/budget/claims/native FF/readback/finalization preserved. snapshot-facts.py is read-only future helper, not yet executed or authorized for live metadata writes',\n        'RCA_limit':'original transport stderr unavailable; exact 40-stage same-environment recheck passed, no permanent config drift proved, no network/core/auth fix applied'}\nc.save(root/'targeted-review-document.json',report)\nrows=c.git(repo,'log','--all','--format=%an%x09%ae').splitlines();name,email=next(row.split('\\t',1) for row in rows if '\\t' in row and row.split('\\t',1)[1].endswith('@users.noreply.github.com'))\nos.environ.update(GIT_AUTHOR_NAME=name,GIT_AUTHOR_EMAIL=email,GIT_COMMITTER_NAME=name,GIT_COMMITTER_EMAIL=email,GIT_TERMINAL_PROMPT='0')\nraw=(root/'targeted-review-document.json').read_bytes();blob=subprocess.check_output(['git','hash-object','-w','--stdin'],cwd=repo,input=raw).decode().strip()\ntree=subprocess.check_output(['git','mktree'],cwd=repo,input=('100644 blob '+blob+'\\tdocument.json\\n').encode()).decode().strip()\ncommit=c.git(repo,'commit-tree',tree,'-m','Exact admitted Fleet recovery source and real diagnostic [skip ci]')\nref='refs/heads/cdc/adopt2121-fleet-recovery-review-20261008';assert not c.git(repo,'ls-remote','origin',ref)\nbinding={'repository':req['lease_repository'],'candidate_sha':commit,'backend':'native_git','mode':'DETACHED_REVIEW_PREPARATION',\n         'environment_id':'cloud-continuation-a1','check_suite_fingerprint':c.operation._hash(report),\n         'environment_fingerprint':c.operation._hash({'source_id':rid}),'check_plan_digest':c.operation._hash({'ref':ref,'commit':commit,'base':prep['base']})}\nintent=c.operation.prepare(binding,req['attempt_id']+'-targeted-review',req['lease_source_ref'],c.now())\nis_=GitDocumentStore(repo,'origin','refs/heads/cdc/adopt2121-fleet-recovery-review-operation-20261008',rid);ir,old=is_.read();assert ir is None\nir=is_.compare_and_swap(None,intent);rr,d=is_.read();assert rr==ir\nreceipt=c.operation.verify_readback(intent,d,'git:'+ir+':document.json',c.now());intent=c.operation.transition(intent,'submitting',c.now(),receipt=receipt);ir=is_.compare_and_swap(ir,intent)\ns=importlib.util.spec_from_file_location('bu','/workspace/work/normalize2121-adapter/budget-update.py');bu=importlib.util.module_from_spec(s);s.loader.exec_module(bu)\nevent={'type':'reserve','event_id':'adopt2121-fleet-recovery-review-publication','task_id':'cdc-parallel-maintenance','wake_id':'cloud-adopt2121-20261008','at_utc':c.now(),\n       'kind':'tool_call','operation_key':intent['operation_key'],'attempt_id':intent['attempt_id'],'scope':'detached/Fleet-recovery-review',\n       'recovery_ref':None,'cost':{'tool_calls':1,'tokens':None,'elapsed_seconds':None}}\nbr=bu.update([event],event['wake_id'],str(root/'targeted-review-budget.json'))\nlr,l=ls.read();ls.compare_and_swap(lr,c.lease.set_guard(l,h['owner_id'],h['generation'],inv,c.now(),intent,'git:'+ir+':document.json'))\nassert c.git(repo,'ls-remote','origin',req['lease_source_ref']).split()[0]==prep['base'] and not c.git(repo,'ls-remote','origin',ref)\nassert c.git(repo,'ls-remote','origin','refs/heads/cdc/parallel-maintenance-budget-20261007').split()[0]==br\nfr,fs=cs.read();effect=fleet.claim_effect_cas(cs,fr,h['owner_id'],gen,inv,c.now(),prep['base'],{'kind':'fleet_write','target':'bajoicheg/g-cdc@'+ref,'observed_fleet_head':prep['base'],'intent':intent})\nassert effect['action']=='SUBMIT_ONCE' and effect['authorizes_effect']\nlr,l=ls.read();c.lease.check_record(l,h['owner_id'],h['generation'],inv,c.now(),action='external_start',intent_digest=c.operation._hash(intent))\nclaim=c.lease.claim_submission(ls,lr,req['lease_repository'],req['lease_source_ref'],h['owner_id'],h['generation'],inv,c.now(),intent_digest=c.operation._hash(intent))\nc.save(root/'targeted-review-claim.json',{'terminal':claim,'canonical_effect':effect})\nfr,fs=cs.read();fleet.update_effect_cas(cs,fr,h['owner_id'],gen,inv,c.now(),effect['effect']['effect_id'],'submitted','git:'+ir+':document.json')\nargv=['push','origin',commit+':'+ref];c.git(repo,*argv)\nreadback=c.git(repo,'ls-remote','origin',ref).split()[0];assert readback==commit\nassert c.git(repo,'ls-remote','origin',req['lease_source_ref']).split()[0]==prep['base']\ntask={'task_id':commit,'task_url':'https://github.com/bajoicheg/g-cdc/tree/'+commit,'operation_key':intent['operation_key'],'attempt_id':intent['attempt_id'],\n      'binding':intent['binding'],'state':'terminal','conclusion':'succeeded','evidence_refs':['git:'+commit+':document.json']}\no={'schema':'operation-observation/v1','operation_key':intent['operation_key'],'lookup_complete':True,'observed_at_utc':c.now(),'tasks':[task]}\nlr,l=ls.read();ls.compare_and_swap(lr,c.lease.clear_guard(l,h['owner_id'],h['generation'],inv,c.now(),o,'git:'+commit+':document.json'))\nir,d=is_.read();is_.compare_and_swap(ir,c.operation.transition(d,'terminal',c.now(),task=task))\nfr,fs=cs.read();fleet.update_effect_cas(cs,fr,h['owner_id'],gen,inv,c.now(),effect['effect']['effect_id'],'terminal','git:'+commit+':document.json',outcome='succeeded')\nreceipt={'ref':ref,'commit':commit,'path':'document.json','utf8_bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest(),'source_sha256':report['source_sha256'],\n         'native_argv':['git',*argv],'exit_code':0,'readback':readback,'claim':claim,'canonical_effect':effect['effect']['effect_id']}\nc.save(root/'targeted-review-publication.json',receipt);print(json.dumps(receipt))\n"
+  },
+  "source_sha256": {
+    "resume-fleet-live.py": "562fd891ba5f26faaa6557464d2ac1f70f3f47ddc37002069134c24f4fc3d77f",
+    "diagnose-fleet-live-target.py": "4696a511ad75326cf0c3bd7011c385c4daa3ae87562fcecc79519c3d6fb8bf96",
+    "snapshot-facts.py": "388e8967c7701c1dbecdc7b6fbb4438247804a4ce2a883b2ef6b19062627cbdb",
+    "publish-fleet-recovery-review.py": "403226fabd3d00f7400ce67b4d3aedcffcf2e8ed0d3157b307a61007e7d60ee2"
+  },
+  "read_only_diagnostic": {
+    "schema": "cdc-live-target-readonly-diagnostic/v1",
+    "environment": "same native transport; exact git_object_environment, sandbox/grant/allowlist unchanged",
+    "nonsecret_overrides": {
+      "GIT_TERMINAL_PROMPT": "0",
+      "GIT_NO_REPLACE_OBJECTS": "1",
+      "GIT_GRAFT_FILE": "/dev/null"
+    },
+    "original_failure": "released _git suppressed stderr; not reconstructed",
+    "stages": [
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "check-ref-format",
+          "refs/heads/cdc/adopt2121-fleet-candidate-20261008"
+        ],
+        "at_utc": "2026-10-08T10:40:23.391071Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "ls-remote",
+          "--refs",
+          "origin",
+          "refs/heads/cdc/adopt2121-fleet-candidate-20261008"
+        ],
+        "at_utc": "2026-10-08T10:40:23.402902Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 91
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "fetch",
+          "--no-tags",
+          "--no-write-fetch-head",
+          "--refmap=",
+          "origin",
+          "4e1a389a8d5fa6812c87431be9b9cb8f6f55bad9"
+        ],
+        "at_utc": "2026-10-08T10:40:24.216004Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "cat-file",
+          "-t",
+          "4e1a389a8d5fa6812c87431be9b9cb8f6f55bad9"
+        ],
+        "at_utc": "2026-10-08T10:40:24.223278Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 7
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "check-ref-format",
+          "refs/heads/cdc/adopt2121-fleet-candidate-20261008"
+        ],
+        "at_utc": "2026-10-08T10:40:24.241681Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "ls-remote",
+          "--refs",
+          "origin",
+          "refs/heads/cdc/adopt2121-fleet-candidate-20261008"
+        ],
+        "at_utc": "2026-10-08T10:40:24.251014Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 91
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "cat-file",
+          "blob",
+          "4e1a389a8d5fa6812c87431be9b9cb8f6f55bad9:fleet/registry.json"
+        ],
+        "at_utc": "2026-10-08T10:40:25.284305Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 1244
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "cat-file",
+          "blob",
+          "4e1a389a8d5fa6812c87431be9b9cb8f6f55bad9:fleet/target.json"
+        ],
+        "at_utc": "2026-10-08T10:40:25.294940Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 250
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "cat-file",
+          "blob",
+          "4e1a389a8d5fa6812c87431be9b9cb8f6f55bad9:fleet/target-release.json"
+        ],
+        "at_utc": "2026-10-08T10:40:25.305230Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 619
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "check-ref-format",
+          "refs/heads/release/v2.12.1"
+        ],
+        "at_utc": "2026-10-08T10:40:25.307310Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "ls-remote",
+          "--refs",
+          "origin",
+          "refs/heads/release/v2.12.1"
+        ],
+        "at_utc": "2026-10-08T10:40:25.317347Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 68
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "fetch",
+          "--no-tags",
+          "--no-write-fetch-head",
+          "--refmap=",
+          "origin",
+          "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54"
+        ],
+        "at_utc": "2026-10-08T10:40:27.109084Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "cat-file",
+          "-t",
+          "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54"
+        ],
+        "at_utc": "2026-10-08T10:40:27.116313Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 7
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "check-ref-format",
+          "refs/heads/release/v2.12.1"
+        ],
+        "at_utc": "2026-10-08T10:40:27.134063Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "ls-remote",
+          "--refs",
+          "origin",
+          "refs/heads/release/v2.12.1"
+        ],
+        "at_utc": "2026-10-08T10:40:27.143247Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 68
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "cat-file",
+          "-t",
+          "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54"
+        ],
+        "at_utc": "2026-10-08T10:40:27.999057Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 7
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "rev-parse",
+          "--verify",
+          "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54:src/continuous-development-cycle"
+        ],
+        "at_utc": "2026-10-08T10:40:28.000817Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 41
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "cat-file",
+          "-t",
+          "9c45d98c3254e9658d452c505d8c97698e3fc9a7"
+        ],
+        "at_utc": "2026-10-08T10:40:28.002773Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 5
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "cat-file",
+          "blob",
+          "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54:src/continuous-development-cycle/VERSION"
+        ],
+        "at_utc": "2026-10-08T10:40:28.013145Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 7
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "check-ref-format",
+          "refs/heads/cdc/release-evidence/v2.12.1"
+        ],
+        "at_utc": "2026-10-08T10:40:28.014956Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "ls-remote",
+          "--refs",
+          "origin",
+          "refs/heads/cdc/release-evidence/v2.12.1"
+        ],
+        "at_utc": "2026-10-08T10:40:28.024666Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 81
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "fetch",
+          "--no-tags",
+          "--no-write-fetch-head",
+          "--refmap=",
+          "origin",
+          "9dece125d09956d4546721bceb9142856bf786d3"
+        ],
+        "at_utc": "2026-10-08T10:40:28.834963Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "cat-file",
+          "-t",
+          "9dece125d09956d4546721bceb9142856bf786d3"
+        ],
+        "at_utc": "2026-10-08T10:40:28.842659Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 7
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "check-ref-format",
+          "refs/heads/cdc/release-evidence/v2.12.1"
+        ],
+        "at_utc": "2026-10-08T10:40:28.860221Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "ls-remote",
+          "--refs",
+          "origin",
+          "refs/heads/cdc/release-evidence/v2.12.1"
+        ],
+        "at_utc": "2026-10-08T10:40:28.869722Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 81
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "merge-base",
+          "--is-ancestor",
+          "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+          "9dece125d09956d4546721bceb9142856bf786d3"
+        ],
+        "at_utc": "2026-10-08T10:40:29.810408Z",
+        "exit_code": 0,
+        "stderr": "hint: Support for <GIT_DIR>/info/grafts is deprecated\nhint: and will be removed in a future Git version.\nhint:\nhint: Please use \"git replace --convert-graft-file\"\nhint: to convert the grafts into replace refs.\nhint:\nhint: Turn this message off by running\nhint: \"git config set advice.graftFileDeprecated false\"\n",
+        "stdout_utf8_bytes": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "cat-file",
+          "-t",
+          "9dece125d09956d4546721bceb9142856bf786d3"
+        ],
+        "at_utc": "2026-10-08T10:40:29.820346Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 7
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "rev-parse",
+          "--verify",
+          "9dece125d09956d4546721bceb9142856bf786d3:src/continuous-development-cycle"
+        ],
+        "at_utc": "2026-10-08T10:40:29.822110Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 41
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "cat-file",
+          "-t",
+          "9c45d98c3254e9658d452c505d8c97698e3fc9a7"
+        ],
+        "at_utc": "2026-10-08T10:40:29.823850Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 5
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "cat-file",
+          "blob",
+          "9dece125d09956d4546721bceb9142856bf786d3:release/evidence-2.12.1.json"
+        ],
+        "at_utc": "2026-10-08T10:40:29.833632Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 14720
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "merge-base",
+          "--is-ancestor",
+          "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+          "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54"
+        ],
+        "at_utc": "2026-10-08T10:40:29.835715Z",
+        "exit_code": 0,
+        "stderr": "hint: Support for <GIT_DIR>/info/grafts is deprecated\nhint: and will be removed in a future Git version.\nhint:\nhint: Please use \"git replace --convert-graft-file\"\nhint: to convert the grafts into replace refs.\nhint:\nhint: Turn this message off by running\nhint: \"git config set advice.graftFileDeprecated false\"\n",
+        "stdout_utf8_bytes": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "cat-file",
+          "-t",
+          "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54"
+        ],
+        "at_utc": "2026-10-08T10:40:29.845306Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 7
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "rev-parse",
+          "--verify",
+          "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54:src/continuous-development-cycle"
+        ],
+        "at_utc": "2026-10-08T10:40:29.847031Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 41
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "cat-file",
+          "-t",
+          "9c45d98c3254e9658d452c505d8c97698e3fc9a7"
+        ],
+        "at_utc": "2026-10-08T10:40:29.848720Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 5
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "check-ref-format",
+          "refs/heads/cdc/adopt2121-fleet-candidate-20261008"
+        ],
+        "at_utc": "2026-10-08T10:40:29.858562Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "ls-remote",
+          "--refs",
+          "origin",
+          "refs/heads/cdc/adopt2121-fleet-candidate-20261008"
+        ],
+        "at_utc": "2026-10-08T10:40:29.867798Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 91
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "check-ref-format",
+          "refs/heads/release/v2.12.1"
+        ],
+        "at_utc": "2026-10-08T10:40:30.720370Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "ls-remote",
+          "--refs",
+          "origin",
+          "refs/heads/release/v2.12.1"
+        ],
+        "at_utc": "2026-10-08T10:40:30.729726Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 68
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "check-ref-format",
+          "refs/heads/cdc/release-evidence/v2.12.1"
+        ],
+        "at_utc": "2026-10-08T10:40:31.678376Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/g-cdc",
+          "ls-remote",
+          "--refs",
+          "origin",
+          "refs/heads/cdc/release-evidence/v2.12.1"
+        ],
+        "at_utc": "2026-10-08T10:40:31.687426Z",
+        "exit_code": 0,
+        "stderr": "",
+        "stdout_utf8_bytes": 81
+      }
+    ],
+    "resolved": {
+      "schema": "live-target-resolution/v1",
+      "observed_at_utc": "2026-10-08T10:40:32.501460Z",
+      "registry_source_identity": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
+      "registry_ref": "refs/heads/cdc/adopt2121-fleet-candidate-20261008",
+      "registry_revision": "4e1a389a8d5fa6812c87431be9b9cb8f6f55bad9",
+      "registry_observed_at_utc": "2026-10-08T10:40:23.391044Z",
+      "canonical_source_identity": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
+      "release_observed_at_utc": "2026-10-08T10:40:25.307297Z",
+      "registry": {
+        "assessment_max_age_seconds": 900,
+        "projects": [
+          {
+            "repository": "bajoicheg-private/g-ad-control",
+            "required": true,
+            "source_ref": "refs/heads/codex/build-0.2.0-engineer-attribute-workflow",
+            "watchdog_id": "6aafa54141308191ac114c8079d15b95"
+          },
+          {
+            "repository": "bajoicheg/g-pc-health-check",
+            "required": true,
+            "source_ref": "refs/heads/design/0.17.0-security-posture",
+            "watchdog_id": "6ab37bf252d4819198b17c4f8679f693"
+          },
+          {
+            "repository": "bajoicheg/g-switcher",
+            "required": true,
+            "source_ref": "refs/heads/release/2.0.1",
+            "watchdog_id": "6ab6b1dd613081919ed34717c02a672d"
+          }
+        ],
+        "schema": "fleet-registry/v1",
+        "slo_policy": {
+          "blocked_pauses_clock": true,
+          "degraded_after_seconds": 1200,
+          "primitive_activity_is_progress": false,
+          "schema": "progress-slo-policy/v1",
+          "stalled_after_seconds": 3600,
+          "waiting_external_pauses_clock": true
+        },
+        "target": {
+          "schema": "version-convergence-target/v1",
+          "target_version": "2.12.1",
+          "target_package_fingerprint": "git-tree:9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+          "checkpoint_schema": "development-work-status/v4",
+          "safe_boundary_required": true
+        }
+      },
+      "target": {
+        "schema": "version-convergence-target/v1",
+        "target_version": "2.12.1",
+        "target_package_fingerprint": "git-tree:9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+        "checkpoint_schema": "development-work-status/v4",
+        "safe_boundary_required": true
+      },
+      "release": {
+        "schema": "live-target-release/v2",
+        "version": "2.12.1",
+        "canonical_repository": "bajoicheg/g-cdc",
+        "release_ref": "refs/heads/release/v2.12.1",
+        "release_commit": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+        "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+        "evidence_binding": {
+          "schema": "canonical-release-evidence-binding/v1",
+          "source_identity": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
+          "ref": "refs/heads/cdc/release-evidence/v2.12.1",
+          "commit": "9dece125d09956d4546721bceb9142856bf786d3",
+          "path": "release/evidence-2.12.1.json"
+        }
+      },
+      "authorizes_adoption": false,
+      "authorizes_scheduler_write": false,
+      "evidence_observation": {
+        "source_identity": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
+        "ref": "refs/heads/cdc/release-evidence/v2.12.1",
+        "revision": "9dece125d09956d4546721bceb9142856bf786d3",
+        "observed_at_utc": "2026-10-08T10:40:28.014945Z"
+      }
+    },
+    "exit_code": 0
+  },
+  "original_failure": {
+    "command": [
+      "python",
+      "-B",
+      "work/adopt2121-20261008/publish-fleet-live.py"
+    ],
+    "exit_code": 1,
+    "failed_stage": "read-only resolve_live_target release-ref pin; before live intent/claim/submission",
+    "core_error": "ValueError: Git source operation failed",
+    "original_transport_stderr": "not surfaced by released GitSource; not reconstructed",
+    "same_handle": "11bb2af3-3500-5f56-8af4-dd0725c2fc85",
+    "canonical_generation": 2
+  },
+  "review_scope": "resume-fleet-live.py only: same real owner, no restart/acquire or existing submission replay; original checks/intent/budget/claims/native FF/readback/finalization preserved. snapshot-facts.py is read-only future helper, not yet executed or authorized for live metadata writes",
+  "RCA_limit": "original transport stderr unavailable; exact 40-stage same-environment recheck passed, no permanent config drift proved, no network/core/auth fix applied"
+}
