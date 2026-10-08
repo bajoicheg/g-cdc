@@ -1,0 +1,16 @@
+{
+  "candidate_sha": "cf383f6574adbf492b0f9f2d6d6a842485e99357",
+  "package_tree": "a16346eb0d56e6ab6d8668acc696eca38acbb0d2",
+  "start_at": "2026-10-07T16:21:09.913331+00:00",
+  "environment": "local clean consumer layout",
+  "command": [
+    "python",
+    "-B",
+    "bootstrap/consumer_package_checks.py"
+  ],
+  "exit_code": 1,
+  "elapsed_seconds": 605.0492000579834,
+  "finish_at": "2026-10-07T16:31:14.958818+00:00",
+  "log_sha256": "fd32e7861b9d22f5f3ba8ffc997657429615539966c4cf09e47d53732f470dbb",
+  "tests": 1121
+}
