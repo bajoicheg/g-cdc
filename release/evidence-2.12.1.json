@@ -1,0 +1,315 @@
+{
+  "schema": "cdc-release-evidence/v1",
+  "version": "2.12.1",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "release_ref": "refs/heads/release/v2.12.1",
+  "candidate_source_commit": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+  "release_commit": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+  "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+  "status": "released",
+  "development_driver": {
+    "version": "2.12.0",
+    "commit": "540d42b5a8b06b11d7aeae78585cffbff99da231",
+    "package_tree": "247facf39eadf073883c5f1fe3b4a291278da7f8"
+  },
+  "release_validation": {
+    "CI": {
+      "verified": true,
+      "success": true,
+      "run_id": 37737459242,
+      "run_url": "https://github.com/bajoicheg/g-cdc/actions/runs/37737459242",
+      "job_id": 113180161046,
+      "PR": 99,
+      "candidate_sha": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+      "actual_checkout_sha": "d7dee676a81777c837234a4a699d720074d775b3",
+      "root_tree": "49e3db723a8703c89f9e535fcab373b3ff128a06",
+      "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+      "checkout_provenance": "Official decoded full log actual checkout plus exact Git root-tree equality; API run reports new exact head; old CI not retargeted",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Validate repository code and test placement",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Independent bootstrap before candidate imports",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Install validator dependency",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Validate candidate package",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Full candidate tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Full bootstrap binding",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Validate three archived consumer snapshots",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21
+        }
+      ],
+      "official_log_sha256": "e87ea031a508cecee807761b66c6f9eb79c154a2a62f5ba3c3f5342703374c99",
+      "official_log_bytes": 245728,
+      "markers": [
+        "2026-10-08T06:24:53.7293348Z d7dee676a81777c837234a4a699d720074d775b3",
+        "2026-10-08T06:24:54.4862691Z Ran 46 tests in 0.287s",
+        "2026-10-08T06:29:02.2127230Z Ran 1121 tests in 246.057s",
+        "2026-10-08T06:29:02.2811501Z \u001b[36;1mecho \"THREE_CONSUMERS_GREEN package_tree=$PACKAGE_TREE\"\u001b[0m",
+        "2026-10-08T06:29:02.6322637Z THREE_CONSUMERS_GREEN package_tree=9c45d98c3254e9658d452c505d8c97698e3fc9a7"
+      ],
+      "evidence_refs": [
+        "https://github.com/bajoicheg/g-cdc/actions/runs/37737459242",
+        "https://github.com/bajoicheg/g-cdc/actions/runs/37737459242/job/113180161046"
+      ],
+      "historical_full_local_rerun": false
+    },
+    "clean_consumer": {
+      "status": "GREEN",
+      "tests": 1121,
+      "candidate_sha": "d709c0cb886113463b501924b33c39c9282416b5",
+      "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+      "log_sha256": "49d555e592ca423fea236dbb965f882adebc847a5542454721f7cc57e9f0def5",
+      "reuse_invariant": "Package/bootstrap/workflow/consumer/fault coverage unchanged; reviewed exact final candidate"
+    },
+    "bootstrap": "independent46 GREEN",
+    "compatibility": "three archived consumer snapshots GREEN",
+    "fault_injection": "full1121 suite GREEN",
+    "metadata_exact_SHA_CI": "NOT_RUN; tested candidate CI not retargeted"
+  },
+  "reviews": {
+    "/workspace/work/normalize2121-adapter/spec-rebind-normalized-20261008.md": "7a069a4c470655626a24d1c8d1081dac812080b0fc9875f4cef1037b7d6e2f0b",
+    "/workspace/work/normalize2121-adapter/quality-rebind-normalized-20261008.md": "93cab9d03bc9f276d0dc8707a9c31ad82ef10b2932a31b038de834719ee036a3"
+  },
+  "review_publications": {
+    "spec": {
+      "candidate": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+      "report_sha256": "7a069a4c470655626a24d1c8d1081dac812080b0fc9875f4cef1037b7d6e2f0b",
+      "ref": "refs/heads/cdc/parallel-normalized-spec-20261008",
+      "revision": "c4a1c1a1dc42642df98adcf339726fdbd3467ef0",
+      "result": "GREEN"
+    },
+    "quality": {
+      "candidate": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+      "report_sha256": "93cab9d03bc9f276d0dc8707a9c31ad82ef10b2932a31b038de834719ee036a3",
+      "result": "GREEN",
+      "spec_sha256": "7a069a4c470655626a24d1c8d1081dac812080b0fc9875f4cef1037b7d6e2f0b",
+      "separate_reviewer": true,
+      "ref": "refs/heads/cdc/parallel-final-quality-20261008",
+      "revision": "44b822a6ca9cc15b66e2511ec8191210f58ed6bc",
+      "path": "quality-normalized-20261008.md",
+      "provenance": "Pinned Git object exact UTF-8 full report, independent parent QUALITY after SPEC hash verification"
+    }
+  },
+  "history_normalization": {
+    "schema": "cdc-normalized-candidate/v1",
+    "old_candidate": "9516aa1fafd32fcf7fcb239e96fa1e6b4d141d3a",
+    "candidate": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+    "base": "b72435542f40ec3f5b195f357c968c2346ab4f8f",
+    "root_tree": "49e3db723a8703c89f9e535fcab373b3ff128a06",
+    "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+    "commit_count": 1,
+    "parent": "b72435542f40ec3f5b195f357c968c2346ab4f8f",
+    "final_paths": [
+      "AGENTS.md",
+      "README.md",
+      "VERSION",
+      "compatibility/matrix.json",
+      "consumer/evidence/g-ad-control/source.json",
+      "consumer/evidence/g-pc-health-check/source.json",
+      "consumer/evidence/g-supervisor/source.json",
+      "docs/execution/cdc-parallel-maintenance-20261007.json",
+      "docs/execution/parallel-maintenance-20261007/argv-green.log.gz",
+      "docs/execution/parallel-maintenance-20261007/argv-red.log.gz",
+      "docs/execution/parallel-maintenance-20261007/audit-report.md",
+      "docs/execution/parallel-maintenance-20261007/bootstrap-corrected.log.gz",
+      "docs/execution/parallel-maintenance-20261007/consumer-corrected-full-result.json",
+      "docs/execution/parallel-maintenance-20261007/consumer-corrected-full.log.gz",
+      "docs/execution/parallel-maintenance-20261007/consumer-full-result.json",
+      "docs/execution/parallel-maintenance-20261007/consumer-full.log.gz",
+      "docs/execution/parallel-maintenance-20261007/quality-review.md",
+      "docs/execution/parallel-maintenance-20261007/spec-review.md",
+      "docs/execution/parallel-maintenance-20261007/transport-green.log.gz",
+      "docs/execution/parallel-maintenance-20261007/transport-red.log.gz",
+      "docs/execution/parallel-maintenance-20261007/validation-cycle-2.json",
+      "docs/roadmap.md",
+      "docs/superpowers/plans/2026-10-07-parallel-maintenance.md",
+      "docs/superpowers/specs/2026-10-07-parallel-maintenance-design.md",
+      "release/candidate.json",
+      "release/source.lock.json",
+      "src/continuous-development-cycle/SKILL.md",
+      "src/continuous-development-cycle/VERSION",
+      "src/continuous-development-cycle/agents/openai.yaml",
+      "src/continuous-development-cycle/manifest.json",
+      "src/continuous-development-cycle/references/runtime-routing-and-subagents.md",
+      "src/continuous-development-cycle/scripts/evidence_reuse.py",
+      "src/continuous-development-cycle/templates/package-transport.json",
+      "src/continuous-development-cycle/tests/test_evidence_reuse.py",
+      "src/continuous-development-cycle/tests/test_package_transport.py"
+    ],
+    "history_touched_paths": [
+      "AGENTS.md",
+      "README.md",
+      "VERSION",
+      "compatibility/matrix.json",
+      "consumer/evidence/g-ad-control/source.json",
+      "consumer/evidence/g-pc-health-check/source.json",
+      "consumer/evidence/g-supervisor/source.json",
+      "docs/execution/cdc-parallel-maintenance-20261007.json",
+      "docs/execution/parallel-maintenance-20261007/argv-green.log.gz",
+      "docs/execution/parallel-maintenance-20261007/argv-red.log.gz",
+      "docs/execution/parallel-maintenance-20261007/audit-report.md",
+      "docs/execution/parallel-maintenance-20261007/bootstrap-corrected.log.gz",
+      "docs/execution/parallel-maintenance-20261007/consumer-corrected-full-result.json",
+      "docs/execution/parallel-maintenance-20261007/consumer-corrected-full.log.gz",
+      "docs/execution/parallel-maintenance-20261007/consumer-full-result.json",
+      "docs/execution/parallel-maintenance-20261007/consumer-full.log.gz",
+      "docs/execution/parallel-maintenance-20261007/quality-review.md",
+      "docs/execution/parallel-maintenance-20261007/spec-review.md",
+      "docs/execution/parallel-maintenance-20261007/transport-green.log.gz",
+      "docs/execution/parallel-maintenance-20261007/transport-red.log.gz",
+      "docs/execution/parallel-maintenance-20261007/validation-cycle-2.json",
+      "docs/roadmap.md",
+      "docs/superpowers/plans/2026-10-07-parallel-maintenance.md",
+      "docs/superpowers/specs/2026-10-07-parallel-maintenance-design.md",
+      "release/candidate.json",
+      "release/source.lock.json",
+      "src/continuous-development-cycle/SKILL.md",
+      "src/continuous-development-cycle/VERSION",
+      "src/continuous-development-cycle/agents/openai.yaml",
+      "src/continuous-development-cycle/manifest.json",
+      "src/continuous-development-cycle/references/runtime-routing-and-subagents.md",
+      "src/continuous-development-cycle/scripts/evidence_reuse.py",
+      "src/continuous-development-cycle/templates/package-transport.json",
+      "src/continuous-development-cycle/tests/test_evidence_reuse.py",
+      "src/continuous-development-cycle/tests/test_package_transport.py"
+    ],
+    "diff_old_new_bytes": 0,
+    "diff_command": [
+      "git",
+      "diff",
+      "--binary",
+      "9516aa1fafd32fcf7fcb239e96fa1e6b4d141d3a",
+      "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54"
+    ],
+    "diff_exit_code": 0,
+    "tracked_clean": true
+  },
+  "main_publication": {
+    "integrated": true,
+    "operation_id": "sha256:03531dec7444869f86983942dc40658b15c7ea609a543d3526227c957b4ed301",
+    "result_commit": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+    "observed_shared_head": "b72435542f40ec3f5b195f357c968c2346ab4f8f",
+    "integrated_head": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+    "conditional_update": true,
+    "force_push": false,
+    "publication_attempt_id": "publication-attempt-e2a810d513867236b704550faa70a10b24c0c2cec9448690",
+    "publication_attempt_state": "confirmed",
+    "publication_remote_id": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
+    "publication_shared_ref": "refs/heads/main",
+    "publication_attempt_store_ref": "refs/heads/cdc/managed-host-publish-5beed48d224c51de834153265a0774db",
+    "evidence_ref": "git-cas:refs/heads/main@9b38bd4d9f5fb113ec10bdbca9fbe33908619a54"
+  },
+  "CI_release_receipt": {
+    "schema": "execution-release-receipt/v1",
+    "lease_revision": "cc7d6fbfab97dd34c1e0f7b67ce86f663c270d2b",
+    "release": {
+      "owner_id": "6ce80c4d-4dbd-4106-b21b-e776a12a9c06",
+      "generation": 1,
+      "invocation_id": "managed-terminal:0d9c3bdf67e16b185b8719fc1e769d949dfcc908083f4931be833533ca6a21a8",
+      "at_utc": "2026-10-08T06:33:27.209725Z",
+      "checkpoint_ref": "git:333fa30c8ec9c0a0337661c529ce79f0fc0eac52:document.json",
+      "external_reconciliation": "none",
+      "completion_reason": "scope_complete"
+    }
+  },
+  "canonical_evidence_publication": {
+    "ref": "refs/heads/cdc/release-evidence/v2.12.1",
+    "path": "release/evidence-2.12.1.json",
+    "pin_provenance": "The separate actual publication receipt pins this metadata commit; this file cannot self-reference its enclosing commit hash."
+  },
+  "old_pool_disposition": "legacy audit unreconciled; independent original CI and new normalized exact-head CI satisfy validation obligation without falsifying old receipts; all charges preserved",
+  "scheduler_state": "owner-paused unchanged",
+  "installation": "root separate scope; no installed/adopted claim",
+  "consumer_deployment": "not inferred",
+  "at_utc": "2026-10-08T06:47:28.521789Z",
+  "publication_preparation_audit": {
+    "schema": "owner53-closure-interpretation-correction/v1",
+    "actual_reason": "Conservative interpretation by Cloud orchestrator of parent expiry instruction; parent clarified successful released-runtime renewal is valid even if timestamp crosses old expiry during read/CAS",
+    "core_renew_failed": false,
+    "core_renewal_revision": "06078742172cb2c719aebb1408357e42a84569b0",
+    "new_expiry": "2026-10-08T06:56:53.422604Z",
+    "parent_required_new_blocker": false,
+    "closure_transaction_already_started": true,
+    "disposition": "Finish existing closure without cancellation/replay; immediately admit fresh publication writer on same canonical lease; retain exact9b38 candidate and new CI/reviews; no CI rerun"
+  },
+  "previous_owner53_actual_release_receipt": {
+    "schema": "execution-release-receipt/v1",
+    "lease_revision": "95c6aaf332186ffbdd12429ba121fd95c42a85b5",
+    "release": {
+      "owner_id": "e716a640-5f37-48b8-a2f8-7a5c3245d791",
+      "generation": 53,
+      "invocation_id": "managed-terminal:bf4e184d6c0c649e0c0f80ef100f6607a78415e19d49b97d0989ed53abeb8359",
+      "at_utc": "2026-10-08T06:40:27.319269Z",
+      "checkpoint_ref": "git:9fcd8849518706b3ee1c3e179ae30f5370af92cd:document.json",
+      "external_reconciliation": "none",
+      "completion_reason": "resumable_blocker"
+    }
+  }
+}
