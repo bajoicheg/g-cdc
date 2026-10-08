@@ -1,0 +1,39 @@
+{
+  "schema": "cdc-targeted-partial-snapshot-correction/v1",
+  "status": "REVIEW_READY",
+  "preceding_packet": {
+    "ref": "refs/heads/cdc/adopt2121-partial-snapshot-review-a3-correction-20261008",
+    "commit": "4d653385169f274cb62ca396ff25f08c0b710529",
+    "path": "document.json",
+    "utf8_bytes": 62267,
+    "sha256": "8c8f87c910f9daa9e155bc7ed008a6d8019b8e1e1e939f01a8beef1e5194a384"
+  },
+  "source_sha256": {
+    "resume-partial3-observations.py": "8b0041622f1b8e40bd9b14f327257d64eeeef9aac09f53050f33ab53f8695722",
+    "refresh-partial3-snapshots.py": "17f81ca2642b2456d00f7311cf85c2c9fd52e99a8e5faa25545d12d2b2002865",
+    "partial3-snapshot-facts.py": "a87add8d7ff30a38eaaba5393305a38117fea40232c36a6df5295818361c435a",
+    "partial3-snapshot-selection.json": "a78ce484c420d13a58cedc1ed9b7697c0479ff9bf4aa2e744b2d5088e9c9a168",
+    "close-snapshot-blocked.py": "d6623f28aee52da138dce9c3c88114cf6f083a9ccef1d04cfe7f2fb868c81163"
+  },
+  "plain_affected_sources": {
+    "resume-partial3-observations.py": "\"\"\"Continue exact unsubmitted phase of the already admitted read-only observer; only reviewed Fleet metadata effects.\"\"\"\nimport importlib.util,pathlib,time,json\nROOT=pathlib.Path('/workspace/work/adopt2121-20261008')\ns=importlib.util.spec_from_file_location('refresh',ROOT/'refresh-partial3-snapshots.py');refresh=importlib.util.module_from_spec(s);s.loader.exec_module(refresh)\nc=refresh.c\nfrom git_document_store import GitDocumentStore\nfrom git_remote_identity import remote_identity\nimport fleet_supervisor_control as fleet\n\ndef main():\n    refresh.verify_quality()\n    c.verify_reviews('fleet','4e1a389a8d5fa6812c87431be9b9cb8f6f55bad9')\n    root=ROOT/'fleet-partial-snapshot-adapter';req=c.read(root/'start-request.json');h=c.read(root/'start-receipt.json')\n    session,runtime,store=c.bridge._recover_session(req['handle_root'],h['handle_id'])\n    assert req['plan']['tasks'][0]['role']=='read_only' and req['plan']['tasks'][0]['write_paths']==[]\n    obs=runtime.observe(req['task_id'],req['attempt_id']);assert obs['status']=='awaiting_release' and obs['pending_terminal_status']=='succeeded'\n    c.bridge._renew_for_result(session,store,obs,action='observe');c.bridge._read_only_result(session,runtime)\n    canonical=GitDocumentStore(req['repo_root'],'origin','refs/heads/cdc/fleet-supervisor',remote_identity(req['repo_root'],'origin'))\n    admission=c.read(root/'leader-admission-receipt.json');generation=admission['generation'];revision,state=canonical.read()\n    owner,invocation=h['owner_id'],h['invocation_id']\n    assert state['lease']['owner_id']==owner and state['lease']['generation']==generation\n    assert state['lease']['invocation']['invocation_id']==invocation and state['lease']['external_guard'] is None\n    assert state['lease']['finalization']['state']=='active' and all(e['state']=='terminal' for e in state['effects'])\n    for name in ['gad','switcher']:\n        prior=GitDocumentStore(req['repo_root'],'origin','refs/heads/cdc/adopt2121-partial-'+name+'-snapshot-operation-20261008',remote_identity(req['repo_root'],'origin'))\n        assert prior.read()==(None,None), 'Prior submitted/unknown intent requires reconciliation, never replay'\n    prior=GitDocumentStore(req['repo_root'],'origin','refs/heads/cdc/adopt2121-partial2-switcher-snapshot-operation-20261008',remote_identity(req['repo_root'],'origin'))\n    assert prior.read()==(None,None), 'Prior partial2 intent requires reconciliation, never replay'\n    # Never create another leader or reconstruct a serialized terminal capability.\n    activity=c.read(root/'review-packet-a3-publication.json')\n    assert c.git(req['repo_root'],'ls-remote','origin',activity['ref']).split()[0]==activity['commit']\n    state['lease']=c.lease.renew(state['lease'],owner,generation,invocation,c.now(),activity_ref='git:'+activity['commit']+':document.json#accepted-targeted-quality-and-validated-readonly-result')\n    fleet.validate(state);canonical.compare_and_swap(revision,state)\n    source_publication=c.read(ROOT/'fleet-publication-adapter/native-publication-receipt.json')\n    checkpoint=refresh.refresh(session,runtime,store,canonical,owner,generation,invocation,source_publication)\n    packet=refresh.c.read(root/'partial3-convergence-checkpoint.json')\n    spec=importlib.util.spec_from_file_location('close',ROOT/'close-snapshot-blocked.py');close=importlib.util.module_from_spec(spec);spec.loader.exec_module(close)\n    close.final_close(session,runtime,store,canonical,owner,generation,invocation,req,root,checkpoint,packet['report']['blocker_proof'])\n\nif __name__=='__main__':main()\n",
+    "partial3-snapshot-selection.json": "{\n  \"schema\": \"cdc-partial-snapshot-selection/v1\",\n  \"selected\": [\n    \"gpc\",\n    \"switcher\"\n  ],\n  \"source_bindings\": {\n    \"gpc\": {\n      \"source_ref\": \"refs/heads/design/0.17.0-security-posture\",\n      \"source_head\": \"7aaefdebca68eed64c8e92d7dfff7384f0a3c800\"\n    },\n    \"switcher\": {\n      \"source_ref\": \"refs/heads/release/2.0.1\",\n      \"source_head\": \"10b7e90dfa9521170c48d9f09e2c5a4d6d77c3c3\"\n    }\n  },\n  \"deferred\": [\n    \"gad\"\n  ],\n  \"scope_complete\": false,\n  \"reason\": \"selected released projects; deferred project actual owned boundary independently observed\",\n  \"prior_blocked_checkpoint\": \"git:dc3b1693c85a89bf80bb2e9e33dfdb2f9a278831:document.json\"\n}\n"
+  },
+  "source_delta": "--- a3/resume-partial3-observations.py\n+++ a3-corrected/resume-partial3-observations.py\n@@ -27,7 +27,7 @@\n     prior=GitDocumentStore(req['repo_root'],'origin','refs/heads/cdc/adopt2121-partial2-switcher-snapshot-operation-20261008',remote_identity(req['repo_root'],'origin'))\n     assert prior.read()==(None,None), 'Prior partial2 intent requires reconciliation, never replay'\n     # Never create another leader or reconstruct a serialized terminal capability.\n-    activity=c.read(root/'review-packet-a2-publication.json')\n+    activity=c.read(root/'review-packet-a3-publication.json')\n     assert c.git(req['repo_root'],'ls-remote','origin',activity['ref']).split()[0]==activity['commit']\n     state['lease']=c.lease.renew(state['lease'],owner,generation,invocation,c.now(),activity_ref='git:'+activity['commit']+':document.json#accepted-targeted-quality-and-validated-readonly-result')\n     fleet.validate(state);canonical.compare_and_swap(revision,state)\n--- a3/partial3-snapshot-selection.json\n+++ a3-corrected/partial3-snapshot-selection.json\n@@ -18,6 +18,6 @@\n     \"gad\"\n   ],\n   \"scope_complete\": false,\n-  \"reason\": \"Actual GPCgen28 and Switchergen30 released; GADgen117 owned/guarded; no previous snapshot intents/effects\",\n+  \"reason\": \"selected released projects; deferred project actual owned boundary independently observed\",\n   \"prior_blocked_checkpoint\": \"git:dc3b1693c85a89bf80bb2e9e33dfdb2f9a278831:document.json\"\n }\n",
+  "findings_resolved": {
+    "receipt_binding": "actual preserved a3 native publication receipt, exact remote readback checked by continuation",
+    "selection_reason": "generic reason; actual lease facts remain independently authenticated in preceding packet and refreshed before effects"
+  },
+  "unchanged_source_and_validation_proof_reused_from_preceding_packet": true,
+  "no_tests_repeated": true,
+  "same_handle": {
+    "handle_id": "0254293e-bf74-50db-82e4-8e3196de2898",
+    "owner_id": "ffb425e2-da5f-4104-9b18-acfa13e50c19",
+    "generation": 1,
+    "invocation_id": "managed-terminal:5162f38b059444481ecbbcf042489522eed80fcf92479842135f7a7b9ec1f361"
+  },
+  "canonical_leader_generation": 4,
+  "no_new_admission": true,
+  "no_controller_replay": true,
+  "review_scope": "Only two literal corrections. Three other effect/reader/close hashes unchanged; same conditional FF/action callbacks/guard/intent/budget/one-use claims and blocked close. Original a3 native object validation and targeted RED-GREEN3 reused."
+}
