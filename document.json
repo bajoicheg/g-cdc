@@ -189,7 +189,7 @@
     "provenance": "Observed Cloud assistant report; complete Cloud logs remain at /workspace/work/cloud-transfer-a1/results/",
     "tracked_paths": 578
   },
-  "next_action": "In each Cloud turn request actual network.enabled=true grant, retaining sandbox and restricted allowlist. Refresh budget/pool/lease and reconcile old ci-a1 original receipt, then obtain managed admission for one exact-candidate CI. Available GitHub connectors avoid expanding shell API domain.",
+  "next_action": "Actual Cloud managed admission and independently guarded required CI in separate read_only pool; old journal remains forensic history. Install only after immutable source release.",
   "observed_at_utc": "2026-10-08T05:31:10.356Z",
   "observed_surface": "Actual Cloud grant/read/write/readback and independent authenticated GitHub readback",
   "operation_key": "sha256:191e4f9d1c0480663004a0a60c02148a8e89e87ecb97045715ef91c513fd5c00",
@@ -343,5 +343,46 @@
     "provider_task_reused": true,
     "CI_started": false,
     "cloud_report": "work/cloud-continuation-a1/recovery-20261008/access-repair-published-report.json"
+  },
+  "parent_replan_20261008": {
+    "at_utc": "2026-10-08T05:43:27.291Z",
+    "owner_instruction": "Делай до конца",
+    "decision": "Independent required-CI read_only managed pool; original pool retained as unreconciled audit history; no inherited launch authority.",
+    "old_attempt_observation": {
+      "lease_ref": "404 absent",
+      "operation_ref": "404 absent",
+      "pool_head": "b079694597537d8e00563eb0728cb9b6ebf0df22",
+      "pool_status": "running; historical state inconsistent with observed setup failure",
+      "budget_outcome": "setup_failed; charged and retained",
+      "historical_executor_observation": {
+        "reference": "CDC-parallel-implementation-handover-20261007.md",
+        "gate": "abort lease coordination absent; go absent",
+        "exit": 125,
+        "quiescent": true,
+        "runtime_seconds": 0.507484702,
+        "original_receipt_retrieved": false
+      },
+      "fresh_provider_ui": {
+        "url": "https://github.com/codespaces",
+        "codespace_id": 51918304,
+        "codespace_name": "cautious-space-bassoon-96jx7w567w64f7jgp",
+        "repository": "bajoicheg/g-cdc",
+        "open_disabled": "Start is temporarily disabled",
+        "stop_action_present": false,
+        "last_used": "about 13 hours ago",
+        "billing_banner": "free usage or budget exhausted",
+        "literal_shutdown_status_returned": false
+      },
+      "assessment": "No prior lease owner or external operation exists. Current provider UI corroborates the previously directly observed stopped environment. Read-only independent validation creates no competing product writer; old audit data is not rewritten or relabeled as original terminal receipt."
+    },
+    "remaining_gates": [
+      "actual package-managed admission",
+      "fresh budget reservation, intent, guard and one-use claim",
+      "one exact-candidate PR-triggered required CI with official checkout/log provenance",
+      "managed finish and immutable release receipt",
+      "normal source release and personal installed byte verification"
+    ],
+    "scheduler_pause_preserved": true,
+    "GAD_excluded": true
   }
 }
