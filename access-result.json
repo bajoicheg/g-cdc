@@ -1,0 +1,44 @@
+{
+  "schema": "cdc-access-repair-evidence/v1",
+  "at_utc": "2026-10-08T05:27:52.843865+00:00",
+  "purpose": "operational transport evidence only",
+  "grant": "{\"permissions\":{\"network\":{\"enabled\":true},\"file_system\":null},\"scope\":\"turn\"}",
+  "command_layer": "exec_command use_default sandbox; network grant inherited for current turn",
+  "candidate_sha": "9516aa1fafd32fcf7fcb239e96fa1e6b4d141d3a",
+  "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+  "known_main_parent": "b72435542f40ec3f5b195f357c968c2346ab4f8f",
+  "observed_commands": [
+    {
+      "argv": [
+        "timeout",
+        "15s",
+        "git",
+        "ls-remote",
+        "origin",
+        "refs/heads/cdc/parallel-maintenance-20261007",
+        "refs/heads/main",
+        "refs/heads/cdc/access-repair-20261008"
+      ],
+      "exit_code": 0,
+      "stdout": "9516aa1fafd32fcf7fcb239e96fa1e6b4d141d3a\trefs/heads/cdc/parallel-maintenance-20261007\nb72435542f40ec3f5b195f357c968c2346ab4f8f\trefs/heads/main\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD",
+        "HEAD:src/continuous-development-cycle"
+      ],
+      "exit_code": 0,
+      "stdout": "9516aa1fafd32fcf7fcb239e96fa1e6b4d141d3a\n9c45d98c3254e9658d452c505d8c97698e3fc9a7\n",
+      "stderr": ""
+    }
+  ],
+  "prior_same_session_checks": {
+    "ls_remote_exit": 0,
+    "push_dry_run_exit": 0,
+    "dry_run_result": "Everything up-to-date"
+  },
+  "authority_boundary": "No product/source/main/budget/lease/CI/PR authority; isolated operational ref only"
+}
