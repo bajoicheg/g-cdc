@@ -1,0 +1,41 @@
+{
+  "request": {
+    "schema": "validation-cycle/v1",
+    "cycle_number": 3,
+    "max_validation_cycles": 2,
+    "changed_inputs": [
+      "scripts/cdc.py",
+      "tests/test_cdc_entrypoint.py"
+    ],
+    "risk_reason": "Reproduced core reconciliation lost an existing external operation identity.",
+    "prior_evidence_insufficient_reason": "Previous aggregate had no compound-state regression and checked the preceding package.",
+    "strategy_revision_ref": "docs/execution/cdc-3.0.0-final-reviews-20261009.md#final-validation-strategy",
+    "budget_observation": {
+      "time_seconds": null,
+      "tokens": null,
+      "external_starts": 0,
+      "time_limit_seconds": null,
+      "token_limit": null,
+      "external_start_limit": 1,
+      "unknown_reason": "Runtime does not expose complete root token or elapsed-consumption counters."
+    }
+  },
+  "result": {
+    "schema": "validation-cycle-result/v1",
+    "validation_recommended": true,
+    "action": "VALIDATE",
+    "blockers": [],
+    "budget_observation": {
+      "time_seconds": null,
+      "tokens": null,
+      "external_starts": 0,
+      "time_limit_seconds": null,
+      "token_limit": null,
+      "external_start_limit": 1,
+      "unknown_reason": "Runtime does not expose complete root token or elapsed-consumption counters."
+    },
+    "authorizes_external_start": false,
+    "authorizes_product_write": false,
+    "authorizes_release": false
+  }
+}
