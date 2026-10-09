@@ -5,7 +5,7 @@ description: Use when substantial software development must continue across long
 
 # Continuous Development Cycle v3.0.0
 
-This is the initial 3.0.0 source candidate. Its version identifies candidate
+This is the 3.0.0 integration source candidate. Its version identifies candidate
 bytes and is not release, installation or adoption evidence. Develop it under
 the independently verified 2.12.1 driver. The prior complete instructions
 are retained in `references/legacy-core-2.12.1.md`. Load current phase detail
@@ -29,6 +29,14 @@ on policy/version drift and the recovery phase references when needed.
 
 Current state belongs in the existing checkpoint/capsule and control backend;
 never add a parallel ledger or infer ownership/quota from a matching HEAD.
+
+For Cloud startup load `references/cloud-fast-start.md` and use
+`scripts/codex_cloud_entrypoint.py prepare` with the project's hash-bound inputs
+and genuinely qualified selected-mode profile. Native, official UI and official
+CLI are separate modes. Preserve restored same-key effects before setup or a
+new send; profile/policy changes require current recovery bindings. Verified
+dependency reuse requires durable proof. Preparation uses existing routing and
+transports and never grants an executor or launch authority.
 
 ## Execute the authorized scope
 

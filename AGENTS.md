@@ -1,3 +1,33 @@
+## Current 3.0.0 isolated integration — 2026-10-09
+
+Owner requires release order 2.12.2 → 2.13.0 → 3.0.0 and prohibits Fleet rollout. Immutable 2.12.2 source 3d063ac723a68340e732d552c1d69636470b1ac3 is released and is an ancestor of the qualified 2.13.0 candidate c6c37ee97223de809a259513dd12bcbb4fd651be/package5b95b33b4ed1f807ddbefbf4ca24e5ceb2896f2f. That candidate passed ordered Root SPEC/independent QUALITY and actual clean-consumer FULL1263/355.212s; exact-head CI/release/installation remain separate. Its implementation is merged with the initial reviewed 3.0.0 branch in cdc/3.0.0-integrated-213-20261009. Preserve compact 3.0.0 guidance and the original Cloud transports; development authority remains the actually verified immutable 2.12.1 driver. Native Git write preflight failed before mutation, exit128 unable to obtain a password. Complete independent eligible integration work and retain this actual publication blocker; never fabricate a managed lease or installed 2.13 driver. See docs/execution/cdc-3.0.0-integration-213-20261009.md. Earlier conflicting state/permissions below remain history.
+
+## Current ordered integration — 2026-10-09
+
+Owner requires 2.12.2 first, then 2.13.0 and integration into 3.0.0. No Fleet rollout. The accepted 2.12.2 alias is integrated into this candidate; main was freshly observed at 3d063ac723a68340e732d552c1d69636470b1ac3. Development still uses the actually verified immutable 2.12.1 driver. Package/source freeze 210c7fa2338ba276302462ea381b1dc52ceb4eaf has package 5b95b33b4ed1f807ddbefbf4ca24e5ceb2896f2f. Independent bootstrap 46 and affected checks 80 passed after metadata binding correction. Clean-consumer FULL, affected actor acceptance, ordered final SPEC/QUALITY, exact CI and immutable release remain separate gates; this section claims none pending. See docs/execution/cdc-2.13.0-integration-20261009.md. Earlier state/rollout permissions below are history wherever they conflict with this current owner instruction.
+
+## CDC 2.13.0 issue100 implementation assembly — 2026-10-09
+
+The approved plan14c39b45 is implemented through registered writer scopes under immutable released2.12.1 authority. Root narrow profile review approved only the native null-label delta; final ordered SPEC/QUALITY, isolated actor, frozen FULL/exact-head CI and release/install/adoption remain pending. Current version2.13.0 labels are candidate assembly, not source release. Use the exact runnable Cloud entry below; preserve all historical sections, GPC unresolved claimed guard and paused schedulers.
+
+## Cloud new-chat entry (2.13.0)
+
+First read the actual project AGENTS, source HEAD, checkpoint, lease/guard and journal. Preserve known operations before setup or a new request. The connected native Cloud runtime is an execution route; official UI and authenticated official CLI are separate modes. CLI401 or unknown nested inventory does not invalidate qualified native work and does not authorize an auth retry, Codespace start or a second executor.
+
+For the canonical source checkout, prepare the typed, hash-bound current observations with:
+
+```sh
+python -B src/continuous-development-cycle/scripts/codex_cloud_entrypoint.py prepare --profile docs/cdc-cloud-profile.json --inputs docs/cdc-cloud-entry-inputs.json --project-root .
+```
+
+In a consumer, use its actually verified vendor root in place of src/continuous-development-cycle. The installed personal loader uses its verified extracted package path. Inputs are project-local snapshots under cloud-entry-inputs/v1, never credentials or cached authority: context/probe/registry/routing_policy/routing_context references each bind exact UTF-8 JSON file bytes with SHA256. Expanded form uses --context, --probe, --registry, --policy (alias --routing-policy), --routing-context. The profile template is explicitly UNCONFIGURED until genuine per-mode namespace/ID, policy/setup and fresh native host evidence are supplied; null fingerprints/unknown CLI labels fail closed. A native display label alone is metadata. --now is test-fixture-only.
+
+Preparation returns ONE typed next_action, not permission to run it. CONTINUE_NATIVE uses the existing registered managed caller for its exact approved argv; OBSERVE_EXISTING/RECONCILE_EXISTING/INTAKE_EXISTING use the original same-key transport, preserving unknown/submitting effects. READY_FOR_SUBMIT requires the existing fresh owner/intent/guard/budget/one-use callback; no UI-to-CLI or mode/namespace substitution. Qualify only the selected mode; never repeat broad provider inventory just to use this connected native host. Read references/cloud-fast-start.md.
+
+Recovery v2 selection uses current source/environment/policy/input digests and durable append-only history. The existing authorized caller records genuine started/unknown/terminal observations through record_history with fresh callback/CAS/readback. A consumed fingerprint needs explicitly bound unused correction evidence; a reason string, new chat or unrelated proof is not a retry. Unknown/submitting state is observe/reconcile-only. Reused verified dependency/result evidence skips installation/investigation; a concrete record_blocker result is preserved. Recipes do not execute arbitrary shell or grant ownership.
+
+Watchdog resumes use the same entry and actual current facts; inherited paused status remains paused. Do not enable/rebind/reschedule a watchdog or reopen product/security/platform gates to complete CDC metadata.
+
 ## Planning revision after independent review — 2026-10-09
 
 Actual Root reviewer /root/issue100_design_review completed PLAN_ONLY CHANGES_REQUIRED (0 Critical/4 Important), report SHA441dead9592a390496c7bae81a3929026920c0a80c21ba85f269624f48b09676. Close D100-01..04 with typed context/prepared/restore precedence and exact transport field/per-mode namespace mapping, durable recovery history/action hookup, typed compute/control-host exceptions and actual candidate-bound isolated new-chat/cold-warm measurements. Revised spec contains concrete runnable prepare --profile/--inputs loading, shared-interface rulings and complete A1-A12 coverage. Feature implementation awaits the same independent reviewer's real GREEN; physical review success is separate from semantic changes-required.
