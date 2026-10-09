@@ -1,0 +1,87 @@
+{
+  "schema": "cdc-release-evidence/v1",
+  "status": "released",
+  "version": "3.0.0",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "candidate_commit": "6a7bebaf342f70fef058f63d24febb337a741cb0",
+  "candidate_source_commit": "6a7bebaf342f70fef058f63d24febb337a741cb0",
+  "release_commit": "6a7bebaf342f70fef058f63d24febb337a741cb0",
+  "release_ref": "refs/heads/release/v3.0.0",
+  "root_tree": "87e92eadc33e0ddc0894e689b39271a247fce666",
+  "package_tree": "2b8f3101a8fc6930e08387db1f509ab23c02d2f0",
+  "sole_parent": "38971c582edfb5885b9281a316e02b2044b187bf",
+  "source_main_at_release_preflight": "38971c582edfb5885b9281a316e02b2044b187bf",
+  "release_lineage": [
+    "2.12.2",
+    "2.13.0",
+    "3.0.0"
+  ],
+  "package_files": 385,
+  "package_file_manifest_sha256": "422ec2e893ea3383b45b97a12b20ec775abb6a59d60556f291627ce22770f2c7",
+  "canonical_evidence_publication": {
+    "ref": "refs/heads/cdc/release-evidence/v3.0.0",
+    "path": "release/evidence-3.0.0.json",
+    "provenance": "Separate immutable evidence commit; actual enclosing commit is pinned by the native publication receipt"
+  },
+  "source_main_integration": "Verified separately by managed finish receipt and strict private final checkpoint",
+  "development_driver": {
+    "version": "2.12.1",
+    "release_commit": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+    "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+    "matched_files": 352
+  },
+  "ordered_reviews": {
+    "SPEC": "GREEN",
+    "subsequent_independent_QUALITY": "GREEN",
+    "open_findings": 0,
+    "ordered_exact_rebind": "git:bajoicheg/codex-compute@ba242980f7626c0c6dd98fffa9c3797102e557ef:source300-linear-reviews.json",
+    "original_reviewed_source": "5d034b017cd1851872090cf3a8ededf2a787c517",
+    "whole_root_equal": true
+  },
+  "reused_local_validation": {
+    "FULL": {
+      "tests": 1267,
+      "seconds": 318.535,
+      "exit_code": 0,
+      "source": "464d3ad24415c2154db3e8a879454b425b9bce68"
+    },
+    "bootstrap_tests": 51,
+    "archive_qualifications": 3,
+    "compressed_and_raw_hashes_verified": true,
+    "manifest": "docs/execution/cdc300-qualified-evidence/manifest.json",
+    "local_FULL_repeated": false
+  },
+  "ci": {
+    "ci_success": true,
+    "run_id": 37996248882,
+    "job_id": 114042971847,
+    "run_url": "https://github.com/bajoicheg/g-cdc/actions/runs/37996248882",
+    "pr": 103,
+    "pr_url": "https://github.com/bajoicheg/g-cdc/pull/103",
+    "head_sha": "6a7bebaf342f70fef058f63d24febb337a741cb0",
+    "actual_checkout_sha": "41fb5d54b59b648b9b0167738c6b2b04a4bda388",
+    "actual_checkout_root_tree": "87e92eadc33e0ddc0894e689b39271a247fce666",
+    "actual_checkout_package_tree": "2b8f3101a8fc6930e08387db1f509ab23c02d2f0",
+    "exact_candidate_and_checkout_full_tree_equal": true,
+    "all_configured_steps_successful": true,
+    "hosted_FULL": {
+      "tests": 1267,
+      "seconds": 341.845
+    },
+    "hosted_bootstrap": {
+      "tests": 51,
+      "seconds": 0.357
+    },
+    "archived_qualifications": 3,
+    "log_sha256": "a79bde913e76430d324745fed0b2f4e1be1675368ba407d0602deb6e17bffd00",
+    "private_log_archive_ref": "git:bajoicheg/codex-compute@268a411765089c7e33fde018f52197bbc1a64707:document.json#job_log_archive",
+    "one_CI_reservation_and_one_PR_creation": true,
+    "operation_key": "sha256:4b7292ebde870b009f18835d3cf6906bff82b3c8cfbed46e55baa4ac19cd7fa8",
+    "attempt_id": "cdc300-release-host-a1-ci"
+  },
+  "full_evidence_and_package_manifest_ref": "git:bajoicheg/codex-compute@ee6eae0fbb6ddf6ddd484559799da74d112274c6:document.json#full_release_evidence_and_package_manifest",
+  "personal_installation": "NOT_DONE_SEPARATE_PARENT_SCOPE",
+  "fleet_rollout": false,
+  "scheduler_mutations": false,
+  "source_remote_id": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac"
+}
