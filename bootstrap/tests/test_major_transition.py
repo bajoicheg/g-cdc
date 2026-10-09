@@ -11,10 +11,24 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'bootstrap'))
 from src.cdc27.canonical_source import validate_source_lock
 from src.cdc27.release_contract import validate_candidate
+from src.cdc27.compatibility import validate_matrix
 import validate_release
 
 
 class MajorTransitionTests(unittest.TestCase):
+    def test_major_compatibility_transition_preserves_schemas_and_history(self):
+        data = json.loads((ROOT / 'compatibility/matrix.json').read_text())
+        data.update(target_version='3.0.0', developed_under_version='2.12.1')
+        validate_matrix(data)
+        for version in ('3.0.1', '3.1.0', '4.0.0'):
+            with self.subTest(version=version):
+                invalid = copy.deepcopy(data); invalid['target_version'] = version
+                with self.assertRaises(ValueError):
+                    validate_matrix(invalid)
+        invalid = copy.deepcopy(data); invalid['migration']['preserve_budget_history'] = False
+        with self.assertRaises(ValueError):
+            validate_matrix(invalid)
+
     def test_major_candidate_uses_the_same_strict_stable_transition(self):
         data = json.loads((ROOT / 'release/candidate.template.json').read_text())
         data.update(version='3.0.0', developed_under_version='2.12.1')
