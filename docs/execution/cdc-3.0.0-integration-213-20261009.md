@@ -43,3 +43,8 @@ reviews; exact-head CI; managed source publication and separate installation.
 Archived policy ceilings can correctly reject 3.0.0 and must be preserved.
 Keep the original task budget, unknown legacy actor charge, unresolved guards
 and paused schedulers. No Fleet operation is part of this integration.
+
+Integrated source freeze: e124c41db43220d2d202f2f7c8cd1ffc3bba63bd,
+package 10e9f3fa8c7ff1175bd1725a9d4642955aacedb7. Outside-core
+candidate and archived snapshot bindings are updated together; this metadata
+rebinding is not a claim of a new runtime or completed release.
