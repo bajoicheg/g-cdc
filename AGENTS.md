@@ -1,3 +1,9 @@
+## Planning revision after independent review — 2026-10-09
+
+Actual Root reviewer /root/issue100_design_review completed PLAN_ONLY CHANGES_REQUIRED (0 Critical/4 Important), report SHA441dead9592a390496c7bae81a3929026920c0a80c21ba85f269624f48b09676. Close D100-01..04 with typed context/prepared/restore precedence and exact transport field/per-mode namespace mapping, durable recovery history/action hookup, typed compute/control-host exceptions and actual candidate-bound isolated new-chat/cold-warm measurements. Revised spec contains concrete runnable prepare --profile/--inputs loading, shared-interface rulings and complete A1-A12 coverage. Feature implementation awaits the same independent reviewer's real GREEN; physical review success is separate from semantic changes-required.
+
+Terminal held writer output is immutable: gen57 must finish normally as proposed planning docs before an actual next bounded managed revision writer edits. This is no feature/release/adoption acceptance. Preserve every historical section/ledger/charge, GPC claimed guard and paused schedulers.
+
 ## Authorized CDC 2.13.0 issue100 planning — 2026-10-09
 
 Owner authorized Cloud fast start and reusable recovery through full source release, personal installation and safe Fleet deployment. Development authority is immutable released CDC2.12.1 at 9b38bd4d9f5fb113ec10bdbca9fbe33908619a54/package9c45d98c3254e9658d452c505d8c97698e3fc9a7. Current phase is concrete design/implementation-plan review; feature implementation waits for Root independent plan acceptance. See docs/superpowers/specs/2026-10-09-cloud-fast-start-reusable-recovery-design.md and docs/superpowers/plans/2026-10-09-cloud-fast-start-reusable-recovery.md. Proposed next version2.13.0 is not yet released/installed/adopted. FULL risk floor applies.

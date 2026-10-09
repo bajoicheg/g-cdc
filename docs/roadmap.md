@@ -1,3 +1,9 @@
+## CDC 2.13.0 concrete contract revision — 2026-10-09
+
+Actual Root reviewer /root/issue100_design_review completed PLAN_ONLY CHANGES_REQUIRED (0 Critical/4 Important), report SHA441dead9592a390496c7bae81a3929026920c0a80c21ba85f269624f48b09676. Close D100-01..04 with typed context/prepared/restore precedence and exact transport field/per-mode namespace mapping, durable recovery history/action hookup, typed compute/control-host exceptions and actual candidate-bound isolated new-chat/cold-warm measurements. Revised spec contains concrete runnable prepare --profile/--inputs loading, shared-interface rulings and complete A1-A12 coverage. Feature implementation awaits the same independent reviewer's real GREEN; physical review success is separate from semantic changes-required.
+
+Terminal held writer output is immutable: gen57 must finish normally as proposed planning docs before an actual next bounded managed revision writer edits. This is no feature/release/adoption acceptance. Preserve every historical section/ledger/charge, GPC claimed guard and paused schedulers.
+
 ## CDC 2.13.0 — owner-authorized issue100 Cloud fast start/recovery (2026-10-09)
 
 Issue100 is admitted as a genuinely new scope under immutable2.12.1 (9b38bd4d/package9c45), with ordinary default limits and complete immutable links to predecessor143events/charges. Owner authorized implementation through full release, actual personal-byte acceptance and safe Fleet adoption. Root reviews concrete spec/plan before feature implementation; ordered exact-candidate SPEC and distinct independent QUALITY remain mandatory. FULL is the risk floor.
