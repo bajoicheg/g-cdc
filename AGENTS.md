@@ -1,3 +1,7 @@
+## Authorized bounded alias maintenance candidate — 2026-10-09
+
+Owner authorized the exact submission-recovery historical alias correction as maintenance candidate 2.12.2 under immutable released CDC 2.12.1. Use the isolated package-owned managed writer and FULL independent gates described in docs/superpowers/specs/2026-10-09-submission-recovery-alias-design.md and its matching plan. This admits candidate development only. Root exact-candidate ordered reviews and required exact-SHA CI precede main integration/release. Preserve issue100 proposed 2.13.0 scope, all historical proofs and product guards; no GPC recovery, installation, adoption, scheduler or Fleet effects. Earlier sections below retain their history.
+
 ## Planning revision after independent review — 2026-10-09
 
 Actual Root reviewer /root/issue100_design_review completed PLAN_ONLY CHANGES_REQUIRED (0 Critical/4 Important), report SHA441dead9592a390496c7bae81a3929026920c0a80c21ba85f269624f48b09676. Close D100-01..04 with typed context/prepared/restore precedence and exact transport field/per-mode namespace mapping, durable recovery history/action hookup, typed compute/control-host exceptions and actual candidate-bound isolated new-chat/cold-warm measurements. Revised spec contains concrete runnable prepare --profile/--inputs loading, shared-interface rulings and complete A1-A12 coverage. Feature implementation awaits the same independent reviewer's real GREEN; physical review success is separate from semantic changes-required.

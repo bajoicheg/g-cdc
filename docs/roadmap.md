@@ -527,3 +527,7 @@ RCA consolidation for 2.11.6: PR79 hidden-fixture evidence remains reproducible 
 ## CDC2.11.8 — authorized Cloud Development and taskful guard reconciliation — IN DEVELOPMENT
 
 Develop under verified immutable released/installed7. Preserve the original approved spec/plan (its proposed7 label is historical; maintenance7 was released first). Integrate the accepted transport/bridge and existing functional pilot, with no new pilot. Correct taskful-resolution-distinct-intent-digests: original claim and current guard/terminal digests remain independently bound, canonical equality and all history/field guards remain fail-closed. Preserve gen38 RED and actual39 repair. Run independent bootstrap, frozen package/consumer/fault checks, ordered independent reviews and exact required CI/release; personal8 activation and each live consumer remain separate actual gates. No savings or live convergence is inferred from the functional pilot.
+
+## Bounded submission-recovery alias maintenance — 2026-10-09
+
+Owner-approved 2.12.2 candidate under immutable released 2.12.1: exact required_pr_validation/github_create_pull_request positive cancelled-before-send recovery, unchanged common proof/CAS safeguards. See the submission-recovery-alias design/plan. Preserve the independent proposed issue100 2.13.0 scope. Candidate-only; Root ordered reviews and exact-SHA CI remain required before integration/release, with installation/adoption and product platform gates separate.
