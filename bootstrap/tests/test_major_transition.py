@@ -10,10 +10,21 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'bootstrap'))
 from src.cdc27.canonical_source import validate_source_lock
+from src.cdc27.release_contract import validate_candidate
 import validate_release
 
 
 class MajorTransitionTests(unittest.TestCase):
+    def test_major_candidate_uses_the_same_strict_stable_transition(self):
+        data = json.loads((ROOT / 'release/candidate.template.json').read_text())
+        data.update(version='3.0.0', developed_under_version='2.12.1')
+        validate_candidate(data)
+        for version in ('3.0.1', '3.1.0', '4.0.0'):
+            with self.subTest(version=version):
+                invalid = copy.deepcopy(data); invalid['version'] = version
+                with self.assertRaises(ValueError):
+                    validate_candidate(invalid)
+
     def lock(self):
         data = json.loads((ROOT / 'release/source.lock.json').read_text())
         data['development_driver_version'] = '2.12.1'

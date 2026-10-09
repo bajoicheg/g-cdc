@@ -8,7 +8,8 @@ def validate_candidate(d):
     v=semver(d["version"]); base=semver(d["developed_under_version"])
     minor=v[0]==base[0] and v[1]==base[1]+1 and v[2]==0
     patch=v[0]==base[0] and v[1]==base[1] and v[2]==base[2]+1
-    if not (minor or patch): raise ValueError("candidate not developed by stable prior release")
+    major=v[0]==base[0]+1 and v[1:]==(0,0)
+    if not (major or minor or patch): raise ValueError("candidate not developed by stable prior release")
     if d["canonical_repository"]!="bajoicheg/g-cdc" or not SHA.fullmatch(d["source_commit"]) or not SHA.fullmatch(d["package_tree"]): raise ValueError("candidate source binding invalid")
     if d["status"] not in {"candidate","released"}: raise ValueError("invalid candidate status")
     ev=d["evidence"]; required={"bootstrap","package","compatibility","fault_injection","consumers"}
