@@ -1,10 +1,10 @@
 {
   "schema": "cdc-release-candidate/v1",
-  "version": "2.12.1",
-  "developed_under_version": "2.12.0",
+  "version": "3.0.0",
+  "developed_under_version": "2.12.1",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "a717db0f1cc327a2dd7c5a323c3e4104c43b923c",
-  "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+  "source_commit": "2eef7c199cd391f13e2bf5fd372c8fa531f5227e",
+  "package_tree": "6d9183527e7081b947625a88084d1f215b6a1070",
   "status": "candidate",
   "evidence": {
     "bootstrap": [
