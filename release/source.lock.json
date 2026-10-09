@@ -1,7 +1,7 @@
 {
   "schema": "cdc-source-lock/v1",
   "canonical_repository": "bajoicheg/g-cdc",
-  "target_version": "2.12.2",
+  "target_version": "2.13.0",
   "development_driver_version": "2.12.1",
   "base_validation_repository": "bajoicheg/g-cdc",
   "base_validation_commit": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",

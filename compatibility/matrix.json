@@ -1,6 +1,6 @@
 {
   "schema": "cdc-compatibility-matrix/v1",
-  "target_version": "2.12.2",
+  "target_version": "2.13.0",
   "developed_under_version": "2.12.1",
   "supported_from_versions": [
     "2.11.3",
