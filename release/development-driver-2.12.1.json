@@ -1,0 +1,23 @@
+{
+  "schema": "cdc-development-driver-identity/v1",
+  "observed_at_utc": "2026-10-09T13:08:04Z",
+  "version": "2.12.1",
+  "source_ref": "refs/heads/release/v2.12.1",
+  "source_commit": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+  "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+  "archive_sha256": "b08970afe7641c5741f76af0e90c50ba94281f6e6e6f8fc03ea3f743ad1f7295",
+  "verification": {
+    "schema": "active-package-verification/v1",
+    "version": "2.12.1",
+    "expected_package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+    "canonical_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+    "installed_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
+    "matched": true,
+    "errors": [],
+    "normalizations": [],
+    "ignored_generated_files": [],
+    "byte_identical_files": 352,
+    "proves_agent_behavior": false
+  },
+  "scope": "Independent loaded driver byte identity; no candidate release or consumer adoption authority."
+}

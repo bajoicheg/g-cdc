@@ -15,7 +15,7 @@ quality:
 policy:
   revision: "1"
   skill_min_version: "2.11.3"
-  skill_max_version_exclusive: "3.0.0"
+  skill_max_version_exclusive: "4.0.0"
   approved_exceptions: []
 
 repository:

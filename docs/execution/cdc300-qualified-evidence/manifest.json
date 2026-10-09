@@ -1,0 +1,44 @@
+{
+  "schema": "cdc-source-qualification-evidence/v1",
+  "repository": "bajoicheg/g-cdc",
+  "version": "3.0.0",
+  "source_freeze": "1546b15964ac67e4acec60ec4ccc39f507123b6f",
+  "reviewed_local_source": "464d3ad24415c2154db3e8a879454b425b9bce68",
+  "package_tree": "2b8f3101a8fc6930e08387db1f509ab23c02d2f0",
+  "scope": "source-candidate-qualification",
+  "checks": [
+    {
+      "id": "full",
+      "log": "docs/execution/cdc300-qualified-evidence/full.log.gz",
+      "uncompressed_sha256": "cb0a473a09d0c7851183703b4676ab7d40e4422cc22ea5bddd60c7c2e1201f4e",
+      "log_sha256": "d9e0fcd0bd9a156dad5ffcb3047da46d6d953b8063ca441e621a76657ae8eb32",
+      "exit_code": 0,
+      "test_count": 1267,
+      "elapsed_seconds": 318.535
+    },
+    {
+      "id": "bootstrap",
+      "log": "docs/execution/cdc300-qualified-evidence/bootstrap.log.gz",
+      "uncompressed_sha256": "6233d0fa0d6e5336134168272bfcb729d895321c1f9f1e798ba390ee5229bfd0",
+      "log_sha256": "2bf9f453a35ebc2512bff0601a995b6e29960cbef4320ce04652dcf7617b2b45",
+      "exit_code": 0,
+      "test_count": 51,
+      "elapsed_seconds": 0.316
+    },
+    {
+      "id": "archives",
+      "log": "docs/execution/cdc300-qualified-evidence/archives.log.gz",
+      "uncompressed_sha256": "684c4d38edb0c260d56f55831d08d237096def0297174dde156b6c8d38a52197",
+      "log_sha256": "dc10f5e1dc44b73ee9dadee89a8e26581ca22d3b4fbe897ae1b9796b617984e6",
+      "exit_code": 0,
+      "test_count": null,
+      "elapsed_seconds": null
+    }
+  ],
+  "hosted_ci": "not_run",
+  "installation_accepted": false,
+  "source_release_accepted": false,
+  "fleet_rollout": false,
+  "tokens": null,
+  "actual_command_start_utc": null
+}

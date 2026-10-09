@@ -61,10 +61,8 @@ jobs:
         run: |
           set -euo pipefail
           PACKAGE_TREE="$(git rev-parse HEAD:src/continuous-development-cycle)"
-          CANDIDATE="$(cat VERSION)"
-          for consumer in g-supervisor g-ad-control g-pc-health-check; do
-            python -B src/continuous-development-cycle/scripts/validate_adapter.py "consumer/evidence/$consumer/development-cycle.yaml"
-            python -B src/continuous-development-cycle/scripts/validate_checkpoint_24.py "consumer/evidence/$consumer/work-status.md" --adapter "consumer/evidence/$consumer/development-cycle.yaml"
-            CONSUMER="$consumer" PACKAGE_TREE="$PACKAGE_TREE" CANDIDATE="$CANDIDATE" python -c 'import json,os,pathlib; n=os.environ["CONSUMER"]; d=json.loads((pathlib.Path("consumer/evidence")/n/"source.json").read_text()); assert d["candidate_version"]==os.environ["CANDIDATE"]; assert d["candidate_package_tree"]==os.environ["PACKAGE_TREE"]; assert len(d["source_commit"])==40; print("CONSUMER_GREEN",n,d["repository"],d["source_commit"],d["vendored_cdc_version"])'
-          done
-          echo "THREE_CONSUMERS_GREEN package_tree=$PACKAGE_TREE"
+          BASELINE="$(python -c 'import json,pathlib; print(json.loads(pathlib.Path("release/source.lock.json").read_text())["development_driver_version"])')"
+          python -B src/continuous-development-cycle/scripts/archived_consumer_qualification.py \
+            --snapshot-root consumer/evidence --baseline-version "$BASELINE" \
+            --consumers g-supervisor g-ad-control g-pc-health-check \
+            --package-tree "$PACKAGE_TREE"
