@@ -11,6 +11,7 @@ from test_recovery_recipes_v2 import B,H,C,DIAG,PARAMS,event,D
 class PublicCallerContracts(unittest.TestCase):
  def test_verified_recipe_reuses_bound_evidence_and_typed_exact_next_check(self):
   p,c,q,reg,policy,route=fixtures();b=copy.deepcopy(B);b.update(repository=c['repository'],environment_id=p['environments']['native_runtime']['id'],toolchain_fingerprint=c['recovery']['bindings']['toolchain_fingerprint'],policy_digest=p['policy_digest']);history=copy.deepcopy(H);history['repository']=c['repository'];catalog=copy.deepcopy(C);recipe=catalog['recipes'][0]
+  b['input_digests']['cloud-profile:native_runtime']=m.profile_api.profile_binding_digest(p,'native_runtime')
   recipe['scope'].update(repository=b['repository'],environment_id=b['environment_id'],toolchain_fingerprint=b['toolchain_fingerprint'],policy_digest=b['policy_digest']);recipe['provenance']['verified_at_utc']=NOW
   diag=dict(DIAG,code='known_failure');selected=r.select(catalog,diag,bindings=b,now_utc=NOW,history=history,new_signal=None);plan=r.action_plan(selected,diag,b,history,PARAMS)
   ev=event(plan,outcome='verified');ev.update(at_utc=NOW,subject=r._subject(diag,b),evidence_ref='evidence:actual-bound-verified-result',evidence_digest=recipe['provenance']['evidence_sha256']);history=r.append_history(history,ev)
