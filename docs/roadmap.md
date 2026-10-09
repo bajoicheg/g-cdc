@@ -1,3 +1,9 @@
+## CDC 2.13.0 — owner-authorized issue100 Cloud fast start/recovery (2026-10-09)
+
+Issue100 is admitted as a genuinely new scope under immutable2.12.1 (9b38bd4d/package9c45), with ordinary default limits and complete immutable links to predecessor143events/charges. Owner authorized implementation through full release, actual personal-byte acceptance and safe Fleet adoption. Root reviews concrete spec/plan before feature implementation; ordered exact-candidate SPEC and distinct independent QUALITY remain mandatory. FULL is the risk floor.
+
+Use docs/superpowers/specs/2026-10-09-cloud-fast-start-reusable-recovery-design.md and docs/superpowers/plans/2026-10-09-cloud-fast-start-reusable-recovery.md. Integrate Cloud native/UI/CLI access qualification, project-owned stable profile, existing entry transport/journal/managed gates, qualified recipe reuse and one-action handoff. Current native Cloud works independently of nested CLI401. No new Codespace/nested Cloud task/auth retry, repeated historical pilot/aggregate checks, scheduler changes or GPC takeover. Proposed2.13.0 is not release/install/convergence evidence. Preserve every historical roadmap section below.
+
 ## Current CDC status and parallel maintenance — 2026-10-07
 
 CDC 2.12.0 is source-released at immutable refs/heads/release/v2.12.0, commit540d42b5a8b06b11d7aeae78585cffbff99da231/package247facf39eadf073883c5f1fe3b4a291278da7f8. Separate metadata mainb72435542f40ec3f5b195f357c968c2346ab4f8f records release/evidence-2.12.0.json; it has no transferred exact-SHA CI claim. Run37610915069 reports the release commit while checkout1fc3ee06ff558cb2362a9f1fd3f0bed7d9c577fd has the identical root tree. The recorded final independent rereview remains NOT_RUN. Source release, personal installation and live adoption are separate surfaces.
