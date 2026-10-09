@@ -230,3 +230,9 @@ existing journal, and recovery-history references must agree. Submit verificatio
 additionally carries the three exact routing/registry digests. Unknown nested
 fields, arbitrary handler parameters and contradictory identities fail closed.
 This is serialized identity validation, never authority or execution admission.
+
+#### Final release-review interface correction (2026-10-09)
+
+The existing context retains all original fields and accepts one optional `routing_request` containing the existing strict capability-request/v1. It is mandatory for new official-CLI remote preparation, bound to context task_id/exact_sha, nonempty approved capabilities and an explicit backend ID. Existing cost_router.route must select that exact backend under a v2 provider binding matching the qualified CLI namespace/environment, codex_cloud provider, compute_backend/create action and current registry configuration. No inferred argv capabilities, backend/environment ID coercion, alternate-mode fallback or extra executor is introduced. The original submit callback remains mandatory; the adapter executable must equal the freshly qualified CLI executable.
+
+The existing authorized recovery caller additionally binds input_digests[cloud-profile:ACCESS_MODE] to the current per-mode profile digest, and supplies independently observed current toolchain_fingerprint. `_recovery` requires both that digest and current policy equality; setup/CLI-mode/shared profile changes cannot reuse an older qualification. Unchanged actual history/provenance remains immutable. A capsule external operation outranks journal-absence/native continuation; missing or conflicting exact original journal identity requires reconciliation. Handoff recipe steps and verification use the shared action_plan consistency contract. These corrections implement A3/A5/A7/A9 and the strict handoff requirement; they do not expand owner/Fleet/provider authority.

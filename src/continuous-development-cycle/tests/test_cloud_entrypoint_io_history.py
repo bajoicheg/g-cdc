@@ -60,6 +60,7 @@ class IOHistoryContracts(unittest.TestCase):
 
     def test_caller_freshly_selects_consumed_diagnostic_and_preserves_blocker(self):
         p,c,q,reg,policy,route=entry.fixtures();b=copy.deepcopy(B);b.update(repository=c['repository'],environment_id=p['environments']['native_runtime']['id'],toolchain_fingerprint=c['recovery']['bindings']['toolchain_fingerprint'],policy_digest=p['policy_digest'])
+        b['input_digests']['cloud-profile:native_runtime']=m.profile_api.profile_binding_digest(p,'native_runtime')
         history=copy.deepcopy(H);history['repository']=c['repository'];catalog=copy.deepcopy(C)
         c['recovery'].update(catalog_ref='git:catalog',catalog=catalog,diagnosis=DIAG,history_ref='git:history',history=history,bindings=b)
         first=m.prepare(p,c,q,reg,policy,route,entry.NOW);decision=first['recovery_decision'];self.assertEqual(decision['action_plan']['handler'],'inspect_exact_invocation')

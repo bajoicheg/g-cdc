@@ -68,9 +68,8 @@ class Handoff(unittest.TestCase):
   h=self.recovery();d=h['next_action']['parameters']['decision'];d['status']='BLOCKED';d['selection']['action']='blocked'
   with self.assertRaises(ValueError):m.validate_handoff(h)
  def test_ready_intent_key_matches_action_and_handoff(self):
-  p,c,q,registry,policy,route=entry.fixtures();c['access_mode']='official_cli';q['access_modes']['official_cli']['status']='ready';c['live_recovery']['provider']=copy.deepcopy(c['live_recovery']['source'])
-  c['intent']={'operation_key':entry.KEY,'attempt_id':'synthetic-ready','intent_ref':'fixture:intent','intent_digest':D,'request_binding_digest':D}
-  c['intent']['request_binding_digest']=m._hash(m._request(p,c))
+  from test_cloud_entry_review_regressions import remote_values
+  p,c,q,registry,policy,route=remote_values()
   prepared=m.prepare(p,c,q,registry,policy,route,entry.NOW);self.assertEqual(prepared['action'],'READY_FOR_SUBMIT')
   self.assertEqual(prepared['operation_key'],entry.KEY);self.assertEqual(prepared['next_action']['parameters']['operation_key'],entry.KEY)
   self.assertEqual(prepared['next_action']['verification']['expected_operation_key'],entry.KEY)

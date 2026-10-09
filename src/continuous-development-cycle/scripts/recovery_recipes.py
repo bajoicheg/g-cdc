@@ -385,6 +385,23 @@ def _read_inputs(handler, parameters, bindings):
         references.add(parameters["evidence_ref"])
     return {k: v for k, v in bindings["input_digests"].items() if k in roles | references}
 
+def selection_verification(selection):
+    """Shared serialized recipe/step contract; this never qualifies or executes it."""
+    recipe = selection['recipe']
+    if recipe is not None:
+        _recipe(recipe, True)
+        if selection['recipe_id'] != recipe['id']:
+            raise ValueError('selection recipe mismatch')
+        expected = ['resume_next_action'] if selection['reason'] == 'verified_evidence_reused' else recipe['actions']
+        if selection['steps'] != expected:
+            raise ValueError('selection steps differ from recipe')
+        return copy.deepcopy(recipe['verification'])
+    if selection['recipe_id'] is not None:
+        raise ValueError('selection missing recipe projection')
+    return {'required_facts': ['result:bound'], 'success_next_action': 'resume_next_action',
+            'failure_next_action': 'record_blocker'}
+
+
 def action_plan(selection, diagnosis, bindings, history, parameters):
     if not isinstance(parameters, dict):
         raise ValueError("parameters must be an object")
@@ -407,14 +424,7 @@ def action_plan(selection, diagnosis, bindings, history, parameters):
         _recipe(recipe, True)
         if selection["recipe_id"] != recipe["id"] or recipe["diagnosis_code"] != diagnosis["code"]:
             raise ValueError("selection recipe mismatch")
-        expected = ["resume_next_action"] if selection["reason"] == "verified_evidence_reused" else recipe["actions"]
-        if selection["steps"] != expected:
-            raise ValueError("selection steps differ from recipe")
-        verification = recipe["verification"]
-    else:
-        if selection["recipe_id"] is not None:
-            raise ValueError("selection missing recipe projection")
-        verification = {"required_facts": ["result:bound"], "success_next_action": "resume_next_action", "failure_next_action": "record_blocker"}
+    verification = selection_verification(selection)
     handler = selection["steps"][0]
     events = _subject_events(diagnosis, bindings, history)
     unresolved = _unresolved(events)

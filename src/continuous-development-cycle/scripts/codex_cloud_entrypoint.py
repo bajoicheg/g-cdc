@@ -46,11 +46,15 @@ def _checks(checks):
         if n is not None and (type(n) is not int or n<1):raise ValueError('invalid minimum test count')
 
 def validate_context(c):
-    _fields(c,CONTEXT_FIELDS,'entry context')
+    if not isinstance(c,dict) or set(c) not in (CONTEXT_FIELDS,CONTEXT_FIELDS|{'routing_request'}):raise ValueError('entry context fields mismatch')
     if c['schema']!='cloud-entry-context/v1':raise ValueError('unsupported entry context')
     profile_api._repository(c['repository']);profile_api._source_ref(c['source_ref']);_text(c['task_id'])
     if not isinstance(c['exact_sha'],str) or not re.fullmatch(r'[0-9a-f]{40}',c['exact_sha']):raise ValueError('invalid exact source SHA')
     if c['task_mode'] not in MODES or c['access_mode'] not in profile_api.MODES:raise ValueError('invalid entry mode')
+    route=c.get('routing_request')
+    if route is not None:
+        capability_router.validate_request(route)
+        if route['task_id']!=c['task_id'] or route['candidate_sha']!=c['exact_sha']:raise ValueError('routing request task/source mismatch')
     _checks(c['checks'])
     intent=c['intent']
     if intent is not None:
@@ -111,6 +115,7 @@ def _recovery(c,p,now):
     if rec['catalog'] is None or rec['history'] is None or rec['catalog_ref'] is None or rec['history_ref'] is None:return {'status':'BLOCKED','reason':'recovery_documents_unconfigured','selection':None,'action_plan':None}
     b=rec['bindings'];env=p['environments'][c['access_mode']]
     if (b['repository']!=c['repository'] or b['environment_namespace']!=env['provider_namespace'] or b['environment_id']!=env['id'] or b['access_mode']!=c['access_mode'] or rec['history']['repository']!=c['repository']):return {'status':'BLOCKED','reason':'recovery_scope_mismatch','selection':None,'action_plan':None}
+    if (b['policy_digest']!=p['policy_digest'] or b['input_digests'].get('cloud-profile:'+c['access_mode'])!=profile_api.profile_binding_digest(p,c['access_mode'])):return {'status':'BLOCKED','reason':'recovery_profile_binding_mismatch','selection':None,'action_plan':None}
     selected=recipes.select(rec['catalog'],rec['diagnosis'],bindings=b,now_utc=now,history=rec['history'],new_signal=rec['new_signal'])
     handler=selected['steps'][0]
     if handler=='inspect_exact_invocation':
@@ -137,6 +142,14 @@ def prepare(profile,context,probe,registry,routing_policy,routing_context,now_ut
     result={'schema':'cloud-entrypoint-preparation/v1','action':'BLOCKED','access_mode':mode,'task_mode':c['task_mode'],'request':None,'request_digest':None,'operation_key':key,'task_id':restore['task_id'],'journal_ref':restore['journal_ref'],'profile_projection':p,'profile_binding_digest':profile_api.profile_binding_digest(p,mode),'probe_projection':q,'probe_binding_digest':_hash(q),'context_projection':c,'context_digest':_hash(c),'restore_digest':_hash(restore),'checked_at_utc':now_utc,'max_age_seconds':300,'recovery_decision':None,'next_action':None,'reasons':[],'authorities':copy.deepcopy(AUTHORITIES)}
     def choose(action,reason,handler,params=None):
         result.update(action=action,reasons=[reason],next_action={'handler':handler,'parameters':copy.deepcopy(params or {}),'required_scope_ref':c['live_recovery']['ownership']['evidence_ref'],'verification':{'expected_operation_key':result['operation_key'],'exact_sha':c['exact_sha']}});return result
+    capsule=c['resume_capsule'];external=None if capsule is None else capsule['external']
+    if external is not None:
+        capsule_key=external['operation_key'];_digest(capsule_key)
+        if key is None:
+            result.update(operation_key=capsule_key,task_id=external['id'])
+            return choose('RECONCILE_EXISTING','capsule_effect_requires_exact_journal_recovery','reconcile_existing_operation',{'operation_key':capsule_key,'task_mode':c['task_mode'],'journal_ref':restore['journal_ref']})
+        if (capsule_key!=key or external['id']!=restore['task_id'] or external['sha']!=c['exact_sha'] or capsule['repository']!=c['repository'] or capsule['source_ref']!=c['source_ref'] or capsule['head_sha']!=c['exact_sha']):
+            return choose('RECONCILE_EXISTING','capsule_restored_identity_conflict','reconcile_existing_operation',{'operation_key':key,'task_mode':c['task_mode'],'journal_ref':restore['journal_ref']})
     known=(key is not None or restore['guard_ref'] is not None or restore['task_id'] is not None or restore['journal_ref'] is not None or restore['intent_ref'] is not None or restore['journal_state']!='NONE_VERIFIED')
     if known:
         if (key is None or restore['mode']!=c['task_mode'] or restore['journal_ref'] is None or restore['journal_digest'] is None or restore['journal_state'] in {'UNKNOWN','CORRUPT'} or lookup['operation_key']!=key or not lookup['complete'] or not _fresh(lookup['observed_at_utc'],now_utc)):
@@ -159,11 +172,15 @@ def prepare(profile,context,probe,registry,routing_policy,routing_context,now_ut
     if c['intent'] is None or not _domain_ready(c,now_utc,('provider',)):return choose('BLOCKED','new_remote_intent_or_scoped_provider_boundary_missing','record_blocker')
     request=_request(p,c)
     if _hash(request)!=c['intent']['request_binding_digest']:return choose('BLOCKED','intent_request_binding_mismatch','record_blocker')
-    if routing_context.get('schema')=='compute-cost-context/v2':
-        assessed=cost_router.assess_provider_action(routing_context['provider_action'],routing_context,routing_policy,now_utc)
-        if not assessed['allowed_for_callback']:return choose('BLOCKED',assessed['reason'],'record_blocker')
-        ex=routing_context['codespace_exception']
-        if ex is not None and (ex['repository']!=c['repository'] or ex['request_plan_digest']!=c['intent']['request_binding_digest']):return choose('BLOCKED','exception_source_request_mismatch','record_blocker')
+    route_request=c.get('routing_request')
+    if route_request is None or not route_request['required_capabilities'] or route_request['required_backend_id'] is None:return choose('BLOCKED','explicit_cli_capability_request_missing','record_blocker')
+    if routing_context.get('schema')!='compute-cost-context/v2':return choose('BLOCKED','qualified_cli_provider_binding_missing','record_blocker')
+    provider_action=routing_context['provider_action'];env=p['environments'][mode]
+    if (provider_action['backend_id']!=route_request['required_backend_id'] or provider_action['provider_kind']!='codex_cloud' or provider_action['provider_namespace']!=env['provider_namespace'] or provider_action['environment_id']!=env['id'] or provider_action['consumption']!='compute_backend' or provider_action['action']!='create' or provider_action['compute_backend_ref'] is None):return choose('BLOCKED','cli_provider_route_mismatch','record_blocker')
+    assessed=cost_router.assess_provider_action(provider_action,routing_context,routing_policy,now_utc)
+    if not assessed['allowed_for_callback']:return choose('BLOCKED',assessed['reason'],'record_blocker')
+    routed=cost_router.route(registry,route_request,routing_policy,routing_context,now_utc)
+    if routed['action']!='route' or routed['backend_id']!=route_request['required_backend_id']:return choose('BLOCKED',routed['reason'],'record_blocker')
     result.update(request=request,request_digest=_hash(request),operation_key=c['intent']['operation_key'])
     answer=choose('READY_FOR_SUBMIT','existing_intent_fresh_qualified_mode','submit_existing_transport',{'task_mode':c['task_mode'],'operation_key':c['intent']['operation_key']})
     answer['next_action']['verification'].update(routing_policy_digest=_hash(routing_policy),routing_context_digest=_hash(routing_context),registry_digest=_hash(registry))
@@ -182,6 +199,7 @@ def submit(prepared,transport,*,read_preflight,launch_authorized,clock=None):
     if any(new[k]!=prepared[k] for k in PREPARED_FIELDS-{'checked_at_utc'}):raise ValueError('fresh preflight changed prepared binding')
     is_dev=isinstance(transport,development.CodexCloudDevelopment)
     if not isinstance(transport,cli.CodexCloudCLI) or is_dev!=(prepared['task_mode']=='DEVELOPMENT'):raise ValueError('transport task mode mismatch')
+    if transport.executable!=new['profile_projection']['toolchain']['cli_executable']:raise ValueError('transport executable differs from qualified CLI')
     return transport.submit(copy.deepcopy(new['request']),launch_authorized=launch_authorized)
 
 def observe(operation_key,transport):
@@ -273,6 +291,7 @@ def _handoff_recovery(decision,h):
         recipes._recipe(recipe,True)
         if selection['recipe_id']!=recipe['id']:raise ValueError('selection recipe mismatch')
     elif selection['recipe_id'] is not None:raise ValueError('missing recipe projection')
+    verification=recipes.selection_verification(selection)
     if selection['action']=='blocked' and (decision['status']!='BLOCKED' or selection['steps']!=['record_blocker']):raise ValueError('blocked selection cannot execute another handler')
     if plan is None:
         if decision['status']!='BLOCKED':raise ValueError('planned recovery requires plan')
@@ -281,6 +300,7 @@ def _handoff_recovery(decision,h):
     _fields(plan,{'schema','handler','parameters','action_fingerprint','verification','next_on_success','next_on_failure','authorities'},'recovery action plan')
     if plan['schema']!='recovery-action-plan/v1' or plan['handler']!=selection['steps'][0]:raise ValueError('recovery handler mismatch')
     recipes._parameters(plan['handler'],plan['parameters']);_digest(plan['action_fingerprint']);recipes._verification(plan['verification'])
+    if plan['verification']!=verification:raise ValueError('plan verification differs from selected recipe')
     if plan['authorities']!=recipes.AUTHORITIES or any(type(v) is not bool for v in plan['authorities'].values()):raise ValueError('recovery authority rejected')
     if (plan['next_on_success']!=plan['verification']['success_next_action'] or plan['next_on_failure']!=plan['verification']['failure_next_action']):raise ValueError('recovery branch mismatch')
     if plan['handler']=='reconcile_external':
