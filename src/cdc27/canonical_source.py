@@ -14,7 +14,8 @@ def validate_source_lock(d):
     if min(target,driver)<(2,11,3):raise ValueError("minimum supported CDC version is 2.11.3")
     minor=target[0]==driver[0] and target[1]==driver[1]+1 and target[2]==0
     patch=target[0]==driver[0] and target[1]==driver[1] and target[2]==driver[2]+1
-    if not (minor or patch): raise ValueError("stable driver must develop next minor or patch")
+    major=target[0]==driver[0]+1 and target[1:]==(0,0)
+    if not (major or minor or patch): raise ValueError("stable driver must develop next major, minor or patch")
     if not SHA.fullmatch(d["base_validation_commit"]) or not TREE.fullmatch(d["base_package_tree"]): raise ValueError("invalid base evidence")
     run_id=d["base_validation_run_id"]; evidence_ref=d["base_validation_evidence_ref"]
     if type(run_id) is not int or run_id<0: raise ValueError("validation run id invalid")

@@ -2,8 +2,10 @@
 
 `bajoicheg/g-cdc` is the canonical source for CDC.
 
-The current immutable source release is **2.12.0**, at `refs/heads/release/v2.12.0`, commit `540d42b5a8b06b11d7aeae78585cffbff99da231`, package tree `247facf39eadf073883c5f1fe3b4a291278da7f8`. It adds explicit quality levels, dependency-bound evidence reuse and bounded validation cycles. See `release/evidence-2.12.0.json` for exact CI checkout/tree provenance and separate metadata boundaries.
+This branch contains the **initial 3.0.0 source candidate**: a compact instruction core, an executable read-only `cdc resume` entry, composed risk/evidence assessments, honest operation observations and bounded executor recommendations. It is not a released or installed runtime. The qualified 2.13.0 Cloud fast-start integration and final release gates remain prerequisites.
 
-**2.12.1 is a maintenance candidate**, developed under released 2.12.0. It documents two independent writers, an optional analyst within existing caps and one integrator; repairs exact argv string validation and the transport example; and checks version metadata before expensive validation. See `docs/superpowers/plans/2026-10-07-parallel-maintenance.md` and `docs/execution/cdc-parallel-maintenance-20261007.json`. A candidate version is not a release or installation claim.
+Development uses an independent verified **2.12.1** driver from `refs/heads/release/v2.12.1`, commit `9b38bd4d9f5fb113ec10bdbca9fbe33908619a54`, package tree `9c45d98c3254e9658d452c505d8c97698e3fc9a7`. See `release/development-driver-2.12.1.json` for the actual 352-file byte-identity witness; it does not claim candidate CI, behavioral acceptance or adoption.
+
+The approved baseline and implementation plan are in `docs/superpowers/specs/2026-10-09-cdc-3.0.0-lean-core-design.md` and `docs/superpowers/plans/2026-10-09-cdc-3.0.0-lean-core.md`. **Live Fleet rollout is paused by the owner for this work.**
 
 Source release, personal installation and live adoption are separate gates. Archived consumer snapshots prove compatibility and do not deploy consumers. Required FULL/platform/release checks remain in force. GAD has a separate owner; paused schedulers remain paused.
