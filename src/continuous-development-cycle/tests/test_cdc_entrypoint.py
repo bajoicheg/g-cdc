@@ -71,6 +71,25 @@ class ResumeEntryTests(unittest.TestCase):
         self.assertEqual(result['next_action']['kind'], 'RECONCILE_EXTERNAL')
         self.assertEqual(result['next_action']['operation'], self.cap['external'])
 
+    def test_stale_or_changed_probe_preserves_existing_external_identity(self):
+        self.cap['external'] = dict(kind='compute', id='existing-task', sha='0' * 40,
+                                    operation_key='preserved-key', state='UNKNOWN')
+        original = copy.deepcopy(self.cap)
+        for field, value, now in [('head_sha', '1' * 40, self.now),
+                                  ('lease_revision', 'changed', self.now),
+                                  ('complete', True, '2026-01-01T04:00:00Z')]:
+            with self.subTest(field=field, now=now):
+                probe = copy.deepcopy(self.probe)
+                probe[field] = value
+                result = cdc.resume(self.cap, probe, now_utc=now)
+                self.assertEqual(result['next_action']['kind'], 'RECONCILE')
+                self.assertEqual(result['next_action']['operation'], original['external'])
+                self.assertTrue(result['next_action']['reasons'])
+                self.assertFalse(result['authorizes_external_start'])
+                self.assertFalse(result['authorizes_product_write'])
+                self.assertFalse(result['authorizes_lease_mutation'])
+        self.assertEqual(self.cap, original)
+
     def test_recorded_blocker_waits_and_recovery_health_reconciles(self):
         self.cap['task']['blocker'] = 'owner pause'
         self.assertEqual(self.assess()['next_action']['kind'], 'WAIT')

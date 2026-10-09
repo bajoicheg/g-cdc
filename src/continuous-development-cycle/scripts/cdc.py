@@ -34,12 +34,14 @@ def resume(capsule, probe, *, now_utc=None, max_age_seconds=7200,
         reasons.append('probe_from_future')
     elif probe_age > max_probe_age_seconds:
         reasons.append('probe_stale')
-    operation = None
+    # Keep the validated original operation as reconciliation context even
+    # when fresh source/ownership observations are still missing or changed.
+    # This carries identity, never current execution or replay authority.
+    operation = dict(capsule['external']) if capsule['external'] is not None else None
     if reasons:
         kind = 'RECONCILE'
     elif capsule['external'] is not None:
         kind = 'RECONCILE_EXTERNAL'
-        operation = dict(capsule['external'])
         reasons.append('existing_external_operation')
     elif capsule['task']['blocker'] is not None or capsule['health']['state'] == 'BLOCKED':
         kind = 'WAIT'
