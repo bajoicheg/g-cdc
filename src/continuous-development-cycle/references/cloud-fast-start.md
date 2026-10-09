@@ -1,6 +1,4 @@
-# CDC 2.13.0 candidate Cloud entry
-
-This is candidate implementation, not release/installation/adoption acceptance. Development authority is immutable released2.12.1.
+# Cloud fast start and durable recovery
 
 ## Cloud new-chat entry (2.13.0)
 
@@ -20,12 +18,29 @@ Recovery v2 selection uses current source/environment/policy/input digests and d
 
 Watchdog resumes use the same entry and actual current facts; inherited paused status remains paused. Do not enable/rebind/reschedule a watchdog or reopen product/security/platform gates to complete CDC metadata.
 
-# Continuous Development Cycle
+The wrapper digest is sha256-prefixed sorted UTF-8 JSON. Existing transport _canonical/_digest retain default ASCII escaping and plain 64-hex output. Never silently trim argv. `snapshot(operation_key)` is a locked read-only copy of the existing transport journal, not inventory or provider authority. Prepared/restored projections are detached; submit repeats fresh preflight and delegates to the original transport callback. History documents belong to their dedicated document refs, not a replacement of multi-file coordination trees.
 
-`bajoicheg/g-cdc` is the canonical source for CDC.
 
-The current immutable source release is **2.12.0**, at `refs/heads/release/v2.12.0`, commit `540d42b5a8b06b11d7aeae78585cffbff99da231`, package tree `247facf39eadf073883c5f1fe3b4a291278da7f8`. It adds explicit quality levels, dependency-bound evidence reuse and bounded validation cycles. See `release/evidence-2.12.0.json` for exact CI checkout/tree provenance and separate metadata boundaries.
+### Exact handoff v1 continuation contract
 
-**2.12.1 is a maintenance candidate**, developed under released 2.12.0. It documents two independent writers, an optional analyst within existing caps and one integrator; repairs exact argv string validation and the transport example; and checks version metadata before expensive validation. See `docs/superpowers/plans/2026-10-07-parallel-maintenance.md` and `docs/execution/cdc-parallel-maintenance-20261007.json`. A candidate version is not a release or installation claim.
+A handoff preserves `operation_key` (nullable only for genuinely no admitted
+remote operation), `task_mode`, `access_mode`, `restore_ref`/`restore_digest`
+(both present or both null), and nullable `recovery_history_ref`, alongside the
+existing source/profile/task/journal/guard/budget/recipe references. `task.mode`
+must equal `task_mode`; next-action verification must contain the exact handoff
+`operation_key` and `exact_sha`. Every object rejects unknown fields. Accepted
+argv strings are never normalized. These references grant no authority.
 
-Source release, personal installation and live adoption are separate gates. Archived consumer snapshots prove compatibility and do not deploy consumers. Required FULL/platform/release checks remain in force. GAD has a separate owner; paused schedulers remain paused.
+| Handler | Exact parameters | Additional binding |
+| --- | --- | --- |
+| run_existing_native_check | check_id, argv | native_runtime, no remote operation |
+| observe_existing_operation / intake_existing_result | operation_key, task_mode, journal_ref | Same known key, mode and journal |
+| reconcile_existing_operation | operation_key, task_mode, journal_ref; optional terminal_evidence_ref | Same key/mode/journal, including unresolved nullable key/journal |
+| submit_existing_transport | operation_key, task_mode | official_cli; exact routing_policy_digest, routing_context_digest and registry_digest verification |
+| use_existing_official_ui_boundary | task_mode | official_ui only |
+| record_blocker | empty object | No executable parameters |
+| execute_existing_recovery_plan | decision | Strict selection/action-plan projection; existing allowlisted typed recipe parameters; exact recovery_history_ref; reconciliation key/task/mode/journal consistency |
+
+Recovery decision validation only checks the serialized contract. It cannot
+revalidate observations or execute a stale recipe: the caller must freshly select
+against actual history and invoke the original owner/action/claim callbacks.

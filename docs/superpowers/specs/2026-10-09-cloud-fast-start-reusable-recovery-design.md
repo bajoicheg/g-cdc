@@ -205,3 +205,28 @@ python -B src/continuous-development-cycle/scripts/codex_cloud_entrypoint.py pre
 --inputs loads strict cloud-entry-inputs/v1 {schema,context,probe,registry,routing_policy,routing_context}; each value is {path,sha256}. Paths are project-relative materialized authorized read-only snapshots; reject outside-root paths, missing/corrupt data and digest mismatches. The existing authorized caller materializes actual durable context/journal/history/capsule/live-domain observations and writes their original timestamps/hashes. The loader performs no network/auth/provider/start/write operation and cannot bless its own input freshness. Probe per-mode completeness and context restore logic decide readiness. It loads each referenced file once into detached typed values; current UTC is the default real process clock. Explicit --now is test-only labeled fixture input, never production freshness evidence. Existing expanded --context/--probe/--registry/--policy/--routing-context options remain a documented equivalent for an authorized caller, with the same strict loading/validation; reject conflicts with --inputs.
 
 prepare emits one preparation JSON and an exact single next_action descriptor {handler,parameters,required_scope_ref,verification}. CONTINUE_NATIVE uses handler run_existing_native_check with parameters {check_id,argv} from the validated context.checks, required_scope_ref of the actual authorized native scope and expected exit/result binding. The existing caller executes that bounded argv only through its ordinary permission/managed gates; prepare itself is not a runner. OBSERVE_EXISTING emits the original operation_key/mode/journal_ref and the concrete existing observe command; unavailable CLI/UI emits its supported official observation/reconciliation boundary with same identity, not another transport. No ready profile or printed command grants a lease. A new chat needs no infrastructure rediscovery to load this supported invocation and follow the one typed next action.
+
+
+### Registered integration shared-interface rulings — 2026-10-09
+
+Profile provenance entries are exactly {field,evidence_ref,evidence_sha256,qualified_at_utc}; control_host.kind is a nonempty discriminator, not a provider-name heuristic. A null display label does not invalidate authenticated native-runtime ID/control-host/evidence binding. Remote CLI/UI environment_label remains required. Template unknown IDs/URLs/labels/tool versions/control_host.binding_ref are null; configured=false/capability_ref=null. setup.fingerprint and policy_digest null mean UNCONFIGURED, never a placeholder ready digest.
+
+Recovery v2 selection adds strict selected_signal:null or {reference,digest,changed_inputs,completed_correction_ref}, detached from the freshly validated new_signal. Legacy v1 shape is unchanged. For an already consumed exact action fingerprint, action_plan requires the explicitly selected correction ref+digest to match an unused same-subject terminal verified correction event; a reason string or unrelated successful event cannot infer a correction. It validates signal consumption and the exact fingerprint's genuine typed read dependencies. The entry caller derives selection afresh and persists selected signal/correction refs with its exact history event; cached reason is never sufficient. Repeated-fingerprint ValueError becomes the preserved concrete BLOCKER, not another investigation. input_digests/changed_inputs use nonempty name-to-sha256-prefixed-digest maps; arbitrary incidental chat/wake/attestation fields do not reset the fingerprint.
+
+
+### Verified-recipe caller projection and expanded invocation
+
+The entrypoint passes the existing strict resume handler `{next_action_ref,evidence_ref}`. next_action_ref is `cloud-entry-check:` plus the wrapper sha256 digest of repository/source_ref/exact_sha/exact first check projection. A reused verified recipe retains the actual same-subject terminal history evidence_ref; this pure reference grants no launch authority. `prepare --policy FILE` is the documented alias of `--routing-policy FILE`, with identical typed routing_policy loading; either form delegates to the existing interfaces. Accepted raw argv strings are retained exactly.
+
+
+#### R2 concrete handoff parser contract (Root source preflight correction)
+
+Handoff fields and typed handler parameters are enumerated in the package
+`references/cloud-fast-start.md` contract table. All six originally required
+continuation fields are mandatory keys; only genuinely absent operation/reference
+values are nullable. `restore_ref` and wrapper-prefixed `restore_digest` form a
+pair. Task mode, next-action expected operation key/exact SHA, per-mode handler,
+existing journal, and recovery-history references must agree. Submit verification
+additionally carries the three exact routing/registry digests. Unknown nested
+fields, arbitrary handler parameters and contradictory identities fail closed.
+This is serialized identity validation, never authority or execution admission.

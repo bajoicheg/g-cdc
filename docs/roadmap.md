@@ -1,3 +1,7 @@
+## CDC 2.13.0 issue100 candidate assembly — 2026-10-09
+
+Registered implementation closes typed profile/entrypoint/router/history contracts under released2.12.1. Completed focused RED/GREEN receipts are preserved and reused by unchanged input bindings; new caller mismatches have their own RED/GREEN. Next phase assembles one version-consistent candidate and performs shared-interface/bootstrap/layout/isolated actor, ordered exact-candidate SPEC/independent QUALITY and one required final CI/FULL before source publication. Personal activation and safe eligible consumers/Fleet remain separate gates. GPC claimed uncertainty and paused schedulers stay protected. No candidate label certifies release or adoption.
+
 ## CDC 2.13.0 concrete contract revision — 2026-10-09
 
 Actual Root reviewer /root/issue100_design_review completed PLAN_ONLY CHANGES_REQUIRED (0 Critical/4 Important), report SHA441dead9592a390496c7bae81a3929026920c0a80c21ba85f269624f48b09676. Close D100-01..04 with typed context/prepared/restore precedence and exact transport field/per-mode namespace mapping, durable recovery history/action hookup, typed compute/control-host exceptions and actual candidate-bound isolated new-chat/cold-warm measurements. Revised spec contains concrete runnable prepare --profile/--inputs loading, shared-interface rulings and complete A1-A12 coverage. Feature implementation awaits the same independent reviewer's real GREEN; physical review success is separate from semantic changes-required.
@@ -527,3 +531,7 @@ RCA consolidation for 2.11.6: PR79 hidden-fixture evidence remains reproducible 
 ## CDC2.11.8 — authorized Cloud Development and taskful guard reconciliation — IN DEVELOPMENT
 
 Develop under verified immutable released/installed7. Preserve the original approved spec/plan (its proposed7 label is historical; maintenance7 was released first). Integrate the accepted transport/bridge and existing functional pilot, with no new pilot. Correct taskful-resolution-distinct-intent-digests: original claim and current guard/terminal digests remain independently bound, canonical equality and all history/field guards remain fail-closed. Preserve gen38 RED and actual39 repair. Run independent bootstrap, frozen package/consumer/fault checks, ordered independent reviews and exact required CI/release; personal8 activation and each live consumer remain separate actual gates. No savings or live convergence is inferred from the functional pilot.
+
+## Backlog — English CDC communication and documentation
+
+- Owner request, 2026-10-09 10:03:22 Europe/Moscow (07:03:22Z): use English for CDC chat messages, include explicit timestamps and timezone, send meaningful updates only, and bold the most important point. Audit and translate remaining non-English canonical CDC documentation, then maintain all new and edited CDC documents in English while preserving identifiers, contracts and evidence. This is future backlog work; the historical corpus translation is outside the current 2.13.0 release scope.
