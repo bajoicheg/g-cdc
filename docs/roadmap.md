@@ -1,3 +1,7 @@
+## Current release sequence — 2026-10-09
+
+Owner requires 2.12.2 → 2.13.0 → integration into the 3.0.0 source branch. No Fleet rollout. Isolated candidate development may continue, but immutable releases and adoption cannot skip their predecessor gates. The 2.12.2 alias fix is integrated in the 2.13.0 candidate. Current evidence/status is in docs/execution/cdc-2.13.0-integration-20261009.md; historical release/Fleet instructions below do not override the current restriction.
+
 ## CDC 2.13.0 issue100 candidate assembly — 2026-10-09
 
 Registered implementation closes typed profile/entrypoint/router/history contracts under released2.12.1. Completed focused RED/GREEN receipts are preserved and reused by unchanged input bindings; new caller mismatches have their own RED/GREEN. Next phase assembles one version-consistent candidate and performs shared-interface/bootstrap/layout/isolated actor, ordered exact-candidate SPEC/independent QUALITY and one required final CI/FULL before source publication. Personal activation and safe eligible consumers/Fleet remain separate gates. GPC claimed uncertainty and paused schedulers stay protected. No candidate label certifies release or adoption.

@@ -1,3 +1,7 @@
+## Current ordered integration — 2026-10-09
+
+Owner requires 2.12.2 first, then 2.13.0 and integration into 3.0.0. No Fleet rollout. The accepted 2.12.2 alias is integrated into this candidate; main was freshly observed at 3d063ac723a68340e732d552c1d69636470b1ac3. Development still uses the actually verified immutable 2.12.1 driver. Package/code freeze e1b08f6b57b10b3b0217afb0cc22c23849b55377 has package be9cec8df9ea125086ef31b6df9f552fb410e5e6. Independent bootstrap 46 and affected checks 80 passed after metadata binding correction. Clean-consumer FULL, affected actor acceptance, ordered final SPEC/QUALITY, exact CI and immutable release remain separate gates; this section claims none pending. See docs/execution/cdc-2.13.0-integration-20261009.md. Earlier state/rollout permissions below are history wherever they conflict with this current owner instruction.
+
 ## CDC 2.13.0 issue100 implementation assembly — 2026-10-09
 
 The approved plan14c39b45 is implemented through registered writer scopes under immutable released2.12.1 authority. Root narrow profile review approved only the native null-label delta; final ordered SPEC/QUALITY, isolated actor, frozen FULL/exact-head CI and release/install/adoption remain pending. Current version2.13.0 labels are candidate assembly, not source release. Use the exact runnable Cloud entry below; preserve all historical sections, GPC unresolved claimed guard and paused schedulers.
