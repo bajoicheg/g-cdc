@@ -135,6 +135,48 @@ class ProjectMigrationTests(unittest.TestCase):
         cp = yaml.safe_load(files['docs/work-status/current.md'].split('---\n', 2)[1])
         return files, adapter, cp
 
+    def test_custom_checkpoint_path_is_rejected_before_fixed_path_proposal(self):
+        adapter, cp, body = self.documents()
+        adapter['checkpoint']['path'] = 'state/custom.md'
+        self.update_documents(adapter, cp, body)
+        self.request['preset'] = 'critical'
+        with self.assertRaisesRegex(ValueError, 'checkpoint path'): self.migrate()
+
+    def test_recovery_without_binding_still_validates_supplied_cloud_profile(self):
+        adapter, cp, body = self.documents()
+        cp['policy_digest'] = None
+        self.request['current_checkpoint_markdown'] = '---\n' + yaml.safe_dump(cp) + '---' + body
+        wrong = json.loads(self.files['docs/cdc-cloud-profile.json'])
+        wrong['repository'] = 'other/project'
+        for text in ('malformed', '{"schema":"one","schema":"two"}', json.dumps(wrong)):
+            with self.subTest(text=text):
+                self.request['cloud_profile_json'] = text
+                with self.assertRaises(ValueError): self.migrate()
+        self.request['cloud_profile_json'] = self.files['docs/cdc-cloud-profile.json']
+        result = self.migrate()
+        self.assertEqual(result['action'], 'RECONCILE')
+        self.assertEqual(result['files'], [])
+        self.assertEqual(result['cloud_reuse']['status'], 'REQUALIFY')
+
+    def test_keyless_partial_external_markers_are_retained_and_block_files(self):
+        for key, value in (('waiting_external_kind', 'compute'),
+                           ('waiting_external_id', 'saved-task'),
+                           ('waiting_external_sha', 'a' * 40),
+                           ('operation_intent_ref', 'git:saved-intent')):
+            with self.subTest(key=key):
+                adapter, cp, body = self.documents()
+                cp[key] = value
+                self.update_documents(adapter, cp, body)
+                self.request['preset'] = 'critical'
+                result = self.migrate()
+                self.assertEqual(result['action'], 'WAIT')
+                self.assertEqual(result['files'], [])
+                output_key = {'waiting_external_kind': 'kind', 'waiting_external_id': 'id',
+                              'waiting_external_sha': 'sha', 'operation_intent_ref': 'intent_ref'}[key]
+                self.assertEqual(result['existing_operation'][output_key], value)
+                self.request['current_checkpoint_markdown'] = self.files['docs/work-status/current.md']
+                self.request['current_adapter_yaml'] = self.files['docs/development-cycle.yaml']
+
     def test_migrate_cli_uses_its_own_fresh_clock(self):
         request = copy.deepcopy(self.request)
         request['probe']['observed_at_utc'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')

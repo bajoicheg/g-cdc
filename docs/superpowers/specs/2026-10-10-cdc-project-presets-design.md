@@ -53,7 +53,10 @@ and an explicitly inert UNCONFIGURED Cloud-entry input scaffold. The scaffold us
 cloud-entry-inputs-template/v1 (not the runnable cloud-entry-inputs/v1), names
 the five required snapshots and contains no invented probes or hashes. It must
 fail the existing prepare command until genuine snapshots are materialized.
-Outputs have portable fixed relative paths.
+Outputs have portable fixed relative paths. Migration rejects a custom checkpoint
+path rather than emitting a file the preserved adapter does not reference.
+A supplied Cloud profile validates even when original digest is null. Any saved
+external marker, including keyless partial identity, is retained and blocks files.
 The checkpoint records no active owner, no operation, no validation success and
 no release. It binds the adapter revision/digest and project/source identity.
 

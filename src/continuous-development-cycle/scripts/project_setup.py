@@ -93,7 +93,7 @@ def _cloud(text, repository, branch, digest):
     validate_profile(value)
     if value['repository'] != repository or value['source_ref'] != 'refs/heads/' + branch:
         raise ValueError('Cloud profile project/source identity mismatch')
-    status = ('REUSE_PENDING_FRESH_PROBE' if value['policy_digest'] == 'sha256:' + digest
+    status = ('REUSE_PENDING_FRESH_PROBE' if digest is not None and value['policy_digest'] == 'sha256:' + digest
               else 'REQUALIFY')
     return text, {'status': status, 'reused': True}
 
@@ -170,6 +170,8 @@ def _original_documents(request):
         raise ValueError('original policy has no supported diagnostic version')
     diagnostic_text = '.'.join(str(part) for part in diagnostic_version)
     validate_checkpoint_24(checkpoint, adapter, skill_version=diagnostic_text)
+    if adapter['checkpoint']['path'] != 'docs/work-status/current.md':
+        raise ValueError('custom checkpoint path requires separately reviewed migration')
     target_text = (ROOT / 'VERSION').read_text().strip()
     compatibility = dict(diagnostic_version=diagnostic_text, target_version=target_text,
                          original_target_compatible=diagnostic_version <= semver(target_text) < ceiling)
@@ -177,7 +179,9 @@ def _original_documents(request):
 
 
 def _existing_operation(checkpoint):
-    if checkpoint['operation_key'] is None and checkpoint['lease_state'] != 'waiting_external':
+    saved = ('operation_key', 'operation_intent_ref', 'waiting_external_kind',
+             'waiting_external_id', 'waiting_external_sha')
+    if all(checkpoint[key] is None for key in saved) and checkpoint['lease_state'] != 'waiting_external':
         return None
     return dict(kind=checkpoint['waiting_external_kind'], id=checkpoint['waiting_external_id'],
                 sha=checkpoint['waiting_external_sha'], intent_ref=checkpoint['operation_intent_ref'],
@@ -233,8 +237,11 @@ def migrate(request, *, now_utc=None):
     operation = _existing_operation(checkpoint)
     # Incomplete original binding is reconciliation work, never a silent rebind.
     if checkpoint['policy_digest'] is None:
-        cloud = {'status': 'REQUALIFY' if request['cloud_profile_json'] is not None else 'UNCONFIGURED',
-                 'reused': request['cloud_profile_json'] is not None}
+        if request['cloud_profile_json'] is not None:
+            _, cloud = _cloud(request['cloud_profile_json'], checkpoint['repository'],
+                              checkpoint['branch'], None)
+        else:
+            cloud = {'status': 'UNCONFIGURED', 'reused': False}
     else:
         _, cloud = _cloud(request['cloud_profile_json'], checkpoint['repository'],
                           checkpoint['branch'], checkpoint['policy_digest'])

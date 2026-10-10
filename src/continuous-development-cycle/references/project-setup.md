@@ -41,7 +41,10 @@ observed_at_utc (UTC Z), lease_released (boolean) and guard_reconciled (boolean)
 Use a current source observation; CLI accepts at most 90 seconds of age and
 5 seconds of future clock tolerance. Embedded tests may inject now_utc.
 
-Original policy/checkpoint bindings validate before planning. An explicit
+Original policy/checkpoint bindings validate before planning. This fixed-path
+slice rejects custom checkpoint paths rather than redirecting the policy. Even
+unbound recovery validates a supplied Cloud profile and project/ref identity.
+Any saved external marker, including a keyless partial record, blocks artifacts. An explicit
 supported diagnostic version reads an archived policy; default checkpoint
 validation still rejects an incompatible installed runtime. Only a known
 exclusive ceiling 3.0.0 may be proposed as 4.0.0 for the 3.x target. Report
