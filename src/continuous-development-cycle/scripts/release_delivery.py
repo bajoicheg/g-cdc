@@ -97,13 +97,16 @@ class GitReleaseDelivery:
             GIT_AUTHOR_EMAIL="cdc@example.invalid",GIT_COMMITTER_NAME="CDC delivery",GIT_COMMITTER_EMAIL="cdc@example.invalid")
         if index is not None:env["GIT_INDEX_FILE"]=str(index)
         try:
-            p=subprocess.run(["git","-C",str(self.repo),*args],input=input_text,text=True,
+            data=input_text.encode("utf-8") if isinstance(input_text,str) else input_text
+            p=subprocess.run(["git","-C",str(self.repo),*args],input=data,
                 capture_output=True,env=env,timeout=30)
+            output=p.stdout if raw else p.stdout.decode("utf-8").rstrip("\n")
         except (OSError,subprocess.SubprocessError,UnicodeError):raise ValueError("delivery Git operation unavailable") from None
         if p.returncode:raise ValueError("delivery Git object operation failed")
-        return p.stdout if raw else p.stdout.rstrip("\n")
+        return output
 
-    def _read(self,commit,path):return self._git("cat-file","blob",_sha(commit)+":"+path,raw=True)
+    def _read_bytes(self,commit,path):return self._git("cat-file","blob",_sha(commit)+":"+path,raw=True)
+    def _read(self,commit,path):return self._read_bytes(commit,path).decode("utf-8")
     def _object(self,commit,path,kind):
         oid=_sha(self._git("rev-parse",_sha(commit)+":"+path))
         if self._git("cat-file","-t",oid)!=kind:raise ValueError("delivery object type mismatch")
@@ -147,7 +150,7 @@ class GitReleaseDelivery:
         for name in ("version","release_ref","release_commit","package_tree","canonical_repository"):
             if historic[name]!=binding[name]:raise ValueError("rollback historical acceptance disagrees")
         self._object(previous,"docs/cdc-adoption-"+binding["version"]+".md","blob")
-        if not self._read(previous,"docs/cdc-adoption-"+binding["version"]+".md").strip():
+        if not self._read_bytes(previous,"docs/cdc-adoption-"+binding["version"]+".md").strip():
             raise ValueError("rollback historical acceptance audit missing")
 
     def _pending(self):
@@ -186,13 +189,13 @@ class GitReleaseDelivery:
         # Missing audit is normal on forward adoption, but all existing bytes survive.
         exists=self._git("ls-tree",expected_head,"--",audit)
         if exists:self._object(expected_head,audit,"blob")
-        previous_audit=self._read(expected_head,audit) if exists else ""
+        previous_audit=self._read_bytes(expected_head,audit) if exists else b""
         audit_record=dict(schema="cdc-delivery-audit/v1",transaction_id=transaction_id,
             mode="rollback" if rollback_from else "adopt",source_head=expected_head,
             previous_acceptance=rollback_from,release_commit=binding["release_commit"],
             package_tree=binding["package_tree"],version=binding["version"])
-        appended=previous_audit+("\n" if previous_audit and not previous_audit.endswith("\n") else "")
-        appended+="\n"+json.dumps(audit_record,sort_keys=True)+"\n"
+        appended=previous_audit+(b"\n" if previous_audit and not previous_audit.endswith(b"\n") else b"")
+        appended+=("\n"+json.dumps(audit_record,sort_keys=True)+"\n").encode("utf-8")
         fd,path=tempfile.mkstemp(prefix="cdc-delivery-index-");os.close(fd);os.unlink(path)
         index=Path(path)
         try:
@@ -253,8 +256,8 @@ class GitReleaseDelivery:
         for name in ("version","release_ref","release_commit","package_tree","canonical_repository"):
             if lock[name]!=binding[name]:raise ValueError("delivery target lock disagrees")
         exists=self._git("ls-tree",source,"--",audit)
-        prior=self._read(source,audit) if exists else ""
-        result=self._read(candidate,audit)
+        prior=self._read_bytes(source,audit) if exists else b""
+        result=self._read_bytes(candidate,audit)
         if not result.startswith(prior):raise ValueError("delivery audit history was overwritten")
         try:record=_json(result.splitlines()[-1])
         except (IndexError,ValueError):raise ValueError("delivery audit record missing") from None

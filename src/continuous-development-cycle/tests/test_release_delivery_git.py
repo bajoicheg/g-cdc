@@ -211,6 +211,22 @@ class GitDeliveryTests(unittest.TestCase):
         self.assertTrue(raw.startswith(audit.encode()))
         self.assertEqual(self.git(self.work,"write-tree"),index_before)
 
+    def test_forward_and_rollback_preserve_crlf_and_bare_cr_audit_bytes(self):
+        paths = ['docs/cdc-adoption-2.11.3.md', 'docs/cdc-adoption-2.11.4.md']
+        history = b'original acceptance\r\nrecord retained\rlast\r\n\r\n'
+        for path in paths:
+            (self.work/path).write_bytes(history)
+        self.source=self.commit(self.work);self.git(self.work,'push','-q','origin','main')
+        p=self.prepare()
+        raw=subprocess.check_output(['git','-C',str(self.work),'show',p['state']['candidate_commit']+':'+paths[1]])
+        self.assertTrue(raw.startswith(history))
+        self.delivery.publish(p)
+        restored=self.delivery.prepare(self.bindings['2.11.3'],expected_head=p['state']['candidate_commit'],
+            transaction_id='rollback-newline-bytes',operation_budget=100,rollback_from=self.source)
+        raw=subprocess.check_output(['git','-C',str(self.work),'show',restored['state']['candidate_commit']+':'+paths[0]])
+        self.assertTrue(raw.startswith(history))
+        self.delivery.publish(restored)
+
     def test_lease_revision_change_at_actual_assembly_push_blocks_effect(self):
         original=self.delivery.assembly_store._git
         changed=False
