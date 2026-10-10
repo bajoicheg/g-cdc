@@ -40,11 +40,13 @@ src/continuous-development-cycle; modify scripts/cdc.py and tests/test_cdc_entry
 
 **Interfaces:** produces initialize(request: dict) -> cdc-project-plan/v1; fixed
 files docs/development-cycle.yaml, docs/work-status/current.md,
-docs/cdc-cloud-profile.json and docs/cdc-cloud-entry-inputs.json.
+docs/cdc-cloud-profile.json and docs/cdc-cloud-entry-inputs.template.json. The
+inert template has no context/probe hashes and is not a runnable inputs bundle.
 
 - [ ] Write behavioral tests: test_each_preset_validates, test_init_recovery_has_no_authority,
   test_literal_commands_never_execute, test_init_rejects_bad_identity_or_commands,
-  test_cloud_reuse_preserves_bytes_and_rejects_other_project.
+  test_cloud_reuse_preserves_bytes_and_rejects_other_project,
+  test_unconfigured_input_scaffold_cannot_prepare_cloud_action.
 - [ ] Observe RED against absent initialization, retaining exact command/output.
 - [ ] Implement initialize and shared strict parsers/rendered-file hashing; reuse templates.
 - [ ] Add strict CLI init dispatch and duplicate-key regression; observe targeted GREEN.
@@ -53,7 +55,9 @@ docs/cdc-cloud-profile.json and docs/cdc-cloud-entry-inputs.json.
 ### Task 2: conservative migration preview
 
 **Files:** same project_setup.py and test_project_setup.py; CLI migrate dispatch
-and focused entrypoint regressions; references/project-setup.md, phase-routing.md.
+and focused entrypoint regressions; references/project-setup.md, phase-routing.md;
+backward-compatible keyword-only diagnostic version propagation in
+scripts/validate_checkpoint.py and scripts/validate_checkpoint_24.py.
 
 **Interfaces:** consumes existing valid adapter/checkpoint/profile text and fresh
 probe; produces migrate(request: dict, *, now_utc=None) -> cdc-project-plan/v1.
@@ -62,7 +66,9 @@ probe; produces migrate(request: dict, *, now_utc=None) -> cdc-project-plan/v1.
   test_missing_quality_stays_full, test_platform_cannot_downgrade,
   test_drift_and_stale_probe_have_no_files, test_external_or_guard_wait_preserves_identity,
   test_noop_is_byte_exact, test_changed_revision_rebind_then_noop,
-  test_cloud_policy_change_requires_requalification, test_nondecimal_revision_requires_choice.
+  test_cloud_policy_change_requires_requalification, test_nondecimal_revision_requires_choice,
+  test_original_major_ceiling_is_diagnostic_only_and_proposal_validates,
+  test_default_checkpoint_validation_still_rejects_original_ceiling.
 - [ ] Observe meaningful RED for the absent behaviors before code changes.
 - [ ] Compose policy_migration.plan, existing strict validators and conservative projections.
   Rebind only revision/digest; reject conflicting platform; enforce fresh runtime probe.

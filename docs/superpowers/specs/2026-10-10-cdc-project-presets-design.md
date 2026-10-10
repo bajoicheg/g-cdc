@@ -49,7 +49,11 @@ Repository is canonical owner/name, branch is a safe refs/heads suffix, and
 source_head is an exact 40-character Git SHA. It renders an adapter from the
 packaged development-cycle template, a validated v4 recovery checkpoint, an
 unconfigured Cloud profile or the exact supplied reusable Cloud-profile text,
-and packaged Cloud-entry inputs. Outputs have portable fixed relative paths.
+and an explicitly inert UNCONFIGURED Cloud-entry input scaffold. The scaffold uses
+cloud-entry-inputs-template/v1 (not the runnable cloud-entry-inputs/v1), names
+the five required snapshots and contains no invented probes or hashes. It must
+fail the existing prepare command until genuine snapshots are materialized.
+Outputs have portable fixed relative paths.
 The checkpoint records no active owner, no operation, no validation success and
 no release. It binds the adapter revision/digest and project/source identity.
 
@@ -60,7 +64,14 @@ no release. It binds the adapter revision/digest and project/source identity.
 guard_reconciled}`. The runtime clock enforces a 90-second probe age (5-second
 future tolerance). Pure injected clock is for embedded deterministic tests;
 the CLI uses its own clock. Validate existing adapter/checkpoint bindings before
-proposing updates. Invalid/legacy policy, mismatched repository, unsupported
+proposing updates. Add a backward-compatible optional keyword-only skill_version
+diagnostic parameter through validate_checkpoint_24 -> validate_checkpoint ->
+validate_adapter. Validate original structures at max(original minimum, 2.11.3)
+only if inside the original range; default callers still use actual VERSION and
+reject incompatible installations. Report original target incompatibility
+separately. For explicit migration only, a known exclusive ceiling 3.0.0 may be
+proposed as 4.0.0; other unsupported bounds require a reviewed migration.
+Validate detached proposed adapter/checkpoint under the actual target runtime. Invalid/legacy policy, mismatched repository, unsupported
 versions, duplicate YAML/JSON keys and malformed control data fail explicitly.
 
 A stale/source-drifted probe returns RECONCILE with no proposed write artifacts.
@@ -88,7 +99,8 @@ environment. Without reuse, generated profiles remain UNCONFIGURED.
 
 Every successful result has `schema=cdc-project-plan/v1`, `action`, `preset`,
 `source_head`, `policy_digest`, `files=[{path,content,before_sha256,after_sha256}]`,
-`changed_paths`, `cloud_reuse`, `reason`, and false write/external/lease/release/
+`changed_paths`, `cloud_reuse`, `reason`, `existing_operation`,
+`original_compatibility`, and false write/external/lease/release/
 adoption authority. File hash previews cover exact UTF-8 contents; identical
 files are omitted from changed_paths. Results and request objects are never
 mutated. No caller-defined output paths or free-text executable actions.
@@ -105,6 +117,8 @@ mutated. No caller-defined output paths or free-text executable actions.
   applicable artifacts; original external identity remains available for recovery.
 - FULL cannot become MEDIUM; Windows/Android cannot silently become any or each
   other; missing quality retains FULL; unknown presets and revisions fail clearly.
+- Original installation incompatibility is distinct from proposed-bound validity;
+  default checkpoint callers retain rejection, including archived ceilings.
 - NOOP retains exact bytes; a real change advances revision/digest once and a
   second plan from that output is NOOP.
 - Reused Cloud profile bytes survive unchanged; wrong repository/ref is rejected;
