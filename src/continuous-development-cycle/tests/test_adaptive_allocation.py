@@ -223,5 +223,26 @@ class AdaptiveAllocationTests(unittest.TestCase):
                                     capture_output=True, text=True)
             self.assertEqual(failed.returncode, 2)
 
+    def test_malformed_strategy_inputs_fail_closed_in_api_and_both_clis(self):
+        script = Path(__file__).resolve().parents[1] / 'scripts/adaptive_allocation.py'
+        mutations = [lambda r: r['profiles'][1]['agent_reservations'][0]['event']['cost'].update(tokens=10 ** 309),
+                     lambda r: r['strategy']['ledger']['policy'].update(max_parallel_agents=10 ** 309),
+                     lambda r: r['profiles'][1]['agent_reservations'][0].update(task_id=[])]
+        for mutate in mutations:
+            request = allocation()
+            mutate(request)
+            with self.subTest(request=request), self.assertRaises(ValueError):
+                self.evaluate(request)
+            with tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / 'request.json'
+                path.write_text(json.dumps(request))
+                for argv in ([sys.executable, '-B', str(script), str(path)],
+                             [sys.executable, '-B', str(script.with_name('cdc.py')), 'allocate', str(path)]):
+                    failed = subprocess.run(argv, capture_output=True, text=True)
+                    with self.subTest(argv=argv):
+                        self.assertEqual(failed.returncode, 2)
+                        self.assertEqual(failed.stdout, '')
+                        self.assertNotIn('Traceback', failed.stderr)
+
 
 if __name__ == '__main__': unittest.main()

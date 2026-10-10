@@ -28,6 +28,13 @@ def _text(value, label):
         raise ValueError(label + ' must be nonempty unpadded text')
 
 
+def _strategy(value):
+    try:
+        return execution_strategy.evaluate(value)
+    except (TypeError, KeyError, OverflowError) as exc:
+        raise ValueError('invalid strategy or prospective budget input') from exc
+
+
 def evaluate(request: dict) -> dict:
     """Select from caller-authenticated compatible evidence without consuming reservations."""
     _fields(request, ('schema', 'comparison_group', 'strategy', 'default_profile_id',
@@ -35,7 +42,7 @@ def evaluate(request: dict) -> dict:
     if request['schema'] != 'adaptive-allocation/v1':
         raise ValueError('allocation schema mismatch')
     _text(request['comparison_group'], 'comparison_group')
-    baseline = execution_strategy.evaluate(request['strategy'])
+    baseline = _strategy(request['strategy'])
     floor = 2 if any(q['effective_level'] == 'FULL'
                      for q in baseline['task_quality'].values()) else 1
     raw_profiles = request['profiles']
@@ -54,7 +61,7 @@ def evaluate(request: dict) -> dict:
             raise ValueError('duplicate profile id')
         strategy = copy.deepcopy(request['strategy'])
         strategy['agent_reservations'] = profile['agent_reservations']
-        strategies[profile['id']] = execution_strategy.evaluate(strategy)
+        strategies[profile['id']] = _strategy(strategy)
         profiles[profile['id']] = profile
     default_id = request['default_profile_id']
     _text(default_id, 'default_profile_id')
