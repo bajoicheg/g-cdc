@@ -3,11 +3,11 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.2.0
+# Continuous Development Cycle v3.3.0
 
-This is the 3.2.0 adaptive-allocation source candidate. Its version identifies candidate
+This is the 3.3.0 release-delivery and forward-rollback source candidate. Its version identifies candidate
 bytes and is not release, installation or adoption evidence. Develop it under
-the independently verified 3.1.0 driver. The prior complete instructions
+the independently verified 3.2.0 driver. The prior complete instructions
 are retained in `references/legacy-core-2.12.1.md`. Load current phase detail
 through `references/phase-routing.md`, rather than reading all history.
 
@@ -42,6 +42,13 @@ For project setup load `references/project-setup.md`. `scripts/cdc.py init`
 and `migrate` produce validated file previews from strict requests. Presets
 preserve platform, quality and control requirements. Their output carries no
 write or launch authority; apply only through the existing managed writer.
+
+For exact release delivery or restoration load `references/release-delivery.md`.
+The read-only `scripts/cdc.py delivery` command lists missing live checks. The
+explicit native Git API composes verified immutable releases, current managed
+ownership, detached assembly and the existing durable consumer publisher.
+Rollback creates a new forward commit and preserves current controls/history;
+no proposal grants effect authority or starts Fleet/schedulers.
 
 ## Execute the authorized scope
 

@@ -18,6 +18,7 @@ its own authority requirements. A route is not permission to execute an effect.
 | Public source publication | `references/publication-safety.md`, `references/autonomous-continuity-and-isolation.md` |
 | Release / isolated archived-consumer compatibility | `references/release-management.md`, `references/canonical-source-and-release.md`, `references/deterministic-distribution-and-convergence.md` |
 | Live consumer adoption | `references/live-target-resolution.md`, `references/cooperative-project-lanes-and-watchdog-survivability.md` |
+| Detached release delivery / forward rollback | `references/release-delivery.md`, `references/execution-ownership.md`, `references/deterministic-distribution-and-convergence.md` |
 
 Historical explanations and older sections remain in
 `references/legacy-core-2.12.1.md`. Read a relevant section only when current

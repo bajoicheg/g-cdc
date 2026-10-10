@@ -84,6 +84,9 @@ from consumer_adoption import assess as assess_consumer_adoption
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
+    'scripts/release_delivery.py', 'tests/test_release_delivery.py',
+    'tests/test_release_delivery_git.py', 'tests/test_release_delivery_cli.py',
+    'references/release-delivery.md', 'templates/release-delivery.json',
     'scripts/adaptive_allocation.py', 'tests/test_adaptive_allocation.py',
     'references/adaptive-allocation.md', 'templates/adaptive-allocation.json',
     'scripts/project_setup.py', 'tests/test_project_setup.py',
@@ -804,6 +807,7 @@ def validate_lean_templates(root):
     from execution_strategy import evaluate as strategy
     from operation_report import measure, render
     from adaptive_allocation import evaluate as allocate
+    from release_delivery import plan as delivery
     def load(name):
         return json.loads((root / 'templates' / name).read_text())
     assessment = assess(load('development-assessment.json'))
@@ -823,7 +827,10 @@ def validate_lean_templates(root):
     allocation = allocate(load('adaptive-allocation.json'))
     if allocation['selection'] != 'default' or allocation['action'] != 'SINGLE' or allocation['measurement'] is not None:
         raise ContractError('allocation template must preserve safe default without fabricated measurements')
-    for result in (assessment, execution, allocation):
+    proposed = delivery(load('release-delivery.json'))
+    if proposed['action'] != 'VERIFY_RELEASE_AND_OWNERSHIP' or proposed['publication_prerequisites_satisfied']:
+        raise ContractError('delivery template must retain missing live authority')
+    for result in (assessment, execution, allocation, proposed):
         if any(value for key, value in result.items() if key.startswith('authorizes_')):
             raise ContractError('lean template cannot grant effect authority')
 
