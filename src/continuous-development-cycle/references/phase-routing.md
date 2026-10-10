@@ -7,6 +7,7 @@ its own authority requirements. A route is not permission to execute an effect.
 | Current action | Load before acting |
 |---|---|
 | Source implementation / small batch | `references/lean-execution-core.md`, `references/task-lifecycle.md`, `references/quality-levels.md` |
+| Initialize project / preview migration | `references/project-setup.md`, `references/policy-compatibility.md` |
 | Resume mismatch or uncertain state | `references/bounded-recovery.md`, `references/policy-compatibility.md`, `references/progress-and-checkpoints.md`, `references/operational-hardening.md`, `references/deterministic-recovery.md` |
 | Shared write, lease or pool claim | `references/execution-ownership.md`, `references/control-plane-v2.4.md`, `references/orchestration-controls.md`, `references/managed-host-bridge.md`, `references/managed-executor-pool.md`, `references/multi-subscription-coordination-and-ownership.md` |
 | Delegate independent work | `references/runtime-routing-and-subagents.md`, `references/budget-ledger.md` |

@@ -1,3 +1,23 @@
+## Current 3.1.0 project-presets candidate — 2026-10-10
+
+CDC 3.0.0 is independently source-released and personally byte-accepted at
+6a7bebaf342f70fef058f63d24febb337a741cb0, package
+2b8f3101a8fc6930e08387db1f509ab23c02d2f0; canonical evidence is immutable
+78cfd9fc9722ce7b97a65ea588fa7d8413f11566, exact required CI37996248882.
+Managed generation69 and its controller/workers are physically closed with
+immutable released receipt09c267e5b6bdeb200926ba74de27b94e740563bd.
+The actual current driver is byte-verified3.0.0. Earlier 3.0 candidate status
+below remains historical where it conflicts with these live facts.
+
+Owner-authorized continuation implements the agreed3.1 project-presets/init/migrate
+stage. Its planners generate validated concrete files and hashes without applying
+writes. Existing expected-head intent/lease/guard/budget publication remains the
+application boundary. Original archived policies remain installation-incompatible;
+detached qualifications preserve original controls/revisions/history and do not
+adopt consumers. Exact source/CI/reviews/release/personal gates remain pending.
+Fleet rollout and schedulers stay paused; all prior unknown charges survive.
+See docs/superpowers/specs/2026-10-10-cdc-project-presets-design.md and its plan.
+
 ## Current 3.0.0 corrected source qualification — 2026-10-09
 
 Continue from cdc/3.0.0-qualified-20261009-work2334. Source freeze1546b15964ac67e4acec60ec4ccc39f507123b6f/package2b8f3101a8fc6930e08387db1f509ab23c02d2f0 integrates official2.13.0 release38971c582edfb5885b9281a316e02b2044b187bf and preserves the compact core. Actual clean-consumer FULL1267/318.535s, bootstrap51, full binding, package and three detached archived migration qualifications are GREEN. Root SPEC and subsequent independent QUALITY are GREEN with the compound resume identity-loss finding fixed. Original archive policies/checkpoints are byte-unchanged and remain installation-incompatible. Hosted exact-head CI, managed main/release publication and personal activation remain separate gates; no 3.0 release or installation is claimed. Development authority remains byte-verified2.12.1. See docs/execution/cdc-3.0.0-final-reviews-20261009.md.

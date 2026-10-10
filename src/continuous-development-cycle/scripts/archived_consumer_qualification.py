@@ -20,16 +20,41 @@ from validate_checkpoint_24 import validate_checkpoint_24
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def qualify(adapter, checkpoint, *, baseline_version):
+def _same_major_lock(source_lock, candidate, baseline_version):
+    return (isinstance(source_lock, dict) and
+            source_lock.get('schema') == 'cdc-source-lock/v1' and
+            source_lock.get('canonical_repository') == 'bajoicheg/g-cdc' and
+            source_lock.get('target_version') == candidate and
+            source_lock.get('development_driver_version') == baseline_version and
+            all(isinstance(source_lock.get(key), str) and
+                re.fullmatch('[0-9a-f]{40}', source_lock[key])
+                for key in ('base_validation_commit', 'base_package_tree')))
+
+
+def qualify(adapter, checkpoint, *, baseline_version, source_lock=None):
     candidate = (ROOT / 'VERSION').read_text().strip()
     target, baseline = semver(candidate), semver(baseline_version)
     if baseline >= target:
         raise ContractError('baseline must precede the candidate runtime')
-    original_binding = validate_adapter(adapter, skill_version=baseline_version)
+    ceiling = semver(adapter['policy']['skill_max_version_exclusive'])
+    later_three = (target[0] == baseline[0] == 3 and ceiling == (3, 0, 0))
+    if later_three and not _same_major_lock(source_lock, candidate, baseline_version):
+        raise ContractError('later 3.x qualification requires exact source lock binding')
+    baseline_compatible = semver(adapter['policy']['skill_min_version']) <= baseline < ceiling
+    diagnostic = baseline_version
+    if later_three and not baseline_compatible:
+        floor = max(semver(adapter['policy']['skill_min_version']), (2, 11, 3))
+        if floor >= ceiling:
+            raise ContractError('original policy has no supported diagnostic version')
+        diagnostic = '.'.join(map(str, floor))
+    original_binding = validate_adapter(adapter, skill_version=diagnostic)
     if (checkpoint.get('policy_revision') != original_binding['policy_revision'] or
             checkpoint.get('policy_digest') != original_binding['policy_digest']):
         raise ContractError('archived policy binding must validate before migration')
+    validate_checkpoint_24(checkpoint, adapter, skill_version=diagnostic)
     result = {'candidate_version': candidate, 'baseline_version': baseline_version,
+              'baseline_installation_compatible': baseline_compatible,
+              'diagnostic_version': diagnostic,
               'installation_compatible': True, 'qualification': 'compatible',
               'migration_changes': [], 'authorizes_adoption': False,
               'authorizes_policy_write': False}
@@ -38,9 +63,9 @@ def qualify(adapter, checkpoint, *, baseline_version):
     except ContractError as exc:
         if str(exc) != 'policy skill version range is incompatible with installed skill':
             raise
-        ceiling = semver(adapter['policy']['skill_max_version_exclusive'])
-        if (target[1:] != (0, 0) or ceiling != target or
-                baseline[0] + 1 != target[0]):
+        major_boundary = (target[1:] == (0, 0) and ceiling == target and
+                          baseline[0] + 1 == target[0])
+        if not (major_boundary or later_three):
             raise ContractError('qualification requires an explicit major boundary') from exc
         migrated_adapter = copy.deepcopy(adapter)
         migrated_adapter['policy']['skill_max_version_exclusive'] = f'{target[0] + 1}.0.0'
@@ -66,7 +91,8 @@ def _unique(pairs):
     return result
 
 
-def qualify_snapshots(snapshot_root, *, consumers, baseline_version, package_tree):
+def qualify_snapshots(snapshot_root, *, consumers, baseline_version, package_tree,
+                      source_lock=None):
     if not isinstance(package_tree, str) or not re.fullmatch('[0-9a-f]{40}', package_tree):
         raise ValueError('package_tree must be an exact Git tree SHA')
     if (not isinstance(consumers, (list, tuple)) or len(consumers) != 3 or
@@ -88,7 +114,8 @@ def qualify_snapshots(snapshot_root, *, consumers, baseline_version, package_tre
         if source.get('repository') != adapter['repository']['remote']:
             raise ValueError(name + ' archived repository identity mismatch')
         checkpoint = load_yaml(paths[2], frontmatter=True)
-        result = qualify(adapter, checkpoint, baseline_version=baseline_version)
+        result = qualify(adapter, checkpoint, baseline_version=baseline_version,
+                         source_lock=source_lock)
         if [path.read_bytes() for path in paths] != before:
             raise ValueError(name + ' archive changed during qualification')
         results.append(dict(result, consumer=name, source_commit=source['source_commit']))
@@ -107,7 +134,10 @@ def main(argv=None):
     try:
         result = qualify_snapshots(args.snapshot_root, consumers=args.consumers,
                                    baseline_version=args.baseline_version,
-                                   package_tree=args.package_tree)
+                                   package_tree=args.package_tree,
+                                   source_lock=json.loads((ROOT.parents[1] /
+                                       'release/source.lock.json').read_text(),
+                                       object_pairs_hook=_unique))
     except (OSError, ValueError, TypeError, KeyError) as exc:
         print('ARCHIVED_CONSUMERS_RED:', exc)
         return 1

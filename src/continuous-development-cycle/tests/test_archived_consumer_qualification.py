@@ -16,6 +16,12 @@ from archived_consumer_qualification import qualify, qualify_snapshots
 
 class ArchivedConsumerQualificationTests(unittest.TestCase):
     def setUp(self):
+        self.source_lock = dict(schema='cdc-source-lock/v1',
+            canonical_repository='bajoicheg/g-cdc',
+            target_version=(ROOT / 'VERSION').read_text().strip(),
+            development_driver_version='3.0.0',
+            base_validation_commit='a' * 40, base_package_tree='b' * 40)
+        self.baseline = self.source_lock['development_driver_version']
         self.adapter = load_yaml(ROOT / 'templates/development-cycle.yaml')
         self.adapter['policy']['skill_max_version_exclusive'] = '3.0.0'
         self.checkpoint = load_yaml(ROOT / 'templates/work-status-v4.md', frontmatter=True)
@@ -24,7 +30,7 @@ class ArchivedConsumerQualificationTests(unittest.TestCase):
 
     def check(self, adapter=None, checkpoint=None):
         return qualify(adapter or self.adapter, checkpoint or self.checkpoint,
-                       baseline_version='2.12.1')
+                       baseline_version=self.baseline, source_lock=self.source_lock)
 
     def test_major_ceiling_is_rejected_and_copy_is_qualified_without_mutation(self):
         original = copy.deepcopy((self.adapter, self.checkpoint))
@@ -64,12 +70,32 @@ class ArchivedConsumerQualificationTests(unittest.TestCase):
         self.adapter['policy']['skill_max_version_exclusive'] = '2.13.0'
         self.checkpoint['policy_digest'] = validate_adapter(
             self.adapter, skill_version='2.12.1')['policy_digest']
-        with self.assertRaisesRegex(ContractError, 'explicit major boundary'):
+        with self.assertRaises(ContractError):
             self.check()
 
     def test_unknown_runtime_baseline_is_rejected(self):
         with self.assertRaises(ContractError):
             qualify(self.adapter, self.checkpoint, baseline_version='2.11.2')
+
+    def test_same_major_driver_incompatibility_is_reported_without_revision_change(self):
+        self.adapter['policy']['revision'] = 'original-review-v2'
+        self.checkpoint['policy_revision'] = 'original-review-v2'
+        self.checkpoint['policy_digest'] = validate_adapter(
+            self.adapter, skill_version='2.12.1')['policy_digest']
+        before = copy.deepcopy((self.adapter, self.checkpoint))
+        result = self.check()
+        self.assertFalse(result['baseline_installation_compatible'])
+        self.assertEqual(result['diagnostic_version'], '2.11.3')
+        self.assertFalse(result['installation_compatible'])
+        self.assertEqual((self.adapter, self.checkpoint), before)
+
+    def test_same_major_extension_requires_exact_source_lock_binding(self):
+        for lock in (None, dict(self.source_lock, target_version='3.9.0'),
+                     dict(self.source_lock, development_driver_version='2.12.1'),
+                     dict(self.source_lock, base_package_tree='wrong')):
+            with self.subTest(lock=lock), self.assertRaises(ContractError):
+                qualify(self.adapter, self.checkpoint, baseline_version=self.baseline,
+                        source_lock=lock)
 
     def snapshots(self, root):
         for name in ('one', 'two', 'three'):
@@ -86,7 +112,7 @@ class ArchivedConsumerQualificationTests(unittest.TestCase):
                 'candidate_package_tree': 'a' * 40}))
 
     def qualify_files(self, root, **changes):
-        args = dict(consumers=['one', 'two', 'three'], baseline_version='2.12.1',
+        args = dict(consumers=['one', 'two', 'three'], baseline_version=self.baseline, source_lock=self.source_lock,
                     package_tree='a' * 40)
         args.update(changes)
         return qualify_snapshots(root, **args)

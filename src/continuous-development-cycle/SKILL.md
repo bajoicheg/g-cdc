@@ -3,11 +3,11 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.0.0
+# Continuous Development Cycle v3.1.0
 
-This is the 3.0.0 integration source candidate. Its version identifies candidate
+This is the 3.1.0 project-presets source candidate. Its version identifies candidate
 bytes and is not release, installation or adoption evidence. Develop it under
-the independently verified 2.12.1 driver. The prior complete instructions
+the independently verified 3.0.0 driver. The prior complete instructions
 are retained in `references/legacy-core-2.12.1.md`. Load current phase detail
 through `references/phase-routing.md`, rather than reading all history.
 
@@ -37,6 +37,11 @@ CLI are separate modes. Preserve restored same-key effects before setup or a
 new send; profile/policy changes require current recovery bindings. Verified
 dependency reuse requires durable proof. Preparation uses existing routing and
 transports and never grants an executor or launch authority.
+
+For project setup load `references/project-setup.md`. `scripts/cdc.py init`
+and `migrate` produce validated file previews from strict requests. Presets
+preserve platform, quality and control requirements. Their output carries no
+write or launch authority; apply only through the existing managed writer.
 
 ## Execute the authorized scope
 

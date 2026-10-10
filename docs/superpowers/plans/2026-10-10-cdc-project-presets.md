@@ -83,6 +83,9 @@ status and existing checkpoint/evidence surfaces; no new accounting controller.
 - [ ] Root requirements review the exact diff against the spec; independently review quality.
 - [ ] Freeze a 3.1.0 candidate under immutable independently verified 3.0.0.
 - [ ] Run repository layout, package metadata, bootstrap and focused binding checks first.
+- [ ] Extend archived_consumer_qualification.py with source-lock-bound later-3.x
+  detached qualification; add behavioral RED/GREEN coverage preserving original
+  incompatibility, nondecimal revisions/history and rejection of substituted locks.
 - [ ] Run one clean-consumer FULL and independent bootstrap; qualify three archived copies
   without changing original archive controls; retain actual command exits/counts/log hashes.
 - [ ] Reserve one required exact-candidate CI before its existing PR/dispatch trigger.

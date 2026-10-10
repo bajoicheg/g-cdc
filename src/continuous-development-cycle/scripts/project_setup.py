@@ -150,3 +150,130 @@ def initialize(request):
     return _result('INIT', request['preset'], source, binding['policy_digest'], files,
                    cloud, 'review_generated_files_then_use_existing_managed_writer')
 
+
+def _parse_utc(text):
+    if not isinstance(text, str) or not text.endswith('Z') or 'T' not in text:
+        raise ValueError('observation must be UTC Z text')
+    value = datetime.fromisoformat(text[:-1] + '+00:00')
+    if value.utcoffset().total_seconds() != 0:
+        raise ValueError('observation must be UTC')
+    return value
+
+
+def _original_documents(request):
+    adapter = _yaml(request['current_adapter_yaml'])
+    checkpoint, body = _checkpoint(request['current_checkpoint_markdown'])
+    policy = adapter['policy']
+    diagnostic_version = max(semver(policy['skill_min_version']), (2, 11, 3))
+    ceiling = semver(policy['skill_max_version_exclusive'])
+    if diagnostic_version >= ceiling:
+        raise ValueError('original policy has no supported diagnostic version')
+    diagnostic_text = '.'.join(str(part) for part in diagnostic_version)
+    validate_checkpoint_24(checkpoint, adapter, skill_version=diagnostic_text)
+    target_text = (ROOT / 'VERSION').read_text().strip()
+    compatibility = dict(diagnostic_version=diagnostic_text, target_version=target_text,
+                         original_target_compatible=diagnostic_version <= semver(target_text) < ceiling)
+    return adapter, checkpoint, body, compatibility
+
+
+def _existing_operation(checkpoint):
+    if checkpoint['operation_key'] is None and checkpoint['lease_state'] != 'waiting_external':
+        return None
+    return dict(kind=checkpoint['waiting_external_kind'], id=checkpoint['waiting_external_id'],
+                sha=checkpoint['waiting_external_sha'], intent_ref=checkpoint['operation_intent_ref'],
+                operation_key=checkpoint['operation_key'])
+
+
+def _desired_sections(adapter, preset, compatibility):
+    quality, platform = _preset(preset)
+    old_platform = adapter['validation']['final_platform']
+    if old_platform != 'any' and platform not in {'any', old_platform}:
+        return None
+    sections = {}
+    old_quality = adapter.get('quality', {'default_level': 'FULL', 'max_validation_cycles': 2})
+    new_quality = copy.deepcopy(old_quality)
+    new_quality['default_level'] = max([old_quality['default_level'], quality], key=lambda key: LEVELS[key])
+    if adapter.get('quality') != new_quality:
+        sections['quality'] = new_quality
+    if old_platform == 'any' and platform != 'any':
+        sections['validation'] = {**adapter['validation'], 'final_platform': platform}
+    new_policy = copy.deepcopy(adapter['policy'])
+    if not compatibility['original_target_compatible']:
+        target = semver(compatibility['target_version'])
+        if (new_policy['skill_max_version_exclusive'] != '3.0.0' or target[0] != 3
+                or target < semver(new_policy['skill_min_version'])):
+            raise ValueError('version range requires separately reviewed migration')
+        new_policy['skill_max_version_exclusive'] = '4.0.0'
+        sections['policy'] = new_policy
+    if sections:
+        revision = new_policy['revision']
+        if not re.fullmatch(r'[0-9]+', revision):
+            raise ValueError('nondecimal revision requires reviewed revision choice')
+        new_policy['revision'] = str(int(revision) + 1)
+        sections['policy'] = new_policy
+    return sections
+
+
+def migrate(request, *, now_utc=None):
+    _fields(request, {'schema', 'current_adapter_yaml', 'current_checkpoint_markdown',
+                      'cloud_profile_json', 'preset', 'expected_source_head', 'probe'}, 'migrate request')
+    if request['schema'] != 'cdc-migrate-request/v1':
+        raise ValueError('unsupported migrate schema')
+    _preset(request['preset'])
+    expected = _sha(request['expected_source_head'])
+    probe = request['probe']
+    _fields(probe, {'source_head', 'observed_at_utc', 'lease_released', 'guard_reconciled'}, 'probe')
+    observed = _sha(probe['source_head'])
+    for key in ('lease_released', 'guard_reconciled'):
+        if type(probe[key]) is not bool:
+            raise ValueError(key + ' must be boolean')
+    now = _parse_utc(now_utc) if now_utc is not None else datetime.now(timezone.utc)
+    age = (now - _parse_utc(probe['observed_at_utc'])).total_seconds()
+    adapter, checkpoint, body, compatibility = _original_documents(request)
+    operation = _existing_operation(checkpoint)
+    # Incomplete original binding is reconciliation work, never a silent rebind.
+    if checkpoint['policy_digest'] is None:
+        cloud = {'status': 'REQUALIFY' if request['cloud_profile_json'] is not None else 'UNCONFIGURED',
+                 'reused': request['cloud_profile_json'] is not None}
+    else:
+        _, cloud = _cloud(request['cloud_profile_json'], checkpoint['repository'],
+                          checkpoint['branch'], checkpoint['policy_digest'])
+    def result(action, reason, files=None, digest=None, cloud_result=None):
+        return _result(action, request['preset'], observed,
+                       checkpoint['policy_digest'] if digest is None else digest,
+                       files or [], cloud if cloud_result is None else cloud_result, reason,
+                       operation=operation, compatibility=compatibility)
+    if expected != observed or not -5 <= age <= 90 or checkpoint['policy_digest'] is None:
+        return result('RECONCILE', 'source_probe_or_original_binding_requires_reconciliation')
+    if (not probe['lease_released'] or not probe['guard_reconciled']
+            or checkpoint['lease_state'] != 'released' or operation is not None):
+        return result('WAIT', 'ownership_or_existing_operation_requires_reconciliation')
+    desired = _desired_sections(adapter, request['preset'], compatibility)
+    if desired is None:
+        return result('CONFLICT', 'incompatible_platform_requires_reviewed_migration')
+    if desired:
+        proposal = policy_plan(dict(schema='policy-migration-request/v1',
+                                    expected_source_head=expected, observed_source_head=observed,
+                                    current_policy_yaml=request['current_adapter_yaml'], desired_sections=desired))
+        adapter_text = proposal['rendered_policy_yaml']
+        proposed_adapter = _yaml(adapter_text)
+        binding = validate_adapter(proposed_adapter)
+        proposed_checkpoint = copy.deepcopy(checkpoint)
+        proposed_checkpoint.update(policy_revision=binding['policy_revision'], policy_digest=binding['policy_digest'])
+        validate_checkpoint_24(proposed_checkpoint, proposed_adapter)
+        checkpoint_text = _render_checkpoint(proposed_checkpoint, body)
+        action = 'APPLY'
+    else:
+        adapter_text = request['current_adapter_yaml']
+        checkpoint_text = request['current_checkpoint_markdown']
+        binding = validate_adapter(adapter)
+        action = 'NOOP'
+    files = [_file('docs/development-cycle.yaml', adapter_text, request['current_adapter_yaml']),
+             _file('docs/work-status/current.md', checkpoint_text, request['current_checkpoint_markdown'])]
+    if request['cloud_profile_json'] is not None:
+        cloud_text, cloud = _cloud(request['cloud_profile_json'], checkpoint['repository'],
+                                  checkpoint['branch'], binding['policy_digest'])
+        files.append(_file('docs/cdc-cloud-profile.json', cloud_text, request['cloud_profile_json']))
+    return result(action, 'review_preview_then_use_existing_managed_writer', files,
+                  binding['policy_digest'], cloud)
+

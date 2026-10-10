@@ -84,6 +84,8 @@ from consumer_adoption import assess as assess_consumer_adoption
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
+    'scripts/project_setup.py', 'tests/test_project_setup.py',
+    'references/project-setup.md',
     'scripts/quality_levels.py', 'scripts/evidence_reuse.py',
     'tests/test_quality_levels.py', 'tests/test_evidence_reuse.py',
     'tests/test_review_levels.py', 'tests/test_validation_cycles.py',

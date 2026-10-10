@@ -84,7 +84,7 @@ def main(argv=None):
     entry.add_argument('--probe', required=True)
     entry.add_argument('--max-age-seconds', type=int, default=7200)
     entry.add_argument('--max-probe-age-seconds', type=int, default=90)
-    for name in ('assess', 'report', 'strategy', 'init'):
+    for name in ('assess', 'report', 'strategy', 'init', 'migrate'):
         command = sub.add_parser(name)
         command.add_argument('input')
     args = parser.parse_args(argv)
@@ -96,6 +96,9 @@ def main(argv=None):
         elif args.command == 'init':
             from project_setup import initialize
             result = initialize(_load(args.input))
+        elif args.command == 'migrate':
+            from project_setup import migrate
+            result = migrate(_load(args.input))
         elif args.command == 'assess':
             from development_contract import evaluate
             result = evaluate(_load(args.input))

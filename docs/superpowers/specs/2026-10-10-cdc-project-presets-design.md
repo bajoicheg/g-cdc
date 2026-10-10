@@ -127,6 +127,17 @@ mutated. No caller-defined output paths or free-text executable actions.
   bootstrap, compatibility/fault, archived consumers, independent ordered review,
   exact-candidate CI and installation-byte acceptance remain release gates.
 
+## Archived compatibility qualification
+
+For later 3.x candidates, qualification of the original 3.0.0 archive ceiling
+requires the candidate source lock to bind the independently released 3.x driver
+and actual target version. Report original baseline and target installation
+incompatibility explicitly. Validate original bindings under a supported diagnostic
+version inside the original range, then validate only a detached ceiling-4.0.0 /
+checkpoint-digest copy. Preserve revision, all controls/history and archive bytes.
+This is compatibility qualification, not live migrate eligibility or adoption.
+Other ceilings, missing/substituted locks and invalid original bindings fail.
+
 ## Alternatives and release
 
 Recommended: planner composition with existing managed application. Automatic

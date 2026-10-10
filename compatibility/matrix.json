@@ -1,7 +1,7 @@
 {
   "schema": "cdc-compatibility-matrix/v1",
-  "target_version": "3.0.0",
-  "developed_under_version": "2.12.1",
+  "target_version": "3.1.0",
+  "developed_under_version": "3.0.0",
   "supported_from_versions": [
     "2.11.3",
     "2.11.4",
@@ -13,7 +13,8 @@
     "2.12.0",
     "2.12.1",
     "2.12.2",
-    "2.13.0"
+    "2.13.0",
+    "3.0.0"
   ],
   "checkpoint_schemas": [
     "development-work-status/v4"
