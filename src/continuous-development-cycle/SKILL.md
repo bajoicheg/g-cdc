@@ -3,11 +3,11 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.3.0
+# Continuous Development Cycle v3.3.1
 
-This is the 3.3.0 release-delivery and forward-rollback source candidate. Its version identifies candidate
+This is the 3.3.1 bounded UNKNOWN-retirement source candidate. Its version identifies candidate
 bytes and is not release, installation or adoption evidence. Develop it under
-the independently verified 3.2.0 driver. The prior complete instructions
+the independently verified 3.3.0 driver. The prior complete instructions
 are retained in `references/legacy-core-2.12.1.md`. Load current phase detail
 through `references/phase-routing.md`, rather than reading all history.
 
@@ -139,3 +139,7 @@ Source release, installed runtime and consumer adoption are separate states.
 Adoption requires an exact released package, released/quiescent ownership,
 reconciled guards and preserved budgets/history. An explicit Fleet rollout
 pause is binding; archived-consumer tests do not deploy live consumers.
+
+## Unknown isolated Git submission
+
+Use `references/unknown-retirement.md` only for explicitly owner-authorized administrative isolation of an original returned create-only pilot Git submission on a physically released/quiescent v2 lease. Outcome stays UNKNOWN; do not invent provider terminal evidence or replay the candidate. All other unknown effects retain normal reconciliation.

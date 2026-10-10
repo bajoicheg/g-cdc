@@ -1,7 +1,7 @@
 {
   "name": "continuous-development-cycle",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "schema": "continuous-development-cycle/v3",
   "entrypoint": "SKILL.md",
-  "description": "Exact verified native release delivery and safe forward rollback composed with existing ownership, assembly and durable publication."
+  "description": "Owner-authorized isolation of UNKNOWN create-only Git submissions, preserving history and permanent replay protection."
 }

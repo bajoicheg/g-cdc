@@ -84,6 +84,8 @@ from consumer_adoption import assess as assess_consumer_adoption
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
+    'scripts/submission_retirement.py', 'tests/test_submission_retirement.py',
+    'references/unknown-retirement.md',
     'scripts/release_delivery.py', 'tests/test_release_delivery.py',
     'tests/test_release_delivery_git.py', 'tests/test_release_delivery_cli.py',
     'references/release-delivery.md', 'templates/release-delivery.json',
