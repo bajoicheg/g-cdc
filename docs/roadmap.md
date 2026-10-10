@@ -1,3 +1,7 @@
+## Current final3.x stage — 2026-10-10
+
+CDC3.2.0 is source released and personally accepted; canonical71a91a1/packagefaa7266/evidencefe13cd14, exact CI38043953939 and managed gen72 closure are independently verified. Owner-approved final3.3 implements reusable release/adoption delivery and safe forward rollback under unchanged3.2. All final gates remain pending. Fleet rollout and schedulers remain paused. Earlier state labels below are history.
+
 ## Current 3.2.0 measured adaptive allocation — 2026-10-10
 
 Owner authorized completion of the agreed 3.x roadmap and confirmed CDC plus the personal skill only. Fleet rollout and schedulers remain paused. Actual driver is independently released and strictly personally byte-accepted CDC3.1.0 at f5a704a93abdf0a36d0cb7a312a742f862af4946/package817a73d4f5048a0790fd3623c8083a8646777053, immutable evidence6b6f3ebe33f0e4b4b14cbcfdc3927f3f778662a3, required CI38015031642. Managed generation70, worker/supervisor/controller and actual Cloud task are terminal with preserved release receipt. Older current-state labels below remain history.
