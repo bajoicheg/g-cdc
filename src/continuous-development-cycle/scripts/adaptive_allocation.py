@@ -101,6 +101,12 @@ def evaluate(request: dict) -> dict:
             raise ValueError('aggregate elapsed measurement must be finite')
         tokens = sum(item['tokens']['value'] for item in eligible)
         delivered = sum(item['delivery']['delivered']['value'] for item in eligible)
+        try:
+            finite_totals = math.isfinite(tokens) and math.isfinite(delivered)
+        except OverflowError as exc:
+            raise ValueError('aggregate token or delivery measurement exceeds finite range') from exc
+        if not finite_totals:
+            raise ValueError('aggregate token and delivery measurements must be finite')
         cost = Fraction(tokens, delivered)
         duration = elapsed / delivered
         try:

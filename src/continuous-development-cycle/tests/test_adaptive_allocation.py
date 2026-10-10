@@ -104,6 +104,12 @@ class AdaptiveAllocationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.evaluate(allocation(sample('a', elapsed=1e308), sample('b', elapsed=1e308)))
 
+    def test_aggregate_token_and_delivery_overflow_is_controlled_rejection(self):
+        for field in ('tokens', 'delivered'):
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                self.evaluate(allocation(sample('a', **{field: 10 ** 308}),
+                                         sample('b', **{field: 10 ** 308})))
+
     def test_comparison_groups_and_duplicate_observation_refs_are_rejected(self):
         for observations in ([sample('a', group='another-env')], [sample('a'), sample('a')]):
             with self.subTest(observations=observations), self.assertRaises(ValueError):
