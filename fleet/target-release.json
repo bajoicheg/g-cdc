@@ -1,15 +1,15 @@
 {
-  "schema": "live-target-release/v2",
-  "version": "2.12.1",
   "canonical_repository": "bajoicheg/g-cdc",
-  "release_ref": "refs/heads/release/v2.12.1",
-  "release_commit": "9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
-  "package_tree": "9c45d98c3254e9658d452c505d8c97698e3fc9a7",
   "evidence_binding": {
+    "commit": "226e70b3fb4a172b86f18c1828b8668387b6d009",
+    "path": "release/evidence-3.3.0.json",
+    "ref": "refs/heads/cdc/release-evidence/v3.3.0",
     "schema": "canonical-release-evidence-binding/v1",
-    "source_identity": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
-    "ref": "refs/heads/cdc/release-evidence/v2.12.1",
-    "commit": "9dece125d09956d4546721bceb9142856bf786d3",
-    "path": "release/evidence-2.12.1.json"
-  }
+    "source_identity": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac"
+  },
+  "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+  "release_commit": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+  "release_ref": "refs/heads/release/v3.3.0",
+  "schema": "live-target-release/v2",
+  "version": "3.3.0"
 }
