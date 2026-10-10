@@ -23,12 +23,23 @@ ROOT = Path(__file__).resolve().parents[1]
 def _same_major_lock(source_lock, candidate, baseline_version):
     return (isinstance(source_lock, dict) and
             source_lock.get('schema') == 'cdc-source-lock/v1' and
-            source_lock.get('canonical_repository') == 'bajoicheg/g-cdc' and
+            isinstance(source_lock.get('canonical_repository'), str) and
+            re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', source_lock['canonical_repository']) and
+            source_lock.get('base_validation_repository') == source_lock['canonical_repository'] and
+            source_lock.get('bootstrap_contract') == 'cdc-bootstrap/v1' and
+            source_lock.get('direct_product_repo_development') is False and
             source_lock.get('target_version') == candidate and
             source_lock.get('development_driver_version') == baseline_version and
             all(isinstance(source_lock.get(key), str) and
                 re.fullmatch('[0-9a-f]{40}', source_lock[key])
-                for key in ('base_validation_commit', 'base_package_tree')))
+                for key in ('base_validation_commit', 'base_package_tree')) and
+            type(source_lock.get('base_validation_run_id')) is int and
+            source_lock['base_validation_run_id'] >= 0 and
+            ((source_lock['base_validation_run_id'] > 0 and
+              source_lock.get('base_validation_evidence_ref') is None) or
+             (source_lock['base_validation_run_id'] == 0 and
+              isinstance(source_lock.get('base_validation_evidence_ref'), str) and
+              bool(source_lock['base_validation_evidence_ref'].strip()))))
 
 
 def qualify(adapter, checkpoint, *, baseline_version, source_lock=None):

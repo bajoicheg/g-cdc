@@ -17,10 +17,12 @@ from archived_consumer_qualification import qualify, qualify_snapshots
 class ArchivedConsumerQualificationTests(unittest.TestCase):
     def setUp(self):
         self.source_lock = dict(schema='cdc-source-lock/v1',
-            canonical_repository='bajoicheg/g-cdc',
+            canonical_repository='owner/cdc', base_validation_repository='owner/cdc',
             target_version=(ROOT / 'VERSION').read_text().strip(),
             development_driver_version='3.0.0',
-            base_validation_commit='a' * 40, base_package_tree='b' * 40)
+            base_validation_commit='a' * 40, base_package_tree='b' * 40,
+            bootstrap_contract='cdc-bootstrap/v1', direct_product_repo_development=False,
+            base_validation_run_id=1, base_validation_evidence_ref=None)
         self.baseline = self.source_lock['development_driver_version']
         self.adapter = load_yaml(ROOT / 'templates/development-cycle.yaml')
         self.adapter['policy']['skill_max_version_exclusive'] = '3.0.0'
