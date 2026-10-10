@@ -3,6 +3,6 @@
   "repository": "bajoicheg-private/g-supervisor",
   "source_commit": "f250ace4cf0f5a4086c31099c0017d53770008bd",
   "vendored_cdc_version": "2.6.0",
-  "candidate_version": "3.3.1",
-  "candidate_package_tree": "f580a8946c0510540a4be3f4422ab3404875274b"
+  "candidate_version": "3.4.0",
+  "candidate_package_tree": "75d8cfbb70ad026670276d4cdafef4abdfbb4592"
 }
