@@ -1,3 +1,9 @@
+## Current 3.2.0 measured adaptive allocation — 2026-10-10
+
+Owner authorized completion of the agreed 3.x roadmap and confirmed CDC plus the personal skill only. Fleet rollout and schedulers remain paused. Actual driver is independently released and strictly personally byte-accepted CDC3.1.0 at f5a704a93abdf0a36d0cb7a312a742f862af4946/package817a73d4f5048a0790fd3623c8083a8646777053, immutable evidence6b6f3ebe33f0e4b4b14cbcfdc3927f3f778662a3, required CI38015031642. Managed generation70, worker/supervisor/controller and actual Cloud task are terminal with preserved release receipt. Older current-state labels below remain history.
+
+Implement measured effort and agent allocation as a pure composition of existing strategy, quality, operation measurements and budget. Root integrates inline; independent ordered exact-candidate SPEC then distinct QUALITY remain required, with one frozen aggregate FULL/clean-consumer and mandatory hosted exact-tree CI. Release3.2 and strict whole-package personal acceptance precede development of agreed final stage3.3 (release/adopt automation and rollback) under3.2. No live Fleet adoption is granted. See docs/superpowers/specs/2026-10-10-cdc-adaptive-allocation-design.md and matching plan.
+
 ## Current 3.1.0 project-presets candidate — 2026-10-10
 
 CDC 3.0.0 is independently source-released and personally byte-accepted at

@@ -84,7 +84,7 @@ def main(argv=None):
     entry.add_argument('--probe', required=True)
     entry.add_argument('--max-age-seconds', type=int, default=7200)
     entry.add_argument('--max-probe-age-seconds', type=int, default=90)
-    for name in ('assess', 'report', 'strategy', 'init', 'migrate'):
+    for name in ('assess', 'report', 'strategy', 'allocate', 'init', 'migrate'):
         command = sub.add_parser(name)
         command.add_argument('input')
     args = parser.parse_args(argv)
@@ -104,6 +104,9 @@ def main(argv=None):
             result = evaluate(_load(args.input))
         elif args.command == 'strategy':
             from execution_strategy import evaluate
+            result = evaluate(_load(args.input))
+        elif args.command == 'allocate':
+            from adaptive_allocation import evaluate
             result = evaluate(_load(args.input))
         else:
             from operation_report import measure, render

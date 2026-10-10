@@ -84,6 +84,8 @@ from consumer_adoption import assess as assess_consumer_adoption
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
+    'scripts/adaptive_allocation.py', 'tests/test_adaptive_allocation.py',
+    'references/adaptive-allocation.md', 'templates/adaptive-allocation.json',
     'scripts/project_setup.py', 'tests/test_project_setup.py',
     'references/project-setup.md',
     'scripts/quality_levels.py', 'scripts/evidence_reuse.py',
@@ -801,6 +803,7 @@ def validate_lean_templates(root):
     from development_contract import evaluate as assess
     from execution_strategy import evaluate as strategy
     from operation_report import measure, render
+    from adaptive_allocation import evaluate as allocate
     def load(name):
         return json.loads((root / 'templates' / name).read_text())
     assessment = assess(load('development-assessment.json'))
@@ -817,7 +820,10 @@ def validate_lean_templates(root):
     execution = strategy(load('execution-strategy.json'))
     if execution['action'] != 'SINGLE' or execution['batch_candidate']['effective_level'] != 'MEDIUM':
         raise ContractError('lean strategy template must preserve project floor and missing admissions')
-    for result in (assessment, execution):
+    allocation = allocate(load('adaptive-allocation.json'))
+    if allocation['selection'] != 'default' or allocation['action'] != 'SINGLE' or allocation['measurement'] is not None:
+        raise ContractError('allocation template must preserve safe default without fabricated measurements')
+    for result in (assessment, execution, allocation):
         if any(value for key, value in result.items() if key.startswith('authorizes_')):
             raise ContractError('lean template cannot grant effect authority')
 

@@ -1,7 +1,7 @@
 {
   "name": "continuous-development-cycle",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "schema": "continuous-development-cycle/v3",
   "entrypoint": "SKILL.md",
-  "description": "Validated project presets and conservative initialization/migration previews, composed with existing control and Cloud contracts."
+  "description": "Measured conservative effort and agent allocation composed with existing strategy, operation observations and budget admission."
 }

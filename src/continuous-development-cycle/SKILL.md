@@ -3,11 +3,11 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.1.0
+# Continuous Development Cycle v3.2.0
 
-This is the 3.1.0 project-presets source candidate. Its version identifies candidate
+This is the 3.2.0 adaptive-allocation source candidate. Its version identifies candidate
 bytes and is not release, installation or adoption evidence. Develop it under
-the independently verified 3.0.0 driver. The prior complete instructions
+the independently verified 3.1.0 driver. The prior complete instructions
 are retained in `references/legacy-core-2.12.1.md`. Load current phase detail
 through `references/phase-routing.md`, rather than reading all history.
 
@@ -108,7 +108,9 @@ Codex used as the orchestration environment, useful independent subagents are
 allowed within existing budgets. Unknown origin is sequential. Use minimum
 sufficient effort, disjoint scopes and one integrator; dependencies or trivial
 work stay with one executor. `scripts/execution_strategy.py` recommends from
-existing budget admission without launching. COMPUTE_ONLY is exact-SHA
+existing budget admission without launching. For measured allocation load
+`references/adaptive-allocation.md`; `scripts/cdc.py allocate` recommends effort
+and agents from compatible measured outcomes without changing authority. COMPUTE_ONLY is exact-SHA
 read-only verification and does not inherit editing/parent-task authority.
 Read `references/runtime-routing-and-subagents.md` before delegation.
 

@@ -1,8 +1,8 @@
 {
   "schema": "cdc-package-transport/v1",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "canonical_repository": "owner/canonical-cdc",
-  "release_ref": "refs/heads/release/v3.1.0",
+  "release_ref": "refs/heads/release/v3.2.0",
   "release_commit": "0000000000000000000000000000000000000000",
   "package_tree": "29a82214f4d5664a44558f6b57d7c05e127aa863",
   "hash_algorithm": "git-sha1",
