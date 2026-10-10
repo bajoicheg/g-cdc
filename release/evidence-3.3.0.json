@@ -1,0 +1,787 @@
+{
+  "candidate_commit": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+  "candidate_source_commit": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+  "canonical_evidence_publication": {
+    "path": "release/evidence-3.3.0.json",
+    "provenance": "Separately pinned immutable evidence commit; enclosing commit independently pinned by native publication receipt",
+    "ref": "refs/heads/cdc/release-evidence/v3.3.0"
+  },
+  "canonical_repository": "bajoicheg/g-cdc",
+  "ci": {
+    "actual_checkout_package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+    "actual_checkout_root_tree": "b969ddc33fd671491e2d88a20ab085772f4ae4c8",
+    "actual_checkout_sha": "f37416e92cb53fefc79618ebc371d00e732595cb",
+    "actual_job_elapsed_seconds": 324.0,
+    "all_configured_jobs_steps_successful": true,
+    "all_three_surfaces_complete": true,
+    "archives": {
+      "archives_unchanged": true,
+      "authorizes_adoption": false,
+      "authorizes_policy_write": false,
+      "consumers": [
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "baseline_installation_compatible": false,
+          "baseline_version": "3.2.0",
+          "candidate_version": "3.3.0",
+          "consumer": "g-supervisor",
+          "diagnostic_version": "2.11.3",
+          "installation_compatible": false,
+          "migration_changes": [
+            "policy.skill_max_version_exclusive",
+            "checkpoint.policy_digest"
+          ],
+          "qualification": "migration_fixture_compatible",
+          "source_commit": "f250ace4cf0f5a4086c31099c0017d53770008bd"
+        },
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "baseline_installation_compatible": false,
+          "baseline_version": "3.2.0",
+          "candidate_version": "3.3.0",
+          "consumer": "g-ad-control",
+          "diagnostic_version": "2.11.3",
+          "installation_compatible": false,
+          "migration_changes": [
+            "policy.skill_max_version_exclusive",
+            "checkpoint.policy_digest"
+          ],
+          "qualification": "migration_fixture_compatible",
+          "source_commit": "a65c36461d56aa80f129b65a0782be02529e1fc7"
+        },
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "baseline_installation_compatible": false,
+          "baseline_version": "3.2.0",
+          "candidate_version": "3.3.0",
+          "consumer": "g-pc-health-check",
+          "diagnostic_version": "2.11.3",
+          "installation_compatible": false,
+          "migration_changes": [
+            "policy.skill_max_version_exclusive",
+            "checkpoint.policy_digest"
+          ],
+          "qualification": "migration_fixture_compatible",
+          "source_commit": "5afac455f6d4d10a0f8e71258c0250ecdbb1fb1a"
+        }
+      ],
+      "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+      "schema": "archived-consumer-qualification/v1"
+    },
+    "ci_success": true,
+    "configured_jobs": [
+      {
+        "check_run_url": "https://api.github.com/repos/bajoicheg/g-cdc/check-runs/114205080864",
+        "completed_at": "2026-10-10T11:47:15Z",
+        "conclusion": "success",
+        "created_at": "2026-10-10T11:41:50Z",
+        "head_branch": "cdc/3.3.0-delivery-20261010-work2334",
+        "head_sha": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+        "html_url": "https://github.com/bajoicheg/g-cdc/actions/runs/38049318793/job/114205080864",
+        "id": 114205080864,
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "name": "Bootstrap + package + three consumers",
+        "node_id": "CR_kwDOUqlJvs8AAAAalyc9IA",
+        "run_attempt": 1,
+        "run_id": 38049318793,
+        "run_url": "https://api.github.com/repos/bajoicheg/g-cdc/actions/runs/38049318793",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions",
+        "runner_id": 1000003432,
+        "runner_name": "GitHub Actions 1000003432",
+        "started_at": "2026-10-10T11:41:51Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completed_at": "2026-10-10T11:41:53Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "started_at": "2026-10-10T11:41:52Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T11:41:55Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "started_at": "2026-10-10T11:41:53Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T11:41:55Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-python@v5",
+            "number": 3,
+            "started_at": "2026-10-10T11:41:55Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T11:41:55Z",
+            "conclusion": "success",
+            "name": "Validate repository code and test placement",
+            "number": 4,
+            "started_at": "2026-10-10T11:41:55Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T11:41:56Z",
+            "conclusion": "success",
+            "name": "Independent bootstrap before candidate imports",
+            "number": 5,
+            "started_at": "2026-10-10T11:41:55Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T11:41:58Z",
+            "conclusion": "success",
+            "name": "Install validator dependency",
+            "number": 6,
+            "started_at": "2026-10-10T11:41:56Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T11:41:58Z",
+            "conclusion": "success",
+            "name": "Validate candidate package",
+            "number": 7,
+            "started_at": "2026-10-10T11:41:58Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T11:47:11Z",
+            "conclusion": "success",
+            "name": "Full candidate tests",
+            "number": 8,
+            "started_at": "2026-10-10T11:41:58Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T11:47:11Z",
+            "conclusion": "success",
+            "name": "Full bootstrap binding",
+            "number": 9,
+            "started_at": "2026-10-10T11:47:11Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T11:47:11Z",
+            "conclusion": "success",
+            "name": "Validate three archived consumer snapshots",
+            "number": 10,
+            "started_at": "2026-10-10T11:47:11Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T11:47:11Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-python@v5",
+            "number": 19,
+            "started_at": "2026-10-10T11:47:11Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T11:47:11Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 20,
+            "started_at": "2026-10-10T11:47:11Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T11:47:11Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 21,
+            "started_at": "2026-10-10T11:47:11Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://api.github.com/repos/bajoicheg/g-cdc/actions/jobs/114205080864",
+        "workflow_name": "CDC release / 38049318793 / f37416e92cb53fefc79618ebc371d00e732595cb"
+      }
+    ],
+    "exact_candidate_and_checkout_full_tree_equal": true,
+    "head_sha": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+    "hosted_FULL": {
+      "seconds": 311.725,
+      "tests": 1339
+    },
+    "hosted_bootstrap": {
+      "seconds": 0.297,
+      "tests": 51
+    },
+    "job_id": 114205080864,
+    "legacy_status": {
+      "state": "pending",
+      "statuses": [],
+      "total_count": 0
+    },
+    "log_bytes": 301871,
+    "log_ref": "git:bajoicheg/codex-compute@e8791fcb99f8efee94bd3a8047e15646a986b91c:ci-log-3.3.0.json",
+    "log_sha256": "64089167430f026668d2647d9d38bfc24eba6af9d7fa3f818a48af4b52a6e452",
+    "observation_ref": "git:bajoicheg/codex-compute@e8791fcb99f8efee94bd3a8047e15646a986b91c:ci-observations-final-3.3.0.json",
+    "one_CI_one_PR": true,
+    "pr": 106,
+    "pr_url": "https://github.com/bajoicheg/g-cdc/pull/106",
+    "run_attempt": 1,
+    "run_id": 38049318793,
+    "run_url": "https://github.com/bajoicheg/g-cdc/actions/runs/38049318793"
+  },
+  "development_driver": {
+    "bytes_and_modes_equal": true,
+    "evidence_commit": "fe13cd14e6c6333518ca93ac818847342eac8770",
+    "package_tree": "faa72667c5b9c3fe1cb075309934b16ae18c6f62",
+    "release_commit": "71a91a19499c9e480a08b46bfda4d8c803cf3a41"
+  },
+  "fleet_rollout": false,
+  "local_FULL_repeated": false,
+  "new_release_actor": {
+    "controller": {
+      "command_channel": "short path to hash-pinned command JSON and code file",
+      "input_max_bytes": 256,
+      "max_lifetime_seconds": 7200,
+      "namespace": "pid:[4026532200]",
+      "parent_pid": 24952,
+      "pid": 24953,
+      "proc_start_ticks": "601788",
+      "started_at_utc": "2026-10-10T11:38:50.637658Z",
+      "state": "alive"
+    },
+    "generation": 73,
+    "handle": {
+      "attempt_id": "cdc330-release-host-a1",
+      "generation": 73,
+      "handle_id": "17deec5c-e413-5dae-8d1d-a61d479c5f62",
+      "invocation_id": "managed-terminal:c15b1b5924c3c0ab19eb55513580f44e0c4e2894d58bcbf515e37e53275c255b",
+      "lease_revision": "a018418a0d0861340e1fdfebb8a53a2939f25473",
+      "owner_id": "5d40872a-b401-4733-9d3c-0cbbca31e305",
+      "publication_ref": "refs/heads/cdc/managed-host-publish-17deec5ce4135dae8d1da61d479c5f62",
+      "schema": "managed-host-handle/v1",
+      "state": "running",
+      "task_id": "cdc330-release-writer"
+    }
+  },
+  "ordered_reviews": {
+    "SPEC": {
+      "all_authority_flags": false,
+      "base": "71a91a19499c9e480a08b46bfda4d8c803cf3a41",
+      "candidate": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+      "checks": [
+        {
+          "result": "GREEN",
+          "seconds": 40.606,
+          "tests": 25
+        },
+        {
+          "module": "live-target",
+          "result": "GREEN",
+          "seconds": 16.666,
+          "tests": 32,
+          "unchanged": true
+        },
+        {
+          "module": "consumer-adoption",
+          "result": "GREEN",
+          "seconds": 6.96,
+          "tests": 19,
+          "unchanged": true
+        }
+      ],
+      "files": 398,
+      "findings": [
+        {
+          "description": "Git universal newline conversion lost existing audit CRLF/bareCR; binary audit preservation fixed and real regression verified.",
+          "fix": "64a3b173e49ceff87e43fe8b5b205a490d28e0d5",
+          "id": "S330-01",
+          "status": "closed"
+        },
+        {
+          "description": "Source/candidate/historical lock regular Git mode enforcement before effects.",
+          "fix": "85fd0e50e267472ee2bbfc9d7539c09d2c9480dc",
+          "id": "Q330-01",
+          "status": "conforms_to_spec"
+        }
+      ],
+      "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+      "physical_terminal": true,
+      "reviewed_commits": 7,
+      "reviewer": "/root/cdc330_spec",
+      "root_tree": "b969ddc33fd671491e2d88a20ab085772f4ae4c8",
+      "schema": "cdc-owner-independent-review/v1",
+      "status": "SPEC_GREEN",
+      "unresolved_critical": 0,
+      "unresolved_important": 0,
+      "write_paths": 27
+    },
+    "immutable_source_ref": "git:bajoicheg/codex-compute@080d4eb2a3f5faa1f7df3693f6a8ecd1b6d573d4",
+    "open_findings": 0,
+    "subsequent_independent_QUALITY": {
+      "all_authority_flags": false,
+      "base": "71a91a19499c9e480a08b46bfda4d8c803cf3a41",
+      "candidate": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+      "checks": [
+        {
+          "result": "GREEN",
+          "seconds": 39.951,
+          "tests": 25
+        },
+        {
+          "check": "original source mode repro",
+          "result": "GREEN",
+          "seconds": 0.839,
+          "tests": 1
+        },
+        {
+          "check": "historical symlink rollback rejected",
+          "result": "GREEN",
+          "seconds": 3.979,
+          "tests": 1
+        },
+        {
+          "check": "state/authority/mode/release and lease push-race adversarial",
+          "result": "GREEN",
+          "seconds": 10.625,
+          "tests": 4,
+          "unchanged": true
+        }
+      ],
+      "files": 398,
+      "findings": [
+        {
+          "description": "Unsupported source/historical symlink-mode validJSON lock refused by regular Git blob validation.",
+          "fix": "85fd0e50e267472ee2bbfc9d7539c09d2c9480dc",
+          "id": "Q330-01",
+          "status": "closed"
+        }
+      ],
+      "ordered_after": "/root/cdc330_spec SPEC_GREEN exact final candidate",
+      "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+      "physical_terminal": true,
+      "reviewed_commits": 7,
+      "reviewer": "/root/cdc330_quality",
+      "root_tree": "b969ddc33fd671491e2d88a20ab085772f4ae4c8",
+      "schema": "cdc-owner-independent-review/v1",
+      "status": "QUALITY_GREEN",
+      "unresolved_critical": 0,
+      "unresolved_important": 0,
+      "write_paths": 27
+    }
+  },
+  "package_files": 398,
+  "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+  "personal_installation": "NOT_DONE_SEPARATE_PARENT_SCOPE",
+  "prior_3_2_scope": "CLOSED_GEN72_WITH_ORIGINAL_FAILED_GEN71_PRESERVED",
+  "qualification_logs": {
+    "bundle_authenticated": true,
+    "candidate": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+    "driver_bytes_modes_verified": true,
+    "driver_commit": "71a91a19499c9e480a08b46bfda4d8c803cf3a41",
+    "driver_files": 392,
+    "driver_package": "faa72667c5b9c3fe1cb075309934b16ae18c6f62",
+    "introduced_commits": [
+      "d788d44341b0985a955b4b18893a65c495b29e44",
+      "263ee0daf2a57737200d143b71d74c85f5ba6aa1",
+      "98f7be862151444b30ee3a2899af35b828c41667",
+      "64a3b173e49ceff87e43fe8b5b205a490d28e0d5",
+      "918fad9669ad9f8ecabe976314f42af7fefd1d87",
+      "85fd0e50e267472ee2bbfc9d7539c09d2c9480dc",
+      "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad"
+    ],
+    "log_archive_authenticated": true,
+    "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+    "root_tree": "b969ddc33fd671491e2d88a20ab085772f4ae4c8",
+    "unchanged_FULL_repeated": false,
+    "union_write_paths": [
+      "AGENTS.md",
+      "VERSION",
+      "compatibility/matrix.json",
+      "consumer/evidence/g-ad-control/source.json",
+      "consumer/evidence/g-pc-health-check/source.json",
+      "consumer/evidence/g-supervisor/source.json",
+      "docs/roadmap.md",
+      "docs/superpowers/plans/2026-10-10-cdc-release-delivery.md",
+      "docs/superpowers/specs/2026-10-10-cdc-release-delivery-design.md",
+      "release/candidate.json",
+      "release/source.lock.json",
+      "src/continuous-development-cycle/SKILL.md",
+      "src/continuous-development-cycle/VERSION",
+      "src/continuous-development-cycle/agents/openai.yaml",
+      "src/continuous-development-cycle/manifest.json",
+      "src/continuous-development-cycle/references/phase-routing.md",
+      "src/continuous-development-cycle/references/release-delivery.md",
+      "src/continuous-development-cycle/scripts/cdc.py",
+      "src/continuous-development-cycle/scripts/consumer_adoption.py",
+      "src/continuous-development-cycle/scripts/live_target.py",
+      "src/continuous-development-cycle/scripts/release_delivery.py",
+      "src/continuous-development-cycle/scripts/validate_package.py",
+      "src/continuous-development-cycle/templates/package-transport.json",
+      "src/continuous-development-cycle/templates/release-delivery.json",
+      "src/continuous-development-cycle/tests/test_release_delivery.py",
+      "src/continuous-development-cycle/tests/test_release_delivery_cli.py",
+      "src/continuous-development-cycle/tests/test_release_delivery_git.py"
+    ],
+    "verified_logs": [
+      {
+        "bytes": 1693,
+        "file": "cdc330-archived-consumers.log",
+        "sha256": "6c10c47adfd240d25ab36460c62262e683c78c44f0301906003f4de626b905a8"
+      },
+      {
+        "bytes": 7390,
+        "file": "cdc330-bootstrap-tests.log",
+        "sha256": "8e1e9cca2bab097f6e86f715a304d0826073bc2a4a40c82f955d0c1678338511"
+      },
+      {
+        "bytes": 52,
+        "file": "cdc330-bootstrap.log",
+        "sha256": "1440a57f3ca727d3b62ca08ea4f90487b3e7e18ddd9c7d0442b3cdf5b45da814"
+      },
+      {
+        "bytes": 205666,
+        "file": "cdc330-clean-consumer-full.log",
+        "sha256": "4998ba0f5687e5024cdc9c44de175729a0afabcf42c0d449765bc2aa87779138"
+      },
+      {
+        "bytes": 3213,
+        "file": "cdc330-consumer-adoption-regression.log",
+        "sha256": "49e76a31a3a656ac1d911c89b838577508f38f1ae1ff20f34cd8d3da6bbb2756"
+      },
+      {
+        "bytes": 273,
+        "file": "cdc330-delivery-checkpoint-policy.log",
+        "sha256": "beb0d32f215cb558b22a4e29b99f9318f19fe8fb5be213e85ce48bd4b4b0dd6b"
+      },
+      {
+        "bytes": 662,
+        "file": "cdc330-delivery-cli-green.log",
+        "sha256": "d8513427fc7d3139cbb72968169c4541070f732857c40df70b5d0a5955935a02"
+      },
+      {
+        "bytes": 261,
+        "file": "cdc330-delivery-cli-nesting-red.log",
+        "sha256": "dc6e54651106c1424798aedb1e06a3cc3b3018f7cf5aa9a77da217f63d423ccb"
+      },
+      {
+        "bytes": 3099,
+        "file": "cdc330-delivery-cli-red.log",
+        "sha256": "4da1978eb19e3bcbcce6cb43f70281e3102d513d0b3d94071892c3202121b357"
+      },
+      {
+        "bytes": 271,
+        "file": "cdc330-delivery-guard.log",
+        "sha256": "1016aaef0327f70e76e6dbf8f2972f8bc2a7ced4b4348e5569d61137a4b27fb6"
+      },
+      {
+        "bytes": 2250,
+        "file": "cdc330-delivery-native-final.log",
+        "sha256": "8f129f82b71e865b95bcbdceecfa38972209061ce363fb364b2fa728a5dda28f"
+      },
+      {
+        "bytes": 1499,
+        "file": "cdc330-delivery-native-green-a1.log",
+        "sha256": "09088b5a4f1698286e06b183a016c0c508cc436cd41f6d917ed3b2a33e91c58d"
+      },
+      {
+        "bytes": 1577,
+        "file": "cdc330-delivery-native-green-a2.log",
+        "sha256": "ac098ded1b2debc6101e078393d5ab2ff017b7a29823728698c12ee18dfe7815"
+      },
+      {
+        "bytes": 6967,
+        "file": "cdc330-delivery-native-red.log",
+        "sha256": "e0a2c76cf1dff8ed9ed2f0c0327143f79be60bc52125dad53f538ccea34e8a00"
+      },
+      {
+        "bytes": 2250,
+        "file": "cdc330-delivery-reconciliation-green.log",
+        "sha256": "ae022eb9af9e377175d623b6bbe43e6732dce62b6596c031667b6cc87572b939"
+      },
+      {
+        "bytes": 3652,
+        "file": "cdc330-delivery-reconciliation-red.log",
+        "sha256": "e23b316d98110eb39091394d2af11a789ce0fcda39c9c108941800b0d7aec74b"
+      },
+      {
+        "bytes": 52,
+        "file": "cdc330-full-binding.log",
+        "sha256": "1440a57f3ca727d3b62ca08ea4f90487b3e7e18ddd9c7d0442b3cdf5b45da814"
+      },
+      {
+        "bytes": 5000,
+        "file": "cdc330-live-target-regression.log",
+        "sha256": "a8162ce681779d0dee675ba092a94cc22475965b28dbc706f6dd0e3ce1f1117a"
+      },
+      {
+        "bytes": 73,
+        "file": "cdc330-package.log",
+        "sha256": "2e2311edb4e67776817d3d02f20cfcd44ac071da2a3a6fbd9582b9ec7c390fc3"
+      },
+      {
+        "bytes": 265,
+        "file": "cdc330-quality-lock-green.log",
+        "sha256": "d053f82b4e84ec0ead8db73e04b9a43115b89a260c5a107cc9b42e10b5150dcc"
+      },
+      {
+        "bytes": 986,
+        "file": "cdc330-quality-lock-red.log",
+        "sha256": "969bb0049670a13e2dd3cde14f2282d5e1b38c63069f78329a4102774202f9f7"
+      },
+      {
+        "bytes": 898,
+        "file": "cdc330-release-verification-green.log",
+        "sha256": "98de663c7db140d72f72ea9dddef2e63a94a5a8e6f6d6d11842f0ac774fed268"
+      },
+      {
+        "bytes": 10764,
+        "file": "cdc330-release-verification-red.log",
+        "sha256": "2f74a9fe30fa8ad37038724af2b557da0345833d7e0f8db8cef55d44d54ec8c6"
+      },
+      {
+        "bytes": 277,
+        "file": "cdc330-spec-audit-green.log",
+        "sha256": "ba344e39976d9c0790fd6e65c7b34e403e5cb745ac30b28f1013e0bc7e229b70"
+      },
+      {
+        "bytes": 932,
+        "file": "cdc330-spec-audit-red.log",
+        "sha256": "ef590cc78afb59727ba19eba325131ed4a3ac25a9f40ea13aa974ff2f5b7a120"
+      },
+      {
+        "bytes": 1062,
+        "file": "cdc330-transport-regression.log",
+        "sha256": "3cbc242d02b00f87d537715f3c46bf5720e123e8a4ce7e7b1f1758b9e3751d4a"
+      },
+      {
+        "bytes": 2156,
+        "file": "cdc330-qualification-cheap.json",
+        "sha256": "4eba931003a5c980cbd42801dba1b43d6301bff5fc143c5da4ea20c709d2e152"
+      },
+      {
+        "bytes": 494,
+        "file": "cdc330-qualification-full.json",
+        "sha256": "e96915f819d73d3591b3171bdd5f1ba56ce0a5ed98fe23c5c7c7790dc810918b"
+      }
+    ]
+  },
+  "release_commit": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+  "release_ref": "refs/heads/release/v3.3.0",
+  "reused_local_validation": {
+    "all_reviews_physically_terminal": true,
+    "bootstrap_tests": 51,
+    "budget_accounting_complete": false,
+    "candidate": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+    "cheap_checks": [
+      {
+        "at_utc": "2026-10-10T11:23:56.182075+00:00",
+        "check": "bootstrap",
+        "elapsed_seconds": 0.045,
+        "exit_code": 0,
+        "log": "/workspace/scratch/2334e427b94e/cdc330-bootstrap.log",
+        "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+        "root_tree": "b969ddc33fd671491e2d88a20ab085772f4ae4c8",
+        "source_commit": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+        "test_counts": []
+      },
+      {
+        "at_utc": "2026-10-10T11:23:56.520386+00:00",
+        "check": "bootstrap-tests",
+        "elapsed_seconds": 0.333,
+        "exit_code": 0,
+        "log": "/workspace/scratch/2334e427b94e/cdc330-bootstrap-tests.log",
+        "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+        "root_tree": "b969ddc33fd671491e2d88a20ab085772f4ae4c8",
+        "source_commit": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+        "test_counts": [
+          [
+            "51",
+            "0.230"
+          ]
+        ]
+      },
+      {
+        "at_utc": "2026-10-10T11:23:56.780449+00:00",
+        "check": "package",
+        "elapsed_seconds": 0.254,
+        "exit_code": 0,
+        "log": "/workspace/scratch/2334e427b94e/cdc330-package.log",
+        "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+        "root_tree": "b969ddc33fd671491e2d88a20ab085772f4ae4c8",
+        "source_commit": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+        "test_counts": []
+      },
+      {
+        "at_utc": "2026-10-10T11:23:56.829604+00:00",
+        "check": "full-binding",
+        "elapsed_seconds": 0.043,
+        "exit_code": 0,
+        "log": "/workspace/scratch/2334e427b94e/cdc330-full-binding.log",
+        "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+        "root_tree": "b969ddc33fd671491e2d88a20ab085772f4ae4c8",
+        "source_commit": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+        "test_counts": []
+      },
+      {
+        "at_utc": "2026-10-10T11:23:56.966708+00:00",
+        "check": "archived-consumers",
+        "elapsed_seconds": 0.132,
+        "exit_code": 0,
+        "log": "/workspace/scratch/2334e427b94e/cdc330-archived-consumers.log",
+        "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+        "root_tree": "b969ddc33fd671491e2d88a20ab085772f4ae4c8",
+        "source_commit": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+        "test_counts": []
+      }
+    ],
+    "fleet_rollout": false,
+    "full": {
+      "elapsed_seconds": 382.544,
+      "exit_code": 0,
+      "test_count": 1339
+    },
+    "full_log": {
+      "at_utc": "2026-10-10T11:31:58.234914+00:00",
+      "check": "clean-consumer-full",
+      "elapsed_seconds": 383.155,
+      "exit_code": 0,
+      "log": "/workspace/scratch/2334e427b94e/cdc330-clean-consumer-full.log",
+      "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+      "root_tree": "b969ddc33fd671491e2d88a20ab085772f4ae4c8",
+      "source_commit": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+      "test_counts": [
+        [
+          "1339",
+          "382.544"
+        ]
+      ]
+    },
+    "ordered_spec": {
+      "all_authority_flags": false,
+      "base": "71a91a19499c9e480a08b46bfda4d8c803cf3a41",
+      "candidate": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+      "checks": [
+        {
+          "result": "GREEN",
+          "seconds": 40.606,
+          "tests": 25
+        },
+        {
+          "module": "live-target",
+          "result": "GREEN",
+          "seconds": 16.666,
+          "tests": 32,
+          "unchanged": true
+        },
+        {
+          "module": "consumer-adoption",
+          "result": "GREEN",
+          "seconds": 6.96,
+          "tests": 19,
+          "unchanged": true
+        }
+      ],
+      "files": 398,
+      "findings": [
+        {
+          "description": "Git universal newline conversion lost existing audit CRLF/bareCR; binary audit preservation fixed and real regression verified.",
+          "fix": "64a3b173e49ceff87e43fe8b5b205a490d28e0d5",
+          "id": "S330-01",
+          "status": "closed"
+        },
+        {
+          "description": "Source/candidate/historical lock regular Git mode enforcement before effects.",
+          "fix": "85fd0e50e267472ee2bbfc9d7539c09d2c9480dc",
+          "id": "Q330-01",
+          "status": "conforms_to_spec"
+        }
+      ],
+      "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+      "physical_terminal": true,
+      "reviewed_commits": 7,
+      "reviewer": "/root/cdc330_spec",
+      "root_tree": "b969ddc33fd671491e2d88a20ab085772f4ae4c8",
+      "schema": "cdc-owner-independent-review/v1",
+      "status": "SPEC_GREEN",
+      "unresolved_critical": 0,
+      "unresolved_important": 0,
+      "write_paths": 27
+    },
+    "package_files": 398,
+    "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+    "personal_installation": "NOT_DONE",
+    "provider_usage_unknown": true,
+    "required_ci": "RESERVED_NOT_STARTED",
+    "required_files": 367,
+    "root_tree": "b969ddc33fd671491e2d88a20ab085772f4ae4c8",
+    "schedulers_paused": true,
+    "schema": "cdc-owner-release-readiness/v1",
+    "source_base": "71a91a19499c9e480a08b46bfda4d8c803cf3a41",
+    "source_release": "NOT_DONE",
+    "subsequent_quality": {
+      "all_authority_flags": false,
+      "base": "71a91a19499c9e480a08b46bfda4d8c803cf3a41",
+      "candidate": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+      "checks": [
+        {
+          "result": "GREEN",
+          "seconds": 39.951,
+          "tests": 25
+        },
+        {
+          "check": "original source mode repro",
+          "result": "GREEN",
+          "seconds": 0.839,
+          "tests": 1
+        },
+        {
+          "check": "historical symlink rollback rejected",
+          "result": "GREEN",
+          "seconds": 3.979,
+          "tests": 1
+        },
+        {
+          "check": "state/authority/mode/release and lease push-race adversarial",
+          "result": "GREEN",
+          "seconds": 10.625,
+          "tests": 4,
+          "unchanged": true
+        }
+      ],
+      "files": 398,
+      "findings": [
+        {
+          "description": "Unsupported source/historical symlink-mode validJSON lock refused by regular Git blob validation.",
+          "fix": "85fd0e50e267472ee2bbfc9d7539c09d2c9480dc",
+          "id": "Q330-01",
+          "status": "closed"
+        }
+      ],
+      "ordered_after": "/root/cdc330_spec SPEC_GREEN exact final candidate",
+      "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+      "physical_terminal": true,
+      "reviewed_commits": 7,
+      "reviewer": "/root/cdc330_quality",
+      "root_tree": "b969ddc33fd671491e2d88a20ab085772f4ae4c8",
+      "schema": "cdc-owner-independent-review/v1",
+      "status": "QUALITY_GREEN",
+      "unresolved_critical": 0,
+      "unresolved_important": 0,
+      "write_paths": 27
+    },
+    "version": "3.3.0"
+  },
+  "root_tree": "b969ddc33fd671491e2d88a20ab085772f4ae4c8",
+  "scheduler_mutations": false,
+  "schedulers_paused": true,
+  "schema": "cdc-release-evidence/v1",
+  "source_main_at_release_preflight": "71a91a19499c9e480a08b46bfda4d8c803cf3a41",
+  "source_main_integration": "Separately proven by genuine managed finish conditional publisher and strict release receipt",
+  "source_remote_id": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
+  "status": "released",
+  "version": "3.3.0"
+}
