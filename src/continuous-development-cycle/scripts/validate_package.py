@@ -90,7 +90,7 @@ REQUIRED = [
     'tests/test_release_delivery_git.py', 'tests/test_release_delivery_cli.py',
     'references/release-delivery.md', 'templates/release-delivery.json',
     'scripts/verification_economics.py', 'scripts/compact_evidence.py',
-    'scripts/execution_efficiency.py', 'scripts/test_audit.py',
+    'scripts/execution_efficiency.py', 'scripts/suite_audit.py',
     'references/execution-efficiency.md', 'tests/test_verification_economics.py',
     'tests/test_execution_efficiency.py',
     'scripts/adaptive_allocation.py', 'tests/test_adaptive_allocation.py',

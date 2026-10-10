@@ -111,7 +111,7 @@ def main(argv=None):
             from git_lease_store import GitLeaseStore
             result=terminal_bundle(_load(args.input),GitLeaseStore(args.repo,args.remote,args.coordination_ref))
         elif args.command == 'audit-tests':
-            from test_audit import audit
+            from suite_audit import audit
             result=audit(args.root)
         elif args.command == 'resume':
             result = resume(_load(args.capsule), _load(args.probe),

@@ -11,7 +11,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from compact_evidence import project
 from compact_evidence import runtime_identity
 from execution_efficiency import evaluate, terminal_bundle
-from test_audit import audit
+from suite_audit import audit
 
 
 def low_request():
