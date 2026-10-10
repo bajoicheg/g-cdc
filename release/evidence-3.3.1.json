@@ -1,0 +1,1291 @@
+{
+  "candidate_commit": "51740497bea3e1bcbb302e894fda8b7e42bc0087",
+  "candidate_source_commit": "51740497bea3e1bcbb302e894fda8b7e42bc0087",
+  "canonical_evidence_publication": {
+    "path": "release/evidence-3.3.1.json",
+    "provenance": "Separately pinned immutable evidence commit; enclosing commit independently pinned by native publication receipt",
+    "ref": "refs/heads/cdc/release-evidence/v3.3.1"
+  },
+  "canonical_repository": "bajoicheg/g-cdc",
+  "ci": {
+    "actual_checkout_package_tree": "f580a8946c0510540a4be3f4422ab3404875274b",
+    "actual_checkout_root_tree": "e04aa540c447f83e1f18a86cb8d5b7e965065ed4",
+    "actual_checkout_sha": "9304e682aef8d45251d045d1b01e5c585dde257a",
+    "actual_job_elapsed_seconds": 405.0,
+    "all_configured_jobs_steps_successful": true,
+    "all_three_surfaces_complete": true,
+    "archives": {
+      "archives_unchanged": true,
+      "authorizes_adoption": false,
+      "authorizes_policy_write": false,
+      "consumers": [
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "baseline_installation_compatible": false,
+          "baseline_version": "3.3.0",
+          "candidate_version": "3.3.1",
+          "consumer": "g-supervisor",
+          "diagnostic_version": "2.11.3",
+          "installation_compatible": false,
+          "migration_changes": [
+            "policy.skill_max_version_exclusive",
+            "checkpoint.policy_digest"
+          ],
+          "qualification": "migration_fixture_compatible",
+          "source_commit": "f250ace4cf0f5a4086c31099c0017d53770008bd"
+        },
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "baseline_installation_compatible": false,
+          "baseline_version": "3.3.0",
+          "candidate_version": "3.3.1",
+          "consumer": "g-ad-control",
+          "diagnostic_version": "2.11.3",
+          "installation_compatible": false,
+          "migration_changes": [
+            "policy.skill_max_version_exclusive",
+            "checkpoint.policy_digest"
+          ],
+          "qualification": "migration_fixture_compatible",
+          "source_commit": "a65c36461d56aa80f129b65a0782be02529e1fc7"
+        },
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "baseline_installation_compatible": false,
+          "baseline_version": "3.3.0",
+          "candidate_version": "3.3.1",
+          "consumer": "g-pc-health-check",
+          "diagnostic_version": "2.11.3",
+          "installation_compatible": false,
+          "migration_changes": [
+            "policy.skill_max_version_exclusive",
+            "checkpoint.policy_digest"
+          ],
+          "qualification": "migration_fixture_compatible",
+          "source_commit": "5afac455f6d4d10a0f8e71258c0250ecdbb1fb1a"
+        }
+      ],
+      "package_tree": "f580a8946c0510540a4be3f4422ab3404875274b",
+      "schema": "archived-consumer-qualification/v1"
+    },
+    "ci_success": true,
+    "configured_jobs": [
+      {
+        "check_run_url": "https://api.github.com/repos/bajoicheg/g-cdc/check-runs/114285883903",
+        "completed_at": "2026-10-10T18:50:53Z",
+        "conclusion": "success",
+        "created_at": "2026-10-10T18:44:07Z",
+        "head_branch": "cdc/3.3.1-delivery-20261010-work2334",
+        "head_sha": "51740497bea3e1bcbb302e894fda8b7e42bc0087",
+        "html_url": "https://github.com/bajoicheg/g-cdc/actions/runs/38076972040/job/114285883903",
+        "id": 114285883903,
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "name": "Bootstrap + package + three consumers",
+        "node_id": "CR_kwDOUqlJvs8AAAAam_gx_w",
+        "run_attempt": 1,
+        "run_id": 38076972040,
+        "run_url": "https://api.github.com/repos/bajoicheg/g-cdc/actions/runs/38076972040",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions",
+        "runner_id": 1000003433,
+        "runner_name": "GitHub Actions 1000003433",
+        "started_at": "2026-10-10T18:44:08Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completed_at": "2026-10-10T18:44:09Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "started_at": "2026-10-10T18:44:09Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T18:44:10Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "started_at": "2026-10-10T18:44:09Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T18:44:10Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-python@v5",
+            "number": 3,
+            "started_at": "2026-10-10T18:44:10Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T18:44:11Z",
+            "conclusion": "success",
+            "name": "Validate repository code and test placement",
+            "number": 4,
+            "started_at": "2026-10-10T18:44:10Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T18:44:11Z",
+            "conclusion": "success",
+            "name": "Independent bootstrap before candidate imports",
+            "number": 5,
+            "started_at": "2026-10-10T18:44:11Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T18:44:13Z",
+            "conclusion": "success",
+            "name": "Install validator dependency",
+            "number": 6,
+            "started_at": "2026-10-10T18:44:11Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T18:44:13Z",
+            "conclusion": "success",
+            "name": "Validate candidate package",
+            "number": 7,
+            "started_at": "2026-10-10T18:44:13Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T18:50:51Z",
+            "conclusion": "success",
+            "name": "Full candidate tests",
+            "number": 8,
+            "started_at": "2026-10-10T18:44:13Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T18:50:51Z",
+            "conclusion": "success",
+            "name": "Full bootstrap binding",
+            "number": 9,
+            "started_at": "2026-10-10T18:50:51Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T18:50:51Z",
+            "conclusion": "success",
+            "name": "Validate three archived consumer snapshots",
+            "number": 10,
+            "started_at": "2026-10-10T18:50:51Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T18:50:51Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-python@v5",
+            "number": 19,
+            "started_at": "2026-10-10T18:50:51Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T18:50:51Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 20,
+            "started_at": "2026-10-10T18:50:51Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-10T18:50:51Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 21,
+            "started_at": "2026-10-10T18:50:51Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://api.github.com/repos/bajoicheg/g-cdc/actions/jobs/114285883903",
+        "workflow_name": "CDC release / 38076972040 / 9304e682aef8d45251d045d1b01e5c585dde257a"
+      }
+    ],
+    "exact_candidate_and_checkout_full_tree_equal": true,
+    "head_sha": "51740497bea3e1bcbb302e894fda8b7e42bc0087",
+    "hosted_FULL": {
+      "seconds": 396.636,
+      "tests": 1346
+    },
+    "hosted_bootstrap": {
+      "seconds": 0.363,
+      "tests": 51
+    },
+    "job_id": 114285883903,
+    "legacy_status": {
+      "state": "pending",
+      "statuses": [],
+      "total_count": 0
+    },
+    "log_bytes": 304201,
+    "log_ref": "git:bajoicheg/codex-compute@2cc25cc9882c7bfd3e349a0018c149ab7b0d41ff:ci-log-3.3.1.json",
+    "log_sha256": "a258c6fba1aa6eb7b0d0a52efd41dd3ba61d6f9c6e8bed8b3cbe53b20716378b",
+    "observation_ref": "git:bajoicheg/codex-compute@2cc25cc9882c7bfd3e349a0018c149ab7b0d41ff:ci-observations-final-3.3.1.json",
+    "one_CI_one_PR": true,
+    "pr": 107,
+    "pr_url": "https://github.com/bajoicheg/g-cdc/pull/107",
+    "run_attempt": 1,
+    "run_id": 38076972040,
+    "run_url": "https://github.com/bajoicheg/g-cdc/actions/runs/38076972040"
+  },
+  "development_driver": {
+    "bytes_and_modes_equal": true,
+    "evidence_commit": "226e70b3fb4a172b86f18c1828b8668387b6d009",
+    "package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+    "release_commit": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+    "version": "3.3.0"
+  },
+  "fleet_rollout": false,
+  "local_FULL_repeated": false,
+  "new_release_actor": {
+    "controller": {
+      "command_channel": "short path to hash-pinned command JSON and code file",
+      "input_max_bytes": 256,
+      "max_lifetime_seconds": 5400,
+      "namespace": "pid:[4026532200]",
+      "parent_pid": 111079,
+      "pid": 111080,
+      "proc_start_ticks": "3139136",
+      "started_at_utc": "2026-10-10T18:41:44.115016Z",
+      "state": "alive"
+    },
+    "generation": 74,
+    "handle": {
+      "attempt_id": "cdc331-release-host-a1",
+      "generation": 74,
+      "handle_id": "30d04afa-da66-5165-9f1b-73641a33c92c",
+      "invocation_id": "managed-terminal:b1f2ba438087ae0d648eef726cb02660ce4bb655b41006a06242ecac4b69dcb1",
+      "lease_revision": "e5e1b3e0800e6eaf8c4a7106a429025435052eda",
+      "owner_id": "1a995a60-8b30-47cd-8469-ea0c516592b8",
+      "publication_ref": "refs/heads/cdc/managed-host-publish-30d04afada6651659f1b73641a33c92c",
+      "schema": "managed-host-handle/v1",
+      "state": "running",
+      "task_id": "cdc331-release-writer"
+    }
+  },
+  "ordered_reviews": {
+    "SPEC": {
+      "at_utc": "2026-10-10T18:29:17.247Z",
+      "findings": [],
+      "focused_tests": 7,
+      "kind": "SPEC",
+      "live_application_obligations": [
+        "authenticate immutable original returned create-only pilot caller",
+        "authenticate original physical-stop evidence",
+        "persist proof and independently read back before CAS"
+      ],
+      "package_tree": "f580a8946c0510540a4be3f4422ab3404875274b",
+      "physical_terminal": true,
+      "qualified_head": "51740497bea3e1bcbb302e894fda8b7e42bc0087",
+      "reviewed_commit": "5f098cd0a908a9fa3ceb187d257f77a66037aed7",
+      "reviewer": "/root/cdc331_spec",
+      "schema": "cdc-independent-review/v1",
+      "status": "GREEN"
+    },
+    "immutable_source_ref": "git:bajoicheg/codex-compute@f02a44c1d68735d0fe436c57997e430480aa4b86",
+    "open_findings": 0,
+    "subsequent_independent_QUALITY": {
+      "actual_gpc_lease_blob": "409cb124c37d7b4875e59c82716ac5b563c6424c",
+      "actual_gpc_resolutions": 18,
+      "external_effects": false,
+      "findings": [],
+      "finished_moscow": "2026-10-10T21:30:56+03:00",
+      "focused_tests": 7,
+      "kind": "QUALITY",
+      "package_tree": "f580a8946c0510540a4be3f4422ab3404875274b",
+      "physical_terminal": true,
+      "pure_lifecycle_probe": "retire/acquire/product-write/finalization/release GREEN; genuine capability explicitly mocked only in pure fixture",
+      "reviewed_commit": "51740497bea3e1bcbb302e894fda8b7e42bc0087",
+      "reviewer": "/root/cdc331_quality",
+      "schema": "cdc-independent-review/v1",
+      "status": "GREEN"
+    }
+  },
+  "package_files": 401,
+  "package_tree": "f580a8946c0510540a4be3f4422ab3404875274b",
+  "personal_installation": "NOT_DONE_SEPARATE_PARENT_SCOPE",
+  "prior_scopes": "SOURCE3.3_AND_ALL330_TERMINAL",
+  "qualification_logs": {
+    "both_FULL_logs_authenticated_reused": true,
+    "bundle_bytes": 15278,
+    "bundle_sha256": "2352d88d78a1fc21e06234681661c0916215e3ff97a6c5b1bf50dccc494dac4e",
+    "candidate_401": true,
+    "driver_398_actual_blobs_modes_verified": true,
+    "fresh_lease_record": {
+      "acquired_at_utc": null,
+      "activity_refs": [
+        "git:bajoicheg/codex-compute@ad95069e15cc42b34620c513e5c372bebe7ce6c8:ci-observations-initial-3.3.0.json",
+        "git:bajoicheg/codex-compute@08c8f98927f9b0757b7b19c06894d86e04d02440:ci-verified-3.3.0.json",
+        "git:bajoicheg/codex-compute@02f831b53d9316a6cd08901ef3817a38e410a115:native-release-publication-receipt-3.3.0.json",
+        "managed-host:finish-admission:/workspace/work/cdc330/handles/gates/17deec5c-e413-5dae-8d1d-a61d479c5f62/finish-admission-97228795-8014-41db-b4b1-b2aaf4a9d38c.json:sha256:228af448f8a72c971df2f59678fb7ad4b2e0a915f6d4f660bc9317cfbad3ac4a"
+      ],
+      "expires_at_utc": null,
+      "external_guard": null,
+      "finalization": null,
+      "generation": 73,
+      "heartbeat_at_utc": null,
+      "invocation": null,
+      "last_release": {
+        "at_utc": "2026-10-10T11:54:05.724331Z",
+        "checkpoint_ref": "git:bajoicheg/codex-compute@7e277ff35436044ee5a2d43205d4bf74bf7bc18c:managed-finish-checkpoint-3.3.0.json",
+        "completion_reason": "scope_complete",
+        "external_reconciliation": "none",
+        "generation": 73,
+        "invocation_id": "managed-terminal:c15b1b5924c3c0ab19eb55513580f44e0c4e2894d58bcbf515e37e53275c255b",
+        "owner_id": "5d40872a-b401-4733-9d3c-0cbbca31e305"
+      },
+      "last_terminal": {
+        "at_utc": "2026-10-10T11:52:21.608927Z",
+        "evidence_reference": "git:bajoicheg/codex-compute@1887fdf32f352907345dbf29d1821a6d3adde8ba:native-release-observation-3.3.0.json",
+        "intent_digest": "sha256:ddebccc5c12d73008628d71e5479e3c01d25abda0710c6bfbcb24ae30a03ca46",
+        "intent_reference": "git:bajoicheg/codex-compute@a74b8649a6c6386679664ed3b14a4959f561ddd5:source320-native-release-intent.json",
+        "observation": {
+          "lookup_complete": true,
+          "observed_at_utc": "2026-10-10T11:52:16.803128Z",
+          "operation_key": "sha256:650ad68e3dc7d50079029f38e39557f476b8b2d332cd625dd34aa79396aef98e",
+          "schema": "operation-observation/v1",
+          "tasks": [
+            {
+              "attempt_id": "cdc330-immutable-release-a1",
+              "binding": {
+                "backend": "native_git",
+                "candidate_sha": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+                "check_plan_digest": "sha256:0e2d639a30e3d9efb3eb7ac52de8dcb48457761a51b853c85fc6b73bc926b3d9",
+                "check_suite_fingerprint": "sha256:a9a45d7a987a4b886809bfd09c949d5294d2b344c8015f144da0e6d6cb681393",
+                "environment_fingerprint": "sha256:ff4b24cb0e63d1651a3cf393c57ed61cf572c0e6d95f77e3fb591d2bdf9099d6",
+                "environment_id": "ccarenv_b64_Y2NhcmVudl8wMTMzYTJiZjBlNzg4MTkxYjExM2QzMmI2Zjc3YzdmZA",
+                "mode": "SOURCE_RELEASE",
+                "repository": "bajoicheg/g-cdc"
+              },
+              "conclusion": "succeeded",
+              "evidence_refs": [
+                "git:bajoicheg/codex-compute@02f831b53d9316a6cd08901ef3817a38e410a115:native-release-publication-receipt-3.3.0.json"
+              ],
+              "operation_key": "sha256:650ad68e3dc7d50079029f38e39557f476b8b2d332cd625dd34aa79396aef98e",
+              "state": "terminal",
+              "task_id": "native-git:release-v3.3.0:226e70b3fb4a172b86f18c1828b8668387b6d009",
+              "task_url": "https://github.com/bajoicheg/g-cdc/tree/226e70b3fb4a172b86f18c1828b8668387b6d009/release/evidence-3.3.0.json"
+            }
+          ]
+        },
+        "operation_key": "sha256:650ad68e3dc7d50079029f38e39557f476b8b2d332cd625dd34aa79396aef98e"
+      },
+      "legacy_migration": null,
+      "owner_id": null,
+      "repository": "bajoicheg/g-cdc",
+      "schema": "execution-lease/v2",
+      "source_ref": "refs/heads/main",
+      "submission_claims": [
+        {
+          "attempt_id": "final-ci-a1",
+          "claimed_at_utc": "2026-10-04T21:40:11.838744Z",
+          "generation": 7,
+          "grant_id": "ccd7add3-4e7b-4372-b4de-f286f817ec40",
+          "intent_digest": "sha256:352a7862da03153f309fd03d91c9eea57f54df98d094b4708851fdf59865b034",
+          "operation_key": "sha256:97ae1e285da368a47b882b7e8d71e1b71452d01e8f49d8f5bb4661baac7c73d1",
+          "owner_id": "f0419230-5493-417c-b002-c3516c2c7163"
+        },
+        {
+          "attempt_id": "ref-cleanup-a1",
+          "claimed_at_utc": "2026-10-04T21:50:09.765542Z",
+          "generation": 7,
+          "grant_id": "8f0a1713-8a32-4ff6-8aaa-9a26fe7d3064",
+          "intent_digest": "sha256:aba4ed08dd22a1490a62fde686b13e51250dfbde2ed3787d8290a63f16496da9",
+          "operation_key": "sha256:077ecc042493fc9c85820654cefcba7cd7661bcf558bb128ef6560d1ff065019",
+          "owner_id": "f0419230-5493-417c-b002-c3516c2c7163"
+        },
+        {
+          "attempt_id": "release-publication-a1",
+          "claimed_at_utc": "2026-10-04T22:05:28.801099Z",
+          "generation": 7,
+          "grant_id": "06961f47-7a3c-483e-9e8d-26689e6d4426",
+          "intent_digest": "sha256:d368430f128712e6e4206a84835f927c1aa21537d6246d77d271781617797319",
+          "operation_key": "sha256:cbf7dc6f43993cdda96f96c35a149eb8f62ddfe688edaf0a935f5669e4d89bb2",
+          "owner_id": "f0419230-5493-417c-b002-c3516c2c7163"
+        },
+        {
+          "attempt_id": "cloud-cli-smoke-r2-a1",
+          "claimed_at_utc": "2026-10-05T03:51:55.955211Z",
+          "generation": 9,
+          "grant_id": "5b569c58-707a-4e98-a06e-70d65d7fa7d2",
+          "intent_digest": "sha256:5cedce0262aa44c757abea7ff26f3be65c64663f89a2e84faa7425bac6028ec6",
+          "operation_key": "sha256:f24903183854632aede6b34242c3b4ccc19f18000c51da073eac6a13d7501f8f",
+          "owner_id": "72793c37-8ab7-4685-a1c0-a798f422c4a4"
+        },
+        {
+          "attempt_id": "cdc2116-native-cloud-a1",
+          "claimed_at_utc": "2026-10-05T06:57:27.420954Z",
+          "generation": 11,
+          "grant_id": "2af3e9aa-9160-4ec5-9efc-ec069f10a415",
+          "intent_digest": "sha256:189029d898eb3c0d6d47c89d4fd3c495788c6aedc5b1ccb355aff7ffb1de91a7",
+          "operation_key": "sha256:a63dcbb5fec1f160e32f6db9c03580195e9e0a4dd86cb8a57aeb58797f4b111e",
+          "owner_id": "53073288-3f62-47e5-ab5c-795e1d619be1"
+        },
+        {
+          "attempt_id": "cdc2116-native-cloud-a2",
+          "claimed_at_utc": "2026-10-05T08:43:46.566051Z",
+          "generation": 11,
+          "grant_id": "99aee96f-13d5-4758-bdb2-d0a51158fdf4",
+          "intent_digest": "sha256:d8086788ac04fa5a41bbe1d035bff4d0cee55ff57e880f7f04c2f6bdc045d9df",
+          "operation_key": "sha256:33be052065af7d25e77ceb81e0b3dc410be7ec224ce8f7f8b3bbb43360980e21",
+          "owner_id": "53073288-3f62-47e5-ab5c-795e1d619be1"
+        },
+        {
+          "attempt_id": "cdc2116-native-cloud-a3",
+          "claimed_at_utc": "2026-10-05T12:25:17.690780Z",
+          "generation": 12,
+          "grant_id": "22e197bc-1c6c-402c-8541-b700f6cce8d8",
+          "intent_digest": "sha256:bcb683e15b41a5a074ff7b2116b1f5a0ec70f18f713ca6159b756ba0cb47fc86",
+          "operation_key": "sha256:7467338303e42573ce8de60416f539cae04ca83e5071b570c9c4cd4e66212cd6",
+          "owner_id": "1324f833-ca4b-49d2-879f-1069dc3987da"
+        },
+        {
+          "attempt_id": "cdc2116-native-cloud-a4",
+          "claimed_at_utc": "2026-10-05T22:39:13.880867Z",
+          "generation": 13,
+          "grant_id": "71739f1f-73a6-4682-b114-c7952318221b",
+          "intent_digest": "sha256:e24d6b5524939a5296ff4f29cdcfbe2b8950c03bf727cb0ac4a0e2eb2fd435d5",
+          "operation_key": "sha256:428abc334033b09f66e9ccb63dcbc16093bffc4677bebe273178bbcc3de76057",
+          "owner_id": "d84796c3-8de0-4234-b9f0-2c4d68b2a83c"
+        },
+        {
+          "attempt_id": "cdc2116-native-cloud-a5",
+          "claimed_at_utc": "2026-10-06T07:19:01.669747Z",
+          "generation": 15,
+          "grant_id": "74da5420-2f6d-491b-ae3c-fdd264577eef",
+          "intent_digest": "sha256:511158ac8827a6dbd188f200a938e882f609d3ccf0ac46b9682a7effc52ac7b5",
+          "operation_key": "sha256:e24fb267c76dd133726f66023ca62a053db5e813ca7f346a6479a8c0bfbf56a6",
+          "owner_id": "cd7e52c5-5108-4800-9236-19f2f95e925a"
+        },
+        {
+          "attempt_id": "cdc2116-native-cloud-a6",
+          "claimed_at_utc": "2026-10-06T09:04:13.154477Z",
+          "generation": 17,
+          "grant_id": "e955c75e-2aed-4e39-a314-253077514abc",
+          "intent_digest": "sha256:540ae943028c65a98b28a0a6490108bd9a652f6424e0152b656d1ef9cc39d8de",
+          "operation_key": "sha256:615452f00e8eb3bcdb00d705b9897b4b7d55a66bf6df060388af6e168c695e21",
+          "owner_id": "11a733fb-da05-4b3a-9b8a-0dbf7054e14a"
+        },
+        {
+          "attempt_id": "cdc2116-a6-final-ci",
+          "claimed_at_utc": "2026-10-06T09:45:50.789940Z",
+          "generation": 18,
+          "grant_id": "5e522dc4-31be-480e-8ec3-968641593826",
+          "intent_digest": "sha256:ed21b0b88883b810decfe07f0beb31bdffd3f38dd06fcf06bb70fff740368e97",
+          "operation_key": "sha256:05df549f089d0f0d2ee0a8e00e4432e6ae6ddba397c824cabbba135f5e2563b3",
+          "owner_id": "64d69183-3a52-4e80-baca-75edb2b5019f"
+        },
+        {
+          "attempt_id": "capability-probe-7809b8ab9c054d80869ab4d415948508-a1",
+          "claimed_at_utc": "2026-10-06T20:16:59.359936Z",
+          "generation": 28,
+          "grant_id": "acbdd5f5-1d45-434e-a3a9-b71bdb6a874f",
+          "intent_digest": "sha256:76e40699a038544d641a161c380d07690b7f8d578cd7da1b8dacc8e0c6ec0b0e",
+          "operation_key": "sha256:59f8cc712ae587fefa755a8aec336cf5b1b1e5509be7c50788b6fff329fefea5",
+          "owner_id": "744b367a-cc11-432e-8320-f5400b7508ef"
+        },
+        {
+          "attempt_id": "development-a39b0b7ded7e4e11abae424f8b38d875-a1",
+          "claimed_at_utc": "2026-10-06T21:57:44.320668Z",
+          "generation": 35,
+          "grant_id": "3b31e85d-67c3-47ee-81a5-e71eb6c6fdef",
+          "intent_digest": "sha256:8f83d942e5244af3fe5c6d3afec9daf9802ba6151ba64f9040c28307fa260e17",
+          "operation_key": "sha256:1c06691c0688667d624d1a519c48c0f437ab4951e072f065d9a5e34eec4756be",
+          "owner_id": "accd3e08-b33f-4aad-98ea-b41cd57c1bbc"
+        },
+        {
+          "attempt_id": "maintenance-pr-497cc3baa2a5435296184d7c45743354-a1",
+          "claimed_at_utc": "2026-10-06T22:49:25.921417Z",
+          "generation": 38,
+          "grant_id": "c8080f08-7399-4bd4-832a-c00beeb132b4",
+          "intent_digest": "sha256:f2aba7defbb8fc1988b5178c464a59528aa2973750254d00e3d97a924a79889d",
+          "operation_key": "sha256:a916d60e707f38147f5c59252ef78aa374623038e6d77e5ed011cc11c9bd36e7",
+          "owner_id": "b1cfe234-0bfc-4ab2-8116-900ea15603ca"
+        },
+        {
+          "attempt_id": "cloud8-pr-813583bd6afe42ff8d1659e66cfdf772-a1",
+          "claimed_at_utc": "2026-10-07T00:06:18.349955Z",
+          "generation": 42,
+          "grant_id": "3a29c993-5d4f-4cd6-842f-ed598850fcdc",
+          "intent_digest": "sha256:50e3279fb41033fc88588578ca2d7afbdd8ef9a349bff49754d16b52ada82916",
+          "operation_key": "sha256:9ada701d6092d1d5b362a9b4f20ffd6fb3a01c514577edcfadbf503f13525932",
+          "owner_id": "8f14c491-bc91-46be-96e4-28ec75abbd93"
+        },
+        {
+          "attempt_id": "live-target9-pr-37a7f20ea15140798f01534021091b09-a1",
+          "claimed_at_utc": "2026-10-07T01:30:58.523951Z",
+          "generation": 46,
+          "grant_id": "298c3bde-0aff-4281-9a51-18fd23dcaf05",
+          "intent_digest": "sha256:7a099045bd6748024ece0d241925f32a1cabfab228b34230f04c090d1402b90e",
+          "operation_key": "sha256:6e576f1b6804fb397ffbd0600f49f66ed0064f334f6ef713fdae02569d79b101",
+          "owner_id": "a3e2e662-ad7f-4163-8dce-385a0e26643c"
+        },
+        {
+          "attempt_id": "quality212-ci-a1",
+          "claimed_at_utc": "2026-10-07T10:32:37.434683Z",
+          "generation": 49,
+          "grant_id": "84d0b3e6-91ac-4938-837f-55118a479746",
+          "intent_digest": "sha256:1b3f0a79940bbe1667901605dbfccdfcee56d299175a6f83df3635c9469c6e2c",
+          "operation_key": "sha256:083fee882d7c5c29543a907231e9fb50cba86baf30a04e06c74f85a9d6240bd5",
+          "owner_id": "7bf3ee6c-4929-4431-b1bd-a8a6b422fcdb"
+        },
+        {
+          "attempt_id": "quality212-ci-pr-a2",
+          "claimed_at_utc": "2026-10-07T10:57:21.935879Z",
+          "generation": 50,
+          "grant_id": "d90e52a1-e309-409f-994c-97fb267671b9",
+          "intent_digest": "sha256:7200ca550261ac18d82c4014efa4dc1942176bf4b5483d36ab6985f6946cb9c7",
+          "operation_key": "sha256:e2c137c606b0e910fc58c08f3a21b4e6f4f27a27cc8ce6ec4f818268bf28cceb",
+          "owner_id": "4a5ee594-1d17-4557-a6bf-885b78a1fca0"
+        },
+        {
+          "attempt_id": "normalize2121-candidate-ref-a1",
+          "claimed_at_utc": "2026-10-08T06:15:45.576147Z",
+          "generation": 53,
+          "grant_id": "b308b2f7-8853-4792-8189-8d64932affb7",
+          "intent_digest": "sha256:059095431d90bb22b9342d94cbf5999f35920028ee65b5b6c35819148db20e48",
+          "operation_key": "sha256:acf92c5943ac4586ba3802e70a663851ada6ec2308b637201ed131b3f8311533",
+          "owner_id": "e716a640-5f37-48b8-a2f8-7a5c3245d791"
+        },
+        {
+          "attempt_id": "release2121-refs-a1",
+          "claimed_at_utc": "2026-10-08T06:48:10.562570Z",
+          "generation": 54,
+          "grant_id": "1ada4c9b-6493-49db-bfb2-881f5ccdbf21",
+          "intent_digest": "sha256:ec0bc5f0e0db10b624377e2bb66860e73f1954c0939e2f7354760f8c961c892a",
+          "operation_key": "sha256:f324bfc4541fc13bd2bac5ee4dac609cfbd40cb49e1aaf0036d8c961d3f3a8ec",
+          "owner_id": "3885e111-b4ff-4c4f-b994-c7dbe5d17881"
+        },
+        {
+          "attempt_id": "pr98-close-a1",
+          "claimed_at_utc": "2026-10-08T06:54:25.578798Z",
+          "generation": 55,
+          "grant_id": "3c526bfb-6ab0-4ad3-8ec1-1b50c838be6d",
+          "intent_digest": "sha256:1f61442cd2b25d54233e64fd43c3d518be2ccee497811d7e0120e9ac255b489d",
+          "operation_key": "sha256:cd6c2d296238fe55b67ae3b5da0a8a9c41e39706ea2c0294c7b8f477e74e3087",
+          "owner_id": "7b26b69d-ae99-4112-93b9-b3a03ca17cc2"
+        },
+        {
+          "attempt_id": "issue100-planning-writer-a1-20261009-detached-design-review",
+          "claimed_at_utc": "2026-10-09T01:21:11.854452Z",
+          "generation": 57,
+          "grant_id": "85f190b4-cd6d-4bfa-b2d1-13dbca671c1d",
+          "intent_digest": "sha256:76027c51260a84f961785ee8757b48bcf5d5d560fa97496cadd93ee7c97598a2",
+          "operation_key": "sha256:8ea401b356953d6945b6201f30251bb9173d1ec1734eb0006daafaf1426158a2",
+          "owner_id": "d00ffb03-8442-4bf0-a78d-80758c5745b4"
+        },
+        {
+          "attempt_id": "issue100-planning-revision-r1-20261009-detached-review-r1",
+          "claimed_at_utc": "2026-10-09T01:55:13.825108Z",
+          "generation": 58,
+          "grant_id": "b1fb5b38-78f1-40d4-913a-8dfe368a6e4d",
+          "intent_digest": "sha256:d508283d473aabad5a8f447dbed3ed38e5de31ef1327d6707bc95b747619328a",
+          "operation_key": "sha256:1804a860f63b97eda8c59982da38c7c13982e1758b80e5482ec802e770068cf4",
+          "owner_id": "b61f3184-3133-4912-82b3-4e6af68e4447"
+        },
+        {
+          "attempt_id": "issue100-feature-integrator-a5-20261009-implementation-review",
+          "claimed_at_utc": "2026-10-09T06:06:27.900020Z",
+          "generation": 62,
+          "grant_id": "e7cdf29c-edf6-44ae-adb5-21ace02e0721",
+          "intent_digest": "sha256:9466ce6d4267530c7cf48a8a8f1d21ee3f696e73f09e2924bc0875aea9db10dd",
+          "operation_key": "sha256:4f538d3bc0c660517c9f30d418daea36aad1d52d14a65e5ead3854183f227d5f",
+          "owner_id": "9c478652-9ec8-4b42-a4df-8c53c0ddbdda"
+        },
+        {
+          "attempt_id": "issue100-feature-integrator-a5-20261009-implementation-correction-review",
+          "claimed_at_utc": "2026-10-09T06:32:01.982061Z",
+          "generation": 62,
+          "grant_id": "39e2fb79-4759-46c0-a6f9-dc8f188a0551",
+          "intent_digest": "sha256:960c73508e734eafd84d12ac8c911854a9e6749a1510d7cd97f2c52a56aa5f5b",
+          "operation_key": "sha256:18dd0957310f68a5c2d55f6daaae80d6ed99db667cc7976e1dc2f75699399bd9",
+          "owner_id": "9c478652-9ec8-4b42-a4df-8c53c0ddbdda"
+        },
+        {
+          "attempt_id": "issue100-feature-integrator-a5-20261009-actor-trace-task-review",
+          "claimed_at_utc": "2026-10-09T06:47:01.685217Z",
+          "generation": 62,
+          "grant_id": "7bbb520f-04fc-4d11-a130-dac7b9d81efb",
+          "intent_digest": "sha256:f8ba6307e7f73450374290ffde4e78ffaee38d2c99d3b236611e5f59625a3192",
+          "operation_key": "sha256:51377ff6d001c9b9b0237c712ea625ece4598ebd69cd25df916a8c9d6b0dd245",
+          "owner_id": "9c478652-9ec8-4b42-a4df-8c53c0ddbdda"
+        },
+        {
+          "attempt_id": "issue100-feature-integrator-a5-20261009-actor-admission-review",
+          "claimed_at_utc": "2026-10-09T07:14:48.124333Z",
+          "generation": 62,
+          "grant_id": "e44fa093-b36b-41f7-b1a9-fd03ab61d5d0",
+          "intent_digest": "sha256:1644f08bda2e62640fd583cc9fabd7e8cace81352eefbceaa8bfc35064795e4c",
+          "operation_key": "sha256:d294709c298ba8a3a79f9fa12c087bc26a85cdc2441bdf807745272cea4e6f48",
+          "owner_id": "9c478652-9ec8-4b42-a4df-8c53c0ddbdda"
+        },
+        {
+          "attempt_id": "issue100-feature-integrator-a5-20261009-transport-template-correction-review",
+          "claimed_at_utc": "2026-10-09T07:48:02.565957Z",
+          "generation": 62,
+          "grant_id": "2196a610-0c27-40f6-a1dc-db952e71ce20",
+          "intent_digest": "sha256:4faa8eecb2bc3e9c273dc9322482f2ddd2241bf9653102103e35ae88cc4b7fcb",
+          "operation_key": "sha256:abe1ede3561142ab046087b301b564c74df637e94416587d881de68cc63171d6",
+          "owner_id": "9c478652-9ec8-4b42-a4df-8c53c0ddbdda"
+        },
+        {
+          "attempt_id": "issue100-feature-integrator-a5-20261009-frozen-validation-result-review",
+          "claimed_at_utc": "2026-10-09T07:57:09.163597Z",
+          "generation": 62,
+          "grant_id": "6d1dda53-a87d-4ba2-9a49-8f8534870893",
+          "intent_digest": "sha256:b63b111a2b361a4e8852bd259c5f160c946e69038f87f5351ee74b842c44a18e",
+          "operation_key": "sha256:1886337537187da0433854d9ff64371fd0b5616583af359c9ffd4d7106ba282a",
+          "owner_id": "9c478652-9ec8-4b42-a4df-8c53c0ddbdda"
+        },
+        {
+          "attempt_id": "gpc-cdc-2122-a3-exact-ci",
+          "claimed_at_utc": "2026-10-09T14:06:23.881425Z",
+          "generation": 63,
+          "grant_id": "368ac8a5-92e4-4f60-81bf-657ca8d873ad",
+          "intent_digest": "sha256:789b23df9244f4d7db4a7585712af1e629fce827556699a1d6670848b83fd7f9",
+          "operation_key": "sha256:f8bee8132de65ae79e384cabf393436692b9d5aa96281dfa2b566ba3aa7fae79",
+          "owner_id": "827589cc-a101-4bea-bc17-633c3ac737e8"
+        },
+        {
+          "attempt_id": "gpc-cdc-2122-a3-release-managed-worker-atomic-release",
+          "claimed_at_utc": "2026-10-09T14:47:50.676826Z",
+          "generation": 64,
+          "grant_id": "6601e52c-35b9-4c8d-a14e-d434709827cd",
+          "intent_digest": "sha256:3ec650d393f20e0bca9be1ba74c73d9022e0993abd866c3e29c16a7a0789f76e",
+          "operation_key": "sha256:7c9182148157fb2c265a1355e3d5a67764ab1ec6a09a060031d3f597ff0b3e38",
+          "owner_id": "49221187-78f9-4a4d-af2e-206d45a4e4b1"
+        },
+        {
+          "attempt_id": "cdc-213-mainbound-topic-a1",
+          "claimed_at_utc": "2026-10-09T19:28:10.833237Z",
+          "generation": 68,
+          "grant_id": "2f05e4da-b552-4646-ad55-b5b47f792e0c",
+          "intent_digest": "sha256:0bfa0bd12b3711d5808d4b5d42cf320abafcee5e88217d601fc232a15c88be9e",
+          "operation_key": "sha256:b6d49d564a3bf84a7017a215b28be3a787e80f76a9aacb45c27eb164fdb3b7ff",
+          "owner_id": "44563d10-3ace-4b0b-8606-ee93c280aee3"
+        },
+        {
+          "attempt_id": "cdc-213-exact-final-ci-mainbound-a1",
+          "claimed_at_utc": "2026-10-09T19:44:22.606279Z",
+          "generation": 68,
+          "grant_id": "00a25f93-78fb-4b10-b49b-bb4fc017b4d9",
+          "intent_digest": "sha256:bfade93daba76086e569281781348a90401c448ccaf065e466e216f3258a8e71",
+          "operation_key": "sha256:2e4cc047f4192c1c5d01753404606fe24a7a7eca6b372c04947b22875ff58eab",
+          "owner_id": "44563d10-3ace-4b0b-8606-ee93c280aee3"
+        },
+        {
+          "attempt_id": "cdc-213-immutable-release-mainbound-a1",
+          "claimed_at_utc": "2026-10-09T20:05:18.286995Z",
+          "generation": 68,
+          "grant_id": "a6c5ece0-bb22-4cdf-831a-99643a711eee",
+          "intent_digest": "sha256:d0edd2c78f0f5a62a0b0ff21564ed2c69c892db40043af16247b05af0cac7296",
+          "operation_key": "sha256:4740d2ea0a9d238ebd5778d7406fabe3f460278aa6aa76d656b7ee2a51d7d50f",
+          "owner_id": "44563d10-3ace-4b0b-8606-ee93c280aee3"
+        },
+        {
+          "attempt_id": "cdc300-release-host-a1-ci",
+          "claimed_at_utc": "2026-10-09T21:53:42.515125Z",
+          "generation": 69,
+          "grant_id": "e0ee3da0-8d77-4997-96c6-13c3279e597c",
+          "intent_digest": "sha256:01e173bfaea510989dfdcabe226915e2267587b1a69d065f669046923155542a",
+          "operation_key": "sha256:4b7292ebde870b009f18835d3cf6906bff82b3c8cfbed46e55baa4ac19cd7fa8",
+          "owner_id": "d3b748c5-414d-4de8-bd3d-685e5b7ac660"
+        },
+        {
+          "attempt_id": "cdc300-release-host-a1-release",
+          "claimed_at_utc": "2026-10-09T22:05:02.627508Z",
+          "generation": 69,
+          "grant_id": "5e6e86e9-acb1-419b-bb0a-21d83d1c6a8f",
+          "intent_digest": "sha256:d7cc54387dfb3469fdd07e72e6a83b56d0fcee0009d813be7a5903acc8f3f016",
+          "operation_key": "sha256:f10bc10bf3790dbc49adf81418ceace67f9c223e9f59fa163d6ad1d731990c10",
+          "owner_id": "d3b748c5-414d-4de8-bd3d-685e5b7ac660"
+        },
+        {
+          "attempt_id": "cdc310-exact-ci-a1",
+          "claimed_at_utc": "2026-10-10T01:55:05.134441Z",
+          "generation": 70,
+          "grant_id": "e1b42b04-9a2d-4b33-8f01-13c4d37bf28e",
+          "intent_digest": "sha256:a821fabcd56e2628801e24fc00e253ac745828c8647aba15e495fc8487a2b994",
+          "operation_key": "sha256:b6826802e5a9c0ba60f00b253048624d0a6d204b9d7d20b55cefa9e09bb5783f",
+          "owner_id": "07c853c2-7b23-4b1b-85b3-f35b4a56bc2c"
+        },
+        {
+          "attempt_id": "cdc310-immutable-release-a1",
+          "claimed_at_utc": "2026-10-10T02:02:10.680973Z",
+          "generation": 70,
+          "grant_id": "83f82a49-f883-4792-983f-a9e6b185cf92",
+          "intent_digest": "sha256:c9838074f5062d5322090cfee78a8948a4abe6c7f3d8070946a184f9b3c14c85",
+          "operation_key": "sha256:a2968efc6e76e4517a2e84ce4068ba66897ec2d7060c9efd15d7ef07d87335d1",
+          "owner_id": "07c853c2-7b23-4b1b-85b3-f35b4a56bc2c"
+        },
+        {
+          "attempt_id": "cdc320-exact-ci-a1",
+          "claimed_at_utc": "2026-10-10T10:09:33.270813Z",
+          "generation": 71,
+          "grant_id": "8373d885-b157-49d7-bbf7-ce18b8568b39",
+          "intent_digest": "sha256:c8c780d68476a95ca182d7ef80b3daaae03eadd79851f03bbaee635d286a2486",
+          "operation_key": "sha256:fb910ef3f4aee5b5eb4a5b08e14d9b6287e4e1f3092e9921a7ed89d666bf46f8",
+          "owner_id": "72d20bc9-42ae-482c-af87-016c603dacea"
+        },
+        {
+          "attempt_id": "cdc320-immutable-release-recovery-a1",
+          "claimed_at_utc": "2026-10-10T10:32:55.032507Z",
+          "generation": 72,
+          "grant_id": "9a4497e0-3b9a-4129-b150-2fb4932cf94b",
+          "intent_digest": "sha256:379d546fb2b696c4e9a41e1bc0604d4bda0d6260b8567028617992481710e295",
+          "operation_key": "sha256:c4800fc2b26efc515a1f71b0cecf03585061c632e43facc6c3d9e9760c3ef062",
+          "owner_id": "c1045059-477c-447a-9c2a-8bf6f730305b"
+        },
+        {
+          "attempt_id": "cdc330-exact-ci-a1",
+          "claimed_at_utc": "2026-10-10T11:40:44.212666Z",
+          "generation": 73,
+          "grant_id": "ba7a4033-8c2d-4e49-aec0-92bb487d20bc",
+          "intent_digest": "sha256:e6459dfe222758eb2930716709ed881be97bbb175b4698bc8b8d45bd739b06df",
+          "operation_key": "sha256:030d43361d3522891c74b3dce11ca5a5b33f3273daecd50b98893008becc1298",
+          "owner_id": "5d40872a-b401-4733-9d3c-0cbbca31e305"
+        },
+        {
+          "attempt_id": "cdc330-immutable-release-a1",
+          "claimed_at_utc": "2026-10-10T11:52:05.002726Z",
+          "generation": 73,
+          "grant_id": "fd093372-05e9-46f9-ad4a-95dc0a2f3b69",
+          "intent_digest": "sha256:ddebccc5c12d73008628d71e5479e3c01d25abda0710c6bfbcb24ae30a03ca46",
+          "operation_key": "sha256:650ad68e3dc7d50079029f38e39557f476b8b2d332cd625dd34aa79396aef98e",
+          "owner_id": "5d40872a-b401-4733-9d3c-0cbbca31e305"
+        }
+      ],
+      "submission_resolutions": [
+        {
+          "attempt_id": "final-ci-a1",
+          "evidence_reference": "git:1b33e08d383d7ef9fb50e534b045e682a4ba453d",
+          "generation": 7,
+          "grant_id": "ccd7add3-4e7b-4372-b4de-f286f817ec40",
+          "intent_digest": "sha256:352a7862da03153f309fd03d91c9eea57f54df98d094b4708851fdf59865b034",
+          "observation_digest": "sha256:ab180c2f8927c6a9c1bb45347839971420b58aae59bea3b4f9690306a9df1b08",
+          "operation_key": "sha256:97ae1e285da368a47b882b7e8d71e1b71452d01e8f49d8f5bb4661baac7c73d1",
+          "owner_id": "f0419230-5493-417c-b002-c3516c2c7163",
+          "resolved_at_utc": "2026-10-04T21:45:20.942599Z"
+        },
+        {
+          "attempt_id": "ref-cleanup-a1",
+          "evidence_reference": "git:a9008176e3d71f19cab90985cf2f0af9a4a81694",
+          "generation": 7,
+          "grant_id": "8f0a1713-8a32-4ff6-8aaa-9a26fe7d3064",
+          "intent_digest": "sha256:aba4ed08dd22a1490a62fde686b13e51250dfbde2ed3787d8290a63f16496da9",
+          "observation_digest": "sha256:92acdc671d0d733607abd2878ab100a449cf75350cc23cd18528db27a3a97dfa",
+          "operation_key": "sha256:077ecc042493fc9c85820654cefcba7cd7661bcf558bb128ef6560d1ff065019",
+          "owner_id": "f0419230-5493-417c-b002-c3516c2c7163",
+          "resolved_at_utc": "2026-10-04T22:04:59.913332Z"
+        },
+        {
+          "attempt_id": "release-publication-a1",
+          "evidence_reference": "git:25cf6ca8671e52af7e24039afd1908f3226a20fe",
+          "generation": 7,
+          "grant_id": "06961f47-7a3c-483e-9e8d-26689e6d4426",
+          "intent_digest": "sha256:d368430f128712e6e4206a84835f927c1aa21537d6246d77d271781617797319",
+          "observation_digest": "sha256:4117ed4283fc70b63266066785c1fe258014a7ddda802d03f0a6d8c4ef81973f",
+          "operation_key": "sha256:cbf7dc6f43993cdda96f96c35a149eb8f62ddfe688edaf0a935f5669e4d89bb2",
+          "owner_id": "f0419230-5493-417c-b002-c3516c2c7163",
+          "resolved_at_utc": "2026-10-04T22:05:41.561069Z"
+        },
+        {
+          "attempt_id": "cloud-cli-smoke-r2-a1",
+          "evidence_reference": "git:e0b86a074a3789eea063a5fb6f4dd1d40a02cb17",
+          "generation": 9,
+          "grant_id": "5b569c58-707a-4e98-a06e-70d65d7fa7d2",
+          "intent_digest": "sha256:5cedce0262aa44c757abea7ff26f3be65c64663f89a2e84faa7425bac6028ec6",
+          "observation_digest": "sha256:80c482956001910c6e345a8a974ff0fdf949cadd72c8eaca8de4ab2647ec5ed0",
+          "operation_key": "sha256:f24903183854632aede6b34242c3b4ccc19f18000c51da073eac6a13d7501f8f",
+          "owner_id": "72793c37-8ab7-4685-a1c0-a798f422c4a4",
+          "resolved_at_utc": "2026-10-05T03:58:09.393121Z"
+        },
+        {
+          "attempt_id": "cdc2116-native-cloud-a1",
+          "evidence_reference": "git:a5b06acece93b6dd07bf26a90aaaeb75b93831c3",
+          "generation": 11,
+          "grant_id": "2af3e9aa-9160-4ec5-9efc-ec069f10a415",
+          "intent_digest": "sha256:189029d898eb3c0d6d47c89d4fd3c495788c6aedc5b1ccb355aff7ffb1de91a7",
+          "observation_digest": "sha256:c7243fb2f95be10463c115c63ec511727a43bf2c7371e9608c40964a578d8293",
+          "operation_key": "sha256:a63dcbb5fec1f160e32f6db9c03580195e9e0a4dd86cb8a57aeb58797f4b111e",
+          "owner_id": "53073288-3f62-47e5-ab5c-795e1d619be1",
+          "resolved_at_utc": "2026-10-05T07:23:02.151444Z"
+        },
+        {
+          "attempt_id": "cdc2116-native-cloud-a2",
+          "evidence_reference": "git:fcfd754660cbd414e67093cc7776b38202049218",
+          "generation": 11,
+          "grant_id": "99aee96f-13d5-4758-bdb2-d0a51158fdf4",
+          "intent_digest": "sha256:d8086788ac04fa5a41bbe1d035bff4d0cee55ff57e880f7f04c2f6bdc045d9df",
+          "observation_digest": "sha256:7984ce78751f641594f0e91a2bc00cf162d62d2a5390131a22074e4ab2ccb3c9",
+          "operation_key": "sha256:33be052065af7d25e77ceb81e0b3dc410be7ec224ce8f7f8b3bbb43360980e21",
+          "owner_id": "53073288-3f62-47e5-ab5c-795e1d619be1",
+          "resolved_at_utc": "2026-10-05T11:45:26.601218Z"
+        },
+        {
+          "attempt_id": "cdc2116-native-cloud-a3",
+          "evidence_reference": "git:9dcf9954e2cb5665a6840d0f5151094a7c8abdd9",
+          "generation": 12,
+          "grant_id": "22e197bc-1c6c-402c-8541-b700f6cce8d8",
+          "intent_digest": "sha256:bcb683e15b41a5a074ff7b2116b1f5a0ec70f18f713ca6159b756ba0cb47fc86",
+          "observation_digest": "sha256:f4ffcb24803d5a8aea75266fdde0c1b9ee5d3da80aa0b15d19627ca0856327ed",
+          "operation_key": "sha256:7467338303e42573ce8de60416f539cae04ca83e5071b570c9c4cd4e66212cd6",
+          "owner_id": "1324f833-ca4b-49d2-879f-1069dc3987da",
+          "resolved_at_utc": "2026-10-05T21:23:26.746604Z"
+        },
+        {
+          "attempt_id": "cdc2116-native-cloud-a4",
+          "evidence_reference": "git:b896cd334131f49e73af8a5956bd3c18ea0d6215",
+          "generation": 13,
+          "grant_id": "71739f1f-73a6-4682-b114-c7952318221b",
+          "intent_digest": "sha256:e24d6b5524939a5296ff4f29cdcfbe2b8950c03bf727cb0ac4a0e2eb2fd435d5",
+          "observation_digest": "sha256:cdfd2a15beeac42cd131c25b43013585e43aa9d00dae2a00ad53df8c3da92652",
+          "operation_key": "sha256:428abc334033b09f66e9ccb63dcbc16093bffc4677bebe273178bbcc3de76057",
+          "owner_id": "d84796c3-8de0-4234-b9f0-2c4d68b2a83c",
+          "resolved_at_utc": "2026-10-06T05:56:17.975069Z"
+        },
+        {
+          "attempt_id": "cdc2116-native-cloud-a5",
+          "evidence_reference": "git:118893175c1f8350ab126551d87a5f75f65341f0",
+          "generation": 15,
+          "grant_id": "74da5420-2f6d-491b-ae3c-fdd264577eef",
+          "intent_digest": "sha256:511158ac8827a6dbd188f200a938e882f609d3ccf0ac46b9682a7effc52ac7b5",
+          "observation_digest": "sha256:87d0e5c09f3953a655e0a54151246b41b0fe59349153182c2380083cdf3f010a",
+          "operation_key": "sha256:e24fb267c76dd133726f66023ca62a053db5e813ca7f346a6479a8c0bfbf56a6",
+          "owner_id": "cd7e52c5-5108-4800-9236-19f2f95e925a",
+          "resolved_at_utc": "2026-10-06T08:12:21.777287Z"
+        },
+        {
+          "attempt_id": "cdc2116-native-cloud-a6",
+          "evidence_reference": "git:971734071011bffe6108f8a0f810b07832dc24da",
+          "generation": 17,
+          "grant_id": "e955c75e-2aed-4e39-a314-253077514abc",
+          "intent_digest": "sha256:540ae943028c65a98b28a0a6490108bd9a652f6424e0152b656d1ef9cc39d8de",
+          "observation_digest": "sha256:8563e0f430b164d6dfa6b98b5b560a6df2d15f4bedeb655ada7ef86f7d859b9d",
+          "operation_key": "sha256:615452f00e8eb3bcdb00d705b9897b4b7d55a66bf6df060388af6e168c695e21",
+          "owner_id": "11a733fb-da05-4b3a-9b8a-0dbf7054e14a",
+          "resolved_at_utc": "2026-10-06T09:45:02.080919Z"
+        },
+        {
+          "attempt_id": "cdc2116-a6-final-ci",
+          "evidence_reference": "git:7193db459cdad522bd906c633ce1757a4239ef1a",
+          "generation": 18,
+          "grant_id": "5e522dc4-31be-480e-8ec3-968641593826",
+          "intent_digest": "sha256:ed21b0b88883b810decfe07f0beb31bdffd3f38dd06fcf06bb70fff740368e97",
+          "observation_digest": "sha256:47b851d263502caa634c6af9add84b483cf287b2c2171d9eb56847e0030b2008",
+          "operation_key": "sha256:05df549f089d0f0d2ee0a8e00e4432e6ae6ddba397c824cabbba135f5e2563b3",
+          "owner_id": "64d69183-3a52-4e80-baca-75edb2b5019f",
+          "resolved_at_utc": "2026-10-06T10:05:06.179376Z"
+        },
+        {
+          "attempt_id": "capability-probe-7809b8ab9c054d80869ab4d415948508-a1",
+          "evidence_reference": "sha256:49c09c210bef84276e47805c1283062a75d646d6bf2f281085be2a11e302b5b9",
+          "generation": 28,
+          "grant_id": "acbdd5f5-1d45-434e-a3a9-b71bdb6a874f",
+          "intent_digest": "sha256:76e40699a038544d641a161c380d07690b7f8d578cd7da1b8dacc8e0c6ec0b0e",
+          "observation_digest": "sha256:f72fd96a6127e0e03ae417445ee4d70bb9d74fc7c0c79487030a6353d737bc83",
+          "operation_key": "sha256:59f8cc712ae587fefa755a8aec336cf5b1b1e5509be7c50788b6fff329fefea5",
+          "owner_id": "744b367a-cc11-432e-8320-f5400b7508ef",
+          "resolved_at_utc": "2026-10-06T20:47:15.129926Z"
+        },
+        {
+          "attempt_id": "development-a39b0b7ded7e4e11abae424f8b38d875-a1",
+          "evidence_reference": "sha256:1afec79d85ab19d159f00fd79d52313649ce97d263641507ab788f8f199b3b01",
+          "generation": 35,
+          "grant_id": "3b31e85d-67c3-47ee-81a5-e71eb6c6fdef",
+          "intent_digest": "sha256:8f83d942e5244af3fe5c6d3afec9daf9802ba6151ba64f9040c28307fa260e17",
+          "observation_digest": "sha256:bc5d814054315405e35ea322f718dfef48d497b0cf4eb87b37ddb326deae9ed0",
+          "operation_key": "sha256:1c06691c0688667d624d1a519c48c0f437ab4951e072f065d9a5e34eec4756be",
+          "owner_id": "accd3e08-b33f-4aad-98ea-b41cd57c1bbc",
+          "resolved_at_utc": "2026-10-06T22:01:48.393859Z"
+        },
+        {
+          "attempt_id": "maintenance-pr-497cc3baa2a5435296184d7c45743354-a1",
+          "evidence_reference": "sha256:e794325f5c2a77b8c614676c9fe2171593b6a4f22de79f3838a05cd1c4412760",
+          "generation": 38,
+          "grant_id": "c8080f08-7399-4bd4-832a-c00beeb132b4",
+          "intent_digest": "sha256:f2aba7defbb8fc1988b5178c464a59528aa2973750254d00e3d97a924a79889d",
+          "observation_digest": "sha256:4de9092b61d81681de90572799efdea0847e0d93f9d4dd1b435dab7ea180e320",
+          "operation_key": "sha256:a916d60e707f38147f5c59252ef78aa374623038e6d77e5ed011cc11c9bd36e7",
+          "owner_id": "b1cfe234-0bfc-4ab2-8116-900ea15603ca",
+          "resolved_at_utc": "2026-10-06T23:25:51.331722Z"
+        },
+        {
+          "attempt_id": "cloud8-pr-813583bd6afe42ff8d1659e66cfdf772-a1",
+          "evidence_reference": "sha256:4448f894473dccf9922bf640007c684a12f5c892f676dedeca2ab8ce96d47f3d",
+          "generation": 42,
+          "grant_id": "3a29c993-5d4f-4cd6-842f-ed598850fcdc",
+          "intent_digest": "sha256:50e3279fb41033fc88588578ca2d7afbdd8ef9a349bff49754d16b52ada82916",
+          "observation_digest": "sha256:4abf4f168a654fddf99ca83b44650b2358c9c1cf3d364a3699f13464afb47e19",
+          "operation_key": "sha256:9ada701d6092d1d5b362a9b4f20ffd6fb3a01c514577edcfadbf503f13525932",
+          "owner_id": "8f14c491-bc91-46be-96e4-28ec75abbd93",
+          "resolved_at_utc": "2026-10-07T00:25:59.431122Z"
+        },
+        {
+          "attempt_id": "live-target9-pr-37a7f20ea15140798f01534021091b09-a1",
+          "evidence_reference": "sha256:ed8da50ba3e3964573577a5cfa73dfb8fb6b4d16ec52ddab7e185f05d62670ab",
+          "generation": 46,
+          "grant_id": "298c3bde-0aff-4281-9a51-18fd23dcaf05",
+          "intent_digest": "sha256:7a099045bd6748024ece0d241925f32a1cabfab228b34230f04c090d1402b90e",
+          "observation_digest": "sha256:5cfb9f713a46e6d11ab4e98216fb514f424d0ed56db982fa973fdfc416513ac9",
+          "operation_key": "sha256:6e576f1b6804fb397ffbd0600f49f66ed0064f334f6ef713fdae02569d79b101",
+          "owner_id": "a3e2e662-ad7f-4163-8dce-385a0e26643c",
+          "resolved_at_utc": "2026-10-07T01:43:42.085453Z"
+        },
+        {
+          "attempt_id": "quality212-ci-a1",
+          "evidence_reference": "owner-repair/quality212-ci-a1.json",
+          "generation": 49,
+          "grant_id": "84d0b3e6-91ac-4938-837f-55118a479746",
+          "intent_digest": "sha256:1b3f0a79940bbe1667901605dbfccdfcee56d299175a6f83df3635c9469c6e2c",
+          "observation_digest": "sha256:8c80071b376e3b9fedc86cb184201bba780fbba939a07413888679feb9923a76",
+          "operation_key": "sha256:083fee882d7c5c29543a907231e9fb50cba86baf30a04e06c74f85a9d6240bd5",
+          "owner_id": "7bf3ee6c-4929-4431-b1bd-a8a6b422fcdb",
+          "resolved_at_utc": "2026-10-07T10:52:27.623Z"
+        },
+        {
+          "attempt_id": "quality212-ci-pr-a2",
+          "evidence_reference": "git:e3a45e180d02bd4638f4c3c36883b26cfd9ab904",
+          "generation": 50,
+          "grant_id": "d90e52a1-e309-409f-994c-97fb267671b9",
+          "intent_digest": "sha256:7200ca550261ac18d82c4014efa4dc1942176bf4b5483d36ab6985f6946cb9c7",
+          "observation_digest": "sha256:1bc1fbe11142b952c30344938eedde972633be5c9f8983205832e9c1e1ff2dc8",
+          "operation_key": "sha256:e2c137c606b0e910fc58c08f3a21b4e6f4f27a27cc8ce6ec4f818268bf28cceb",
+          "owner_id": "4a5ee594-1d17-4557-a6bf-885b78a1fca0",
+          "resolved_at_utc": "2026-10-07T11:04:51.387910Z"
+        },
+        {
+          "attempt_id": "normalize2121-candidate-ref-a1",
+          "evidence_reference": "git:9b38bd4d9f5fb113ec10bdbca9fbe33908619a54",
+          "generation": 53,
+          "grant_id": "b308b2f7-8853-4792-8189-8d64932affb7",
+          "intent_digest": "sha256:059095431d90bb22b9342d94cbf5999f35920028ee65b5b6c35819148db20e48",
+          "observation_digest": "sha256:78a4c2516a760db837b2602ff826c475f7713ed41a3f536adf91db209212003f",
+          "operation_key": "sha256:acf92c5943ac4586ba3802e70a663851ada6ec2308b637201ed131b3f8311533",
+          "owner_id": "e716a640-5f37-48b8-a2f8-7a5c3245d791",
+          "resolved_at_utc": "2026-10-08T06:15:59.315992Z"
+        },
+        {
+          "attempt_id": "release2121-refs-a1",
+          "evidence_reference": "git:9dece125d09956d4546721bceb9142856bf786d3",
+          "generation": 54,
+          "grant_id": "1ada4c9b-6493-49db-bfb2-881f5ccdbf21",
+          "intent_digest": "sha256:ec0bc5f0e0db10b624377e2bb66860e73f1954c0939e2f7354760f8c961c892a",
+          "observation_digest": "sha256:14019f07d227f224a6bab66b8fde52921c2187a413a0bb8990e7f8523da91230",
+          "operation_key": "sha256:f324bfc4541fc13bd2bac5ee4dac609cfbd40cb49e1aaf0036d8c961d3f3a8ec",
+          "owner_id": "3885e111-b4ff-4c4f-b994-c7dbe5d17881",
+          "resolved_at_utc": "2026-10-08T06:48:24.984878Z"
+        },
+        {
+          "attempt_id": "pr98-close-a1",
+          "evidence_reference": "git:66bd6089181bd523ca56a4dab87016824dbcda2f:document.json",
+          "generation": 55,
+          "grant_id": "3c526bfb-6ab0-4ad3-8ec1-1b50c838be6d",
+          "intent_digest": "sha256:1f61442cd2b25d54233e64fd43c3d518be2ccee497811d7e0120e9ac255b489d",
+          "observation_digest": "sha256:d37a9ba34bb897d2f2f99285a5a351df487a67955aa1d7c90687f1808369740e",
+          "operation_key": "sha256:cd6c2d296238fe55b67ae3b5da0a8a9c41e39706ea2c0294c7b8f477e74e3087",
+          "owner_id": "7b26b69d-ae99-4112-93b9-b3a03ca17cc2",
+          "resolved_at_utc": "2026-10-08T06:55:06.319186Z"
+        },
+        {
+          "attempt_id": "issue100-planning-writer-a1-20261009-detached-design-review",
+          "evidence_reference": "git:a686398ddff112f26f527b91dd0247ffe754e549",
+          "generation": 57,
+          "grant_id": "85f190b4-cd6d-4bfa-b2d1-13dbca671c1d",
+          "intent_digest": "sha256:76027c51260a84f961785ee8757b48bcf5d5d560fa97496cadd93ee7c97598a2",
+          "observation_digest": "sha256:e44524983f34875d380091aa80cecc979e2ac69f98ac5e21a9ca6b3d34fc40c7",
+          "operation_key": "sha256:8ea401b356953d6945b6201f30251bb9173d1ec1734eb0006daafaf1426158a2",
+          "owner_id": "d00ffb03-8442-4bf0-a78d-80758c5745b4",
+          "resolved_at_utc": "2026-10-09T01:21:27.431049Z"
+        },
+        {
+          "attempt_id": "issue100-planning-revision-r1-20261009-detached-review-r1",
+          "evidence_reference": "git:14c39b45107740b3a1479b539b776a6f44983f8e",
+          "generation": 58,
+          "grant_id": "b1fb5b38-78f1-40d4-913a-8dfe368a6e4d",
+          "intent_digest": "sha256:d508283d473aabad5a8f447dbed3ed38e5de31ef1327d6707bc95b747619328a",
+          "observation_digest": "sha256:60122fa439046536a5e5c2e8d03143c8fe57db6fc9a73333964e186cae88b4f6",
+          "operation_key": "sha256:1804a860f63b97eda8c59982da38c7c13982e1758b80e5482ec802e770068cf4",
+          "owner_id": "b61f3184-3133-4912-82b3-4e6af68e4447",
+          "resolved_at_utc": "2026-10-09T01:55:27.976106Z"
+        },
+        {
+          "attempt_id": "issue100-feature-integrator-a5-20261009-implementation-review",
+          "evidence_reference": "git:5d708399876ca2441e7665848d231790a7963409",
+          "generation": 62,
+          "grant_id": "e7cdf29c-edf6-44ae-adb5-21ace02e0721",
+          "intent_digest": "sha256:9466ce6d4267530c7cf48a8a8f1d21ee3f696e73f09e2924bc0875aea9db10dd",
+          "observation_digest": "sha256:34f1725c216f2fc38dc5f070edefccc756717cc4930304ef358694f9a578a750",
+          "operation_key": "sha256:4f538d3bc0c660517c9f30d418daea36aad1d52d14a65e5ead3854183f227d5f",
+          "owner_id": "9c478652-9ec8-4b42-a4df-8c53c0ddbdda",
+          "resolved_at_utc": "2026-10-09T06:06:46.579853Z"
+        },
+        {
+          "attempt_id": "issue100-feature-integrator-a5-20261009-implementation-correction-review",
+          "evidence_reference": "git:b0734dc0f13b8a875b88d3b629f15c9fae4323aa",
+          "generation": 62,
+          "grant_id": "39e2fb79-4759-46c0-a6f9-dc8f188a0551",
+          "intent_digest": "sha256:960c73508e734eafd84d12ac8c911854a9e6749a1510d7cd97f2c52a56aa5f5b",
+          "observation_digest": "sha256:3b4023d7c7030e1212e7d0d5a8577e872029244f35c57dc4a24c04a6bf39e3fa",
+          "operation_key": "sha256:18dd0957310f68a5c2d55f6daaae80d6ed99db667cc7976e1dc2f75699399bd9",
+          "owner_id": "9c478652-9ec8-4b42-a4df-8c53c0ddbdda",
+          "resolved_at_utc": "2026-10-09T06:32:20.217863Z"
+        },
+        {
+          "attempt_id": "issue100-feature-integrator-a5-20261009-actor-trace-task-review",
+          "evidence_reference": "git:9ded88c9e0a4d415a8c5238573afcf36c7d3a235",
+          "generation": 62,
+          "grant_id": "7bbb520f-04fc-4d11-a130-dac7b9d81efb",
+          "intent_digest": "sha256:f8ba6307e7f73450374290ffde4e78ffaee38d2c99d3b236611e5f59625a3192",
+          "observation_digest": "sha256:0706eae56cd34faca206629ca80f2686fb4a3ab3c560ebe96bec3654af23e2f2",
+          "operation_key": "sha256:51377ff6d001c9b9b0237c712ea625ece4598ebd69cd25df916a8c9d6b0dd245",
+          "owner_id": "9c478652-9ec8-4b42-a4df-8c53c0ddbdda",
+          "resolved_at_utc": "2026-10-09T06:47:20.787945Z"
+        },
+        {
+          "attempt_id": "issue100-feature-integrator-a5-20261009-actor-admission-review",
+          "evidence_reference": "git:6f1dd460f680ff5af1e7f26922143f59695edbae",
+          "generation": 62,
+          "grant_id": "e44fa093-b36b-41f7-b1a9-fd03ab61d5d0",
+          "intent_digest": "sha256:1644f08bda2e62640fd583cc9fabd7e8cace81352eefbceaa8bfc35064795e4c",
+          "observation_digest": "sha256:6cc9b3f1e4b054680cd48664356dcba48f5ae495eab54d2d47e7a5f67d3d580d",
+          "operation_key": "sha256:d294709c298ba8a3a79f9fa12c087bc26a85cdc2441bdf807745272cea4e6f48",
+          "owner_id": "9c478652-9ec8-4b42-a4df-8c53c0ddbdda",
+          "resolved_at_utc": "2026-10-09T07:15:07.633411Z"
+        },
+        {
+          "attempt_id": "issue100-feature-integrator-a5-20261009-transport-template-correction-review",
+          "evidence_reference": "git:2cbc990f9ae2e7773a2fd4de19842102449abd84",
+          "generation": 62,
+          "grant_id": "2196a610-0c27-40f6-a1dc-db952e71ce20",
+          "intent_digest": "sha256:4faa8eecb2bc3e9c273dc9322482f2ddd2241bf9653102103e35ae88cc4b7fcb",
+          "observation_digest": "sha256:f8b95680854b034b9e76de64e54522d907d107879b2c755d4f27ee3dd4913a07",
+          "operation_key": "sha256:abe1ede3561142ab046087b301b564c74df637e94416587d881de68cc63171d6",
+          "owner_id": "9c478652-9ec8-4b42-a4df-8c53c0ddbdda",
+          "resolved_at_utc": "2026-10-09T07:48:24.829588Z"
+        },
+        {
+          "attempt_id": "issue100-feature-integrator-a5-20261009-frozen-validation-result-review",
+          "evidence_reference": "git:cf53981160d1a044b91c6e903043e56faf0f0ed7",
+          "generation": 62,
+          "grant_id": "6d1dda53-a87d-4ba2-9a49-8f8534870893",
+          "intent_digest": "sha256:b63b111a2b361a4e8852bd259c5f160c946e69038f87f5351ee74b842c44a18e",
+          "observation_digest": "sha256:b9de1f7406bb4b5f0b2901f08bade3e7dd1a8a7d4282762c92ee644e6abf420f",
+          "operation_key": "sha256:1886337537187da0433854d9ff64371fd0b5616583af359c9ffd4d7106ba282a",
+          "owner_id": "9c478652-9ec8-4b42-a4df-8c53c0ddbdda",
+          "resolved_at_utc": "2026-10-09T07:57:28.064811Z"
+        },
+        {
+          "attempt_id": "gpc-cdc-2122-a3-exact-ci",
+          "evidence_reference": "git:bajoicheg/codex-compute@f7fc255287f6b08a848b0f5a1df6b12c47703a92:document.json#terminal_observation",
+          "generation": 63,
+          "grant_id": "368ac8a5-92e4-4f60-81bf-657ca8d873ad",
+          "intent_digest": "sha256:789b23df9244f4d7db4a7585712af1e629fce827556699a1d6670848b83fd7f9",
+          "observation_digest": "sha256:e0b354a8a631b947362a3f3c218d79eb56312efbc6181c66a2b3535a0c126c53",
+          "operation_key": "sha256:f8bee8132de65ae79e384cabf393436692b9d5aa96281dfa2b566ba3aa7fae79",
+          "owner_id": "827589cc-a101-4bea-bc17-633c3ac737e8",
+          "resolved_at_utc": "2026-10-09T14:27:26.721196Z"
+        },
+        {
+          "attempt_id": "gpc-cdc-2122-a3-release-managed-worker-atomic-release",
+          "evidence_reference": "git:bajoicheg/codex-compute@12b2c59975c0b9c0baa076aa04d17284bd4c7967:document.json#terminal_observation",
+          "generation": 64,
+          "grant_id": "6601e52c-35b9-4c8d-a14e-d434709827cd",
+          "intent_digest": "sha256:3ec650d393f20e0bca9be1ba74c73d9022e0993abd866c3e29c16a7a0789f76e",
+          "observation_digest": "sha256:e20b5bc747722793ee280b19e1fca0f7321ccbb395340da87be181465b48a825",
+          "operation_key": "sha256:7c9182148157fb2c265a1355e3d5a67764ab1ec6a09a060031d3f597ff0b3e38",
+          "owner_id": "49221187-78f9-4a4d-af2e-206d45a4e4b1",
+          "resolved_at_utc": "2026-10-09T14:48:22.867683Z"
+        },
+        {
+          "attempt_id": "cdc-213-mainbound-topic-a1",
+          "evidence_reference": "git:bajoicheg/codex-compute@29877f12e33049df79d7408b971e8cf139427e55:document.json#terminal_observation",
+          "generation": 68,
+          "grant_id": "2f05e4da-b552-4646-ad55-b5b47f792e0c",
+          "intent_digest": "sha256:0bfa0bd12b3711d5808d4b5d42cf320abafcee5e88217d601fc232a15c88be9e",
+          "observation_digest": "sha256:8638f79018cab04a4a191ff7b60d3059ef9321622b0a23548f43256b5b81058f",
+          "operation_key": "sha256:b6d49d564a3bf84a7017a215b28be3a787e80f76a9aacb45c27eb164fdb3b7ff",
+          "owner_id": "44563d10-3ace-4b0b-8606-ee93c280aee3",
+          "resolved_at_utc": "2026-10-09T19:32:37.311761Z"
+        },
+        {
+          "attempt_id": "cdc-213-exact-final-ci-mainbound-a1",
+          "evidence_reference": "git:bajoicheg/codex-compute@db91c9e2445d3cd65f460827f68cfe62b449757b:document.json#terminal_observation",
+          "generation": 68,
+          "grant_id": "00a25f93-78fb-4b10-b49b-bb4fc017b4d9",
+          "intent_digest": "sha256:bfade93daba76086e569281781348a90401c448ccaf065e466e216f3258a8e71",
+          "observation_digest": "sha256:c57e89150786e60359ae85864e0b8168e805bb2291b75ef99e57a399554fe762",
+          "operation_key": "sha256:2e4cc047f4192c1c5d01753404606fe24a7a7eca6b372c04947b22875ff58eab",
+          "owner_id": "44563d10-3ace-4b0b-8606-ee93c280aee3",
+          "resolved_at_utc": "2026-10-09T19:56:43.728988Z"
+        },
+        {
+          "attempt_id": "cdc-213-immutable-release-mainbound-a1",
+          "evidence_reference": "git:bajoicheg/codex-compute@3c43dcda08d64c795cd8c646a5cd24166f8f6447:document.json#terminal_observation",
+          "generation": 68,
+          "grant_id": "a6c5ece0-bb22-4cdf-831a-99643a711eee",
+          "intent_digest": "sha256:d0edd2c78f0f5a62a0b0ff21564ed2c69c892db40043af16247b05af0cac7296",
+          "observation_digest": "sha256:42e15a4517d2b87b6b75c25782016f7dfbd25019c21f3b5085795e0f0282341f",
+          "operation_key": "sha256:4740d2ea0a9d238ebd5778d7406fabe3f460278aa6aa76d656b7ee2a51d7d50f",
+          "owner_id": "44563d10-3ace-4b0b-8606-ee93c280aee3",
+          "resolved_at_utc": "2026-10-09T20:10:16.790350Z"
+        },
+        {
+          "attempt_id": "cdc300-release-host-a1-ci",
+          "evidence_reference": "git:bajoicheg/codex-compute@f6955867cbe725e20523239d04b022bc6174e967:document.json",
+          "generation": 69,
+          "grant_id": "e0ee3da0-8d77-4997-96c6-13c3279e597c",
+          "intent_digest": "sha256:01e173bfaea510989dfdcabe226915e2267587b1a69d065f669046923155542a",
+          "observation_digest": "sha256:68d5133cc965bb3691aed48b79e97284e47b3ec1740700b50259e9a968cb1537",
+          "operation_key": "sha256:4b7292ebde870b009f18835d3cf6906bff82b3c8cfbed46e55baa4ac19cd7fa8",
+          "owner_id": "d3b748c5-414d-4de8-bd3d-685e5b7ac660",
+          "resolved_at_utc": "2026-10-09T22:03:48.095110Z"
+        },
+        {
+          "attempt_id": "cdc300-release-host-a1-release",
+          "evidence_reference": "git:bajoicheg/codex-compute@137dcc4c81b4abcbd372067d8bd78367870e8fa5:document.json",
+          "generation": 69,
+          "grant_id": "5e6e86e9-acb1-419b-bb0a-21d83d1c6a8f",
+          "intent_digest": "sha256:d7cc54387dfb3469fdd07e72e6a83b56d0fcee0009d813be7a5903acc8f3f016",
+          "observation_digest": "sha256:cf5010d2fb61aa70e35ec79beba832c19770cd22283ad5fff9314d30abaaeb00",
+          "operation_key": "sha256:f10bc10bf3790dbc49adf81418ceace67f9c223e9f59fa163d6ad1d731990c10",
+          "owner_id": "d3b748c5-414d-4de8-bd3d-685e5b7ac660",
+          "resolved_at_utc": "2026-10-09T22:06:44.532098Z"
+        },
+        {
+          "attempt_id": "cdc310-exact-ci-a1",
+          "evidence_reference": "git:bajoicheg/codex-compute@4bb201d8c2b94ecdce8251f2e1011f222962919c:document-3.1.0.json#ci",
+          "generation": 70,
+          "grant_id": "e1b42b04-9a2d-4b33-8f01-13c4d37bf28e",
+          "intent_digest": "sha256:a821fabcd56e2628801e24fc00e253ac745828c8647aba15e495fc8487a2b994",
+          "observation_digest": "sha256:52b952611f0e69d052085675be5654bd2b3e2360dd4b34fe401b71ef9ba2ea04",
+          "operation_key": "sha256:b6826802e5a9c0ba60f00b253048624d0a6d204b9d7d20b55cefa9e09bb5783f",
+          "owner_id": "07c853c2-7b23-4b1b-85b3-f35b4a56bc2c",
+          "resolved_at_utc": "2026-10-10T02:01:44.977146Z"
+        },
+        {
+          "attempt_id": "cdc310-immutable-release-a1",
+          "evidence_reference": "git:bajoicheg/codex-compute@a8d0ef9e06e4c8837305d68b196b03e32bc20e7d:document-3.1.0.json#release_identities",
+          "generation": 70,
+          "grant_id": "83f82a49-f883-4792-983f-a9e6b185cf92",
+          "intent_digest": "sha256:c9838074f5062d5322090cfee78a8948a4abe6c7f3d8070946a184f9b3c14c85",
+          "observation_digest": "sha256:e184743411c6af584b1de679d1d1080c0bd08530880a7656d5249a7878dcf73e",
+          "operation_key": "sha256:a2968efc6e76e4517a2e84ce4068ba66897ec2d7060c9efd15d7ef07d87335d1",
+          "owner_id": "07c853c2-7b23-4b1b-85b3-f35b4a56bc2c",
+          "resolved_at_utc": "2026-10-10T02:02:20.513772Z"
+        },
+        {
+          "attempt_id": "cdc320-exact-ci-a1",
+          "evidence_reference": "git:bajoicheg/codex-compute@0ad9702d8d2ee594dffd6d88d6d3aac8463f8cb8:document-3.2.0.json#ci",
+          "generation": 71,
+          "grant_id": "8373d885-b157-49d7-bbf7-ce18b8568b39",
+          "intent_digest": "sha256:c8c780d68476a95ca182d7ef80b3daaae03eadd79851f03bbaee635d286a2486",
+          "observation_digest": "sha256:09c595622e2cb28fec701d3edb3e779fb8b159149f89f4ebb2fcd01fdff60f71",
+          "operation_key": "sha256:fb910ef3f4aee5b5eb4a5b08e14d9b6287e4e1f3092e9921a7ed89d666bf46f8",
+          "owner_id": "72d20bc9-42ae-482c-af87-016c603dacea",
+          "resolved_at_utc": "2026-10-10T10:18:31.885870Z"
+        },
+        {
+          "attempt_id": "cdc320-immutable-release-recovery-a1",
+          "evidence_reference": "git:bajoicheg/codex-compute@af41a2602abae4ca0e1f4233ef0567586bbf6db9:native-release-observation-3.2.0.json",
+          "generation": 72,
+          "grant_id": "9a4497e0-3b9a-4129-b150-2fb4932cf94b",
+          "intent_digest": "sha256:379d546fb2b696c4e9a41e1bc0604d4bda0d6260b8567028617992481710e295",
+          "observation_digest": "sha256:6470142551ba8d8deba8588a48bb6a1554fadf3657dc4c98dd77e179cd4dadfe",
+          "operation_key": "sha256:c4800fc2b26efc515a1f71b0cecf03585061c632e43facc6c3d9e9760c3ef062",
+          "owner_id": "c1045059-477c-447a-9c2a-8bf6f730305b",
+          "resolved_at_utc": "2026-10-10T10:33:12.379468Z"
+        },
+        {
+          "attempt_id": "cdc330-exact-ci-a1",
+          "evidence_reference": "git:bajoicheg/codex-compute@08c8f98927f9b0757b7b19c06894d86e04d02440:source330-ci-terminal-observation.json",
+          "generation": 73,
+          "grant_id": "ba7a4033-8c2d-4e49-aec0-92bb487d20bc",
+          "intent_digest": "sha256:e6459dfe222758eb2930716709ed881be97bbb175b4698bc8b8d45bd739b06df",
+          "observation_digest": "sha256:dd386263df84ed5747bd32d8ce6bf0ea0f0ba1a08d155413fbca87f97c543080",
+          "operation_key": "sha256:030d43361d3522891c74b3dce11ca5a5b33f3273daecd50b98893008becc1298",
+          "owner_id": "5d40872a-b401-4733-9d3c-0cbbca31e305",
+          "resolved_at_utc": "2026-10-10T11:50:45.935726Z"
+        },
+        {
+          "attempt_id": "cdc330-immutable-release-a1",
+          "evidence_reference": "git:bajoicheg/codex-compute@1887fdf32f352907345dbf29d1821a6d3adde8ba:native-release-observation-3.3.0.json",
+          "generation": 73,
+          "grant_id": "fd093372-05e9-46f9-ad4a-95dc0a2f3b69",
+          "intent_digest": "sha256:ddebccc5c12d73008628d71e5479e3c01d25abda0710c6bfbcb24ae30a03ca46",
+          "observation_digest": "sha256:f5beda952f5c9d79c228399fbb03d723ccc66ca1fd9d0741861ef835c9cb0e64",
+          "operation_key": "sha256:650ad68e3dc7d50079029f38e39557f476b8b2d332cd625dd34aa79396aef98e",
+          "owner_id": "5d40872a-b401-4733-9d3c-0cbbca31e305",
+          "resolved_at_utc": "2026-10-10T11:52:21.608927Z"
+        }
+      ],
+      "takeover_evidence": null
+    },
+    "fresh_lease_revision": "fdfd37b8e77c8a85da8210ae122904e0a5eb865a",
+    "immutable_prepared": "f02a44c1d68735d0fe436c57997e430480aa4b86",
+    "logs_sha256": "4e63f006d85de88920432612974f2b8fcddfec5a9b0f1a36be904a3875ea807c",
+    "source_preflight_branch": "cdc/3.3.1-delivery-20261010-work2334",
+    "source_preflight_readback": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+    "submitting_boundary": "62e786d3a8f4813c5e47910bd39ecbb588c76e21",
+    "unchanged_FULL_reruns": 0
+  },
+  "release_commit": "51740497bea3e1bcbb302e894fda8b7e42bc0087",
+  "release_ref": "refs/heads/release/v3.3.1",
+  "reused_local_validation": {
+    "archived_consumers": {
+      "count": 3,
+      "live_adoption": false,
+      "original_archives_unchanged": true,
+      "qualified": true
+    },
+    "at_utc": "2026-10-10T18:36:56.341Z",
+    "bootstrap": {
+      "exit_code": 0,
+      "tests": 51
+    },
+    "candidate": "51740497bea3e1bcbb302e894fda8b7e42bc0087",
+    "clean_consumer_full": {
+      "exit_code": 0,
+      "seconds": 381.102,
+      "tests": 1346
+    },
+    "core_files": 401,
+    "development_driver_version": "3.3.0",
+    "driver_verified_core_files": 398,
+    "gpc_adoption": "NOT_STARTED",
+    "hosted_ci": "NOT_SUBMITTED",
+    "package_required_files": 370,
+    "package_tree": "f580a8946c0510540a4be3f4422ab3404875274b",
+    "reviews": {
+      "QUALITY": "GREEN",
+      "SPEC": "GREEN",
+      "ordered": true,
+      "physical_terminal": true
+    },
+    "root_tree": "e04aa540c447f83e1f18a86cb8d5b7e965065ed4",
+    "schema": "cdc-source-readiness/v1",
+    "source_full": {
+      "exit_code": 0,
+      "seconds": 380.841,
+      "tests": 1346
+    },
+    "source_head": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+    "source_release": "NOT_PUBLISHED",
+    "status": "READY_FOR_MANAGED_EXACT_CI_AND_SOURCE_RELEASE",
+    "version": "3.3.1"
+  },
+  "root_tree": "e04aa540c447f83e1f18a86cb8d5b7e965065ed4",
+  "scheduler_mutations": false,
+  "schedulers_paused": true,
+  "schema": "cdc-release-evidence/v1",
+  "source_main_at_release_preflight": "2be2088d8e6ad59f87cdd9d07dc9f7ab8d4c34ad",
+  "source_main_integration": "Separately proven by genuine managed finish conditional publisher and strict release receipt",
+  "source_remote_id": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
+  "status": "released",
+  "version": "3.3.1"
+}
