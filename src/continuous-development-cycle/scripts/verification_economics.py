@@ -51,9 +51,16 @@ def validate_aggregate_repeats(plan):
         exceptions[item['check_id']] = item
     # A second aggregate in the same runner/environment always needs a
     # separately reviewed coverage justification, even if argv differs.
+    reasons=set()
+    coverage=set()
     for check_id in config['aggregate_check_ids'][1:]:
         if check_id not in exceptions:
             raise ValueError('additional aggregate requires reviewed coverage reason')
+        item=exceptions[check_id]
+        if item['reason'] in reasons or item['coverage_ref'] in coverage:
+            raise ValueError('additional aggregates require distinct reasons and coverage references')
+        reasons.add(item['reason'])
+        coverage.add(item['coverage_ref'])
     return exceptions
 
 

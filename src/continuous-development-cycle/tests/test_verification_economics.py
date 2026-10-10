@@ -67,6 +67,12 @@ class VerificationEconomicsTests(unittest.TestCase):
                            'prior_evidence':[],'repeat_exceptions':[]}}
         with self.assertRaisesRegex(ValueError,'aggregate'):
             economics.validate_aggregate_repeats(plan)
+        plan['checks'].append(dict(check,id='three'))
+        plan['economics']['aggregate_check_ids'].append('three')
+        plan['economics']['repeat_exceptions']=[{'check_id':name,'reason':'copied reason','coverage_ref':'same:coverage'}
+                                              for name in ['two','three']]
+        with self.assertRaisesRegex(ValueError,'distinct'):
+            economics.validate_aggregate_repeats(plan)
 
 
 if __name__=='__main__':unittest.main()

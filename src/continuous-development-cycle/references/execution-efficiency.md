@@ -49,7 +49,10 @@ linked archives, not repeatedly loaded current instructions. Batch independent
 reads, search explicit roots/types, and cap output before returning it to a model.
 
 `cdc.py runtime REQUEST` hashes the actual installed inventory and loader against
-the pinned saved acceptance/commit/tree/version. A stale interface loader digest
+the pinned commit/tree/version, reads actual Git HEAD and its tracked loader blob,
+and rejects a different commit or uncommitted loader. The acceptance reference is
+caller-supplied provenance, explicitly marked unverified by this local adapter.
+A stale interface loader digest
 is explicitly classified; it cannot replace authenticated saved bytes. This
 cheap read needs no archive extraction, FULL or CI. It proves bytes, not behavior.
 The initial acceptance/provenance must come from the actual saved version; this

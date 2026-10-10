@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import subprocess
 
 from active_package import _inventory, _version_errors
 from package_transport import _tree_oid
@@ -76,9 +77,23 @@ def runtime_identity(request):
     errors=_version_errors(root,request['version'])
     if actual_tree!=request['package_tree']:errors.append('installed_tree_changed')
     if actual_loader!=request['saved_loader_sha256']:errors.append('saved_loader_changed')
+    actual_commit=None
+    try:
+        def git(*args):
+            return subprocess.check_output(['git','-C',str(loader.resolve().parent),*args],
+                                           stderr=subprocess.DEVNULL,timeout=10)
+        repository=Path(git('rev-parse','--show-toplevel').decode().strip())
+        actual_commit=git('rev-parse','HEAD').decode().strip()
+        relative=loader.resolve().relative_to(repository.resolve()).as_posix()
+        saved_bytes=git('show',actual_commit+':'+relative)
+        if actual_commit!=request['saved_commit']:errors.append('saved_commit_changed')
+        if saved_bytes!=loader.read_bytes():errors.append('saved_loader_uncommitted')
+    except (OSError,ValueError,subprocess.SubprocessError):
+        errors.append('saved_revision_unavailable')
     stale=request['interface_loader_sha256']!=actual_loader
     return {'schema':'runtime-identity-result/v1','verified':not errors,'errors':errors,
-            'actual_package_tree':actual_tree,'files':len(files),'saved_commit':request['saved_commit'],
+            'actual_package_tree':actual_tree,'files':len(files),'saved_commit':actual_commit,
+            'acceptance_provenance_verified':False,
             'acceptance_ref':request['acceptance_ref'],'stale_interface_snapshot':stale,
             'load_actual_saved_loader':stale and not errors,
             'requires_archive_extraction':False,'requires_FULL':False,

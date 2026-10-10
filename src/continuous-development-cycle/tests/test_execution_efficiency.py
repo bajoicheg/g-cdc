@@ -5,6 +5,7 @@ import json
 import sys
 import tempfile
 import unittest
+import subprocess
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from compact_evidence import project
@@ -35,11 +36,17 @@ class EfficiencyTests(unittest.TestCase):
             (root/'agents/openai.yaml').write_text('version: 3.4.0\n')
             (root/'SKILL.md').write_text('# Continuous Development Cycle v3.4.0\n')
             loader=Path(tmp)/'loader.md';loader.write_text('current saved loader')
+            subprocess.run(['git','init','-q',tmp],check=True)
+            subprocess.run(['git','-C',tmp,'add','loader.md'],check=True)
+            subprocess.run(['git','-C',tmp,'-c','user.name=Test','-c','user.email=test@example.test','commit','-qm','saved'],check=True)
+            saved=subprocess.check_output(['git','-C',tmp,'rev-parse','HEAD'],text=True).strip()
             d={'schema':'runtime-identity/v1','runtime_root':str(root),'version':'3.4.0',
-               'package_tree':_tree_oid(_inventory(root)[0].values()),'saved_commit':'a'*40,
+               'package_tree':_tree_oid(_inventory(root)[0].values()),'saved_commit':saved,
                'loader_path':str(loader),'saved_loader_sha256':hashlib.sha256(loader.read_bytes()).hexdigest(),
                'interface_loader_sha256':'b'*64,'acceptance_ref':'git:actual-saved-acceptance'}
             r=runtime_identity(d);self.assertTrue(r['verified']);self.assertTrue(r['load_actual_saved_loader'])
+            wrong=copy.deepcopy(d);wrong['saved_commit']='0'*40
+            self.assertFalse(runtime_identity(wrong)['verified'])
             (root/'VERSION').write_text('3.3.0\n')
             self.assertFalse(runtime_identity(d)['verified'])
 
