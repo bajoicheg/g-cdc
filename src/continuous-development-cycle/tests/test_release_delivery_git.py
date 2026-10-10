@@ -243,6 +243,18 @@ class GitDeliveryTests(unittest.TestCase):
         self.assertTrue(changed);self.assertEqual(self.assembly.read(),(None,None))
         self.assertEqual(self.remote_head(),self.source)
 
+    def test_source_symlink_mode_lock_is_rejected_before_assembly(self):
+        oid=self.git(self.work,'rev-parse',self.source+':docs/cdc-consumer-lock.json')
+        self.git(self.work,'update-index','--cacheinfo','120000,'+oid+',docs/cdc-consumer-lock.json')
+        self.git(self.work,'commit','-q','-m','unsupported lock mode')
+        self.source=self.git(self.work,'rev-parse','HEAD')
+        self.git(self.work,'push','-q','origin','main')
+        with self.assertRaisesRegex(ValueError,'regular control'):
+            self.prepare()
+        self.assertEqual(self.assembly.read(),(None,None))
+        self.assertEqual(self.attempt.read(),(None,None))
+        self.assertEqual(self.remote_head(),self.source)
+
     def test_fabricated_owner_callback_is_rejected(self):
         with self.assertRaisesRegex(ValueError,"GitLeaseStore"):
             release_delivery.GitReleaseDelivery(self.work,"origin","refs/heads/main",self.remote_id,

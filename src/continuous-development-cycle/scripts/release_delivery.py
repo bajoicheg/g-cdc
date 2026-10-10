@@ -131,6 +131,7 @@ class GitReleaseDelivery:
         return adapter,checkpoint
 
     def _current_lock(self,commit):
+        self._object(commit,LOCK,"blob")
         value=_json(self._read(commit,LOCK))
         try:validate_lock(value)
         except (TypeError,KeyError):raise ValueError("invalid consumer release lock") from None
