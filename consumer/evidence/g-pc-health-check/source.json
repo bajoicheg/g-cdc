@@ -3,6 +3,6 @@
   "repository": "bajoicheg/g-pc-health-check",
   "source_commit": "5afac455f6d4d10a0f8e71258c0250ecdbb1fb1a",
   "vendored_cdc_version": "2.7.1",
-  "candidate_version": "3.3.0",
-  "candidate_package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412"
+  "candidate_version": "3.3.1",
+  "candidate_package_tree": "f580a8946c0510540a4be3f4422ab3404875274b"
 }
