@@ -18,9 +18,9 @@ import validate_release
 class MajorTransitionTests(unittest.TestCase):
     def test_major_compatibility_transition_preserves_schemas_and_history(self):
         data = json.loads((ROOT / 'compatibility/matrix.json').read_text())
-        data.update(target_version='3.0.0', developed_under_version='2.12.1')
+        data.update(target_version='4.0.0', developed_under_version='3.4.0',supported_from_versions=['3.4.0'])
         validate_matrix(data)
-        for version in ('3.0.1', '3.1.0', '4.0.0'):
+        for version in ('4.0.1', '4.1.0', '5.0.0'):
             with self.subTest(version=version):
                 invalid = copy.deepcopy(data); invalid['target_version'] = version
                 with self.assertRaises(ValueError):
@@ -31,9 +31,9 @@ class MajorTransitionTests(unittest.TestCase):
 
     def test_major_candidate_uses_the_same_strict_stable_transition(self):
         data = json.loads((ROOT / 'release/candidate.template.json').read_text())
-        data.update(version='3.0.0', developed_under_version='2.12.1')
+        data.update(version='4.0.0', developed_under_version='3.4.0')
         validate_candidate(data)
-        for version in ('3.0.1', '3.1.0', '4.0.0'):
+        for version in ('4.0.1', '4.1.0', '5.0.0'):
             with self.subTest(version=version):
                 invalid = copy.deepcopy(data); invalid['version'] = version
                 with self.assertRaises(ValueError):
@@ -41,8 +41,8 @@ class MajorTransitionTests(unittest.TestCase):
 
     def lock(self):
         data = json.loads((ROOT / 'release/source.lock.json').read_text())
-        data['development_driver_version'] = '2.12.1'
-        data['target_version'] = '3.0.0'
+        data['development_driver_version'] = '3.4.0'
+        data['target_version'] = '4.0.0'
         return data
 
     def test_next_major_zero_minor_and_patch_is_structurally_supported(self):
@@ -51,7 +51,7 @@ class MajorTransitionTests(unittest.TestCase):
                 validator(self.lock())
 
     def test_major_skip_nonzero_components_or_same_driver_are_rejected(self):
-        for target in ('4.0.0', '3.1.0', '3.0.1', '2.12.1', '3.0.0-rc1'):
+        for target in ('5.0.0', '4.1.0', '4.0.1', '3.4.0', '4.0.0-rc1'):
             for validator in (validate_source_lock, validate_release.source_lock):
                 with self.subTest(target=target, validator=validator.__name__):
                     data = self.lock(); data['target_version'] = target
@@ -59,7 +59,7 @@ class MajorTransitionTests(unittest.TestCase):
                         validator(data)
 
     def test_major_transition_preserves_independent_base_and_canonical_gates(self):
-        for key, value in [('development_driver_version', '3.0.0'),
+        for key, value in [('development_driver_version', '4.0.0'),
                            ('development_driver_version', '2.5.0'),
                            ('base_package_tree', 'missing'),
                            ('base_validation_commit', 'missing'),

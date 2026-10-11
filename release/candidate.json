@@ -1,29 +1,29 @@
 {
-  "schema": "cdc-release-candidate/v1",
-  "version": "3.4.0",
-  "developed_under_version": "3.3.1",
   "canonical_repository": "bajoicheg/g-cdc",
-  "source_commit": "62439f3254fb454accc9fcd58f2e40d8619b0813",
-  "package_tree": "584431373bc80bcbb778eaad7a4394c8dc96d8c9",
-  "status": "candidate",
+  "developed_under_version": "3.4.0",
   "evidence": {
     "bootstrap": [
       "bootstrap/validate_release.py"
     ],
-    "package": [
-      "src/continuous-development-cycle/scripts/validate_package.py",
-      "bootstrap/consumer_package_checks.py"
-    ],
     "compatibility": [
       "compatibility/matrix.json"
+    ],
+    "consumers": [
+      "consumer:fleet-1:supported-control-projection",
+      "consumer:fleet-2:supported-control-projection",
+      "consumer:fleet-3:supported-control-projection"
     ],
     "fault_injection": [
       "fault-injection/scenarios.json"
     ],
-    "consumers": [
-      "consumer:g-supervisor:compatibility-snapshot",
-      "consumer:g-ad-control:compatibility-snapshot",
-      "consumer:g-pc-health-check:compatibility-snapshot"
+    "package": [
+      "src/continuous-development-cycle/scripts/validate_package.py",
+      "bootstrap/consumer_package_checks.py"
     ]
-  }
+  },
+  "package_tree": "00461ac4a383da1af6dc5bc0a117c9648a783e54",
+  "schema": "cdc-release-candidate/v1",
+  "source_commit": "2e28c73bc85f34d242c8deaa34ab0f9745e3e9d7",
+  "status": "candidate",
+  "version": "3.5.0"
 }

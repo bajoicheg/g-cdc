@@ -3,8 +3,8 @@ from .canonical_source import semver
 def validate_matrix(d):
     fields={"minimum_supported_version","schema","target_version","developed_under_version","supported_from_versions","checkpoint_schemas","lease_schemas","resume_schemas","consumer_contract","migration"}
     if not isinstance(d,dict) or set(d)!=fields or d["schema"]!="cdc-compatibility-matrix/v1": raise ValueError("invalid compatibility matrix")
-    if d["minimum_supported_version"]!="2.11.3":raise ValueError("minimum supported CDC version must be 2.11.3")
-    if any(semver(v)<(2,11,3) for v in d["supported_from_versions"]):raise ValueError("CDC runtime below 2.11.3 is unsupported")
+    if d["minimum_supported_version"]!="3.3.0":raise ValueError("minimum supported CDC version must be 3.3.0")
+    if any(semver(v)<(3,3,0) for v in d["supported_from_versions"]):raise ValueError("CDC runtime below 3.3.0 is unsupported")
     target=semver(d["target_version"]); driver=semver(d["developed_under_version"])
     minor=target[0]==driver[0] and target[1]==driver[1]+1 and target[2]==0
     patch=target[0]==driver[0] and target[1]==driver[1] and target[2]==driver[2]+1

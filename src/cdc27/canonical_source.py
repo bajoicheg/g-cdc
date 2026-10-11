@@ -11,7 +11,7 @@ def validate_source_lock(d):
     if not isinstance(d,dict) or set(d)!=required or d["schema"]!="cdc-source-lock/v1": raise ValueError("invalid source lock")
     if d["canonical_repository"]!="bajoicheg/g-cdc": raise ValueError("unexpected canonical repository")
     target=semver(d["target_version"]); driver=semver(d["development_driver_version"])
-    if min(target,driver)<(2,11,3):raise ValueError("minimum supported CDC version is 2.11.3")
+    if min(target,driver)<(3,3,0):raise ValueError("minimum supported CDC version is 3.3.0")
     minor=target[0]==driver[0] and target[1]==driver[1]+1 and target[2]==0
     patch=target[0]==driver[0] and target[1]==driver[1] and target[2]==driver[2]+1
     major=target[0]==driver[0]+1 and target[1:]==(0,0)

@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   release-validation:
-    name: Bootstrap + package + three consumers
+    name: Bootstrap + package + supported Fleet projections
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -56,13 +56,12 @@ jobs:
       - name: Full bootstrap binding
         run: python -B bootstrap/validate_release.py --mode full
 
-      - name: Validate three archived consumer snapshots
+      - name: Validate three supported Fleet projections
         shell: bash
         run: |
           set -euo pipefail
           PACKAGE_TREE="$(git rev-parse HEAD:src/continuous-development-cycle)"
-          BASELINE="$(python -c 'import json,pathlib; print(json.loads(pathlib.Path("release/source.lock.json").read_text())["development_driver_version"])')"
-          python -B src/continuous-development-cycle/scripts/archived_consumer_qualification.py \
-            --snapshot-root consumer/evidence --baseline-version "$BASELINE" \
-            --consumers g-supervisor g-ad-control g-pc-health-check \
+          python -B src/continuous-development-cycle/scripts/supported_consumer_qualification.py \
+            --snapshot-root consumer/supported \
+            --consumers fleet-1 fleet-2 fleet-3 \
             --package-tree "$PACKAGE_TREE"

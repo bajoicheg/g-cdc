@@ -1,0 +1,14 @@
+{
+  "adapter_sha256": "4f0f2e31994358a4bf966b6d946fc06db300e47293eedc840d77e6e9e1886c6f",
+  "candidate_package_tree": "00461ac4a383da1af6dc5bc0a117c9648a783e54",
+  "candidate_version": "3.5.0",
+  "checkpoint_sha256": "e279e0db501d3a06715ad106adb8c1b7bbd961cb3eb9f943deed2b2f186e04b7",
+  "installed_package_tree": "3f00c4927557aa94912c8bf21a881add47c2f412",
+  "installed_version": "3.3.0",
+  "original_adapter_sha256": "be2718ead86879136af0a48e6356aefdda9a8c9f58ebebf395aaf12993bf9467",
+  "original_checkpoint_sha256": "7317edeb8bb6b58665a3049e1d4cb7c43327a7e2e30a05075308ca4297b992a3",
+  "projection": true,
+  "repository": "fleet-projection/project-1",
+  "schema": "cdc-supported-consumer-projection/v1",
+  "source_commit": "7a3699c9fb13eb28d12d8fca41f735be8ea33040"
+}

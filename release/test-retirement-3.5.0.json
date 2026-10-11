@@ -1,0 +1,217 @@
+{
+  "schema": "cdc-test-retirement-map/v1",
+  "version": "3.5.0",
+  "source_base": "1599238a8015096638258a2d4acbce5d43b663ce",
+  "minimum_supported_version": "3.3.0",
+  "per_removed_or_rebased_case": [
+    {
+      "test": "ArchivedConsumerQualificationTests.test_major_ceiling_is_rejected_and_copy_is_qualified_without_mutation",
+      "disposition": "RETIRED",
+      "distinct_risk_or_obsolete_contract": "Pre-floor major-ceiling widening is removed; current rejection is test_old_major_ceiling_is_rejected_without_widening",
+      "retained_suite": "test_supported_consumer_qualification.py"
+    },
+    {
+      "test": "ArchivedConsumerQualificationTests.test_already_compatible_archive_uses_real_checkpoint_validation",
+      "disposition": "REBASED",
+      "distinct_risk_or_obsolete_contract": "test_supported_policy_and_checkpoint_validate_without_mutation",
+      "retained_suite": "test_supported_consumer_qualification.py"
+    },
+    {
+      "test": "ArchivedConsumerQualificationTests.test_stale_checkpoint_binding_cannot_be_repaired_by_qualification",
+      "disposition": "REBASED",
+      "distinct_risk_or_obsolete_contract": "test_stale_checkpoint_binding_cannot_be_repaired",
+      "retained_suite": "test_supported_consumer_qualification.py"
+    },
+    {
+      "test": "ArchivedConsumerQualificationTests.test_other_adapter_defects_cannot_be_treated_as_expected_rejection",
+      "disposition": "REBASED",
+      "distinct_risk_or_obsolete_contract": "test_other_adapter_defects_cannot_be_expected_rejection",
+      "retained_suite": "test_supported_consumer_qualification.py"
+    },
+    {
+      "test": "ArchivedConsumerQualificationTests.test_copy_preserves_invalid_ownership_and_fails",
+      "disposition": "REBASED",
+      "distinct_risk_or_obsolete_contract": "test_invalid_ownership_fails",
+      "retained_suite": "test_supported_consumer_qualification.py"
+    },
+    {
+      "test": "ArchivedConsumerQualificationTests.test_different_ceiling_is_not_automatically_widened",
+      "disposition": "REBASED",
+      "distinct_risk_or_obsolete_contract": "test_old_major_ceiling_is_rejected_without_widening",
+      "retained_suite": "test_supported_consumer_qualification.py"
+    },
+    {
+      "test": "ArchivedConsumerQualificationTests.test_unknown_runtime_baseline_is_rejected",
+      "disposition": "REBASED",
+      "distinct_risk_or_obsolete_contract": "test_below_floor_installed_runtime_is_rejected",
+      "retained_suite": "test_supported_consumer_qualification.py"
+    },
+    {
+      "test": "ArchivedConsumerQualificationTests.test_same_major_driver_incompatibility_is_reported_without_revision_change",
+      "disposition": "RETIRED",
+      "distinct_risk_or_obsolete_contract": "2.x fallback diagnostic no longer exists; below-floor/ceiling rejection preserves fail-closed risk",
+      "retained_suite": "test_supported_consumer_qualification.py"
+    },
+    {
+      "test": "ArchivedConsumerQualificationTests.test_same_major_extension_requires_exact_source_lock_binding",
+      "disposition": "RETIRED",
+      "distinct_risk_or_obsolete_contract": "2.x/later-3.x widening-specific lock is removed; independent bootstrap driver/source-lock binding tests remain",
+      "retained_suite": "test_supported_consumer_qualification.py"
+    },
+    {
+      "test": "ArchivedConsumerQualificationTests.test_all_three_snapshots_and_original_history_bytes_are_preserved",
+      "disposition": "REBASED",
+      "distinct_risk_or_obsolete_contract": "test_three_projection_files_and_history_bytes_are_preserved",
+      "retained_suite": "test_supported_consumer_qualification.py"
+    },
+    {
+      "test": "ArchivedConsumerQualificationTests.test_mismatched_package_cannot_qualify_the_snapshots",
+      "disposition": "REBASED",
+      "distinct_risk_or_obsolete_contract": "test_package_mismatch_fails",
+      "retained_suite": "test_supported_consumer_qualification.py"
+    },
+    {
+      "test": "ArchivedConsumerQualificationTests.test_missing_consumer_and_repeated_directory_fail",
+      "disposition": "REBASED",
+      "distinct_risk_or_obsolete_contract": "test_missing_or_repeated_consumer_fails",
+      "retained_suite": "test_supported_consumer_qualification.py"
+    },
+    {
+      "test": "ArchivedConsumerQualificationTests.test_metadata_repository_substitution_fails",
+      "disposition": "REBASED",
+      "distinct_risk_or_obsolete_contract": "test_metadata_repository_substitution_fails",
+      "retained_suite": "test_supported_consumer_qualification.py"
+    },
+    {
+      "test": "ArchivedConsumerQualificationTests.test_duplicate_metadata_field_fails",
+      "disposition": "REBASED",
+      "distinct_risk_or_obsolete_contract": "test_duplicate_metadata_fails",
+      "retained_suite": "test_supported_consumer_qualification.py"
+    },
+    {
+      "test": "ProjectMigrationTests.test_archived_ceiling_is_diagnostic_only_and_proposal_validates",
+      "disposition": "RETIRED",
+      "distinct_risk_or_obsolete_contract": "2.x diagnostic/automatic ceiling widening no longer executable",
+      "retained_suite": "test_below_floor_original_ceiling_cannot_be_migrated"
+    },
+    {
+      "test": "ProjectMigrationTests.test_optional_diagnostic_version_preserves_default_rejection",
+      "disposition": "REBASED",
+      "distinct_risk_or_obsolete_contract": "No below-floor diagnostic authority; positive old execution removed",
+      "retained_suite": "test_optional_diagnostic_version_cannot_execute_below_floor"
+    }
+  ],
+  "changed_current_risk_fixtures": [
+    {
+      "path": "bootstrap/tests/test_compatibility_floor.py",
+      "distinct_risks_preserved": "all existing assertions except specifically mapped obsolete cases; only supported executable version fixtures rebased",
+      "before_sha256": "5c748261fd3fb5df180864da73052987b42017cde4064e412fa966a2d2ce9db0",
+      "after_sha256": "f36cf4a857f96b8db8b19871cebd7f28e1ca44e1157dad52930e4df50f4fe2dd"
+    },
+    {
+      "path": "bootstrap/tests/test_major_transition.py",
+      "distinct_risks_preserved": "all existing assertions except specifically mapped obsolete cases; only supported executable version fixtures rebased",
+      "before_sha256": "5e6dd06fc3b937427478f5b82a06910ed082ae01de5270439de6ceb63f851910",
+      "after_sha256": "f0d159b08cbbea767a90b187eebd8f03b479d65d0497e71a6567b9ce45eb3f71"
+    },
+    {
+      "path": "bootstrap/tests/test_release_bindings.py",
+      "distinct_risks_preserved": "all existing assertions except specifically mapped obsolete cases; only supported executable version fixtures rebased",
+      "before_sha256": "18caa352a94351405a8fdcc27ebc33b1cb1f9f4630fe5233246326a616294d39",
+      "after_sha256": "6fd5a08669abcea2ca78475a5b5caefbc9bce443dbb2e57ce04fac84a0c6c49a"
+    },
+    {
+      "path": "src/continuous-development-cycle/tests/test_consumer_adoption.py",
+      "distinct_risks_preserved": "all existing assertions except specifically mapped obsolete cases; only supported executable version fixtures rebased",
+      "before_sha256": "50353650f3016fa2bd1b0717dcb2bd0587cc623a24517b6f339a332b293c4693",
+      "after_sha256": "efc95b6e89b762f5fbb7c6c6067de5e3a0f5747ef9af02b542c33d0ef09028ca"
+    },
+    {
+      "path": "src/continuous-development-cycle/tests/test_live_target.py",
+      "distinct_risks_preserved": "all existing assertions except specifically mapped obsolete cases; only supported executable version fixtures rebased",
+      "before_sha256": "7ca4e5364b22f183b31398bdfe28e7f4c95f04348e377f7397e8bb2f10a044ab",
+      "after_sha256": "518022cabf42d2ad83191092ea19be0c2d9a76c19efd0ffaf47b7063f11606cf"
+    },
+    {
+      "path": "src/continuous-development-cycle/tests/test_migration_transaction.py",
+      "distinct_risks_preserved": "all existing assertions except specifically mapped obsolete cases; only supported executable version fixtures rebased",
+      "before_sha256": "3427888fdb26186582d73b577a50580b035bce60acb58d57be799642313ca08a",
+      "after_sha256": "ed867c0927e4d406b6f4fd7c144f626cb1831e2a88f640ad3fa278ef2d394a90"
+    },
+    {
+      "path": "src/continuous-development-cycle/tests/test_package_metadata.py",
+      "distinct_risks_preserved": "all existing assertions except specifically mapped obsolete cases; only supported executable version fixtures rebased",
+      "before_sha256": "b2cb5dc2a5e2980db6a24797e603bc62853cfd3ff6f0c94380da97f310ffd2bd",
+      "after_sha256": "f206dd884d70a330f8d8e209c8c2d065946f38d2ca6dfc334920ffcc00595fa2"
+    },
+    {
+      "path": "src/continuous-development-cycle/tests/test_package_transport.py",
+      "distinct_risks_preserved": "all existing assertions except specifically mapped obsolete cases; only supported executable version fixtures rebased",
+      "before_sha256": "5b8d0de47805b0ab13ebf5d1d0e1d3c3c8d071bbb6f2cd91671593ee491acbc9",
+      "after_sha256": "b5cdeb3496dd039c753a44fa009f2fbf53b47165064200ec77b177a6987eea14"
+    },
+    {
+      "path": "src/continuous-development-cycle/tests/test_policy_controls.py",
+      "distinct_risks_preserved": "all existing assertions except specifically mapped obsolete cases; only supported executable version fixtures rebased",
+      "before_sha256": "94c5e77fa7ad26faf4bbb893b2504c1ff7f8401265e81dd86a951f643003ea79",
+      "after_sha256": "a561b201daa2a7b2e55ddfa80d6fb3ef458b5faad1ff8d05c01d2120423f4552"
+    },
+    {
+      "path": "src/continuous-development-cycle/tests/test_project_setup.py",
+      "distinct_risks_preserved": "all existing assertions except specifically mapped obsolete cases; only supported executable version fixtures rebased",
+      "before_sha256": "5038db8bcf541b45c79b36941e7c52942623a2758ddbd8b6d38c52e0439cc5c0",
+      "after_sha256": "503e784316670264384eb3e8f62d2c5d2c4531d20a27397c2b74d1f1170c6506"
+    },
+    {
+      "path": "src/continuous-development-cycle/tests/test_release_delivery.py",
+      "distinct_risks_preserved": "all existing assertions except specifically mapped obsolete cases; only supported executable version fixtures rebased",
+      "before_sha256": "4be3972ce49643a5a15af3b37e37167f329b81f6ea0f519c36c49bbadca562e7",
+      "after_sha256": "414bc94d92bb038ecaa391484c36932d0419812e8dbe3ae8e3041c2535762185"
+    },
+    {
+      "path": "src/continuous-development-cycle/tests/test_release_delivery_cli.py",
+      "distinct_risks_preserved": "all existing assertions except specifically mapped obsolete cases; only supported executable version fixtures rebased",
+      "before_sha256": "9069e24de2e106fa3abcf2c4fe99fd8b9b7c162116658ab5ecd3a48d67ae51f5",
+      "after_sha256": "eea10ac49c40aba16e75fe056e073eba2b23f25367b46c226573d66ff654c7a1"
+    },
+    {
+      "path": "src/continuous-development-cycle/tests/test_release_delivery_git.py",
+      "distinct_risks_preserved": "all existing assertions except specifically mapped obsolete cases; only supported executable version fixtures rebased",
+      "before_sha256": "818a1605692be08c43229cc0436ce35e91d5d0b87d0168acda451df8c808c95a",
+      "after_sha256": "60e98895c3e5a7d30192709fbfe7d0166bfc7523f4444533534065c777e301c1"
+    }
+  ],
+  "static_counts": {
+    "runtime": {
+      "before_files": 132,
+      "after_files": 132,
+      "before_declared_methods": 1358,
+      "after_declared_methods": 1365
+    },
+    "bootstrap": {
+      "before_files": 9,
+      "after_files": 9,
+      "before_declared_methods": 51,
+      "after_declared_methods": 51
+    }
+  },
+  "before_observed_full": {
+    "ci_run": 38082065711,
+    "runtime_tests": 1358,
+    "bootstrap_tests": 51,
+    "runtime_seconds": 311.065
+  },
+  "after_observed_full": null,
+  "local_FULL": 0,
+  "financial_savings": null,
+  "product_tests": {
+    "gad_ldap": [
+      "CoverageBaseline malformed evidence/redaction/cancellation",
+      "FinalReview DC provenance/duration",
+      "SliceB SID roles/enabled-disabled"
+    ],
+    "all_retained": true,
+    "other_product_tests": "unchanged; no proven obsolete distinct risks"
+  },
+  "history_bytes_preserved": true
+}

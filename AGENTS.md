@@ -1,15 +1,11 @@
-# Current CDC development contract — 2026-10-10
+# Current CDC development contract — 2026-10-11
 
-Owner authorized implementation of issue101 EFF-01..11. Current candidate3.4.0 is developed under independently released, byte-accepted3.3.1: source51740497bea3e1bcbb302e894fda8b7e42bc0087, packagef580a8946c0510540a4be3f4422ab3404875274b, evidence245fdf05c272d3f1c49ff0b7903213fac0aaf5a8, CI38076972040. Candidate labels do not prove release or installation.
+Owner authorized CDC3.5.0 Fleet floor cleanup. Independently released3.4.0 source1599238a8015096638258a2d4acbce5d43b663ce/package584431373bc80bcbb778eaad7a4394c8dc96d8c9 is the unchanged development authority. Candidate labels are not release/installation proof.
 
-Implement inline in isolated candidate340. Read the scoped design/plan in docs/superpowers/{specs,plans}/2026-10-10-execution-efficiency*.md. Use one frozen candidate; affected checks while editing and exactly one required hosted aggregate FULL. Do not repeat source/clean-consumer aggregates or archived qualifications during personal installation. Preserve actual provenance; exact-SHA platform evidence cannot transfer to another SHA.
+Executable floor3.3.0; supported bases3.3.0/3.3.1/3.4.0. Historical records/schemas/budgets/UNKNOWN remain readable. No pre-floor execution, automatic ceiling widening, UNKNOWN replay or guard bypass. Current product/security/platform tests survive; age/names do not prove obsolescence. Read scoped design/plan2026-10-11-fleet-floor-cleanup.
 
-Critical behavior requires one ordered independent SPEC then distinct QUALITY review of the exact frozen material. Reversible docs/status changes use direct inspection/readback, no new agents, universal TDD, CI or release cycle. Existing owner authorization settles routine decisions; do not ask again merely because a companion skill uses a heavier default.
+Native inline implementation, targeted regressions, cheap placement/package/discovery before freeze. Ordered independent SPEC then distinct QUALITY on exact artifact. Exactly one required hosted aggregate FULL; no local/source/consumer/installation aggregate repeats. Normalize one-parent integration before reviews.
 
-Use actual managed invocation-bound ownership, pool, one-use effects, budget admission, expected-head publication and immutable release controls. Starts stay charged when usage is unknown. Do not replay UNKNOWN, create replacement grants, manually clear guards, reset quotas or enable schedulers. Original GPC UNKNOWN remains administratively retired with permanent replay prohibition. Retired Supervisor remains retired; Fleet and other product chats are outside this implementation.
+Fresh managed ownership, budget reservations before starts, one-use effects, expected-head source publication and immutable release/evidence. Authentic streams/returncodes precede interpretation. Actual worker/supervisor/controller exit and birth-bound PID absence, released lease and accepted/integrated pool required. Safe-boundary Fleet package delivery only, no active-owner takeover. Retired Supervisor remains cancelled; schedulers PAUSED. Root owns personal installation/final acceptance.
 
-Load one current state and phase-specific references. Parse full evidence outside model context and return bounded selected fields; never dump whole logs/history or search the entire workspace. A changed ref requires fresh relevant source/ownership reads. Finalization needs authentic exit, physical process absence, lease release and accepted pool, with one compact terminal bundle and durable remaining queue. Reuse cannot establish live ownership.
-
-Write owner-facing updates in Russian, English source documents, one fresh Moscow timestamp per command, meaningful progress and rounded operation durations; unknown tokens stay unknown and are omitted from the suffix. Claim savings only from comparable actual observations.
-
-[Historical instructions](docs/history/agents-through-3.3.1.md) retain exact prior bytes for audit; load only the relevant section if current contracts do not resolve a question. Historical current labels and scopes do not override this entry.
+Russian owner updates; English source docs; rounded durations; omit unknown tokens. Historical instruction bytes at docs/history/agents-through-3.4.0.md are audit, not current authority.
