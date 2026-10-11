@@ -50,9 +50,9 @@ class ReleaseBindingsTests(unittest.TestCase):
         actual = git("rev-parse", "HEAD:" + PACKAGE)
         self.assertEqual(candidate["package_tree"], actual)
         self.assertEqual(git("rev-parse", candidate["source_commit"] + ":" + PACKAGE), actual)
-        for consumer in ("g-supervisor", "g-ad-control", "g-pc-health-check"):
+        for consumer in ("fleet-1", "fleet-2", "fleet-3"):
             with self.subTest(consumer=consumer):
-                snapshot = read("consumer/evidence/" + consumer + "/source.json")
+                snapshot = read("consumer/supported/" + consumer + "/source.json")
                 self.assertEqual(snapshot["candidate_version"], candidate["version"])
                 self.assertEqual(snapshot["candidate_package_tree"], actual)
                 self.assertRegex(snapshot["source_commit"], r"^[0-9a-f]{40}$")

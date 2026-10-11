@@ -3,9 +3,9 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.4.0
+# Continuous Development Cycle v3.5.0
 
-This3.4.0 candidate extends actual execution economics under released3.3.1.
+This3.5.0 candidate extends actual execution economics under released3.4.0.
 Version labels identify bytes; source release, saved activation and adoption require
 separate evidence. Load only current phase references; history remains linked.
 
@@ -13,7 +13,7 @@ separate evidence. Load only current phase references; history remains linked.
 
 Verify the independently released runtime actually loaded: VERSION, manifest,
 installed bytes and canonical release evidence must agree. Develop a new CDC
-candidate under that released driver. Minimum executable runtime is 2.11.3;
+candidate under that released driver. Minimum executable runtime is 3.3.0;
 older records remain readable data, not executable authority.
 
 Read current applicable instructions, adapter and compact checkpoint/capsule.
@@ -132,11 +132,11 @@ wall time; no unobserved speedup, savings or quality improvement claims.
 Independent review covers behavior/spec and quality; critical work retains
 required ordered independent reviews. Verify actual evidence before success
 claims. Freeze an exact release-candidate SHA and use the release phase for
-bootstrap, package, compatibility, fault, archived-consumer and final CI gates.
+bootstrap, package, compatibility, fault, supported-consumer and final CI gates.
 Source release, installed runtime and consumer adoption are separate states.
 Adoption requires an exact released package, released/quiescent ownership,
 reconciled guards and preserved budgets/history. An explicit Fleet rollout
-pause is binding; archived-consumer tests do not deploy live consumers.
+pause is binding; supported-consumer tests do not deploy live consumers.
 
 ## Unknown isolated Git submission
 

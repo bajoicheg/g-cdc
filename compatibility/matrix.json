@@ -1,24 +1,11 @@
 {
   "schema": "cdc-compatibility-matrix/v1",
-  "target_version": "3.4.0",
-  "developed_under_version": "3.3.1",
+  "target_version": "3.5.0",
+  "developed_under_version": "3.4.0",
   "supported_from_versions": [
-    "2.11.3",
-    "2.11.4",
-    "2.11.5",
-    "2.11.6",
-    "2.11.7",
-    "2.11.8",
-    "2.11.9",
-    "2.12.0",
-    "2.12.1",
-    "2.12.2",
-    "2.13.0",
-    "3.0.0",
-    "3.1.0",
-    "3.2.0",
     "3.3.0",
-    "3.3.1"
+    "3.3.1",
+    "3.4.0"
   ],
   "checkpoint_schemas": [
     "development-work-status/v4"
@@ -37,5 +24,5 @@
     "preserve_validation_history": true,
     "preserve_audit_history": true
   },
-  "minimum_supported_version": "2.11.3"
+  "minimum_supported_version": "3.3.0"
 }

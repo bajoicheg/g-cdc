@@ -1,9 +1,7 @@
 # Current CDC roadmap
 
-Owner-authorized3.4.0 candidate implements execution efficiency defects in [issue101](https://github.com/bajoicheg/g-cdc/issues/101), EFF-01..11. Released3.3.1 remains development authority. Candidate implementation, source release, saved personal activation and consumer adoption are separate states.
+Owner authorized3.5.0 Fleet floor cleanup under independently released3.4.0. Executable minimum3.3.0 follows the actual current Fleet inventory; supported migration bases3.3.0/3.3.1/3.4.0. Retire pre-floor execution and archive discovery, preserve historical bytes and current risks.
 
-One candidate covers enforced dependency-bound runner reuse, bounded evidence projection, actual saved-runtime identity, risk-scaled overhead decisions, compact final acceptance, duplicate-test risk audit and comparable overhead metrics. Closure requires actual behavior evidence, not prose or suite count. No Fleet rollout or scheduler wake.
+Source release, personal installation and safe Fleet delivery are separate gates. One frozen one-parent integration, ordered independent SPEC then distinct QUALITY, one hosted FULL. Active owners/guards are not bypassed; original UNKNOWN remains nonreplayable. Retired Supervisor and paused schedulers remain unchanged.
 
-See [design](superpowers/specs/2026-10-10-execution-efficiency-design.md) and [plan](superpowers/plans/2026-10-10-execution-efficiency.md). All eleven items remain admitted until their actual acceptance evidence is recorded. Test removal and broad savings claims require separate risk mapping and matching workload observations; this candidate supplies the audit and measurement paths.
-
-[Full historical roadmap](history/roadmap-through-3.3.1.md) preserves all previous requirements and release history byte-for-byte. Load a historical section only for a concrete unresolved question.
+See2026-10-11-fleet-floor-cleanup design/plan. Previous roadmap bytes: docs/history/roadmap-through-3.4.0.md.

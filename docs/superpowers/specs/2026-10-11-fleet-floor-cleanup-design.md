@@ -1,0 +1,9 @@
+# CDC 3.5.0 supported Fleet floor
+
+Owner-authorized 2026-10-11: retire executable CDC compatibility below the actual Fleet minimum 3.3.0. Develop under unchanged independently released 3.4.0 (1599238a / package58443137). The only supported migration bases are 3.3.0, 3.3.1 and 3.4.0.
+
+Execution ingress rejects below-floor adapters, release/install/rollback/adoption and project migration. Historical locks, lease v2, ledger v1, UNKNOWN and audit remain readable. No automatic 2.x diagnostic or policy-ceiling widening. Preserve current safety risks by rebasing their fixtures. Remove only identified obsolete contracts, with per-test risk/disposition mapping.
+
+Hosted qualification replaces 2.11.3 archived executable consumers with three fresh supported Fleet control projections. Original controls and complete hash/provenance live only in PRIVATE; public projections carry no private product commands/history. Projection status is explicit; they grant no adoption or ownership. Validate original runtime and candidate against current policy/checkpoint, exact installed version/source and control hashes; enforce nonmutation and no silent digest repair. Original archive bytes move outside active discovery.
+
+One frozen ordinary one-parent integration; cheap placement/package/discovery preflight first. Ordered independent SPEC then distinct QUALITY. Exactly one hosted aggregate FULL (including bootstrap, package, current-consumer validation), no local aggregate. Actual managed source release and immutable evidence, then safe-boundary vendored package adoption under released3.5.0. Product tests/platform/security gates and original UNKNOWN are preserved. GAD's retained g03 guard is not resolved by earlier push CI; adopt only after supported authentic reconciliation, otherwise durable exact pending. Retired Supervisor remains cancelled. Schedulers PAUSED. Root owns personal installation/acceptance.
