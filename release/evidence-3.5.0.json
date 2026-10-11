@@ -1,0 +1,397 @@
+{
+  "candidate_commit": "b8f5b2cc64878715b63af388124ac0656d1c87b4",
+  "candidate_source_commit": "b8f5b2cc64878715b63af388124ac0656d1c87b4",
+  "canonical_evidence_publication": {
+    "path": "release/evidence-3.5.0.json",
+    "provenance": "Separately pinned immutable evidence commit; enclosing commit independently pinned by native publication receipt",
+    "ref": "refs/heads/cdc/release-evidence/v3.5.0"
+  },
+  "canonical_repository": "bajoicheg/g-cdc",
+  "ci": {
+    "actual_checkout_package_tree": "bc7961ffc170db38bfa25d8bd132de127c24a8d0",
+    "actual_checkout_root_tree": "0b51a240d5682fd25f9626de596b11d4cf3d7aa6",
+    "actual_checkout_sha": "ab5a169bb14dbfc3c529c8492224f83da0d40018",
+    "actual_job_elapsed_seconds": 401.0,
+    "all_configured_jobs_steps_successful": true,
+    "all_three_surfaces_complete": true,
+    "ci_success": true,
+    "configured_jobs": [
+      {
+        "check_run_url": "https://api.github.com/repos/bajoicheg/g-cdc/check-runs/114448798173",
+        "completed_at": "2026-10-11T10:38:06Z",
+        "conclusion": "success",
+        "created_at": "2026-10-11T10:31:23Z",
+        "head_branch": "cdc/3.5.0-delivery-20261011-work2334",
+        "head_sha": "b8f5b2cc64878715b63af388124ac0656d1c87b4",
+        "html_url": "https://github.com/bajoicheg/g-cdc/actions/runs/38132248286/job/114448798173",
+        "id": 114448798173,
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "name": "Bootstrap + package + supported Fleet projections",
+        "node_id": "CR_kwDOUqlJvs8AAAAapa4R3Q",
+        "run_attempt": 1,
+        "run_id": 38132248286,
+        "run_url": "https://api.github.com/repos/bajoicheg/g-cdc/actions/runs/38132248286",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions",
+        "runner_id": 1000003456,
+        "runner_name": "GitHub Actions 1000003456",
+        "started_at": "2026-10-11T10:31:25Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completed_at": "2026-10-11T10:31:26Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "started_at": "2026-10-11T10:31:26Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-11T10:31:28Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "started_at": "2026-10-11T10:31:26Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-11T10:31:28Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-python@v5",
+            "number": 3,
+            "started_at": "2026-10-11T10:31:28Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-11T10:31:29Z",
+            "conclusion": "success",
+            "name": "Validate repository code and test placement",
+            "number": 4,
+            "started_at": "2026-10-11T10:31:28Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-11T10:31:29Z",
+            "conclusion": "success",
+            "name": "Independent bootstrap before candidate imports",
+            "number": 5,
+            "started_at": "2026-10-11T10:31:29Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-11T10:31:30Z",
+            "conclusion": "success",
+            "name": "Install validator dependency",
+            "number": 6,
+            "started_at": "2026-10-11T10:31:29Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-11T10:31:31Z",
+            "conclusion": "success",
+            "name": "Validate candidate package",
+            "number": 7,
+            "started_at": "2026-10-11T10:31:30Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-11T10:38:03Z",
+            "conclusion": "success",
+            "name": "Full candidate tests",
+            "number": 8,
+            "started_at": "2026-10-11T10:31:31Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-11T10:38:03Z",
+            "conclusion": "success",
+            "name": "Full bootstrap binding",
+            "number": 9,
+            "started_at": "2026-10-11T10:38:03Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-11T10:38:03Z",
+            "conclusion": "success",
+            "name": "Validate three supported Fleet projections",
+            "number": 10,
+            "started_at": "2026-10-11T10:38:03Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-11T10:38:03Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-python@v5",
+            "number": 19,
+            "started_at": "2026-10-11T10:38:03Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-11T10:38:03Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 20,
+            "started_at": "2026-10-11T10:38:03Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-11T10:38:03Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 21,
+            "started_at": "2026-10-11T10:38:03Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://api.github.com/repos/bajoicheg/g-cdc/actions/jobs/114448798173",
+        "workflow_name": "CDC release / 38132248286 / ab5a169bb14dbfc3c529c8492224f83da0d40018"
+      }
+    ],
+    "exact_candidate_and_checkout_full_tree_equal": true,
+    "head_sha": "b8f5b2cc64878715b63af388124ac0656d1c87b4",
+    "hosted_FULL": {
+      "seconds": 391.127,
+      "tests": 1365
+    },
+    "hosted_bootstrap": {
+      "seconds": 0.345,
+      "tests": 51
+    },
+    "job_id": 114448798173,
+    "legacy_status": {
+      "state": "pending",
+      "statuses": [],
+      "total_count": 0
+    },
+    "log_bytes": 308263,
+    "log_ref": "git:bajoicheg/codex-compute@a6eb71d59a01eac8b4694e60e33c5bc3320472c7:cdc350-ci-log-proof.json",
+    "log_sha256": "d75e71643e883f7c924c4c1011554d737d911ec11e0860b2f1686c2b9c7257d5",
+    "observation_ref": "git:bajoicheg/codex-compute@a6eb71d59a01eac8b4694e60e33c5bc3320472c7:ci-observations-final-3.5.0.json",
+    "one_CI_one_PR": true,
+    "pr": 109,
+    "pr_url": "https://github.com/bajoicheg/g-cdc/pull/109",
+    "run_attempt": 1,
+    "run_id": 38132248286,
+    "run_url": "https://github.com/bajoicheg/g-cdc/actions/runs/38132248286",
+    "supported_consumers": {
+      "authorizes_adoption": false,
+      "authorizes_policy_write": false,
+      "consumers": [
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "candidate_version": "3.5.0",
+          "consumer": "fleet-1",
+          "installation_compatible": true,
+          "installed_version": "3.3.0",
+          "migration_changes": [],
+          "projection": true,
+          "qualification": "supported_projection_compatible",
+          "source_commit": "7a3699c9fb13eb28d12d8fca41f735be8ea33040"
+        },
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "candidate_version": "3.5.0",
+          "consumer": "fleet-2",
+          "installation_compatible": true,
+          "installed_version": "3.3.0",
+          "migration_changes": [],
+          "projection": true,
+          "qualification": "supported_projection_compatible",
+          "source_commit": "f2db9a73219668d2d3c3bb8e655e015e5e090e8f"
+        },
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "candidate_version": "3.5.0",
+          "consumer": "fleet-3",
+          "installation_compatible": true,
+          "installed_version": "3.3.1",
+          "migration_changes": [],
+          "projection": true,
+          "qualification": "supported_projection_compatible",
+          "source_commit": "6d65482be7045243501644807a54f6e5f6d6e9ce"
+        }
+      ],
+      "package_tree": "bc7961ffc170db38bfa25d8bd132de127c24a8d0",
+      "schema": "supported-consumer-qualification/v1",
+      "snapshots_unchanged": true
+    }
+  },
+  "development_driver": {
+    "bytes_and_modes_equal": true,
+    "evidence_commit": "ac06234a03070aba25162ab37f0d63ec1081f732",
+    "package_tree": "584431373bc80bcbb778eaad7a4394c8dc96d8c9",
+    "release_commit": "1599238a8015096638258a2d4acbce5d43b663ce",
+    "version": "3.4.0"
+  },
+  "fleet_rollout": false,
+  "local_FULL_repeated": false,
+  "new_release_actor": {
+    "controller": {
+      "boot_id": "94c55839-3270-46c2-8f21-2961245d128d",
+      "command_channel": "short path to hash-pinned command JSON and code file",
+      "input_max_bytes": 256,
+      "max_lifetime_seconds": 5400,
+      "namespace": "pid:[4026532200]",
+      "parent_pid": 282866,
+      "pid": 282867,
+      "proc_start_ticks": "8779049",
+      "role": "bounded CDC3.5 source and safe Fleet controller; all older scopes remain terminal",
+      "started_at_utc": "2026-10-11T10:21:43.252570Z",
+      "state": "alive"
+    },
+    "generation": 77,
+    "handle": {
+      "attempt_id": "cdc350-source-host-a1",
+      "generation": 77,
+      "handle_id": "defbf7b2-6d36-5593-bf8e-e16be11a5c2c",
+      "invocation_id": "managed-terminal:4d614181303c66ef1042b166cee415b54242859680b372ac15b2e691ff454da0",
+      "lease_revision": "1055c9933de168e38d05884a4ad452a10f88094a",
+      "owner_id": "47d0c091-2b5c-4a9d-8bf8-40b87baf0c9c",
+      "publication_ref": "refs/heads/cdc/managed-host-publish-defbf7b26d365593bf8ee16be11a5c2c",
+      "schema": "managed-host-handle/v1",
+      "state": "running",
+      "task_id": "cdc350-source-writer"
+    }
+  },
+  "ordered_reviews": {
+    "SPEC": {
+      "agent": "/root/cdc350_spec",
+      "assessment": "GREEN",
+      "candidate": "b8f5b2cc64878715b63af388124ac0656d1c87b4",
+      "checks": [
+        {
+          "argv": "PYTHONPATH=src/continuous-development-cycle/scripts:src/continuous-development-cycle/tests python -B -m unittest test_consumer_adoption.GitPublisherTests.test_configured_package_version_lock_mismatch_cannot_publish -v",
+          "duration_seconds": 0.417,
+          "return_code": 0,
+          "tests": 1
+        },
+        {
+          "argv": "python -B -",
+          "duration_seconds": 0.019,
+          "purpose": "scoped runtime/metadata/hash/count audit",
+          "return_code": 0
+        }
+      ],
+      "ci_runs": 0,
+      "critical": [],
+      "duration_seconds": 12,
+      "finished_at": "2026-10-11T09:54:50Z",
+      "full_runs": 0,
+      "important": [],
+      "minor": [],
+      "package_tree": "bc7961ffc170db38bfa25d8bd132de127c24a8d0",
+      "parent": "1599238a8015096638258a2d4acbce5d43b663ce",
+      "provenance": "Actual FINAL_ANSWER /root/cdc350_spec; Root transcription, tokens unknown",
+      "proves_installation": false,
+      "proves_release": false,
+      "role": "SPEC_FINAL_ARTIFACT_DELTA",
+      "root_tree": "0b51a240d5682fd25f9626de596b11d4cf3d7aa6",
+      "schema": "cdc-independent-review/v1",
+      "scope": "Only six-file delta vs prior actually approved1b; runtime scripts unchanged; prior SPEC conclusions preserved",
+      "started_at": "2026-10-11T09:54:38Z",
+      "workspace_clean": true
+    },
+    "immutable_source_ref": "git:bajoicheg/codex-compute@76de506b7105a3ff6de1c0ca08dd2fab35445c88:cdc350-quality-review.json",
+    "open_findings": 0,
+    "subsequent_independent_QUALITY": {
+      "agent": "/root/cdc350_quality",
+      "assessment": "GREEN",
+      "candidate": "b8f5b2cc64878715b63af388124ac0656d1c87b4",
+      "canonical_anchor_commit": "2454fc26a60d25ff4608b2c0a96984b232494729",
+      "canonical_anchor_ref": "refs/heads/cdc/3.5.0-package-identity-anchor-20261011-work2334",
+      "checks": [
+        {
+          "command": "Independent canonical GitHub GET anchor ref",
+          "duration_seconds": 0.397,
+          "passed": true
+        },
+        {
+          "command": "python -B -m unittest bootstrap.tests.test_release_bindings.ReleaseBindingsTests.test_candidate_and_snapshots_bind_actual_package -v",
+          "duration_seconds": 0.004,
+          "return_code": 0,
+          "tests": 1
+        },
+        {
+          "command": "python -B -",
+          "duration_seconds": 0.009,
+          "purpose": "anchor SHA integrity, exact package subtree, unchanged candidate identities and clean workspace",
+          "return_code": 0
+        }
+      ],
+      "ci_runs": 0,
+      "closed_findings": [
+        "DELIVERY_ANCHOR_REACHABILITY"
+      ],
+      "critical": [],
+      "duration_seconds": null,
+      "finished_at": "2026-10-11T10:26:16Z",
+      "first_clock_sample_at": "2026-10-11T10:25:54Z",
+      "full_runs": 0,
+      "important": [],
+      "minor": [],
+      "native_receipt_commit": "8c3b5304b0f3986abd34001cbcdb6ae64fa7aa29",
+      "package_tree": "bc7961ffc170db38bfa25d8bd132de127c24a8d0",
+      "previous_runtime_delta_repeated": false,
+      "prior_quality_receipt": "git:bajoicheg/codex-compute@77c6f43bf7dfbfe7f95e4d88e4ca6a66f410bff1:cdc350-root-quality-a2.json",
+      "provenance": "Actual FINAL_ANSWER /root/cdc350_quality; Root transcription; unknown process start and model usage null",
+      "proves_installation": false,
+      "proves_release": false,
+      "role": "QUALITY_ANCHOR_CLOSURE",
+      "root_tree": "0b51a240d5682fd25f9626de596b11d4cf3d7aa6",
+      "schema": "cdc-independent-review/v1",
+      "started_at": null,
+      "workspace_clean": true
+    }
+  },
+  "package_files": 417,
+  "package_identity_anchor_dependency": {
+    "commit": "2454fc26a60d25ff4608b2c0a96984b232494729",
+    "native_publication_proof": "git:bajoicheg/codex-compute@8c3b5304b0f3986abd34001cbcdb6ae64fa7aa29:cdc350-package-anchor-reachability.json",
+    "package_tree": "bc7961ffc170db38bfa25d8bd132de127c24a8d0",
+    "ref": "refs/heads/cdc/3.5.0-package-identity-anchor-20261011-work2334",
+    "role": "package identity only; distinct from frozen candidate, hosted CI head and resulting release commit"
+  },
+  "package_tree": "bc7961ffc170db38bfa25d8bd132de127c24a8d0",
+  "personal_installation": "NOT_DONE_SEPARATE_PARENT_SCOPE",
+  "prior_scopes": "3.4.0_ROOT_ACCEPTED_TERMINAL",
+  "qualification_logs": {
+    "hosted_log_sha256": "d75e71643e883f7c924c4c1011554d737d911ec11e0860b2f1686c2b9c7257d5",
+    "private_qualification_digest": "sha256:f1fe75de3ca25d59dc746bc7ada3991e5e9055a27d3e59ea5ea46238b063c37d",
+    "private_qualification_reference": "git:bajoicheg/codex-compute@76de506b7105a3ff6de1c0ca08dd2fab35445c88:cdc350-readiness.json"
+  },
+  "release_commit": "b8f5b2cc64878715b63af388124ac0656d1c87b4",
+  "release_ref": "refs/heads/release/v3.5.0",
+  "reused_local_validation": {
+    "authenticated_supported_projection_manifest_sha256": "c06ebcfcfeab52883a5a1443d524192a86a1ca326d32e228fa923f0bada0b9e7",
+    "bootstrap_discovery": 51,
+    "candidate": "b8f5b2cc64878715b63af388124ac0656d1c87b4",
+    "local_FULL": 0,
+    "local_archive_qualification": 0,
+    "native_history_and_final_paths": 87,
+    "package_files": 417,
+    "package_tree": "bc7961ffc170db38bfa25d8bd132de127c24a8d0",
+    "package_validator_required_files": 387,
+    "private_original_product_controls_published": false,
+    "private_qualification_digest": "sha256:f1fe75de3ca25d59dc746bc7ada3991e5e9055a27d3e59ea5ea46238b063c37d",
+    "private_qualification_reference": "git:bajoicheg/codex-compute@76de506b7105a3ff6de1c0ca08dd2fab35445c88:cdc350-readiness.json",
+    "root_tree": "0b51a240d5682fd25f9626de596b11d4cf3d7aa6",
+    "runtime_discovery": 1365,
+    "schema": "cdc-source-targeted-qualification/v1",
+    "structural_preflight": "GREEN",
+    "unchanged_released_driver": "3.4.0"
+  },
+  "root_tree": "0b51a240d5682fd25f9626de596b11d4cf3d7aa6",
+  "scheduler_mutations": false,
+  "schedulers_paused": true,
+  "schema": "cdc-release-evidence/v1",
+  "source_main_at_release_preflight": "1599238a8015096638258a2d4acbce5d43b663ce",
+  "source_main_integration": "Separately proven by genuine managed finish conditional publisher and strict release receipt",
+  "source_remote_id": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
+  "status": "released",
+  "version": "3.5.0"
+}
