@@ -6,6 +6,7 @@ its own authority requirements. A route is not permission to execute an effect.
 
 | Current action | Load before acting |
 |---|---|
+| Check planning, bounded evidence read, warm runtime or compact finish | `references/execution-efficiency.md` |
 | Source implementation / small batch | `references/lean-execution-core.md`, `references/task-lifecycle.md`, `references/quality-levels.md` |
 | Initialize project / preview migration | `references/project-setup.md`, `references/policy-compatibility.md` |
 | Resume mismatch or uncertain state | `references/bounded-recovery.md`, `references/policy-compatibility.md`, `references/progress-and-checkpoints.md`, `references/operational-hardening.md`, `references/deterministic-recovery.md` |
