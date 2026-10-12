@@ -426,7 +426,7 @@ def reconcile_finalization(record, owner_id, generation, invocation_id, at, *, e
                                   updated_at_utc=at)
     return validate(result)
 
-def mark_ready(record, owner_id, generation, invocation_id, at, *, continuity_state):
+def mark_ready(record, owner_id, generation, invocation_id, at, *, continuity_state, reporting_authority=None):
     _owner(record, owner_id, generation, invocation_id, at)
     if record["finalization"]["state"] != "reconciled":
         raise ValueError("ready requires reconciled state")
@@ -437,8 +437,11 @@ def mark_ready(record, owner_id, generation, invocation_id, at, *, continuity_st
         raise ValueError("pre-release continuity state must describe an owned, not-yet-released lease")
     if continuity_state.get("checkpoint_ref") != record["finalization"]["checkpoint_ref"]:
         raise ValueError("continuity state must bind the persisted checkpoint")
-    decision = evaluate(continuity_state, now_utc=at)
-    if not decision["allowed"] or decision.get("final_response_allowed") is not True:
+    decision = evaluate(continuity_state, now_utc=at, reporting_authority=reporting_authority)
+    # Historical transactions still require supported physical closure, but
+    # their classifier grants no current reporting/final-response permission.
+    historical=continuity_state.get('schema')=='execution-continuity/v1'
+    if not decision["allowed"] or (not historical and decision.get("ready_for_native_closeout") is not True):
         raise ValueError("hard execution-continuity gate rejected finalization")
     result = copy.deepcopy(record)
     result["finalization"].update(state="ready", completion_reason=decision["reason"], updated_at_utc=at)

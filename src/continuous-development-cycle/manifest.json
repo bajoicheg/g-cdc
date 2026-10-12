@@ -1,7 +1,7 @@
 {
   "name": "continuous-development-cycle",
-  "version": "3.5.1",
+  "version": "3.5.2",
   "schema": "continuous-development-cycle/v3",
   "entrypoint": "SKILL.md",
-  "description": "Strict administrative Actions UNKNOWN quarantine with immutable claims and no replay; compatible test-only efficiency delta."
+  "description": "Native owner reporting/RCA closeout, receiving CI admission and detached/completed-result phase separation."
 }
