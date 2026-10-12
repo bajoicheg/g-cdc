@@ -1,0 +1,156 @@
+{
+  "after_runtime_methods": 1428,
+  "baseline_runtime_methods": 1437,
+  "dynamic_whole_suite_input_case_total": "not inferred from unittest method count; no aggregate run repeated to manufacture a case count",
+  "floor_changes": false,
+  "floor_rationale": "Prior release/test-retirement-3.5.0.json already removed unsupported positive qualification/widening cases. Historical lower-policy parsers and version diagnostics under current supported runtime remain valid requirements.",
+  "formally_supported_runtime_floor": "3.3.0",
+  "independent_unique_input_risks_removed": 0,
+  "negative_effective_setting_correction": {
+    "GREEN": {
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "test_adapter.AdapterTests.test_exception_must_match_effective_setting",
+        "-v"
+      ],
+      "completed_at_utc": "2026-10-12T05:24:44.286483Z",
+      "elapsed_seconds": 0.1519368200097233,
+      "raw_saved_before_interpretation": true,
+      "return_code": 0,
+      "started_at_utc": "2026-10-12T05:24:44.134558Z",
+      "stderr_sha256": "673bb4e744b81e56814240cd04e0b15c3ab862eb48ddf82d296052cccef73e50",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "RED": {
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "test_adapter.AdapterTests.test_exception_must_match_effective_setting",
+        "-v"
+      ],
+      "completed_at_utc": "2026-10-12T05:24:44.134269Z",
+      "elapsed_seconds": 0.1455845960008446,
+      "raw_saved_before_interpretation": true,
+      "return_code": 1,
+      "started_at_utc": "2026-10-12T05:24:43.988687Z",
+      "stderr_sha256": "b65dea0a24610ef4ab06b62049fdfb61266b57c9cc34487ea23a5a81cd7abd63",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "corrected_bounds": [
+      "3.3.0",
+      "4.0.0"
+    ],
+    "original_false_positive": "old [2.2.0,3.0.0) rejects installed current runtime before approved-exception check",
+    "required_rejection_assertion": "approved exception disagrees with effective setting: execution.work.subagents",
+    "test": "test_adapter.AdapterTests.test_exception_must_match_effective_setting"
+  },
+  "new_floor_based_retirements": 0,
+  "new_retired_methods": 9,
+  "new_retired_repeated_direct_fixture_executions": 9,
+  "preserved": [
+    "all below-floor rejection, historical ledger/rollback readers, authority/security/concurrency/UNKNOWN gates",
+    "all nonremoved methods and distinct cases including both different-field consumer provenance substitutions",
+    "no subTest grouping, test skip, expected-value weakening, policy widening, runtime feature changes"
+  ],
+  "previous_retirement_not_counted_again": "release/test-retirement-3.5.0.json",
+  "retirements": [
+    {
+      "direct_fixture_case_executions_removed": 1,
+      "floor_based_retirement": false,
+      "independent_unique_input_risks_removed": 0,
+      "original_body_sha256": "bd2469c7a00efc427932ad1090963194a8ba8fa9650d6b57d5e7a93a6d5fdcf0",
+      "retained_test": "test_package_transport.T.test_template_binds_current_package_version_bytes",
+      "retirement_kind": "semantically_subsumed_identical_fixture_positive",
+      "same_distinct_risks_and_assertions": "Same templates/package-transport.json; root VERSION equality, then verify_directory on those exact bytes implies constructed declared-version bytes are identical.",
+      "test": "test_package_transport.py:T.test_template_verifies_its_declared_version_bytes"
+    },
+    {
+      "direct_fixture_case_executions_removed": 1,
+      "floor_based_retirement": false,
+      "independent_unique_input_risks_removed": 0,
+      "original_body_sha256": "6596fb15692454509b3718753595424f25a7efac642184553a0d34685ac38847",
+      "retained_test": "test_package_transport.T.test_binding_is_independent_of_carrier",
+      "retirement_kind": "semantically_subsumed_identical_fixture_positive",
+      "same_distinct_risks_and_assertions": "verify_binding first calls validate_manifest on deepcopy of exactly the same MANIFEST fixture, then asserts trusted positive binding.",
+      "test": "test_package_transport.py:T.test_manifest_reconstructs_exact_git_tree"
+    },
+    {
+      "direct_fixture_case_executions_removed": 1,
+      "floor_based_retirement": false,
+      "independent_unique_input_risks_removed": 0,
+      "original_body_sha256": "770522f16ba42509f61659d68be73b7ac22e4ce85a46324b310687a21c66fa42",
+      "retained_test": "test_package_transport.T.test_package_validator_accepts_current_transport_fixture",
+      "retirement_kind": "semantically_subsumed_identical_fixture_positive",
+      "same_distinct_risks_and_assertions": "validate() invokes validate_quality_templates(ROOT), exactly the same current template root; missing helper fails that call. Corrupt-positive-review negative retained.",
+      "test": "test_quality_package.py:QualityPackage.test_new_templates_execute_through_real_validators"
+    },
+    {
+      "direct_fixture_case_executions_removed": 1,
+      "floor_based_retirement": false,
+      "independent_unique_input_risks_removed": 0,
+      "original_body_sha256": "4d4d8d91c41349fefac57adb63370b0113b40d251e8b23a3de8727c95f157e0f",
+      "retained_test": "test_package_transport.T.test_package_validator_accepts_current_transport_fixture",
+      "retirement_kind": "semantically_subsumed_identical_fixture_positive",
+      "same_distinct_risks_and_assertions": "validate() passes the identical templates/consumer-lock.json through consumer_lock.validate. Every lock mutation remains.",
+      "test": "test_consumer_lock.py:Tests.test_template_valid"
+    },
+    {
+      "direct_fixture_case_executions_removed": 1,
+      "floor_based_retirement": false,
+      "independent_unique_input_risks_removed": 0,
+      "original_body_sha256": "9fe8a3b5b5353dae46ab0ec7d9a7354def739171a1a91a900d48f39b9d188a73",
+      "retained_test": "test_package_transport.T.test_package_validator_accepts_current_transport_fixture",
+      "retirement_kind": "semantically_subsumed_identical_fixture_positive",
+      "same_distinct_risks_and_assertions": "validate() calls validate_lean_templates(ROOT) on the same exact templates; unknown-token and missing-core-gate negatives remain.",
+      "test": "test_lean_package.py:LeanPackageTests.test_packaged_templates_execute_through_real_composed_contracts"
+    },
+    {
+      "direct_fixture_case_executions_removed": 1,
+      "floor_based_retirement": false,
+      "independent_unique_input_risks_removed": 0,
+      "original_body_sha256": "87218e8abcff0b840974b567678804ce33653e2d98b53758d442ae88d9b1fb44",
+      "retained_test": "test_package_transport.T.test_package_validator_accepts_current_transport_fixture",
+      "retirement_kind": "semantically_subsumed_identical_fixture_positive",
+      "same_distinct_risks_and_assertions": "validate() loads identical templates/development-cycle.yaml and work-status-v4.md and calls validate_checkpoint_24 with those exact fixtures.",
+      "test": "test_checkpoint_v4.py:Tests.test_v4_template_validates"
+    },
+    {
+      "direct_fixture_case_executions_removed": 1,
+      "floor_based_retirement": false,
+      "independent_unique_input_risks_removed": 0,
+      "original_body_sha256": "5c0f1b787584299c039c0723b56c5e42eb68003f54fc79de8ae2426d1d62e379",
+      "retained_test": "test_orchestration_policy.OrchestrationPolicyTests.test_new_controls_reject_legacy_timer_only_takeover",
+      "retirement_kind": "semantically_subsumed_identical_fixture_positive",
+      "same_distinct_risks_and_assertions": "Every remaining self.adapter() call validates this exact positive fixture before returning it and before any mutation; historical policy parser checks remain.",
+      "test": "test_orchestration_policy.py:OrchestrationPolicyTests.test_valid_v23_configuration_is_accepted"
+    },
+    {
+      "direct_fixture_case_executions_removed": 1,
+      "floor_based_retirement": false,
+      "independent_unique_input_risks_removed": 0,
+      "original_body_sha256": "504095a2fd3559b9b2a1096241ea0c757e4dcec3886648a1f2e1d7b1a116af4c",
+      "retained_test": "test_package_transport.T.test_package_validator_accepts_current_transport_fixture",
+      "retirement_kind": "semantically_subsumed_identical_fixture_positive",
+      "same_distinct_risks_and_assertions": "validate() evaluates exactly templates/verification-gate.json and checks allowed, final_claim_allowed, no blockers and all six identical authorizes_* false assertions.",
+      "test": "test_verification_gate.py:T.test_template_allows_terminal_claim_without_granting_authority"
+    },
+    {
+      "direct_fixture_case_executions_removed": 1,
+      "floor_based_retirement": false,
+      "independent_unique_input_risks_removed": 0,
+      "original_body_sha256": "af3cbe2f8bdbaca7199d582161b3cc2b3facd9bed91be6b960ff8dc7bdad5861",
+      "retained_test": "test_package_transport.T.test_package_validator_accepts_current_transport_fixture",
+      "retirement_kind": "semantically_subsumed_identical_fixture_positive",
+      "same_distinct_risks_and_assertions": "validate() evaluates exactly templates/review-pipeline.json and checks review_green, REVIEW_GREEN and both original authorizes_merge/release false plus additional authority fields.",
+      "test": "test_review_pipeline.py:T.test_template_two_stage_green"
+    }
+  ],
+  "schema": "cdc-test-retirement/v1",
+  "source_baseline": "31a9bcb95f60aee58f99a6ed709ed4c532601c3f",
+  "version": "3.5.3"
+}
