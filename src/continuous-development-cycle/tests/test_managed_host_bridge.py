@@ -107,13 +107,17 @@ class ManagedHostBridgeTests(unittest.TestCase):
                 pass
 
     def finish_request(self, handle, checkpoint=None):
+        from reporting_fixtures import binding
+        session=bridge._load_session(str(self.root/'handles'),handle['handle_id'])
+        checkpoint=checkpoint if checkpoint is not None else 'native-test:checkpoint:'+handle['handle_id']
         return {
-            "schema": "managed-host-finish/v1",
+            "schema": "managed-host-finish/v2",
             "handle_root": str(self.root / "handles"),
             "handle_id": handle["handle_id"],
             "output_refs": ["out:closure"],
             "evidence_refs": ["test:closure"],
             "checkpoint_ref": checkpoint,
+            "reporting_binding":binding(bridge._lease_store(session),session['invocation_id'],checkpoint),
         }
 
     def worker(self):
@@ -319,15 +323,9 @@ subprocess.run(['git','commit','-qm','managed closure'],check=True)
         self.assertEqual(self.remote_head(), self.base, "worker must not publish shared source before finish")
         self.assertFalse(waiting["quiescent"])
 
-        finished = bridge.finish({
-            "schema": "managed-host-finish/v1",
-            "handle_root": str(self.root / "handles"),
-            "handle_id": handle["handle_id"],
-            "output_refs": ["out:closure"],
-            "evidence_refs": ["test:closure"],
-            "checkpoint_ref": None,
-        })
+        finished = bridge.finish(self.finish_request(handle))
         self.assertEqual(finished["state"], "released")
+
         self.assertTrue(finished["final_response_allowed"])
         self.assertEqual(self.remote_head(), finished["published_commit"])
         self.assertNotEqual(finished["published_commit"], self.base)
@@ -346,6 +344,42 @@ subprocess.run(['git','commit','-qm','managed closure'],check=True)
         assessment = pool.assess(self.plan, pool_state)
         self.assertTrue(assessment["complete"])
         self.assertTrue(assessment["terminal_allowed"])
+
+
+    def test_resumed_finish_reauthenticates_inventory_and_never_trusts_cached_boolean(self):
+        import reporting_contract as reporting
+        from git_document_store import GitDocumentStore
+        handle=bridge.start(self.start_request());self.wait_for(handle,'awaiting_release')
+        request=self.finish_request(handle)
+        finished=bridge.finish(request);self.assertTrue(finished['final_response_allowed'])
+        session=bridge._load_session(str(self.root/'handles'),handle['handle_id'])
+        # A local cached true is not current canonical inventory authority.
+        session['final_response_gate']={'final_response_allowed':True};session['reporting_binding']=True
+        bridge._save_session(session)
+        store=GitDocumentStore(self.repo,'origin',reporting.inventory_ref(handle['invocation_id']),self.store_id)
+        revision,doc=store.read();doc['material']=[{'anomaly_id':'new-observation','fix_key':'owner-reporting-rca-backlog-enforcement','status':'admitted_open','backlog_ref':'https://github.com/example/project/issues/113','problem':'Synthetic material observation','cause':'Changed condition after first report','evidence_refs':['actual:test-observation'],'correction_refs':[],'verification_revision':None,'deferral':None}]
+        store.compare_and_swap(revision,doc)
+        with self.assertRaisesRegex(ValueError,'stale RCA inventory'):bridge.finish(request)
+        bad=dict(request,reporting_binding=True)
+        with self.assertRaisesRegex(ValueError,'reporting binding'):bridge.finish(bad)
+        self.assertEqual(self.lease_store.read()[1]['last_release'],finished['release_receipt']['release'])
+    def test_final_permission_rechecks_actual_lease_and_release_not_caller_snapshots(self):
+        import copy,final_response_gate,reporting_contract
+        handle=bridge.start(self.start_request());self.wait_for(handle,'awaiting_release')
+        finished=bridge.finish(self.finish_request(handle))
+        session=bridge._load_session(str(self.root/'handles'),handle['handle_id'])
+        post=bridge._continuity(session,session['result_commit'],finished['release_receipt']['release']['checkpoint_ref'],session['publication'],released=True)
+        authority=reporting_contract.authenticate(self.lease_store,post['reporting_binding'],handle['invocation_id'],post['checkpoint_ref'])
+        _,actual=self.lease_store.read();historical=self.lease_store.read_revision(finished['release_receipt']['lease_revision'])
+        owned={'owner_id':handle['owner_id'],'generation':handle['generation']}
+        forged=copy.deepcopy(actual);forged['activity_refs'].append('caller:unobserved-current-field')
+        result=final_response_gate.evaluate(handle['invocation_id'],forged,post,owned,finished['release_receipt'],historical,bridge._utc(),reporting_authority=authority)
+        self.assertFalse(result['final_response_allowed'])
+        forged=copy.deepcopy(historical);forged['activity_refs'].append('caller:unobserved-historical-field')
+        result=final_response_gate.evaluate(handle['invocation_id'],actual,post,owned,finished['release_receipt'],forged,bridge._utc(),reporting_authority=authority)
+        self.assertFalse(result['final_response_allowed'])
+        result=final_response_gate.evaluate(handle['invocation_id'],actual,post,None,None,None,bridge._utc(),reporting_authority=authority)
+        self.assertFalse(result['final_response_allowed'])
 
     def test_dirty_worker_is_rejected_before_publishing(self):
         request = self.start_request()

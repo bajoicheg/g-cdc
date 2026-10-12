@@ -187,7 +187,7 @@ class LocalCommandBackend:
         end = time.monotonic() + 3
         while time.monotonic() < end:
             observation = self.observe(request)
-            if observation["status"] != "unknown":
+            if observation["status"] not in {"unknown","starting"}:
                 return observation
             if process.poll() is not None:
                 break
@@ -232,7 +232,8 @@ def _supervise(directory):
                "supervisor_pid": pid, "supervisor_proc_pid": proc_pid,
                "supervisor_birth": _process(proc_pid)["birth"], "boot_id": _boot(),
                "created_at_utc": _utc(), "started_at_utc": None, "finished_at_utc": None,
-               "exit_code": None, "elapsed_seconds": 0, "runtime_seconds": 0, "failure": None}
+               "exit_code": None, "elapsed_seconds": 0, "runtime_seconds": 0, "failure": None,
+               "process_births": [{"pid":proc_pid,"birth":_process(proc_pid)['birth'],"role":"supervisor"}]}
     _write(directory / "receipt.json", receipt)
     started = time.monotonic()
     try:
@@ -259,9 +260,17 @@ def _supervise(directory):
             with (directory / "stdout.log").open("ab") as out, (directory / "stderr.log").open("ab") as err:
                 child = subprocess.Popen(request["argv"], cwd=cwd, stdin=subprocess.DEVNULL,
                                          stdout=out, stderr=err, close_fds=True)
+            child_identity=_process(child.pid)
+            receipt['process_births'].append({'pid':child.pid,'birth':child_identity['birth'] if child_identity else None,'role':'worker','unknown_reason':None if child_identity else 'exited_before_birth_observation'})
             receipt.update(status="running", started_at_utc=_utc(), worker_pid=child.pid)
             _write(directory / "receipt.json", receipt)
         while True:
+            # Capture genuine births while processes exist; never reconstruct
+            # missing historical births after a wrapper has already exited.
+            recorded={item['pid'] for item in receipt['process_births']}
+            for descendant,identity in _descendants(proc_pid).items():
+                if descendant not in recorded:
+                    receipt['process_births'].append({'pid':descendant,'birth':identity['birth'],'role':'descendant'})
             # waitpid(ECHILD) is the closure proof: root exit alone is insufficient.
             no_children = False
             while True:
@@ -276,6 +285,7 @@ def _supervise(directory):
                     exit_code = os.waitstatus_to_exitcode(status)
                     child.returncode = exit_code
             if no_children:
+                receipt['quiescence_proof']={'method':'waitpid_ECHILD','boot_id':receipt['boot_id'],'supervisor_birth':receipt['supervisor_birth'],'request_ref':receipt['request_ref'],'process_births_digest':_digest(receipt['process_births']),'observed_at_utc':_utc()}
                 break
             elapsed = time.monotonic() - started
             if termination is None:
@@ -376,6 +386,8 @@ class ManagedExecutorRuntime:
                 "lease_source_ref":payload["lease_source_ref"],"armed_at_utc":_utc(),
                 "controller_proc_pid":proc_pid,"controller_birth":proc_state["birth"]}
         _write(paths["intent"],intent)
+        # Save the actual issued descriptor, not a later invented capability.
+        _write(directory/'terminal-capability-descriptor.json',{'schema':'original-managed-capability-descriptor/v1','capability_ref':managed_terminal_capability.reference(capability),'payload':payload})
         fd=os.open(directory,os.O_DIRECTORY)
         try:os.fsync(fd)
         finally:os.close(fd)
@@ -665,6 +677,69 @@ class ManagedExecutorRuntime:
         self.backend.cancel(request, self._saved_receipt(request))
         return self.observe(task_id, attempt_id)
 
+    def verify_terminal(self,task_id,attempt_id,*,include_controller=False,lease_store=None,release_receipt=None):
+        """Package-owned original journal + Git claim + current physical proof."""
+        from managed_executor_store import GitManagedExecutorStore
+        if type(self) is not ManagedExecutorRuntime or type(self.backend) is not LocalCommandBackend or type(self.store) is not GitManagedExecutorStore or type(self.journal) is not ExecutionJournal:
+            raise ValueError('authentic package-owned terminal runtime required')
+        request=self._request(task_id,attempt_id)
+        if request is None:raise ValueError('original runtime request missing')
+        observation=self.observe(task_id,attempt_id)
+        if not observation.get('quiescent') or observation.get('status') not in {'succeeded','failed','cancelled','timed_out'}:
+            raise ValueError('actual supervisor not terminal/quiescent')
+        proof=observation.get('quiescence_proof');births=observation.get('process_births')
+        if not isinstance(proof,dict) or proof.get('method')!='waitpid_ECHILD':raise ValueError('authentic supervisor quiescence proof required; wrapper exit is insufficient')
+        if (proof.get('boot_id')!=observation.get('boot_id') or proof['boot_id']!=_boot() or proof.get('supervisor_birth')!=observation.get('supervisor_birth') or proof.get('request_ref')!=_digest(request) or not isinstance(births,list) or proof.get('process_births_digest')!=_digest(births)):
+            raise ValueError('original birth/request/boot quiescence binding mismatch')
+        historical=self.store.read_revision(request['claim']['store_revision'])
+        if pool.canonical_state_ref(historical)!=request['claim']['state_ref'] or historical['revision']!=request['claim']['state_revision']:
+            raise ValueError('terminal original canonical Git launch claim mismatch')
+        task=next((row for row in historical['tasks'] if row['id']==task_id),None)
+        if task is None or task['active_attempt_id']!=attempt_id or task['reservation_token']!=request['claim']['reservation_token']:
+            raise ValueError('terminal original task/attempt/reservation mismatch')
+        births=copy.deepcopy(births)
+        ownership=None
+        if include_controller:
+            from git_lease_store import GitLeaseStore
+            from managed_terminal_capability import _digest as capability_digest,invocation_identity
+            if type(lease_store) is not GitLeaseStore:raise ValueError('terminal controller requires authentic canonical lease history')
+            paths=_terminal_hold_paths(Path(request['journal_directory']))
+            intent=_read_json(paths['intent']);owned=_read_json(paths['owned']);released=_read_json(paths['release'])
+            descriptor=_read_json(Path(request['journal_directory'])/'terminal-capability-descriptor.json')
+            if not all(isinstance(x,dict) for x in (intent,owned,released,descriptor)):raise ValueError('original issued capability/hold/release records missing; never mint historical capability')
+            payload=descriptor.get('payload')
+            if not isinstance(payload,dict) or descriptor.get('schema')!='original-managed-capability-descriptor/v1':raise ValueError('original capability descriptor invalid')
+            ref=capability_digest(payload)
+            if payload.get('schema')!='managed-terminal-capability/v2' or payload.get('boot_id')!=proof['boot_id'] or any(intent.get(k)!=payload.get(k) for k in ('controller_proc_pid','controller_birth')):
+                raise ValueError('original controller canonical birth/boot binding mismatch; legacy proof remains historical')
+            originals=payload.get('runtime_processes')
+            if (not isinstance(originals,list) or {x.get('role') for x in originals}!={'worker','supervisor'} or
+                any(not isinstance(x.get('birth'),str) or not x['birth'].isdigit() or
+                    not any((x['pid'],x['birth'],x['role'])==(row.get('pid'),row.get('birth'),row.get('role')) for row in births) or
+                    x['pid']!=observation.get('worker_pid' if x['role']=='worker' else 'supervisor_proc_pid') for x in originals)):
+                raise ValueError('original canonical runtime process PID/birth binding mismatch')
+            derived='managed-terminal:'+capability_digest(invocation_identity(payload)).split(':',1)[1]
+            if (any(value.get('capability_ref')!=ref for value in (descriptor,intent,owned,released)) or any(value.get('invocation_id')!=derived for value in (payload,intent,owned,released)) or payload.get('request_ref')!=_digest(request) or payload.get('launch_id')!=_digest(request) or payload.get('managed_store_ref')!=self.store.ref or payload.get('managed_store_id')!=self.store.store_id or any(payload.get(key)!=request['identity'].get(key) for key in ('pool_id','task_id','attempt_id'))):raise ValueError('terminal original ownership/launch/capability chain mismatch')
+            running=self.store.read_revision(payload['managed_store_revision'])
+            row=next((x for x in running['tasks'] if x['id']==task_id),None)
+            if running['revision']!=payload['managed_state_revision'] or row is None or row['status']!='running' or row['active_attempt_id']!=attempt_id or row['reservation_token']!=request['claim']['reservation_token']:raise ValueError('terminal original canonical running pool mismatch')
+            original=lease_store.read_revision(owned['lease_revision'])
+            if original['owner_id']!=owned['owner_id'] or original['generation']!=owned['generation'] or not original['invocation'] or original['invocation']['invocation_id']!=derived:raise ValueError('terminal original owned lease mismatch')
+            if release_receipt!=released.get('release_receipt') or not isinstance(release_receipt,dict):raise ValueError('terminal actual release receipt mismatch')
+            release_record=lease_store.read_revision(release_receipt['lease_revision'])
+            rel=release_receipt['release']
+            if release_record['owner_id'] is not None or release_record['last_release']!=rel or rel['owner_id']!=owned['owner_id'] or rel['generation']!=owned['generation'] or rel['invocation_id']!=derived:raise ValueError('terminal canonical historical release mismatch')
+            births.append({'pid':intent['controller_proc_pid'],'birth':intent['controller_birth'],'role':'controller'})
+            ownership={'invocation_id':derived,'owner_id':owned['owner_id'],'generation':owned['generation'],'original_owned_revision':owned['lease_revision'],'release_revision':release_receipt['lease_revision']}
+        seen=set()
+        for item in births:
+            pid=item.get('pid');birth=item.get('birth')
+            if type(pid) is not int or pid<=0 or pid in seen or not isinstance(birth,str) or not birth.isdigit():raise ValueError('recorded birth missing/invalid; UNKNOWN remains UNKNOWN')
+            seen.add(pid)
+            if _process(pid) is not None:raise ValueError('physical PID still present; no wrapper-exit shortcut')
+        if not {observation.get('worker_pid'),observation.get('supervisor_proc_pid')}<=seen:raise ValueError('terminal exact worker/supervisor PID set missing')
+        return {'schema':'managed-runtime-terminal-proof/v1','task_id':task_id,'attempt_id':attempt_id,'request_ref':_digest(request),'status':observation['status'],'exit_code':observation['exit_code'],'quiescence_method':'waitpid_ECHILD','boot_id':proof['boot_id'],'processes':births,'fresh_physical_absence':True,'observed_at_utc':_utc(),'original_claim_revision':request['claim']['store_revision'],'ownership':ownership,'authorizes_release':False}
+
     def accept(self, task_id, attempt_id, *, result_commit, output_refs, evidence_refs, cost_units=0):
         receipt = self.observe(task_id, attempt_id)
         if receipt["status"] != "succeeded" or not receipt["quiescent"]:
@@ -756,13 +831,13 @@ class ManagedExecutorRuntime:
                 "integration_commit": integration_commit, "integration_ref": integration_ref})
         return self.store.compare_and_swap(revision, updated)
 
-    def evaluate_parent(self, continuity_state, *, now_utc=None):
+    def evaluate_parent(self, continuity_state, *, now_utc=None, reporting_authority=None):
         """Read fresh pool state and combine it with the real continuity evaluator."""
         if continuity_state.get("invocation_id") != self.plan["parent_invocation_id"]:
             raise ValueError("parent invocation identity mismatch")
         revision, state = self.store.read()
         assessment = pool.assess(self.plan, state)
-        continuity = execution_continuity.evaluate(continuity_state, now_utc=now_utc)
+        continuity = execution_continuity.evaluate(continuity_state, now_utc=now_utc, reporting_authority=reporting_authority)
         allowed = assessment["terminal_allowed"] and continuity["final_response_allowed"]
         return {"schema": "managed-executor-parent-assessment/v1", "store_revision": revision,
                 "pool": assessment, "continuity": continuity, "final_response_allowed": allowed,
