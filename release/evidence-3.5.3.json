@@ -1,0 +1,311 @@
+{
+  "Source_scope_only": true,
+  "candidate_commit": "5eaa4eb42bbb10822678f71f55d49c408c2eada8",
+  "candidate_source_commit": "5eaa4eb42bbb10822678f71f55d49c408c2eada8",
+  "canonical_evidence_publication": {
+    "path": "release/evidence-3.5.3.json",
+    "ref": "refs/heads/cdc/release-evidence/v3.5.3"
+  },
+  "canonical_repository": "bajoicheg/g-cdc",
+  "ci": {
+    "actual_checkout_package_tree": "4ef48adfa0c70dd886733e53ced2b0c65f5fe954",
+    "actual_checkout_parents": [
+      "31a9bcb95f60aee58f99a6ed709ed4c532601c3f",
+      "5eaa4eb42bbb10822678f71f55d49c408c2eada8"
+    ],
+    "actual_checkout_root_tree": "9ce47fe053e1de660140c6b1675f3f75dd22d66d",
+    "actual_checkout_sha": "d29858a63bdbabaace1fd69a5976d31e64b68914",
+    "actual_job_elapsed_seconds": 435.0,
+    "all_configured_jobs_steps_successful": true,
+    "all_three_surfaces_complete": true,
+    "checkout_is_synthetic_merge": true,
+    "ci_success": true,
+    "configured_jobs": [
+      {
+        "check_run_url": "https://api.github.com/repos/bajoicheg/g-cdc/check-runs/114689436953",
+        "completed_at": "2026-10-12T06:32:46Z",
+        "conclusion": "success",
+        "created_at": "2026-10-12T06:25:29Z",
+        "head_branch": "cdc/3.5.3-safe-suite-pruning-20261012-work2334",
+        "head_sha": "5eaa4eb42bbb10822678f71f55d49c408c2eada8",
+        "html_url": "https://github.com/bajoicheg/g-cdc/actions/runs/38212447182/job/114689436953",
+        "id": 114689436953,
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "name": "Bootstrap + package + supported Fleet projections",
+        "node_id": "CR_kwDOUqlJvs8AAAAatAXtGQ",
+        "run_attempt": 1,
+        "run_id": 38212447182,
+        "run_url": "https://api.github.com/repos/bajoicheg/g-cdc/actions/runs/38212447182",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions",
+        "runner_id": 1000003469,
+        "runner_name": "GitHub Actions 1000003469",
+        "started_at": "2026-10-12T06:25:31Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completed_at": "2026-10-12T06:25:32Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "started_at": "2026-10-12T06:25:31Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T06:25:34Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "started_at": "2026-10-12T06:25:32Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T06:25:34Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-python@v5",
+            "number": 3,
+            "started_at": "2026-10-12T06:25:34Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T06:25:34Z",
+            "conclusion": "success",
+            "name": "Validate repository code and test placement",
+            "number": 4,
+            "started_at": "2026-10-12T06:25:34Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T06:25:35Z",
+            "conclusion": "success",
+            "name": "Independent bootstrap before candidate imports",
+            "number": 5,
+            "started_at": "2026-10-12T06:25:34Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T06:25:36Z",
+            "conclusion": "success",
+            "name": "Install validator dependency",
+            "number": 6,
+            "started_at": "2026-10-12T06:25:35Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T06:25:36Z",
+            "conclusion": "success",
+            "name": "Validate candidate package",
+            "number": 7,
+            "started_at": "2026-10-12T06:25:36Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T06:32:42Z",
+            "conclusion": "success",
+            "name": "Full candidate tests",
+            "number": 8,
+            "started_at": "2026-10-12T06:25:36Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T06:32:42Z",
+            "conclusion": "success",
+            "name": "Full bootstrap binding",
+            "number": 9,
+            "started_at": "2026-10-12T06:32:42Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T06:32:42Z",
+            "conclusion": "success",
+            "name": "Validate three supported Fleet projections",
+            "number": 10,
+            "started_at": "2026-10-12T06:32:42Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T06:32:42Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-python@v5",
+            "number": 19,
+            "started_at": "2026-10-12T06:32:42Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T06:32:43Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 20,
+            "started_at": "2026-10-12T06:32:42Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T06:32:43Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 21,
+            "started_at": "2026-10-12T06:32:43Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://api.github.com/repos/bajoicheg/g-cdc/actions/jobs/114689436953",
+        "workflow_name": "CDC release / 38212447182 / d29858a63bdbabaace1fd69a5976d31e64b68914"
+      }
+    ],
+    "exact_candidate_and_checkout_full_tree_equal": true,
+    "head_sha": "5eaa4eb42bbb10822678f71f55d49c408c2eada8",
+    "hosted_FULL": {
+      "seconds": 425.076,
+      "tests": 1428
+    },
+    "hosted_bootstrap": {
+      "seconds": 0.322,
+      "tests": 51
+    },
+    "job_id": 114689436953,
+    "legacy_status": {
+      "state": "pending",
+      "statuses": [],
+      "total_count": 0
+    },
+    "log_bytes": 325778,
+    "log_ref": "git:bajoicheg/codex-compute@5474984d686a1640e75bd189b91564270f101a64:cdc353-ci-log-proof.json",
+    "log_sha256": "99e0a1047e2d85299202c992027e76a0a8d776808f465ab98e614368500bd070",
+    "observation_ref": "git:bajoicheg/codex-compute@5474984d686a1640e75bd189b91564270f101a64:ci-observations-final-3.5.3.json",
+    "one_CI_one_PR": true,
+    "pr": 115,
+    "pr_url": "https://github.com/bajoicheg/g-cdc/pull/115",
+    "run_attempt": 1,
+    "run_id": 38212447182,
+    "run_url": "https://github.com/bajoicheg/g-cdc/actions/runs/38212447182",
+    "supported_consumers": {
+      "authorizes_adoption": false,
+      "authorizes_policy_write": false,
+      "consumers": [
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "candidate_version": "3.5.3",
+          "consumer": "fleet-1",
+          "installation_compatible": true,
+          "installed_version": "3.3.0",
+          "migration_changes": [],
+          "projection": true,
+          "qualification": "supported_projection_compatible",
+          "source_commit": "7a3699c9fb13eb28d12d8fca41f735be8ea33040"
+        },
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "candidate_version": "3.5.3",
+          "consumer": "fleet-2",
+          "installation_compatible": true,
+          "installed_version": "3.3.0",
+          "migration_changes": [],
+          "projection": true,
+          "qualification": "supported_projection_compatible",
+          "source_commit": "f2db9a73219668d2d3c3bb8e655e015e5e090e8f"
+        },
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "candidate_version": "3.5.3",
+          "consumer": "fleet-3",
+          "installation_compatible": true,
+          "installed_version": "3.3.1",
+          "migration_changes": [],
+          "projection": true,
+          "qualification": "supported_projection_compatible",
+          "source_commit": "6d65482be7045243501644807a54f6e5f6d6e9ce"
+        }
+      ],
+      "package_tree": "4ef48adfa0c70dd886733e53ced2b0c65f5fe954",
+      "schema": "supported-consumer-qualification/v1",
+      "snapshots_unchanged": true
+    }
+  },
+  "development_driver": {
+    "all427blobs_and_modes_verified": true,
+    "evidence_commit": "f09328a1a4e54277e8fcfbebd3300e881727cd40",
+    "package_tree": "20db6b98c92916bd615dd55307492306b909e07c",
+    "release_commit": "31a9bcb95f60aee58f99a6ed709ed4c532601c3f",
+    "version": "3.5.2"
+  },
+  "local_FULL": 0,
+  "local_consumer_installation_aggregate": 0,
+  "new_release_actor": {
+    "controller": {
+      "boot_id": "94c55839-3270-46c2-8f21-2961245d128d",
+      "input_max_bytes": 256,
+      "max_lifetime_seconds": 18000,
+      "namespace": "pid:[4026532200]",
+      "parent_pid": 1499227,
+      "pid": 1499228,
+      "proc_start_ticks": "15574075",
+      "role": "bounded CDC and live-member safe-suite-pruning controller",
+      "started_at_utc": "2026-10-12T05:14:13.577066Z"
+    },
+    "handle": {
+      "attempt_id": "testprune353-source-host-a1",
+      "generation": 83,
+      "handle_id": "8d6d8e9e-e394-5ba3-a5a8-f1d53799c78d",
+      "invocation_id": "managed-terminal:b50a2d69df7f4a8711ac51bc212f05fd3762382b1effba76299439a61bf59b50",
+      "lease_revision": "c01e0f9fe979018a8060b88eba4dee24bf535421",
+      "owner_id": "765b45f5-2dc7-43c3-bf5d-89446629f674",
+      "publication_ref": "refs/heads/cdc/managed-host-publish-8d6d8e9ee3945ba3a5a8f1d53799c78d",
+      "schema": "managed-host-handle/v1",
+      "state": "running",
+      "task_id": "testprune353-source-writer-a1"
+    }
+  },
+  "ordered_reviews": {
+    "QUALITY": {
+      "candidate": "5eaa4eb42bbb10822678f71f55d49c408c2eada8",
+      "frozen_private_commit": "af632c843bc602bb478ab9d349cb3ee5aa57478a",
+      "package_tree": "4ef48adfa0c70dd886733e53ced2b0c65f5fe954",
+      "report_sha256": "7c7f5c03cedbbfc9e77bdf98e086b9c8a68d72fb7918bb698e8da13276d10ca3",
+      "reviewer": "/root/testprune353_source_quality",
+      "root_tree": "9ce47fe053e1de660140c6b1675f3f75dd22d66d",
+      "verdict": "GREEN"
+    },
+    "SPEC": {
+      "candidate": "5eaa4eb42bbb10822678f71f55d49c408c2eada8",
+      "frozen_private_commit": "af632c843bc602bb478ab9d349cb3ee5aa57478a",
+      "package_tree": "4ef48adfa0c70dd886733e53ced2b0c65f5fe954",
+      "report_sha256": "dfc6e7e77f6d2797d28e4f60f1da2c053215fd5dabf15ccdce668d029ea27357",
+      "reviewer": "/root/testprune353_source_spec",
+      "root_tree": "9ce47fe053e1de660140c6b1675f3f75dd22d66d",
+      "verdict": "GREEN"
+    }
+  },
+  "package_files": 427,
+  "package_identity_anchor_dependency": {
+    "commit": "07f189e9fabe124ce5593501ea5225e18eabab52",
+    "package_tree": "4ef48adfa0c70dd886733e53ced2b0c65f5fe954",
+    "ref": "refs/heads/cdc/3.5.3-package-identity-anchor-spec-corrected-20261012-work2334",
+    "role": "separate create-only package anchor, not candidate/CI checkout/release"
+  },
+  "package_tree": "4ef48adfa0c70dd886733e53ced2b0c65f5fe954",
+  "personal_installation": "Root separate acceptance",
+  "release_commit": "5eaa4eb42bbb10822678f71f55d49c408c2eada8",
+  "release_ref": "refs/heads/release/v3.5.3",
+  "root_tree": "9ce47fe053e1de660140c6b1675f3f75dd22d66d",
+  "schedulers_paused": true,
+  "schema": "cdc-release-evidence/v1",
+  "source_main_at_release_preflight": "31a9bcb95f60aee58f99a6ed709ed4c532601c3f",
+  "source_main_integration": "Separately proven by genuine managed finish expected-head publisher and exact canonical release receipt",
+  "status": "released",
+  "test_retirement": {
+    "baseline_methods": 1437,
+    "current_methods": 1428,
+    "duplicate_direct_fixture_executions_removed": 9,
+    "independent_unique_input_risks_removed": 0,
+    "mapping_path": "release/test-retirement-3.5.3.json",
+    "new_floor_based_retirements": 0,
+    "new_retired_methods": 9,
+    "runtime_scripts_unchanged": true
+  },
+  "version": "3.5.3"
+}
