@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 import sys
+import tempfile
 
 sys.dont_write_bytecode = True
 from contracts import ContractError, load_yaml, semver, require_supported_runtime
@@ -49,7 +50,7 @@ from stuck_state import detect as detect_stuck
 from counterfactual_recovery import choose as choose_counterfactual
 from public_export_planner import plan as plan_public_export
 from dogfood_metrics import measure as measure_dogfood
-from package_transport import validate_manifest as validate_transport_manifest
+from package_transport import validate_manifest as validate_transport_manifest, verify_directory as verify_transport_directory
 from convergence_vector import normalize as normalize_convergence_vector
 from ci_evidence_classifier import classify as classify_ci_evidence
 from policy_migration import plan as plan_policy_migration
@@ -84,6 +85,11 @@ from consumer_adoption import assess as assess_consumer_adoption
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
+    "scripts/reporting_contract.py", "scripts/receiving_ci_preflight.py",
+    "references/systemic-closeout.md", "tests/reporting_fixtures.py",
+    "tests/test_systemic_reporting.py", "tests/test_receiving_ci_preflight.py",
+    "tests/test_native_closeout.py", "tests/test_runtime_terminal_proof.py",
+    "tests/test_detached_preview.py",
     'tests/test_actions_submission_retirement.py',
     'scripts/submission_retirement.py', 'tests/test_submission_retirement.py',
     'references/unknown-retirement.md',
@@ -494,8 +500,8 @@ def validate():
     final_gate = evaluate_final_response_gate(final_gate_template['invocation_id'], final_gate_template['lease'],
                                               final_gate_template['continuity'], final_gate_template['owned_lease'],
                                               final_gate_template['release_receipt'], None, '2026-01-01T00:00:00Z')
-    if not final_gate['allowed'] or not final_gate['final_response_allowed']:
-        raise ContractError('invalid CDC 2.11.3 final-response gate template')
+    if final_gate['allowed'] or final_gate['final_response_allowed'] or final_gate['reason']!='current_authentic_reporting_binding_required':
+        raise ContractError('historical final-response example cannot grant current unbound permission')
     validate_fleet_supervisor_control(json.loads((ROOT / 'templates/fleet-supervisor-state.json').read_text()))
     adoption_plan = assess_consumer_adoption(json.loads((ROOT / 'templates/consumer-adoption-publication.json').read_text()))
     if adoption_plan['action'] != 'PREPARE_DETACHED' or adoption_plan['authorizes_ref_move']:
@@ -620,6 +626,10 @@ def validate():
     transport = validate_transport_manifest(json.loads((ROOT / 'templates/package-transport.json').read_text()))
     if transport['version'] != version:
         raise ContractError('invalid package transport template version')
+    with tempfile.TemporaryDirectory() as carrier:
+        Path(carrier,'VERSION').write_bytes((ROOT/'VERSION').read_bytes())
+        if not verify_transport_directory(transport,carrier)['content_verified']:
+            raise ContractError('invalid package transport template VERSION bytes')
     vector = normalize_convergence_vector(json.loads((ROOT / 'templates/convergence-observation.json').read_text()))
     if not vector['integrated'] or vector['adoption_state'] != 'integrated' or vector['blockers']:
         raise ContractError('invalid convergence vector template')
@@ -649,7 +659,7 @@ def validate():
     timestamp_request = json.loads((ROOT / 'templates/command-timestamp-request.json').read_text())
     timestamp_fixture_clock = datetime.fromisoformat(timestamp_request['observed_at'].replace('Z','+00:00'))
     timestamp = render_command_timestamp(timestamp_request, now=timestamp_fixture_clock)
-    if timestamp['action'] != 'EMIT_ONCE' or timestamp['display'] != '[19:31 26.09]' or timestamp['authorizes_anything']:
+    if timestamp['action'] != 'EMIT_REPORT' or timestamp['display'] != '[19:31 26.09]' or timestamp['authorizes_anything']:
         raise ContractError('invalid command timestamp template')
     rca = disposition_rca_feedback(json.loads((ROOT / 'templates/rca-feedback.json').read_text()))
     if rca['action'] != 'REINFORCE_EXISTING' or rca['authorizes_roadmap_write']:

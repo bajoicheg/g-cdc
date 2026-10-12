@@ -3,9 +3,11 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.5.1
+# Continuous Development Cycle v3.5.2
 
-This3.5.1 candidate adds strict administrative Actions UNKNOWN quarantine under released3.5.0.
+This3.5.2 candidate adds native report/RCA closeout, receiving-CI admission and
+detached/completed-result phase separation under released3.5.1.
+Existing strict administrative Actions UNKNOWN quarantine remains unchanged.
 Missing transport cancellation proof remains UNKNOWN; native evidence and CAS
 retire only the exact read-only pilot without replay or a new submission grant.
 Load `references/unknown-retirement.md` only for that authorized recovery phase.
@@ -123,9 +125,11 @@ read-only verification and does not inherit editing/parent-task authority.
 Read `references/runtime-routing-and-subagents.md` before delegation.
 
 Use Russian chat and English source documentation. Emit one fresh Moscow
-`[HH:MM DD.MM]` timestamp for each user command. After a completed logical
+`[HH:MM DD.MM]` timestamp for EACH substantive progress, blocker, continuation
+and final report. Read the runtime clock at the emission boundary; never infer
+minutes from previous updates. Use no timezone suffix or seconds. After a completed logical
 operation append rounded whole minutes, e.g. `(4 мин)`. Add tokens only from a
-measured counter or a defensible estimate with provenance; omit unknown tokens
+measured counter with provenance; omit unknown tokens
 entirely. `scripts/operation_report.py` formats this contract and retains
 observed phase times and outcomes. Worker-duration sums are consumption, not
 wall time; no unobserved speedup, savings or quality improvement claims.
@@ -161,8 +165,11 @@ Use `runtime` to verify actual saved loader/package identity without extracting
 an archive or rerunning FULL; interface snapshots do not override saved bytes.
 Use `efficient` for low-risk single-executor/review and bounded probe decisions;
 unknown effects retain their original key/guard and no replay authority.
-Use `closeout` with the existing Git store for one compact gate/physical/runtime/
-pool bundle. All exact owned process IDs need fresh absence evidence.
+Load `references/systemic-closeout.md` for native current report, continuation,
+RCA admission, receiving CI and detached-result boundaries. `closeout` uses
+terminal-bundle/v2 and the original managed handle, canonical lease/pool history,
+actual journal and birth-bound fresh PID absence. Caller booleans are observations,
+not terminal authority. Open/deferred RCA stays visibly open.
 `audit-tests` reports duplicate candidates for distinct-risk review, never deletes
 tests. Operation-observation/v2 records context, coordination, finish and repeats
 with explicit unknowns; compare equivalent actual workloads before claiming savings.

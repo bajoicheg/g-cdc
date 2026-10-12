@@ -136,9 +136,10 @@ def main(argv=None):
             from release_delivery import plan
             result = plan(_load(args.input))
         else:
-            from operation_report import measure, render
+            from reporting_contract import emit
             observation = _load(args.input)
-            result = {'observation': measure(observation), 'suffix': render(observation)}
+            # Current emission includes the real body and fresh clock boundary.
+            result = emit(observation)
         print(json.dumps(result, ensure_ascii=False, sort_keys=True, allow_nan=False))
         return 0
     except (OSError, ValueError, TypeError, KeyError) as exc:

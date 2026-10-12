@@ -51,6 +51,7 @@ _CANCEL_FIELDS = {"schema", "handle_root", "handle_id"}
 _FINISH_FIELDS = {
     "schema", "handle_root", "handle_id", "output_refs", "evidence_refs", "checkpoint_ref",
 }
+_CURRENT_FINISH_FIELDS = _FINISH_FIELDS | {'reporting_binding'}
 _IMMUTABLE_SESSION_FIELDS = (
     "handle_id", "repo_root", "remote", "plan", "journal_root", "handle_root",
     "lease_coordination_ref", "lease_repository", "lease_source_ref",
@@ -327,8 +328,10 @@ def _validate_start(request):
     return repo, journal, handles
 
 
-def start(request):
+def start(request,*,receiving_admission=None):
     repo, journal_root, handle_root = _validate_start(request)
+    from receiving_ci_preflight import require_for_writer
+    require_for_writer(request,receiving_admission)
     identity = {"repo_root": str(repo), "store": request["plan"]["coordination_store_id"],
                 "coordination_ref": request["plan"]["coordination_ref"],
                 "pool_id": request["plan"]["pool_id"], "task_id": request["task_id"],
@@ -824,6 +827,8 @@ def _continuity(session, result_commit, checkpoint_ref, publication, *, released
                                          "observed_at_utc": _utc(), "max_age_seconds": 120,
                                          "evidence_refs": evidence, "next_action": next_action,
                                          "recheck_trigger": trigger, "same_invocation_work_exhausted": True})
+    if session.get('reporting_binding') is not None:
+        continuity.update(schema='execution-continuity/v2',reporting_binding=session['reporting_binding'])
     return continuity
 
 
@@ -867,6 +872,7 @@ def _finalize_release(session, runtime, lease_store, result_commit, checkpoint_r
         record = leasev2.mark_ready(
             record, session["owner_id"], session["generation"], session["invocation_id"], _utc(),
             continuity_state=continuity,
+            reporting_authority=_reporting_authority(session,lease_store,checkpoint_ref),
         )
         revision = lease_store.compare_and_swap(revision, record)
     released = runtime.release_execution_lease(
@@ -883,7 +889,11 @@ def _wait_terminal(runtime, session):
     while time.monotonic() < end:
         last = runtime.observe(session["task_id"], session["attempt_id"])
         if last.get("quiescent") is True:
-            return last
+            try:
+                runtime.verify_terminal(session['task_id'],session['attempt_id'])
+                return last
+            except ValueError as exc:
+                if 'physical PID still present' not in str(exc):raise
         time.sleep(.025)
     raise ValueError("managed host supervisor did not become quiescent after release")
 
@@ -917,14 +927,29 @@ def _complete_pool(session, runtime, result_commit, output_refs, evidence_refs):
     return result_ref, assessment
 
 
+def _reporting_authority(session,lease_store,checkpoint_ref):
+    from reporting_contract import authenticate
+    return authenticate(lease_store,session.get('reporting_binding'),session['invocation_id'],checkpoint_ref)
+
+
 def finish(request):
-    if not isinstance(request, dict) or set(request) != _FINISH_FIELDS or request.get("schema") != FINISH_SCHEMA:
+    current=isinstance(request,dict) and request.get('schema')=='managed-host-finish/v2'
+    if not isinstance(request, dict) or set(request) != (_CURRENT_FINISH_FIELDS if current else _FINISH_FIELDS) or request.get("schema") not in {FINISH_SCHEMA,'managed-host-finish/v2'}:
         raise ValueError("managed host finish request fields/schema mismatch")
     output_refs = _refs(request["output_refs"], "output_refs")
     evidence_refs = _refs(request["evidence_refs"], "evidence_refs")
     if request["checkpoint_ref"] is not None:
         _text(request["checkpoint_ref"], "checkpoint_ref")
     session = _load_session(request["handle_root"], request["handle_id"])
+    if not current:
+        raise ValueError('current managed finish requires authentic reporting binding before publication')
+    if current:
+        if request['checkpoint_ref'] is None:raise ValueError('current reporting requires explicit persisted checkpoint')
+        from reporting_contract import check
+        session['reporting_binding']=copy.deepcopy(request['reporting_binding'])
+        authority=_reporting_authority(session,_lease_store(session),request['checkpoint_ref'])
+        check({'schema':'execution-continuity/v2','invocation_id':session['invocation_id'],'checkpoint_ref':request['checkpoint_ref'],'reporting_binding':session['reporting_binding']},authority,now_utc=_utc())
+        _save_session(session)
     task = _task(session["plan"], session["task_id"])
     # Read the exact terminal observation before recovering ownership. A failed
     # attempt supplies failure evidence; successful output labels cannot be
@@ -942,16 +967,6 @@ def finish(request):
         if not set(task["expected_evidence"]) <= set(evidence_refs):
             raise ValueError("worker result missing expected evidence")
     session, runtime, lease_store = _recover_session(request["handle_root"], request["handle_id"])
-    if session.get("release_receipt") is not None and (session.get("final_response_gate") or {}).get("final_response_allowed") is True:
-        return {
-            **_public_handle(session),
-            "published_commit": session["result_commit"] if session.get("publication") is not None else None,
-            "release_receipt": session["release_receipt"],
-            "final_response_allowed": True,
-            "worker_status": session.get("worker_status", "succeeded"),
-            "scope_complete": session.get("worker_status", "succeeded") == "succeeded",
-        }
-
     observation = runtime.observe(session["task_id"], session["attempt_id"])
     if session.get("release_receipt") is None:
         status = observation.get("pending_terminal_status")
@@ -1012,13 +1027,14 @@ def finish(request):
     current_revision, current_lease = lease_store.read()
     release_record = lease_store.read_revision(release_receipt["lease_revision"])
     post = _continuity(session, result_commit, checkpoint_ref, publication, released=True)
-    gate = final_response_gate.evaluate(
+    gate = final_response_gate.release_boundary(
         session["invocation_id"], current_lease, post,
         {"owner_id": session["owner_id"], "generation": session["generation"]},
         release_receipt, release_record, _utc(),
+        reporting_authority=_reporting_authority(session,lease_store,checkpoint_ref),
     )
-    if gate.get("final_response_allowed") is not True:
-        raise ValueError("managed host final-response gate rejected released execution")
+    if gate.get("release_boundary_allowed") is not True:
+        raise ValueError("managed host preparatory release gate rejected released execution")
     session["final_response_gate"] = gate
     session["state"] = "released"
     _save_session(session)
@@ -1028,7 +1044,9 @@ def finish(request):
         "changed_paths": changed_paths if "changed_paths" in locals() else None,
         "release_receipt": release_receipt,
         "current_lease_revision": current_revision,
-        "final_response_allowed": True,
+        "final_response_allowed": False,
+        "managed_finish_allowed": True,
+        "controller_exit_required": True,
         "worker_status": status,
         "scope_complete": status == "succeeded",
     }

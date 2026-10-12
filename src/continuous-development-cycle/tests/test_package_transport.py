@@ -41,4 +41,19 @@ class T(unittest.TestCase):
   from validate_package import validate
   root=Path(__file__).resolve().parents[1]
   self.assertEqual(validate(),(root/"VERSION").read_text().strip())
+ def test_package_validator_rejects_stale_transport_version_blob(self):
+  from unittest import mock
+  import validate_package
+  from contracts import ContractError
+  from package_transport import _blob_oid,_tree_oid
+  path=validate_package.ROOT/'templates/package-transport.json'
+  manifest=json.loads(path.read_text());manifest['entries'][0]['blob_sha1']=_blob_oid(b'3.5.1\n')
+  manifest['package_tree']=_tree_oid(manifest['entries'])
+  original=Path.read_text
+  def read_text(actual,*args,**kwargs):
+   if actual==path:return json.dumps(manifest)
+   return original(actual,*args,**kwargs)
+  with mock.patch.object(Path,'read_text',read_text):
+   with self.assertRaisesRegex(ContractError,'transport.*VERSION'):
+    validate_package.validate()
 if __name__=="__main__":unittest.main()

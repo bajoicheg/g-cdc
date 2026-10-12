@@ -590,6 +590,31 @@ def _git_touched_paths(base_sha, result_commit, git_worktree):
     return touched
 
 
+def preview_writer_result(task, base_sha, result_commit, git_worktree, *, package_path=None):
+    """Inspect detached objects before adoption; never claims worker completion."""
+    if not isinstance(result_commit,str) or not SHA.fullmatch(result_commit):
+        raise ValueError('detached candidate must be an exact commit')
+    if not isinstance(base_sha,str) or not SHA.fullmatch(base_sha):
+        raise ValueError('preview base must be an exact commit')
+    final_paths=_git_changed_paths(base_sha,result_commit,git_worktree)
+    touched_paths=_git_touched_paths(base_sha,result_commit,git_worktree)
+    if not _result_paths_within_claim(task,final_paths):raise ValueError('preview final paths escape scope')
+    if not _result_paths_within_claim(task,touched_paths):raise ValueError('preview history touched paths escape scope')
+    def object_id(expression):
+        try:
+            return subprocess.check_output(['git','-C',str(git_worktree),'rev-parse','--verify',expression],env=git_object_environment(),text=True,stderr=subprocess.PIPE,timeout=15).strip()
+        except (OSError,subprocess.SubprocessError):raise ValueError('detached preview object unavailable') from None
+    root=object_id(result_commit+'^{tree}')
+    package=None
+    if package_path is not None:
+        validate_write_path(package_path)
+        package=object_id(result_commit+':'+package_path)
+        try:kind=subprocess.check_output(['git','-C',str(git_worktree),'cat-file','-t',package],env=git_object_environment(),text=True,stderr=subprocess.PIPE,timeout=15).strip()
+        except (OSError,subprocess.SubprocessError):raise ValueError('preview package unavailable') from None
+        if kind!='tree':raise ValueError('preview package must be a tree')
+    return {'schema':'detached-writer-preview/v1','phase':'DETACHED_PREVIEW','base_sha':base_sha,'candidate_commit':result_commit,'root_tree':root,'package_tree':package,'final_paths':final_paths,'touched_paths':touched_paths,'authorizes_publication':False,'authorizes_completion':False,'authorizes_worker_launch':False}
+
+
 def _verify_writer_result_git(task, base_sha, result_commit, git_worktree):
     if not isinstance(result_commit, str) or not SHA.fullmatch(result_commit):
         raise ValueError("writer result_commit must be a full lowercase SHA")
@@ -619,9 +644,10 @@ def _verify_writer_result_git(task, base_sha, result_commit, git_worktree):
         raise ValueError(f"cannot verify worker result git ancestry: {exc}") from exc
     if live_branch != result_commit:
         raise ValueError("worker result commit is not exact assigned branch head")
-    final_paths = _git_changed_paths(base_sha, result_commit, git_worktree)
-    touched_paths = _git_touched_paths(base_sha, result_commit, git_worktree)
-    return final_paths, touched_paths
+    # Completed Git proof preserves its branch-only primitive contract. Scope is
+    # enforced by accept_result/_result; detached preview independently checks it.
+    return (_git_changed_paths(base_sha,result_commit,git_worktree),
+            _git_touched_paths(base_sha,result_commit,git_worktree))
 
 def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
                   executor_id, parent_invocation_id, integrator_id, branch, worktree,
