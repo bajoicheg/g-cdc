@@ -1,0 +1,382 @@
+{
+  "candidate_commit": "31a9bcb95f60aee58f99a6ed709ed4c532601c3f",
+  "candidate_parents": [
+    "f40cce887bd3775125eb1cf11ffaa86722eb123e"
+  ],
+  "candidate_source_commit": "31a9bcb95f60aee58f99a6ed709ed4c532601c3f",
+  "canonical_evidence_publication": {
+    "path": "release/evidence-3.5.2.json",
+    "provenance": "Separately pinned immutable evidence commit; enclosing commit independently pinned by native publication receipt",
+    "ref": "refs/heads/cdc/release-evidence/v3.5.2"
+  },
+  "canonical_repository": "bajoicheg/g-cdc",
+  "ci": {
+    "actual_checkout_package_tree": "20db6b98c92916bd615dd55307492306b909e07c",
+    "actual_checkout_parents": [
+      "5181ceb82ae4011229c651430c0e06c5f171ffba",
+      "31a9bcb95f60aee58f99a6ed709ed4c532601c3f"
+    ],
+    "actual_checkout_root_tree": "f706914909e586659fa750b8e0521dc671dfcce5",
+    "actual_checkout_sha": "9f15b768ab4a51323489979ab335ef6d875f2a87",
+    "actual_job_elapsed_seconds": 471.0,
+    "all_configured_jobs_steps_successful": true,
+    "all_three_surfaces_complete": true,
+    "checkout_is_synthetic_merge": true,
+    "ci_success": true,
+    "configured_jobs": [
+      {
+        "check_run_url": "https://api.github.com/repos/bajoicheg/g-cdc/check-runs/114656560727",
+        "completed_at": "2026-10-12T04:04:54Z",
+        "conclusion": "success",
+        "created_at": "2026-10-12T03:57:01Z",
+        "head_branch": "cdc/3.5.2-systemic-backlog-20261012-work2334",
+        "head_sha": "31a9bcb95f60aee58f99a6ed709ed4c532601c3f",
+        "html_url": "https://github.com/bajoicheg/g-cdc/actions/runs/38201781297/job/114656560727",
+        "id": 114656560727,
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "name": "Bootstrap + package + supported Fleet projections",
+        "node_id": "CR_kwDOUqlJvs8AAAAashBGVw",
+        "run_attempt": 1,
+        "run_id": 38201781297,
+        "run_url": "https://api.github.com/repos/bajoicheg/g-cdc/actions/runs/38201781297",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions",
+        "runner_id": 1000003468,
+        "runner_name": "GitHub Actions 1000003468",
+        "started_at": "2026-10-12T03:57:03Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completed_at": "2026-10-12T03:57:04Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "started_at": "2026-10-12T03:57:04Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T03:57:06Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "started_at": "2026-10-12T03:57:04Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T03:57:06Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-python@v5",
+            "number": 3,
+            "started_at": "2026-10-12T03:57:06Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T03:57:06Z",
+            "conclusion": "success",
+            "name": "Validate repository code and test placement",
+            "number": 4,
+            "started_at": "2026-10-12T03:57:06Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T03:57:07Z",
+            "conclusion": "success",
+            "name": "Independent bootstrap before candidate imports",
+            "number": 5,
+            "started_at": "2026-10-12T03:57:06Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T03:57:08Z",
+            "conclusion": "success",
+            "name": "Install validator dependency",
+            "number": 6,
+            "started_at": "2026-10-12T03:57:07Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T03:57:08Z",
+            "conclusion": "success",
+            "name": "Validate candidate package",
+            "number": 7,
+            "started_at": "2026-10-12T03:57:08Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T04:04:50Z",
+            "conclusion": "success",
+            "name": "Full candidate tests",
+            "number": 8,
+            "started_at": "2026-10-12T03:57:08Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T04:04:50Z",
+            "conclusion": "success",
+            "name": "Full bootstrap binding",
+            "number": 9,
+            "started_at": "2026-10-12T04:04:50Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T04:04:50Z",
+            "conclusion": "success",
+            "name": "Validate three supported Fleet projections",
+            "number": 10,
+            "started_at": "2026-10-12T04:04:50Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T04:04:50Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-python@v5",
+            "number": 19,
+            "started_at": "2026-10-12T04:04:50Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T04:04:51Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 20,
+            "started_at": "2026-10-12T04:04:50Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T04:04:51Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 21,
+            "started_at": "2026-10-12T04:04:51Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://api.github.com/repos/bajoicheg/g-cdc/actions/jobs/114656560727",
+        "workflow_name": "CDC release / 38201781297 / 9f15b768ab4a51323489979ab335ef6d875f2a87"
+      }
+    ],
+    "exact_candidate_and_checkout_full_tree_equal": true,
+    "head_sha": "31a9bcb95f60aee58f99a6ed709ed4c532601c3f",
+    "hosted_FULL": {
+      "seconds": 461.099,
+      "tests": 1437
+    },
+    "hosted_bootstrap": {
+      "seconds": 0.331,
+      "tests": 51
+    },
+    "job_id": 114656560727,
+    "legacy_status": {
+      "state": "pending",
+      "statuses": [],
+      "total_count": 0
+    },
+    "log_bytes": 326195,
+    "log_ref": "git:bajoicheg/codex-compute@e7846254880a894163059584183ba5c06076426d:cdc352-ci2-log-proof.json",
+    "log_sha256": "3f7ec7eae9774c2dc0551f0fc2c537793e551127ce7e05aab4509d18ca436619",
+    "observation_ref": "git:bajoicheg/codex-compute@e7846254880a894163059584183ba5c06076426d:ci2-observations-final-3.5.2.json",
+    "one_CI_on_final_artifact": true,
+    "original_PR_created_once": true,
+    "original_failed_run_preserved": 38198573266,
+    "pr": 114,
+    "pr_url": "https://github.com/bajoicheg/g-cdc/pull/114",
+    "receiving_event": "pull_request:synchronize",
+    "run_attempt": 1,
+    "run_id": 38201781297,
+    "run_url": "https://github.com/bajoicheg/g-cdc/actions/runs/38201781297",
+    "supported_consumers": {
+      "authorizes_adoption": false,
+      "authorizes_policy_write": false,
+      "consumers": [
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "candidate_version": "3.5.2",
+          "consumer": "fleet-1",
+          "installation_compatible": true,
+          "installed_version": "3.3.0",
+          "migration_changes": [],
+          "projection": true,
+          "qualification": "supported_projection_compatible",
+          "source_commit": "7a3699c9fb13eb28d12d8fca41f735be8ea33040"
+        },
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "candidate_version": "3.5.2",
+          "consumer": "fleet-2",
+          "installation_compatible": true,
+          "installed_version": "3.3.0",
+          "migration_changes": [],
+          "projection": true,
+          "qualification": "supported_projection_compatible",
+          "source_commit": "f2db9a73219668d2d3c3bb8e655e015e5e090e8f"
+        },
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "candidate_version": "3.5.2",
+          "consumer": "fleet-3",
+          "installation_compatible": true,
+          "installed_version": "3.3.1",
+          "migration_changes": [],
+          "projection": true,
+          "qualification": "supported_projection_compatible",
+          "source_commit": "6d65482be7045243501644807a54f6e5f6d6e9ce"
+        }
+      ],
+      "package_tree": "20db6b98c92916bd615dd55307492306b909e07c",
+      "schema": "supported-consumer-qualification/v1",
+      "snapshots_unchanged": true
+    }
+  },
+  "development_driver": {
+    "bytes_and_modes_equal": true,
+    "evidence_commit": "86068e34bd6479865775df6a6680cc46c49dffc1",
+    "package_tree": "3d3b07539ccf6e58914e8de03d6adff691f97b10",
+    "release_commit": "5181ceb82ae4011229c651430c0e06c5f171ffba",
+    "verified_files": 418,
+    "version": "3.5.1"
+  },
+  "fleet_rollout": false,
+  "local_FULL_repeated": false,
+  "new_release_actor": {
+    "controller": {
+      "boot_id": "94c55839-3270-46c2-8f21-2961245d128d",
+      "input_max_bytes": 256,
+      "max_lifetime_seconds": 18000,
+      "namespace": "pid:[4026532200]",
+      "parent_pid": 497947,
+      "pid": 497948,
+      "proc_start_ticks": "13865976",
+      "role": "bounded CDC3.5.2 source issues113/111/112 controller",
+      "started_at_utc": "2026-10-12T00:29:32.486414Z"
+    },
+    "generation": 82,
+    "handle": {
+      "attempt_id": "cdc352-source-host-a1",
+      "generation": 82,
+      "handle_id": "e118ed13-4c6a-5f61-8c6f-61ba2f4e3f5f",
+      "invocation_id": "managed-terminal:ccb7a8ba9ec31195d1dedd942fa5ebd9e213ddd3c1a2a9bd73987f0a00eac247",
+      "lease_revision": "b31b000a9d3f4be3cbe533a92e9bddb5e2cfec7b",
+      "owner_id": "103b34d9-724a-4570-91e7-487a092d5a49",
+      "publication_ref": "refs/heads/cdc/managed-host-publish-e118ed134c6a5f618c6f61ba2f4e3f5f",
+      "schema": "managed-host-handle/v1",
+      "state": "running",
+      "task_id": "cdc352-source-writer-a1"
+    }
+  },
+  "ordered_reviews": {
+    "SPEC": {
+      "actual_FINAL_received": true,
+      "actual_collaboration_status": "completed",
+      "candidate": "31a9bcb95f60aee58f99a6ed709ed4c532601c3f",
+      "findings": [],
+      "frozen_private_commit": "77736870a2a1a309d6c9b55eeec30f9765019b8a",
+      "grant_commit": "6a0584e41173948a59e0b3c98880244ee79088cb",
+      "observed_at_utc": "2026-10-12T03:38:09.128827Z",
+      "operation_key": "sha256:17c02368ec93ca73409a73ec7043bcc2d26c1ebdc806b274173a91a6b6e01388",
+      "package_tree": "20db6b98c92916bd615dd55307492306b909e07c",
+      "parent": "f40cce887bd3775125eb1cf11ffaa86722eb123e",
+      "precise_completed_at_utc": null,
+      "precise_started_at_utc": null,
+      "raw_FINAL_path": "tools/source352-host/reviews/spec-a3-final.txt",
+      "raw_copy_encoding": "UTF8 transcript copy with trailing newline; not provider JSON serialization",
+      "raw_text_sha256": "25414af4555a072b9b07bf8951657430a7fd385d91d43367dd91573e16aee2b2",
+      "reservation_id": "cdc352-spec-a3",
+      "reviewer": "/root/cdc352_spec",
+      "role": "SPEC",
+      "root_tree": "f706914909e586659fa750b8e0521dc671dfcce5",
+      "schema": "cdc352-independent-review-receipt/v1",
+      "scope": "bounded actual hosted-CI correction followup; all prior reviews retain original exact provenance",
+      "source_base": "5181ceb82ae4011229c651430c0e06c5f171ffba",
+      "unresolved_critical": 0,
+      "unresolved_important": 0,
+      "verdict": "GREEN"
+    },
+    "immutable_source_ref": "git:bajoicheg/codex-compute@7dbb1056c817096b44ac7dbd88914eb8676bbb17:cdc352-ci-corrected-quality-review.json",
+    "open_findings": 0,
+    "subsequent_independent_QUALITY": {
+      "actual_FINAL_received": true,
+      "actual_collaboration_status": "completed",
+      "candidate": "31a9bcb95f60aee58f99a6ed709ed4c532601c3f",
+      "findings": [],
+      "frozen_private_commit": "77736870a2a1a309d6c9b55eeec30f9765019b8a",
+      "grant_commit": "da5e36e22ee3d9029c9e30d27f44631f2e3f2c28",
+      "observed_at_utc": "2026-10-12T03:42:45.300022Z",
+      "operation_key": "sha256:23bbf1f86a96f26855579880cf44dd50b2e4fcbc68e35ea0409c1599014a2513",
+      "package_tree": "20db6b98c92916bd615dd55307492306b909e07c",
+      "parent": "f40cce887bd3775125eb1cf11ffaa86722eb123e",
+      "precise_completed_at_utc": null,
+      "precise_started_at_utc": null,
+      "raw_FINAL_path": "tools/source352-host/reviews/quality-a2-final.txt",
+      "raw_copy_encoding": "UTF8 transcript copy with trailing newline; not provider JSON serialization",
+      "raw_text_sha256": "833890aecd55a9dd32c66bcb33ee01993595c42a1b3315405b83b0c67777f871",
+      "reservation_id": "cdc352-quality-a2",
+      "reviewer": "/root/cdc352_quality",
+      "role": "QUALITY",
+      "root_tree": "f706914909e586659fa750b8e0521dc671dfcce5",
+      "schema": "cdc352-independent-review-receipt/v1",
+      "scope": "distinct final QUALITY after actual corrected SPEC terminal",
+      "source_base": "5181ceb82ae4011229c651430c0e06c5f171ffba",
+      "unresolved_critical": 0,
+      "unresolved_important": 0,
+      "verdict": "GREEN"
+    }
+  },
+  "package_files": 427,
+  "package_identity_anchor_dependency": {
+    "commit": "a641b154ff9ed475303b0a0cb929dca1d01e0880",
+    "native_publication_proof": "git:bajoicheg/codex-compute@63cf1319b39b178412cc6a2bf627ad78e9f3b6b0:cdc352-ci-corrected-anchor-reachability.json",
+    "package_tree": "20db6b98c92916bd615dd55307492306b909e07c",
+    "ref": "refs/heads/cdc/3.5.2-ci-corrected-package-identity-anchor-20261012-work2334",
+    "role": "package identity only; distinct from frozen candidate, hosted CI head and resulting release commit"
+  },
+  "package_tree": "20db6b98c92916bd615dd55307492306b909e07c",
+  "personal_installation": "NOT_DONE_SEPARATE_PARENT_SCOPE",
+  "prior_failed_CI": {
+    "candidate": "f40cce887bd3775125eb1cf11ffaa86722eb123e",
+    "conclusion": "failure",
+    "reused_as_GREEN": false,
+    "run_id": 38198573266
+  },
+  "prior_scopes": "3.5.1_ROOT_ACCEPTED_TERMINAL",
+  "qualification_logs": {
+    "hosted_log_sha256": "3f7ec7eae9774c2dc0551f0fc2c537793e551127ce7e05aab4509d18ca436619",
+    "private_qualification_digest": "sha256:a19ffeda6db07919d041fc87a2e100b6761a8be154c6af1ef51978a38a788242",
+    "private_qualification_reference": "git:bajoicheg/codex-compute@7dbb1056c817096b44ac7dbd88914eb8676bbb17:cdc352-ci-corrected-readiness.json"
+  },
+  "release_commit": "31a9bcb95f60aee58f99a6ed709ed4c532601c3f",
+  "release_ref": "refs/heads/release/v3.5.2",
+  "reused_local_validation": {
+    "authenticated_supported_projection_manifest_sha256": "c06ebcfcfeab52883a5a1443d524192a86a1ca326d32e228fa923f0bada0b9e7",
+    "bootstrap_discovery": 51,
+    "candidate": "31a9bcb95f60aee58f99a6ed709ed4c532601c3f",
+    "local_FULL": 0,
+    "local_archive_qualification": 0,
+    "native_history_and_final_paths": 52,
+    "package_files": 427,
+    "package_tree": "20db6b98c92916bd615dd55307492306b909e07c",
+    "package_validator_required_files": 397,
+    "private_original_product_controls_published": false,
+    "private_qualification_digest": "sha256:a19ffeda6db07919d041fc87a2e100b6761a8be154c6af1ef51978a38a788242",
+    "private_qualification_reference": "git:bajoicheg/codex-compute@7dbb1056c817096b44ac7dbd88914eb8676bbb17:cdc352-ci-corrected-readiness.json",
+    "root_tree": "f706914909e586659fa750b8e0521dc671dfcce5",
+    "runtime_discovery": 1437,
+    "schema": "cdc-source-targeted-qualification/v1",
+    "structural_preflight": "GREEN",
+    "unchanged_released_driver": "3.5.1"
+  },
+  "root_tree": "f706914909e586659fa750b8e0521dc671dfcce5",
+  "scheduler_mutations": false,
+  "schedulers_paused": true,
+  "schema": "cdc-release-evidence/v1",
+  "source_base_commit": "5181ceb82ae4011229c651430c0e06c5f171ffba",
+  "source_main_at_release_preflight": "5181ceb82ae4011229c651430c0e06c5f171ffba",
+  "source_main_integration": "Separately proven by genuine managed finish conditional publisher and strict release receipt",
+  "source_remote_id": "sha256:dd313ce733052636056110bcc138394c4b3f2d13b67ef7d0ef3cfc2a690203ac",
+  "status": "released",
+  "version": "3.5.2"
+}
