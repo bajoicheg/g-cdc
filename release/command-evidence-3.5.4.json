@@ -1,0 +1,33 @@
+{
+  "RCA": [
+    {
+      "issue": "https://github.com/bajoicheg/g-cdc/issues/101",
+      "slice": "EFF raw terminal stdout/stderr/exit before interpretation",
+      "state": "OPEN"
+    },
+    {
+      "issue": "https://github.com/bajoicheg/g-cdc/issues/113",
+      "slice": "truthful negative closeout and bounded actual rejection payload",
+      "state": "OPEN"
+    }
+  ],
+  "authority_change": false,
+  "base": "5eaa4eb42bbb10822678f71f55d49c408c2eada8",
+  "legacy_records_retained": true,
+  "limits": [
+    "raw local evidence is not provider attestation",
+    "command terminal may be unavailable if storage itself fails",
+    "historical rejection payload already lost is not reconstructed",
+    "GS35 eight historical reservation-token roles remainPENDING; Security18FAILURE retained",
+    "unknown metric correction/systemic arbitrary host output enforcement remainOPEN"
+  ],
+  "log_projection": "stdout then stderr, no chronological claim",
+  "new_tests": "critical missing-raw,classifier-fault,interruption,tamper/downgrade,negativeCLI boundaries; no aggregate repetition",
+  "schema": "command-terminal-evidence-change/v1",
+  "scope": [
+    "run_checks raw separate stdout/stderr and actual exit before interpretation",
+    "validate_evidence checks terminal identity/stream hashes and projection; legacy retained",
+    "cdc closeout rejected authoritative result returns1; optional create-only saved full result and bounded refs"
+  ],
+  "version": "3.5.4"
+}

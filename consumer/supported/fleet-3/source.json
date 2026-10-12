@@ -1,7 +1,7 @@
 {
   "adapter_sha256": "b227bbfb567a1ff6072933f91f5afbec23517dc095236a8bd601985855155b68",
-  "candidate_package_tree": "4ef48adfa0c70dd886733e53ced2b0c65f5fe954",
-  "candidate_version": "3.5.3",
+  "candidate_package_tree": "fc56813da3e0d609672b312a2fce46fbac462ff1",
+  "candidate_version": "3.5.4",
   "checkpoint_sha256": "9308c0276f0e39347bd13b5109f67b369cb5f198067548f687a785809807ee72",
   "installed_package_tree": "f580a8946c0510540a4be3f4422ab3404875274b",
   "installed_version": "3.3.1",

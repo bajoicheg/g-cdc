@@ -1,4 +1,7 @@
 import copy
+import contextlib
+import io
+from unittest.mock import patch
 from datetime import datetime, timezone
 import importlib.util
 import json
@@ -145,6 +148,27 @@ class ResumeEntryTests(unittest.TestCase):
             parsed=json.loads(result.stdout);self.assertRegex(parsed['text'],r'^\[\d{2}:\d{2} \d{2}\.\d{2}\] Проверка')
             self.assertTrue(parsed['text'].endswith('(4 мин)'));self.assertNotIn('токен',parsed['text'])
             self.assertFalse(parsed['authorizes_anything'])
+
+    def test_closeout_negative_exit_preserves_exact_result_before_bounded_projection(self):
+        # Dispatch-only regression. terminal_bundle authentication is never mocked as native evidence.
+        negative={'schema':'execution-terminal-bundle/v1','accepted':False,'blockers':['actual-gate-rejected'], 'detail':'x'*20000}
+        with tempfile.TemporaryDirectory() as tmp:
+            request=Path(tmp)/'request.json';request.write_text('{}')
+            target=Path(tmp)/'actual-result.json';out=io.StringIO()
+            args=['closeout',str(request),'--repo',tmp,'--remote','origin','--coordination-ref','refs/heads/test']
+            with patch('execution_efficiency.terminal_bundle',return_value=negative),patch('git_lease_store.GitLeaseStore'),contextlib.redirect_stdout(out):
+                self.assertEqual(cdc.main(args),1)
+            self.assertEqual(json.loads(out.getvalue()),negative)
+            out=io.StringIO()
+            with patch('execution_efficiency.terminal_bundle',return_value=negative),patch('git_lease_store.GitLeaseStore'),contextlib.redirect_stdout(out):
+                self.assertEqual(cdc.main(args+['--result-path',str(target)]),1)
+            self.assertEqual(json.loads(target.read_text()),negative)
+            self.assertLess(len(out.getvalue().encode()),8192)
+            self.assertFalse(json.loads(out.getvalue())['accepted'])
+            saved=target.read_bytes()
+            with patch('execution_efficiency.terminal_bundle',return_value=dict(negative,accepted=True)),patch('git_lease_store.GitLeaseStore'),contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(cdc.main(args+['--result-path',str(target)]),2)
+            self.assertEqual(target.read_bytes(),saved)
 
     def test_cli_uses_its_runtime_clock_for_current_resume(self):
         with tempfile.TemporaryDirectory() as tmp:
