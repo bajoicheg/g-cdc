@@ -3,9 +3,9 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.5.3
+# Continuous Development Cycle v3.5.4
 
-This3.5.3 candidate retires nine repeated positive test methods and corrects
+This3.5.4 candidate retires nine repeated positive test methods and corrects
 the approved-exception diagnostic fixture under independently released3.5.2.
 Runtime scripts, supported version floor and safety contracts are unchanged.
 Existing strict administrative Actions UNKNOWN quarantine remains unchanged.
