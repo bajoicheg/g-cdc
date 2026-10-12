@@ -1,0 +1,361 @@
+{
+  "Source_scope_only": true,
+  "candidate_commit": "a3193693a1c8747ec8095b4b43c0385b62aa12dc",
+  "candidate_source_commit": "a3193693a1c8747ec8095b4b43c0385b62aa12dc",
+  "canonical_evidence_publication": {
+    "path": "release/evidence-3.5.4.json",
+    "ref": "refs/heads/cdc/release-evidence/v3.5.4"
+  },
+  "canonical_repository": "bajoicheg/g-cdc",
+  "ci": {
+    "actual_checkout_package_tree": "fc56813da3e0d609672b312a2fce46fbac462ff1",
+    "actual_checkout_parents": [
+      "5eaa4eb42bbb10822678f71f55d49c408c2eada8",
+      "a3193693a1c8747ec8095b4b43c0385b62aa12dc"
+    ],
+    "actual_checkout_root_tree": "4106aca758b7a9b60e06c9ae63503ac77ae6a3ae",
+    "actual_checkout_sha": "8c59c13ec30579e3500db83c7a4a8058c62c6e58",
+    "actual_job_elapsed_seconds": 561.0,
+    "all_configured_jobs_steps_successful": true,
+    "all_three_surfaces_complete": true,
+    "checkout_is_synthetic_merge": true,
+    "ci_success": true,
+    "configured_jobs": [
+      {
+        "check_run_url": "https://api.github.com/repos/bajoicheg/g-cdc/check-runs/114767163056",
+        "completed_at": "2026-10-12T10:33:59Z",
+        "conclusion": "success",
+        "created_at": "2026-10-12T10:24:36Z",
+        "head_branch": "cdc/3.5.4-command-terminal-evidence-20261012-work2334",
+        "head_sha": "a3193693a1c8747ec8095b4b43c0385b62aa12dc",
+        "html_url": "https://github.com/bajoicheg/g-cdc/actions/runs/38236136518/job/114767163056",
+        "id": 114767163056,
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "name": "Bootstrap + package + supported Fleet projections",
+        "node_id": "CR_kwDOUqlJvs8AAAAauKfusA",
+        "run_attempt": 1,
+        "run_id": 38236136518,
+        "run_url": "https://api.github.com/repos/bajoicheg/g-cdc/actions/runs/38236136518",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions",
+        "runner_id": 1000003479,
+        "runner_name": "GitHub Actions 1000003479",
+        "started_at": "2026-10-12T10:24:38Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completed_at": "2026-10-12T10:24:39Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "started_at": "2026-10-12T10:24:39Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T10:24:40Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "started_at": "2026-10-12T10:24:39Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T10:24:41Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-python@v5",
+            "number": 3,
+            "started_at": "2026-10-12T10:24:40Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T10:24:41Z",
+            "conclusion": "success",
+            "name": "Validate repository code and test placement",
+            "number": 4,
+            "started_at": "2026-10-12T10:24:41Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T10:24:42Z",
+            "conclusion": "success",
+            "name": "Independent bootstrap before candidate imports",
+            "number": 5,
+            "started_at": "2026-10-12T10:24:41Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T10:24:43Z",
+            "conclusion": "success",
+            "name": "Install validator dependency",
+            "number": 6,
+            "started_at": "2026-10-12T10:24:42Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T10:24:43Z",
+            "conclusion": "success",
+            "name": "Validate candidate package",
+            "number": 7,
+            "started_at": "2026-10-12T10:24:43Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T10:33:55Z",
+            "conclusion": "success",
+            "name": "Full candidate tests",
+            "number": 8,
+            "started_at": "2026-10-12T10:24:43Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T10:33:56Z",
+            "conclusion": "success",
+            "name": "Full bootstrap binding",
+            "number": 9,
+            "started_at": "2026-10-12T10:33:55Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T10:33:56Z",
+            "conclusion": "success",
+            "name": "Validate three supported Fleet projections",
+            "number": 10,
+            "started_at": "2026-10-12T10:33:56Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T10:33:56Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-python@v5",
+            "number": 19,
+            "started_at": "2026-10-12T10:33:56Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T10:33:56Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 20,
+            "started_at": "2026-10-12T10:33:56Z",
+            "status": "completed"
+          },
+          {
+            "completed_at": "2026-10-12T10:33:56Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 21,
+            "started_at": "2026-10-12T10:33:56Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://api.github.com/repos/bajoicheg/g-cdc/actions/jobs/114767163056",
+        "workflow_name": "CDC release / 38236136518 / 8c59c13ec30579e3500db83c7a4a8058c62c6e58"
+      }
+    ],
+    "exact_candidate_and_checkout_full_tree_equal": true,
+    "head_sha": "a3193693a1c8747ec8095b4b43c0385b62aa12dc",
+    "hosted_FULL": {
+      "seconds": 551.551,
+      "tests": 1432
+    },
+    "hosted_bootstrap": {
+      "seconds": 0.376,
+      "tests": 51
+    },
+    "job_id": 114767163056,
+    "legacy_status": {
+      "state": "pending",
+      "statuses": [],
+      "total_count": 0
+    },
+    "log_bytes": 327378,
+    "log_ref": "git:bajoicheg/codex-compute@e50caa6c41cfc68305743c7edef3ad214e137bc6:cdc354-ci-log-proof.json",
+    "log_sha256": "bddc48e2259fa56cebbee8accaa18073e476b8e4871773ecaacff96325576e60",
+    "observation_ref": "git:bajoicheg/codex-compute@e50caa6c41cfc68305743c7edef3ad214e137bc6:ci-observations-final-3.5.4.json",
+    "one_CI_one_PR": true,
+    "pr": 116,
+    "pr_url": "https://github.com/bajoicheg/g-cdc/pull/116",
+    "run_attempt": 1,
+    "run_id": 38236136518,
+    "run_url": "https://github.com/bajoicheg/g-cdc/actions/runs/38236136518",
+    "supported_consumers": {
+      "authorizes_adoption": false,
+      "authorizes_policy_write": false,
+      "consumers": [
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "candidate_version": "3.5.4",
+          "consumer": "fleet-1",
+          "installation_compatible": true,
+          "installed_version": "3.3.0",
+          "migration_changes": [],
+          "projection": true,
+          "qualification": "supported_projection_compatible",
+          "source_commit": "7a3699c9fb13eb28d12d8fca41f735be8ea33040"
+        },
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "candidate_version": "3.5.4",
+          "consumer": "fleet-2",
+          "installation_compatible": true,
+          "installed_version": "3.3.0",
+          "migration_changes": [],
+          "projection": true,
+          "qualification": "supported_projection_compatible",
+          "source_commit": "f2db9a73219668d2d3c3bb8e655e015e5e090e8f"
+        },
+        {
+          "authorizes_adoption": false,
+          "authorizes_policy_write": false,
+          "candidate_version": "3.5.4",
+          "consumer": "fleet-3",
+          "installation_compatible": true,
+          "installed_version": "3.3.1",
+          "migration_changes": [],
+          "projection": true,
+          "qualification": "supported_projection_compatible",
+          "source_commit": "6d65482be7045243501644807a54f6e5f6d6e9ce"
+        }
+      ],
+      "package_tree": "fc56813da3e0d609672b312a2fce46fbac462ff1",
+      "schema": "supported-consumer-qualification/v1",
+      "snapshots_unchanged": true
+    }
+  },
+  "command_terminal_change": {
+    "authority_gates_unchanged": true,
+    "base_methods": 1428,
+    "current_methods": 1432,
+    "meaningful_native_negative_closeout": {
+      "private_revision": "c6272646d1da9708c292d0d60fb76fe42f1cbfb4",
+      "proof": {
+        "FULL_orCI": 0,
+        "actual_blockers": [
+          "reporting_binding_rejected: stale RCA inventory; reconcile current admission",
+          "physical_absence_missing_or_stale:1500017",
+          "physical_absence_missing_or_stale:1500049",
+          "physical_absence_missing_or_stale:1500876",
+          "physical_absence_missing_or_stale:1499228"
+        ],
+        "at_utc": "2026-10-12T10:17:56.637920Z",
+        "baseline_actual_rejected_result_exit0": true,
+        "candidate_actual_rejected_result_exit1": true,
+        "closed_historical_release_receipt": {
+          "lease_revision": "a8d8e013d65a506e48455169e7dcb51e77ed9bb8",
+          "release": {
+            "at_utc": "2026-10-12T06:42:21.557703Z",
+            "checkpoint_ref": "git:bajoicheg/codex-compute@6de734dafeec39605313ea8424389d7e818459ec:testprune353-source-managed-finish-checkpoint.json",
+            "completion_reason": "scope_complete",
+            "external_reconciliation": "none",
+            "generation": 83,
+            "invocation_id": "managed-terminal:b50a2d69df7f4a8711ac51bc212f05fd3762382b1effba76299439a61bf59b50",
+            "owner_id": "765b45f5-2dc7-43c3-bf5d-89446629f674"
+          },
+          "schema": "execution-release-receipt/v1"
+        },
+        "fresh_clock_stale_original_physical_evidence": true,
+        "full_native_result_saved_before_projection": true,
+        "no_caller_label_authority_or_fabricated_provider_terminal": true,
+        "old_scope_effects_replayed": 0,
+        "original_historical_runtime_binding": {
+          "handle_id": "8d6d8e9e-e394-5ba3-a5a8-f1d53799c78d",
+          "handle_root": "/workspace/work/testprune353/handles"
+        },
+        "raw_private": "3b87e8928aeb9e4ba9ad3334a1b219c3b0724764",
+        "same_new_handle": {
+          "attempt_id": "source354-source-host-a1",
+          "generation": 84,
+          "handle_id": "2d136258-7f2a-5021-9559-89c752dc2ca3",
+          "invocation_id": "managed-terminal:12dce670589a6885793d41ab26b6847380bfc8c6a57ff5d4b7eba6819c964394",
+          "lease_revision": "d3adefa936ca63ad8cba11992f6a84db6dc9384c",
+          "owner_id": "b9b09d33-a118-4658-bde8-f41d5e4fd02b",
+          "publication_ref": "refs/heads/cdc/managed-host-publish-2d1362587f2a5021955989c752dc2ca3",
+          "schema": "managed-host-handle/v1",
+          "state": "running",
+          "task_id": "source354-source-writer-a1"
+        },
+        "schema": "genuine-native-negative-closeout-RED-GREEN/v1"
+      }
+    },
+    "new_critical_boundary_methods": 4,
+    "path": "release/command-evidence-3.5.4.json",
+    "remaining_RCA": "101/113 OPEN, historical lost rejection cause UNKNOWN, lean per-command wording explicitly DEFERRED_OPEN",
+    "runtime_scripts_changed": true
+  },
+  "development_driver": {
+    "all427blobs_and_modes_verified": true,
+    "evidence_commit": "d3c0b718b5c768dc006c0488660dc3e433b9d567",
+    "package_tree": "4ef48adfa0c70dd886733e53ced2b0c65f5fe954",
+    "release_commit": "5eaa4eb42bbb10822678f71f55d49c408c2eada8",
+    "version": "3.5.3"
+  },
+  "local_FULL": 0,
+  "local_consumer_installation_aggregate": 0,
+  "new_release_actor": {
+    "controller": {
+      "boot_id": "94c55839-3270-46c2-8f21-2961245d128d",
+      "input_max_bytes": 256,
+      "max_lifetime_seconds": 10800,
+      "namespace": "pid:[4026532200]",
+      "parent_pid": 1624837,
+      "pid": 1624838,
+      "proc_start_ticks": "17175177",
+      "role": "bounded CDC bounded command-evidence patch controller",
+      "started_at_utc": "2026-10-12T09:41:04.553287Z"
+    },
+    "handle": {
+      "attempt_id": "source354-source-host-a1",
+      "generation": 84,
+      "handle_id": "2d136258-7f2a-5021-9559-89c752dc2ca3",
+      "invocation_id": "managed-terminal:12dce670589a6885793d41ab26b6847380bfc8c6a57ff5d4b7eba6819c964394",
+      "lease_revision": "d3adefa936ca63ad8cba11992f6a84db6dc9384c",
+      "owner_id": "b9b09d33-a118-4658-bde8-f41d5e4fd02b",
+      "publication_ref": "refs/heads/cdc/managed-host-publish-2d1362587f2a5021955989c752dc2ca3",
+      "schema": "managed-host-handle/v1",
+      "state": "running",
+      "task_id": "source354-source-writer-a1"
+    }
+  },
+  "ordered_reviews": {
+    "QUALITY": {
+      "candidate": "a3193693a1c8747ec8095b4b43c0385b62aa12dc",
+      "frozen_private_commit": "8fcb15e060af3a409ff48651d2c271936739beb9",
+      "package_tree": "fc56813da3e0d609672b312a2fce46fbac462ff1",
+      "report_sha256": "b0b1eb1970498c3fbc622ed973e2f1e1ad4f110243fe8fe51db3e686df4f1f8f",
+      "reviewer": "/root/source354_quality",
+      "root_tree": "4106aca758b7a9b60e06c9ae63503ac77ae6a3ae",
+      "verdict": "GREEN"
+    },
+    "SPEC": {
+      "candidate": "a3193693a1c8747ec8095b4b43c0385b62aa12dc",
+      "frozen_private_commit": "8fcb15e060af3a409ff48651d2c271936739beb9",
+      "package_tree": "fc56813da3e0d609672b312a2fce46fbac462ff1",
+      "report_sha256": "c3fb604659172143cb24c208ae9be5a353975d4d54e754224530408055b1c340",
+      "reviewer": "/root/source354_spec",
+      "root_tree": "4106aca758b7a9b60e06c9ae63503ac77ae6a3ae",
+      "verdict": "GREEN"
+    }
+  },
+  "package_files": 427,
+  "package_identity_anchor_dependency": {
+    "commit": "69d4b5a2eb1c6798a85aa0e7c3eca1abfba236d3",
+    "package_tree": "fc56813da3e0d609672b312a2fce46fbac462ff1",
+    "ref": "refs/heads/cdc/3.5.4-package-identity-anchor-metadata-final-20261012-work2334",
+    "role": "separate create-only package anchor, not candidate/CI checkout/release"
+  },
+  "package_tree": "fc56813da3e0d609672b312a2fce46fbac462ff1",
+  "personal_installation": "Root separate acceptance",
+  "release_commit": "a3193693a1c8747ec8095b4b43c0385b62aa12dc",
+  "release_ref": "refs/heads/release/v3.5.4",
+  "root_tree": "4106aca758b7a9b60e06c9ae63503ac77ae6a3ae",
+  "schedulers_paused": true,
+  "schema": "cdc-release-evidence/v1",
+  "source_main_at_release_preflight": "5eaa4eb42bbb10822678f71f55d49c408c2eada8",
+  "source_main_integration": "Separately proven by genuine managed finish expected-head publisher and exact canonical release receipt",
+  "status": "released",
+  "version": "3.5.4"
+}
