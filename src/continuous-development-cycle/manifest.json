@@ -1,6 +1,6 @@
 {
   "name": "continuous-development-cycle",
-  "version": "3.5.2",
+  "version": "3.5.3",
   "schema": "continuous-development-cycle/v3",
   "entrypoint": "SKILL.md",
   "description": "Native owner reporting/RCA closeout, receiving CI admission and detached/completed-result phase separation."

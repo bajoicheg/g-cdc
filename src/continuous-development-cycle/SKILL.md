@@ -3,9 +3,9 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.5.2
+# Continuous Development Cycle v3.5.3
 
-This3.5.2 candidate adds native report/RCA closeout, receiving-CI admission and
+This3.5.3 candidate adds native report/RCA closeout, receiving-CI admission and
 detached/completed-result phase separation under released3.5.1.
 Existing strict administrative Actions UNKNOWN quarantine remains unchanged.
 Missing transport cancellation proof remains UNKNOWN; native evidence and CAS
