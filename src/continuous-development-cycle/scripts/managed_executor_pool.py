@@ -644,8 +644,10 @@ def _verify_writer_result_git(task, base_sha, result_commit, git_worktree):
         raise ValueError(f"cannot verify worker result git ancestry: {exc}") from exc
     if live_branch != result_commit:
         raise ValueError("worker result commit is not exact assigned branch head")
-    preview=preview_writer_result(task,base_sha,result_commit,git_worktree)
-    return preview['final_paths'],preview['touched_paths']
+    # Completed Git proof preserves its branch-only primitive contract. Scope is
+    # enforced by accept_result/_result; detached preview independently checks it.
+    return (_git_changed_paths(base_sha,result_commit,git_worktree),
+            _git_touched_paths(base_sha,result_commit,git_worktree))
 
 def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
                   executor_id, parent_invocation_id, integrator_id, branch, worktree,

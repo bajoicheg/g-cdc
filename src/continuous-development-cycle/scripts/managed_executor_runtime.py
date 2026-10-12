@@ -213,7 +213,7 @@ class LocalCommandBackend:
         end = time.monotonic() + 3
         while time.monotonic() < end:
             observation = self.observe(request)
-            if observation["status"] not in {"unknown","starting"}:
+            if observation["status"] != "unknown":
                 return observation
             if process.poll() is not None:
                 break
@@ -444,6 +444,14 @@ class ManagedExecutorRuntime:
 
     def terminal_capability(self,task_id,attempt_id,*,lease_repository,lease_source_ref,observed_at_utc=None):
         import managed_terminal_capability
+        # Ordinary start remains asynchronous so preparation may be cancelled.
+        # Only capability admission waits for the genuine worker birth; issuance
+        # still rejects missing births, terminal/unknown state and stale joins.
+        end=time.monotonic()+3
+        while time.monotonic()<end:
+            observation=self.observe(task_id,attempt_id)
+            if observation.get('status')!='starting':break
+            time.sleep(.01)
         return managed_terminal_capability.issue(
             self,task_id,attempt_id,lease_repository=lease_repository,lease_source_ref=lease_source_ref,
             observed_at_utc=observed_at_utc)

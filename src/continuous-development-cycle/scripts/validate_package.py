@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 import sys
+import tempfile
 
 sys.dont_write_bytecode = True
 from contracts import ContractError, load_yaml, semver, require_supported_runtime
@@ -49,7 +50,7 @@ from stuck_state import detect as detect_stuck
 from counterfactual_recovery import choose as choose_counterfactual
 from public_export_planner import plan as plan_public_export
 from dogfood_metrics import measure as measure_dogfood
-from package_transport import validate_manifest as validate_transport_manifest
+from package_transport import validate_manifest as validate_transport_manifest, verify_directory as verify_transport_directory
 from convergence_vector import normalize as normalize_convergence_vector
 from ci_evidence_classifier import classify as classify_ci_evidence
 from policy_migration import plan as plan_policy_migration
@@ -625,6 +626,10 @@ def validate():
     transport = validate_transport_manifest(json.loads((ROOT / 'templates/package-transport.json').read_text()))
     if transport['version'] != version:
         raise ContractError('invalid package transport template version')
+    with tempfile.TemporaryDirectory() as carrier:
+        Path(carrier,'VERSION').write_bytes((ROOT/'VERSION').read_bytes())
+        if not verify_transport_directory(transport,carrier)['content_verified']:
+            raise ContractError('invalid package transport template VERSION bytes')
     vector = normalize_convergence_vector(json.loads((ROOT / 'templates/convergence-observation.json').read_text()))
     if not vector['integrated'] or vector['adoption_state'] != 'integrated' or vector['blockers']:
         raise ContractError('invalid convergence vector template')
