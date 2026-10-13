@@ -152,7 +152,14 @@ No arbitrary baseline argument or registration fallback exists. The registered
 Source SHA and immutable owner authorization already pin the checkpoint that
 selects the original identity and revision. Informational `lease_baseline_revision`
 and `lease_release_revision` identify the authenticated interval and actual
-release. They remain serialized observations, not capabilities. Actual managed
+release. They remain serialized observations, not capabilities. Every released snapshot and same-owner interval edge uses the native transition
+contract, including unchanged invocation metadata. Ownership changes preserve the
+exact prior guard, terminal observation, consumed claims, resolutions, retirements,
+migration and last release. A claim-null owned guard clears only through its exact
+persisted native terminal reconciliation. Current clean state cannot replace a
+missing historical reconciliation. Canonical historical retirement appends are
+compared to the native pure projection with the exact original revision; they
+retain UNKNOWN and never reconstruct an extinct or current capability. Actual managed
 ownership/start, CAS, reporting and terminal gates are unchanged.
 A released checkpoint may retain runnable next actions and may name an older
 authentic released generation while the current generation is released. An

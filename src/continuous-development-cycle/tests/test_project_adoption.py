@@ -19,7 +19,7 @@ import execution_lease as legacy_lease
 import execution_lease_v2 as lease
 import operation_intent as operation
 from git_document_store import GitDocumentStore
-from git_lease_store import GitLeaseStore
+from git_lease_store import GitLeaseStore, validate_coordination_transition
 from git_remote_identity import remote_identity
 from live_target import GitSource
 from project_budget_store import GitProjectBudgetStore, ledger_digest
@@ -303,6 +303,116 @@ class ProjectAdoptionTests(unittest.TestCase):
                 self.publish_control(lease.release(ready,ready['owner_id'],ready['generation'],
                                                    ready['invocation']['invocation_id'],'2026-10-13T10:10:00Z'))
                 with self.assertRaisesRegex(ValueError,'ownership generation|owner UUID'): self.observe()
+
+    def guarded_later_generation(self, *, claimed=False, backend='local_command', mode='read_only'):
+        owned=copy.deepcopy(self.owned); owned.update(generation=2,last_release=self.released['last_release'],
+                                                    owner_id='33333333-3333-4333-8333-333333333333')
+        owned['invocation']['invocation_id']='managed-terminal:later-guarded'
+        self.publish_control(owned)
+        intent=operation.prepare({'repository':'fixture/product','candidate_sha':'a'*40,
+            'backend':backend,'mode':mode,'environment_id':'fixture',
+            'check_suite_fingerprint':'sha256:'+'b'*64,'environment_fingerprint':'sha256:'+'c'*64,
+            'check_plan_digest':'sha256:'+'d'*64},'guarded-later-attempt',SOURCE,'2026-10-13T10:00:02Z')
+        receipt=operation.verify_readback(intent,copy.deepcopy(intent),'fixture:intent-readback','2026-10-13T10:00:03Z')
+        intent=operation.transition(intent,'submitting','2026-10-13T10:00:03Z',receipt=receipt)
+        guarded=lease.set_guard(owned,owned['owner_id'],2,owned['invocation']['invocation_id'],
+                                '2026-10-13T10:00:03Z',intent,'fixture:intent')
+        revision=self.publish_control(guarded)
+        if claimed:
+            result=lease.claim_submission(self.lease_store,revision,'fixture/product',SOURCE,
+                owned['owner_id'],2,owned['invocation']['invocation_id'],'2026-10-13T10:00:04Z',
+                intent_digest=guarded['external_guard']['intent_digest'])
+            self.control_head=result['revision']; guarded=self.lease_store.read()[1]
+        intent=operation.transition(intent,'unknown','2026-10-13T10:00:05Z')
+        guarded=lease.set_guard(guarded,owned['owner_id'],2,owned['invocation']['invocation_id'],
+                                '2026-10-13T10:00:05Z',intent,'fixture:intent-unknown')
+        self.publish_control(guarded)
+        return guarded,intent
+
+    def close_later(self, owned, reconciliation):
+        ready=copy.deepcopy(owned); ready['finalization']=copy.deepcopy(self.ready['finalization'])
+        ready['finalization']['external_reconciliation']=reconciliation
+        revision=self.publish_control(ready)
+        released=lease.release(ready,ready['owner_id'],ready['generation'],ready['invocation']['invocation_id'],
+                               '2026-10-13T10:00:07Z')
+        self.control_head=self.lease_store.compare_and_swap(revision,released)
+        return released
+
+    def test_interval_rejects_unknown_guard_erasure_on_released_same_owner_or_acquire_edge(self):
+        for edge in ('released','same_owner','new_generation'):
+            with self.subTest(edge=edge):
+                self.setUp(); guarded,_=self.guarded_later_generation(claimed=edge=='same_owner')
+                if edge=='same_owner':
+                    changed=copy.deepcopy(guarded); changed['external_guard']=None
+                    self.publish_control(changed); self.close_later(changed,'none')
+                else:
+                    released=self.close_later(guarded,'unknown_preserved')
+                    if edge=='released':
+                        changed=copy.deepcopy(released); changed['external_guard']=None
+                        with self.assertRaises(ValueError):validate_coordination_transition(released,changed)
+                        self.publish_control(changed)
+                    else:
+                        changed=copy.deepcopy(self.owned)
+                        changed.update(owner_id='44444444-4444-4444-8444-444444444444',generation=3,
+                                       last_release=released['last_release'])
+                        changed['invocation']['invocation_id']='managed-terminal:guard-erasing-owner'
+                        self.publish_control(changed); self.close_later(changed,'none')
+                with self.assertRaises(ValueError): self.observe()
+
+    def test_selected_released_snapshot_cannot_hide_sealed_state_mutation(self):
+        changed=copy.deepcopy(self.released); changed['activity_refs'].append('fixture:unrecorded-mutation')
+        snapshot=self.publish_control(changed)
+        self.checkpoint['control']['execution_lease_revision']=snapshot; self.refresh_authorization()
+        with self.assertRaisesRegex(ValueError,'sealed'): self.observe()
+
+    def test_canonical_owned_terminal_resolution_remains_eligible(self):
+        for claimed in (False,True):
+            with self.subTest(claimed=claimed):
+                self.setUp(); self.canonical_owned_terminal_resolution(claimed)
+
+    def canonical_owned_terminal_resolution(self, claimed):
+        guarded,intent=self.guarded_later_generation(claimed=claimed)
+        observation={'schema':'operation-observation/v1','operation_key':intent['operation_key'],
+            'observed_at_utc':'2026-10-13T10:00:06Z','lookup_complete':True,'tasks':[{
+                'task_id':'fixture-task','task_url':'https://example.invalid/task','operation_key':intent['operation_key'],
+                'attempt_id':intent['attempt_id'],'binding':copy.deepcopy(intent['binding']),
+                'state':'terminal','conclusion':'succeeded','evidence_refs':['fixture:terminal-evidence']}]}
+        cleared=lease.clear_guard(guarded,guarded['owner_id'],2,guarded['invocation']['invocation_id'],
+                                 '2026-10-13T10:00:06Z',observation,'fixture:terminal-evidence')
+        revision=self.control_head; self.control_head=self.lease_store.compare_and_swap(revision,cleared)
+        self.close_later(cleared,'none')
+        proof=self.observe(); self.revalidate(proof)
+        self.assertEqual(proof.payload['lease_release']['generation'],1)
+        self.assertEqual(len(self.lease_store.read()[1]['submission_resolutions']),int(claimed))
+
+    def test_historical_retirement_preserves_unknown_without_current_capability(self):
+        from submission_retirement import retire_unknown_guard
+        import project_adoption
+        guarded,intent=self.guarded_later_generation(claimed=True,backend='git-conditional-create',mode='retained_windows_exe')
+        released=self.close_later(guarded,'unknown_preserved'); revision=self.control_head
+        at='2026-10-13T10:00:08Z'
+        proof={'schema':'unknown-submission-retirement/v1','lease_revision':revision,
+            'lease_digest':operation._hash(released),'guard_digest':operation._hash(released['external_guard']),
+            'repository':'fixture/product','source_ref':SOURCE,'observed_at_utc':at,
+            'owner_decision':{'action':'retire_unknown_without_replay','reference':'git:'+'1'*40},
+            'effect':{'backend':'git-conditional-create','target_ref':'refs/heads/pilot/original',
+                'candidate_sha':intent['binding']['candidate_sha'],'expected_target':None,'receive_pack_calls':1,
+                'subprocess_returned':True,'caller_reference':'git:'+'2'*40,'caller_digest':'sha256:'+'3'*64,
+                'observation_reference':'git:'+'4'*40},
+            'runtime':{'invocation_id':guarded['invocation']['invocation_id'],'owner_id':guarded['owner_id'],
+                'generation':2,'status':'stopped','quiescent':True,'pending_shared_writes':False,
+                'observed_at_utc':at,'reference':'git:'+'5'*40}}
+        retired=retire_unknown_guard(released,proof,'git:'+'6'*40,at)
+        self.control_head=self.lease_store.compare_and_swap(revision,retired)
+        observed=self.observe(); self.revalidate(observed)
+        self.assertFalse(observed.payload['authorizes_launch'])
+        self.assertEqual(retired['submission_retirements'][0]['outcome'],'UNKNOWN')
+        self.assertEqual(retired['submission_claims'],released['submission_claims'])
+        changed=copy.deepcopy(retired); changed['submission_retirements'][0]['proof']['lease_revision']='0'*40
+        with self.assertRaisesRegex(ValueError,'exact original revision'):
+            project_adoption._history_transition(released,changed,revision)
+        changed=copy.deepcopy(retired); changed['activity_refs'].append('unrelated:mutation')
+        with self.assertRaises(ValueError):project_adoption._history_transition(released,changed,revision)
 
     def test_deleted_downgraded_or_substituted_native_history_cannot_be_restored(self):
         for mutation in ('delete','downgrade','identity','rewind'):

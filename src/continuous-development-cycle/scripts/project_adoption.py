@@ -57,6 +57,45 @@ def _authority(document, path):
         raise ValueError('registered authorization path is absent') from None
 
 
+def _history_transition(previous, record, expected_revision):
+    """Check documentary edges without issuing historical/current capabilities."""
+    ownership_changed = record['owner_id'] is not None and (
+        record['owner_id'] != previous['owner_id'] or record['generation'] != previous['generation'])
+    if ownership_changed:
+        # Native acquire carries every prior effect and consumed submission. The
+        # historical row is not an extinct physical capability or a new grant.
+        old = _optional_history_fields(previous); new = _optional_history_fields(record)
+        for field in ('schema', 'repository', 'source_ref', 'external_guard', 'last_terminal',
+                      'last_release', 'submission_claims', 'submission_resolutions',
+                      'submission_retirements', 'legacy_migration'):
+            _equal(new[field], old[field], 'ownership transition altered protected ' + field)
+        return
+    retirements = record.get('submission_retirements', [])[len(previous.get('submission_retirements', [])):]
+    if retirements:
+        if len(retirements) != 1 or retirements[0]['proof']['lease_revision'] != expected_revision:
+            raise ValueError('historical retirement must bind exact original revision')
+        entry = retirements[0]
+        if entry['schema'] == 'source-publication-quarantine/v1':
+            from source_publication_quarantine import quarantine_source_guard as transition
+        elif entry['schema'] == 'actions-submission-retirement/v1':
+            from submission_retirement import retire_actions_unknown_guard as transition
+        else:
+            from submission_retirement import retire_unknown_guard as transition
+        expected = transition(previous, entry['proof'], entry['evidence_reference'], entry['retired_at_utc'])
+        _equal(record, expected, 'historical retirement contains noncanonical mutation')
+        return
+    validate_coordination_transition(previous, record, expected_revision=expected_revision)
+    if previous['external_guard'] is not None and record['external_guard'] is None:
+        # The current validator already authenticates claimed resolutions.
+        # Claim-null owned guards also need their exact canonical terminal edge.
+        terminal = record.get('last_terminal')
+        if previous['owner_id'] is not None and previous['external_guard']['submission_claim'] is None:
+            if not isinstance(terminal, dict): raise ValueError('guard clearing requires canonical terminal evidence')
+            expected = native_lease.clear_guard(previous, previous['owner_id'], previous['generation'],
+                previous['invocation']['invocation_id'], terminal['at_utc'], terminal['observation'], terminal['evidence_reference'])
+            _equal(record, expected, 'guard clearing is not canonical terminal reconciliation')
+
+
 def _lease_history(store, current, registration, original_revision):
     """Authenticate the Source-selected original interval, never older authority."""
     if store._git('rev-parse', '--is-shallow-repository') != 'false':
@@ -101,7 +140,7 @@ def _lease_history(store, current, registration, original_revision):
                     if (record['owner_id'] != release['owner_id'] or record.get('invocation') is None
                             or record['invocation']['invocation_id'] != release['invocation_id']):
                         raise ValueError('selected original release identity differs')
-                    validate_coordination_transition(record, following, expected_revision=revision)
+                    _history_transition(record, following, revision)
                     baseline = index
                     break
                 _equal(record['last_release'], release, 'selected original release was substituted')
@@ -129,8 +168,8 @@ def _lease_history(store, current, registration, original_revision):
             for field in ('submission_claims', 'submission_resolutions', 'submission_retirements'):
                 old = previous.get(field, []); new = record.get(field, [])
                 _equal(new[:len(old)], old, 'lease history was rewritten')
+            _history_transition(previous, record, parents[revision][0])
             if previous['owner_id'] is not None and record['owner_id'] is None:
-                validate_coordination_transition(previous, record, expected_revision=parents[revision][0])
                 release = record['last_release']
                 key = (release['owner_id'], release['generation'], release['invocation_id'])
                 if key in releases: raise ValueError('duplicate original invocation closure')
@@ -143,8 +182,6 @@ def _lease_history(store, current, registration, original_revision):
                 _equal([record['owner_id'], [record['invocation'][key] for key in keys]],
                        [previous['owner_id'], [previous['invocation'][key] for key in keys]],
                        'owned generation identity changed')
-                if record['invocation'] != previous['invocation']:
-                    validate_coordination_transition(previous, record, expected_revision=parents[revision][0])
         records[revision] = record; previous = record
     return records, releases, revisions[baseline]
 
