@@ -1,0 +1,12 @@
+{
+  "schema": "cloud-entry-inputs-template/v1",
+  "configuration_status": "UNCONFIGURED",
+  "input_schema": "cloud-entry-inputs/v1",
+  "required_snapshots": [
+    "context",
+    "probe",
+    "registry",
+    "routing_policy",
+    "routing_context"
+  ]
+}
