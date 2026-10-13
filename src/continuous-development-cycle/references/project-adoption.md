@@ -70,6 +70,13 @@ The owner wake reference must also match the trusted original budget binding's
 `wake_authorizations`; it must describe genuinely new owner-authorized activity.
 No fallback wake or replacement task is permitted when a quota is denied.
 
+The original budget may occupy a separately registered coordination ref or
+endpoint, including a `document.json` top-level `budget` field. The complete
+binding digest pins that original endpoint, ref, path, field, task, anchor and
+wake authorizations in both registration and immutable Root authorization. It
+must retain the registered project repository and Source ref; matching a ledger
+or changing the lease ref cannot authorize a substituted budget channel.
+
 The factory authenticates the authorization revision as an ancestor of the
 actual native `GitDocumentStore` channel. Every subsequent revision must retain
 the exact authorization object. Unrelated Root document updates are supported;
@@ -120,16 +127,27 @@ host/testing use; callers cannot provide a different clock at revalidation.
 Source adapter and checkpoint are read at the registered live SHA and validated
 with native CDC 3.6 contracts. Repository, Source branch, policy, lease endpoint,
 lease ref, checkpoint original budget ref, and final platform must agree. The
-full canonical single-parent lease history must retain bindings, generations,
-claims, resolutions and retirements. A genuine v2 owner-to-release edge is
-validated through the native transactional release contract.
+complete, nonshallow lease history must reach a canonical released generation
+zero initialization. Source ancestors without `lease.json`, including Source
+merges, may precede that boundary. After initialization, missing or malformed
+lease entries, merges, generation rewind, schema downgrade, and changed bindings
+fail closed. Claims, resolutions and retirements must retain their prefixes.
+An original v1 initialization and exact native v1-to-v2 migration are supported;
+legacy releases and migration markers do not supply v2 invocation closures.
+A genuine v2 owner-to-release edge is validated through the native transactional
+release contract. Native conversation or automation metadata registration is
+supported within an owned generation while its owner, invocation identifier,
+execution surface and start time remain unchanged.
 
 A released checkpoint may retain runnable next actions and may name an older
 authentic released generation while the current generation is released. An
 active checkpoint projection is supported only when its original lease revision,
-executor, generation and invocation match a genuine release of that same current
-generation. Its active compute identifier must be the native managed-host form
-or the native empty/`none` sentinel. Current ownership, guard, unresolved Source
+executor, generation and invocation match a genuine release of that original
+generation. A later authentic read-only generation may have completed; the
+current lease must still be released, unguarded and at least as recent as the
+original generation. The original checkpoint's active fields, budget charges
+and remaining product work stay unchanged. Its active compute identifier must
+be the native managed-host form or the native empty/`none` sentinel. Current ownership, guard, unresolved Source
 operation pointers, wait, CI run, or unknown compute state blocks adoption.
 The factory preserves the checkpoint verbatim; it writes no synthetic closure.
 
@@ -144,7 +162,9 @@ provider permission, a product writer permission, or a launch capability.
 ## Validation
 
 The isolated bare-Git tests exercise authentic typed channels, released runnable
-work, exact stale active projections, older historical releases, source/ref/task/
+work, prelease Source ancestry, native v1 migration, independently registered
+budget channels, native invocation metadata registration, exact stale active
+projections across later releases, older historical releases, source/ref/task/
 policy substitutions, guarded/live leases, fabricated release edges, immutable
 authority history, endpoint drift, budget drift, expiry, and payload seals:
 

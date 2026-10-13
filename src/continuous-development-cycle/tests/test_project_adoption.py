@@ -15,6 +15,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
 import budget
+import execution_lease as legacy_lease
 import execution_lease_v2 as lease
 import operation_intent as operation
 from git_document_store import GitDocumentStore
@@ -60,22 +61,37 @@ class ProjectAdoptionTests(unittest.TestCase):
                     'at_utc': '2026-10-13T10:00:00Z', 'operation_key': 'sha256:' + hashlib.sha256(kind.encode()).hexdigest(),
                     'attempt_id': kind + '-a1', 'kind': kind, 'scope': 'original-product-task',
                     'recovery_ref': None, 'cost': {'tool_calls': 1, 'tokens': None, 'elapsed_seconds': None}})
-        self.initial = lease.initialize('fixture/product', SOURCE)
+        if getattr(self, 'fixture_prelease', False):
+            (self.repo/'product.txt').write_text('original Source');self.git(self.repo,'add','.');self.git(self.repo,'commit','-m','Source before coordination')
+            self.git(self.repo,'checkout','-b','source-side');(self.repo/'side.txt').write_text('Source branch');self.git(self.repo,'add','.');self.git(self.repo,'commit','-m','Source side ancestry')
+            self.git(self.repo,'checkout','-b','source-primary','HEAD~1');(self.repo/'primary.txt').write_text('Source primary');self.git(self.repo,'add','.');self.git(self.repo,'commit','-m','Source primary ancestry')
+            self.git(self.repo,'merge','--no-ff','source-side','-m','Source merge before native initialization')
+        self.initial = (legacy_lease if getattr(self, 'fixture_legacy', False) else lease).initialize('fixture/product', SOURCE)
         self.anchor = self.publish_control(self.initial)
+        if getattr(self, 'fixture_legacy', False):
+            old=legacy_lease.acquire(self.initial,OWNER,'2026-10-13T09:00:00Z');self.publish_control(old)
+            old=legacy_lease.release(old,OWNER,1,'2026-10-13T09:05:00Z');self.legacy_release_revision=self.publish_control(old)
+            self.initial=lease.migrate_v1(old,'2026-10-13T09:10:00Z');self.migration_revision=self.publish_control(self.initial)
+        generation=self.initial['generation']+1
         self.owned = copy.deepcopy(self.initial)
-        self.owned.update(owner_id=OWNER, generation=1, acquired_at_utc='2026-10-13T10:00:01Z',
+        self.owned.update(owner_id=OWNER, generation=generation, acquired_at_utc='2026-10-13T10:00:01Z',
                           heartbeat_at_utc='2026-10-13T10:00:01Z', expires_at_utc='2026-10-13T10:20:01Z',
-                          invocation={'invocation_id': INVOCATION, 'automation_id': None, 'conversation_id': 'fixture',
+                          invocation={'invocation_id': INVOCATION, 'automation_id': None, 'conversation_id': None if getattr(self,'fixture_metadata',False) else 'fixture',
                                       'execution_surface': 'managed', 'started_at_utc': '2026-10-13T10:00:00Z'},
                           finalization={'state': 'active', 'pending_shared_writes': False, 'checkpoint_ref': None,
                                         'external_reconciliation': 'pending', 'completion_reason': None,
                                         'updated_at_utc': '2026-10-13T10:00:01Z', 'failure': None})
         lease.validate(self.owned); self.owned_revision = self.publish_control(self.owned)
+        if getattr(self,'fixture_metadata',False):
+            registered=copy.deepcopy(self.owned);registered['invocation']['conversation_id']='native-registration'
+            native=GitLeaseStore(self.repo,'coordination',CONTROL)
+            self.control_head=native.compare_and_swap(self.owned_revision,registered)
+            self.owned=registered
         self.ready = copy.deepcopy(self.owned)
         self.ready['finalization'].update(state='ready', external_reconciliation='none',
                                          checkpoint_ref='fixture:original-release-checkpoint', completion_reason='scope_complete')
         lease.validate(self.ready); self.publish_control(self.ready)
-        self.released = lease.release(self.ready, OWNER, 1, INVOCATION, '2026-10-13T10:00:05Z')
+        self.released = lease.release(self.ready, OWNER, generation, INVOCATION, '2026-10-13T10:00:05Z')
         self.release_revision = self.publish_control(self.released)
         self.adapter = yaml.safe_load((ROOT / 'templates/development-cycle.yaml').read_text())
         self.adapter['repository'].update(name='product', remote='fixture/product')
@@ -89,18 +105,28 @@ class ProjectAdoptionTests(unittest.TestCase):
                                current_task='Complete Windows acceptance', blocker='Windows manual acceptance pending',
                                next_action='Run the original Windows acceptance kit', active_compute='none')
         self.checkpoint['control'].update(execution_lease_ref=CONTROL, execution_lease_revision=self.release_revision,
-                                          lease_generation=1, budget_ref='https://github.com/fixture/product/blob/cdc/coordination/budget.json')
+                                          lease_generation=generation, budget_ref='https://github.com/fixture/product/blob/cdc/coordination/budget.json')
         self.checkpoint['execution_continuity'].update(runnable_next_action=True, meaningful_progress=True,
                                                       completion_gate='continue', last_progress_ref='fixture:remaining-product-work')
+        budget_ref=CONTROL;budget_endpoint=self.endpoint;budget_path='budget.json';budget_field=None;budget_remote='coordination'
+        if getattr(self,'fixture_document_budget',False):
+            budget_ref='refs/heads/cdc/original-operation';budget_path='document.json';budget_field='budget';budget_remote='budget'
+            target=self.bare
+            if getattr(self,'fixture_budget_endpoint',False):
+                target=self.root/'original-budget.git';self.git(self.root,'init','--bare',str(target))
+            self.git(self.repo,'remote','add',budget_remote,str(target));budget_endpoint=remote_identity(self.repo,budget_remote)
+            self.budget_document=GitDocumentStore(self.repo,budget_remote,budget_ref,budget_endpoint,protected_refs=[SOURCE,CONTROL])
+            self.anchor=self.budget_document.compare_and_swap(None,{'budget':self.ledger,'original_work':'Windows remains pending'})
+            self.checkpoint['control']['budget_ref']=budget_ref+'#budget'
         self.source_sha = self.publish_source()
         self.budget_binding = {'schema': 'project-budget-binding/v1', 'repository': 'fixture/product',
-                               'source_ref': SOURCE, 'coordination_ref': CONTROL, 'coordination_store_id': self.endpoint,
-                               'ledger_path': 'budget.json', 'budget_field': None, 'task_id': self.ledger['task_id'],
+                               'source_ref': SOURCE, 'coordination_ref': budget_ref, 'coordination_store_id': budget_endpoint,
+                               'ledger_path': budget_path, 'budget_field': budget_field, 'task_id': self.ledger['task_id'],
                                'anchor_revision': self.anchor, 'anchor_ledger_digest': ledger_digest(self.ledger),
                                'wake_authorizations': {'connection-wake': 'owner:fixture-new-connection'}}
         self.source = GitSource(self.repo, 'source', self.endpoint, clock=lambda: self.now)
         self.lease_store = GitLeaseStore(self.repo, 'coordination', CONTROL)
-        self.budget_store = GitProjectBudgetStore(self.repo, 'coordination', self.budget_binding, protected_refs=[SOURCE])
+        self.budget_store = GitProjectBudgetStore(self.repo, budget_remote, self.budget_binding, protected_refs=[SOURCE])
         self.authority_store = GitDocumentStore(self.repo, 'authority', AUTHORITY, self.endpoint, protected_refs=[SOURCE, CONTROL])
         self.authorization = self.authorization_record()
         self.auth_revision = self.authority_store.compare_and_swap(None, {'project_adoption_authorizations': {'product': self.authorization}})
@@ -163,6 +189,123 @@ class ProjectAdoptionTests(unittest.TestCase):
 
     def revalidate(self, proof):
         return proof.revalidate_for(self.source, self.lease_store, self.budget_store, self.authority_store, self.registration)
+
+    def test_prelease_source_ancestry_and_merges_precede_native_boundary(self):
+        self.fixture_prelease=True;self.setUp();proof=self.observe()
+        self.assertEqual(self.revalidate(proof)['lease_release']['invocation_id'],INVOCATION)
+        self.assertFalse(proof.payload['authorizes_launch'])
+    def test_legacy_initialization_and_exact_migration_retain_native_v2_closure(self):
+        self.fixture_prelease=True;self.fixture_legacy=True;self.setUp();proof=self.observe()
+        self.assertEqual(proof.payload['lease_release']['generation'],2)
+        self.checkpoint['control'].update(execution_lease_revision=self.legacy_release_revision,lease_generation=1)
+        self.refresh_authorization()
+        with self.assertRaises(ValueError):self.observe()
+    def test_independently_registered_document_budget_on_distinct_channel(self):
+        for split_endpoint in (False,True):
+            with self.subTest(split_endpoint=split_endpoint):
+                self.fixture_document_budget=True;self.fixture_budget_endpoint=split_endpoint;self.fixture_charged=True;self.setUp()
+                before=self.budget_document.read();proof=self.observe();self.revalidate(proof)
+                self.assertNotEqual(self.budget_binding['coordination_ref'],self.registration['lease_ref'])
+                self.assertEqual(proof.payload['budget_summary']['active_agents'],1)
+                self.assertEqual(proof.payload['budget_summary']['task']['ci_starts'],1)
+                self.assertEqual(self.budget_document.read(),before)
+    def test_native_post_acquisition_conversation_registration_is_supported(self):
+        self.fixture_document_budget=True;self.fixture_metadata=True;self.setUp();proof=self.observe()
+        self.assertEqual(proof.payload['lease_release']['invocation_id'],INVOCATION)
+        self.assertFalse(self.revalidate(proof)['authorizes_launch'])
+
+    def test_deleted_downgraded_or_substituted_native_history_cannot_be_restored(self):
+        for mutation in ('delete','downgrade','identity','rewind'):
+            with self.subTest(mutation=mutation):
+                self.setUp();self.git(self.repo,'reset','--hard',self.control_head)
+                if mutation=='delete':
+                    self.git(self.repo,'rm','lease.json');self.git(self.repo,'commit','-m','Missing native lease')
+                    self.control_head=self.git(self.repo,'rev-parse','HEAD')
+                    self.git(self.repo,'push','coordination','HEAD:'+CONTROL)
+                else:
+                    changed=copy.deepcopy(self.released)
+                    if mutation=='downgrade':
+                        changed=legacy_lease.acquire(legacy_lease.initialize('fixture/product',SOURCE),OWNER,'2026-10-13T10:00:01Z')
+                        changed=legacy_lease.release(changed,OWNER,1,'2026-10-13T10:00:05Z')
+                    elif mutation=='identity':changed['repository']='fixture/substituted'
+                    else:changed['generation']=0;changed['last_release']=None
+                    self.publish_control(changed)
+                self.publish_control(self.released)
+                with self.assertRaisesRegex(ValueError,'deleted|downgraded|binding|rewound'):self.observe()
+
+    def test_native_initialization_cannot_be_truncated_to_owned_or_released_generation(self):
+        for owned in (True,False):
+            with self.subTest(owned=owned):
+                self.setUp();revision=self.publish_control(self.owned if owned else self.released)
+                tree=self.git(self.repo,'rev-parse',revision+'^{tree}')
+                root=self.git(self.repo,'commit-tree',tree,'-m','Truncated native ancestry')
+                if owned:
+                    tree=self.git(self.repo,'rev-parse',self.release_revision+'^{tree}')
+                    root=self.git(self.repo,'commit-tree',tree,'-p',root,'-m','Closure after truncated native ancestry')
+                self.git(self.repo,'push','--force','coordination',root+':'+CONTROL)
+                with self.assertRaisesRegex(ValueError,'canonical released generation zero'):self.observe()
+
+    def test_merges_after_native_initialization_fail_even_when_record_unchanged(self):
+        self.git(self.repo,'checkout','-b','native-side',self.control_head)
+        (self.repo/'side.txt').write_text('side');self.git(self.repo,'add','.');self.git(self.repo,'commit','-m','Native side')
+        self.git(self.repo,'checkout','-b','native-primary',self.control_head)
+        (self.repo/'primary.txt').write_text('primary');self.git(self.repo,'add','.');self.git(self.repo,'commit','-m','Native primary')
+        self.git(self.repo,'merge','--no-ff','native-side','-m','Ambiguous native merge')
+        self.control_head=self.git(self.repo,'rev-parse','HEAD');self.git(self.repo,'push','coordination','HEAD:'+CONTROL)
+        with self.assertRaisesRegex(ValueError,'merged lease'):self.observe()
+
+    def test_shallow_native_history_cannot_supply_an_initialization_boundary(self):
+        shallow=self.root/'shallow'
+        self.git(self.root,'clone','--depth','1','--branch',CONTROL.removeprefix('refs/heads/'),self.bare.as_uri(),str(shallow))
+        self.assertEqual(self.git(shallow,'rev-parse','--is-shallow-repository'),'true')
+        candidate=GitLeaseStore(shallow,'origin',CONTROL)
+        with self.assertRaisesRegex(ValueError,'lease history is shallow'):self.observe(lease_store=candidate)
+
+    def test_metadata_registration_does_not_permit_owned_invocation_identity_substitution(self):
+        for field,value in (('invocation_id','managed-terminal:substitute'),('execution_surface','chat'),
+                            ('started_at_utc','2026-10-13T10:00:00.500000Z')):
+            with self.subTest(field=field):
+                self.fixture_document_budget=True;self.setUp()
+                # Append genuine Git ancestry with a new owned generation and an
+                # identity rewrite that generic native metadata CAS accepts.
+                owned=copy.deepcopy(self.owned);owned['generation']=2;owned['last_release']=self.released['last_release']
+                owned['owner_id']='33333333-3333-4333-8333-333333333333'
+                first=self.publish_control(owned);changed=copy.deepcopy(owned);changed['invocation'][field]=value
+                self.control_head=self.lease_store.compare_and_swap(first,changed)
+                changed['finalization']=copy.deepcopy(self.ready['finalization']);self.publish_control(changed)
+                self.publish_control(lease.release(changed,changed['owner_id'],2,changed['invocation']['invocation_id'],'2026-10-13T10:10:00Z'))
+                with self.assertRaisesRegex(ValueError,'owned generation identity'):self.observe()
+
+    def test_separate_budget_channel_cannot_borrow_root_registration(self):
+        self.fixture_document_budget=True;self.fixture_budget_endpoint=True;self.setUp()
+        for field in ('coordination_ref','coordination_store_id','task_id'):
+            with self.subTest(field=field):
+                changed=copy.deepcopy(self.budget_binding)
+                changed['coordination_ref']='refs/heads/cdc/foreign-'+field
+                ledger=copy.deepcopy(self.ledger);remote='budget'
+                if field=='coordination_store_id':remote='coordination';changed[field]=self.endpoint
+                if field=='task_id':
+                    ledger=budget.new_ledger('replacement-task','old-wake',self.ledger['policy'])
+                    changed[field]=ledger['task_id']
+                document=GitDocumentStore(self.repo,remote,changed['coordination_ref'],changed['coordination_store_id'],protected_refs=[SOURCE,CONTROL])
+                changed['anchor_revision']=document.compare_and_swap(None,{'budget':ledger})
+                changed['anchor_ledger_digest']=ledger_digest(ledger)
+                # Each substitute is a genuine independently readable native
+                # channel; the original Root registration still rejects it.
+                candidate=GitProjectBudgetStore(self.repo,remote,changed,protected_refs=[SOURCE])
+                with self.assertRaisesRegex(ValueError,'original budget binding'):self.observe(budget_store=candidate)
+    def test_stale_active_original_checkpoint_survives_later_native_readonly_release(self):
+        self.checkpoint.update(lease_state='active',active_executor=OWNER,executor_heartbeat_at_utc='2026-10-13T10:00:01Z',execution_lease_until_utc='2026-10-13T10:20:01Z',active_compute='managed-host:22222222-2222-5222-8222-222222222222')
+        self.checkpoint['control'].update(executor_id=OWNER,execution_lease_revision=self.owned_revision)
+        self.checkpoint['execution_continuity']['invocation_id']=INVOCATION;self.refresh_authorization()
+        original=copy.deepcopy(self.checkpoint);self.observe()
+        later=copy.deepcopy(self.owned);later.update(owner_id='33333333-3333-4333-8333-333333333333',generation=2,last_release=self.released['last_release'])
+        later['invocation']['invocation_id']='managed-terminal:later-readonly';later['finalization']=copy.deepcopy(self.ready['finalization']);self.publish_control(later)
+        closed=lease.release(later,later['owner_id'],2,later['invocation']['invocation_id'],'2026-10-13T10:10:00Z');self.publish_control(closed)
+        proof=self.observe();value=self.revalidate(proof)
+        self.assertEqual(value['checkpoint'],original);self.assertEqual(value['lease_release']['generation'],1)
+        self.assertEqual(value['remaining_work'],['Original Windows acceptance remains pending'])
+        self.assertFalse(value['authorizes_product_acceptance'])
 
     def test_released_runnable_preserves_product_work_and_windows_gate(self):
         proof = self.observe(); value = self.revalidate(proof)

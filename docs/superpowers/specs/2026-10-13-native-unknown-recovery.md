@@ -124,6 +124,14 @@ Sentinel absence is interpreted only according to the native checkpoint schema.
 Pending guards, unresolved intents, foreign ownership, substituted channels,
 unproved policy authority and changed Source block adoption.
 
+After an independently closed read-only sidecar creates a later generation,
+the unchanged stale Source projection may still name its original genuine v2
+release. Authenticate that exact older owner, generation, invocation and
+checkpoint lease revision, retain its Source fields, and require all later
+canonical history to be authentic with current released/unguarded ownership.
+Do not rewrite the checkpoint or require a product Source write for read-only
+backend use. An active current generation still blocks adoption.
+
 The observation is not a terminal proof, lease grant or provider launch
 capability. It permits the host to evaluate a zero-model, zero-CI, read-only
 Linux sidecar against the original task budget; actual reservations/start still

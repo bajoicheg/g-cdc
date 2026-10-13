@@ -13,6 +13,8 @@ import json
 import re
 
 import budget
+import execution_lease as legacy_lease
+import execution_lease_v2 as native_lease
 from git_document_store import GitDocumentStore
 from git_lease_store import GitLeaseStore, validate_coordination_transition
 from git_remote_identity import remote_identity
@@ -57,20 +59,50 @@ def _authority(document, path):
 
 
 def _lease_history(store, current, registration):
+    if store._git('rev-parse', '--is-shallow-repository') != 'false':
+        raise ValueError('lease history is shallow')
     revisions = store._git('rev-list', '--first-parent', current).splitlines()
     if not revisions or len(revisions) > 10000: raise ValueError('lease history is incomplete or unbounded')
     previous = None; records = {}; releases = {}
     for revision in reversed(revisions):
         parents = store._git('rev-list', '--parents', '-n', '1', revision).split()
+        # Source ancestry can precede native initialization, including merges.
+        # Only actual absence is Source history; malformed lease entries fail.
+        entry = store._git('ls-tree', '--full-tree', '-z', revision, '--', 'lease.json', raw=True)
+        if not entry:
+            if previous is not None: raise ValueError('native lease was deleted from history')
+            continue
         if len(parents) > 2: raise ValueError('merged lease history is ambiguous')
         record = store._read_record(revision)
         _equal([record['repository'], record['source_ref']],
                [registration['repository'], registration['source_ref']], 'historical lease binding differs')
-        if previous is not None:
+        if previous is None:
+            initializer = native_lease if record['schema'] == 'execution-lease/v2' else legacy_lease
+            _equal(_optional_history_fields(record),
+                   _optional_history_fields(initializer.initialize(record['repository'], record['source_ref'])),
+                   'native lease history must begin at canonical released generation zero')
+        else:
             if record['generation'] < previous['generation']: raise ValueError('lease generation rewound')
             for field in ('submission_claims', 'submission_resolutions', 'submission_retirements'):
                 old = previous.get(field, []); new = record.get(field, [])
                 _equal(new[:len(old)], old, 'lease history was rewritten')
+            if previous['schema'] == 'execution-lease/v2' and record['schema'] != previous['schema']:
+                raise ValueError('native lease schema downgraded')
+            if previous['schema'] == 'execution-lease/v1' and record['schema'] == 'execution-lease/v2':
+                migration = record.get('legacy_migration')
+                if not isinstance(migration, dict): raise ValueError('native migration marker is absent')
+                _equal(_optional_history_fields(record), _optional_history_fields(
+                    native_lease.migrate_v1(previous, migration['migrated_at_utc'])),
+                    'native lease migration is not canonical')
+            elif record['schema'] == previous['schema'] == 'execution-lease/v1':
+                if previous['owner_id'] is not None and record['owner_id'] is None:
+                    _equal(record, legacy_lease.release(previous, previous['owner_id'], previous['generation'],
+                                                       record['last_release']['at_utc']),
+                           'legacy release is not canonical')
+                elif record['last_release'] != previous['last_release']:
+                    raise ValueError('legacy release was substituted')
+                if record['generation'] == previous['generation'] and record['owner_id'] is not None:
+                    _equal(record['owner_id'], previous['owner_id'], 'legacy owned generation identity changed')
             if record.get('schema') == previous.get('schema') == 'execution-lease/v2':
                 if previous['owner_id'] is not None and record['owner_id'] is None:
                     validate_coordination_transition(previous, record, expected_revision=parents[1])
@@ -81,10 +113,24 @@ def _lease_history(store, current, registration):
                     raise ValueError('historical release was substituted')
                 if (previous['owner_id'] is not None and record['owner_id'] is not None
                         and record['generation'] == previous['generation']):
-                    _equal([record['owner_id'], record['invocation']], [previous['owner_id'], previous['invocation']],
+                    keys = ('invocation_id', 'execution_surface', 'started_at_utc')
+                    _equal([record['owner_id'], [record['invocation'][key] for key in keys]],
+                           [previous['owner_id'], [previous['invocation'][key] for key in keys]],
                            'owned generation identity changed')
+                    if record['invocation'] != previous['invocation']:
+                        validate_coordination_transition(previous, record, expected_revision=parents[1])
         records[revision] = record; previous = record
+    if previous is None: raise ValueError('native lease initialization is absent')
     return records, releases
+
+
+def _optional_history_fields(record):
+    """Compare native optional empty fields without inventing historical edges."""
+    result = copy.deepcopy(record)
+    if result['schema'] == 'execution-lease/v2':
+        result.setdefault('submission_resolutions', [])
+        result.setdefault('submission_retirements', [])
+    return result
 
 
 def _collect(source, lease_store, budget_store, policy_authority_store, registration):
@@ -108,8 +154,9 @@ def _collect(source, lease_store, budget_store, policy_authority_store, registra
            [r['authority_store_id'], r['authority_ref']], 'policy authority channel differs')
     b = copy.deepcopy(budget_store.binding)
     _equal(_digest(b), r['budget_binding_digest'], 'original budget binding differs')
-    _equal([b['repository'], b['source_ref'], b['coordination_ref'], b['coordination_store_id']],
-           [r['repository'], r['source_ref'], r['lease_ref'], r['lease_store_id']], 'budget channel is foreign')
+    # The full binding digest pins the independently registered budget endpoint,
+    # ref, path/field, task and anchor. Its channel need not be the lease channel.
+    _equal([b['repository'], b['source_ref']], [r['repository'], r['source_ref']], 'budget channel is foreign')
     auth_document = policy_authority_store.read_revision(r['authority_revision'])
     a = copy.deepcopy(_authority(auth_document, r['authority_path']))
     if not isinstance(a, dict) or set(a) != _AUTHORIZATION: raise ValueError('invalid native owner authorization fields')
@@ -168,13 +215,14 @@ def _collect(source, lease_store, budget_store, policy_authority_store, registra
     original = records[original_revision]
     generation = control.get('lease_generation')
     _equal(original['generation'], generation, 'checkpoint generation differs from original revision')
+    if current['generation'] < generation: raise ValueError('current lease precedes original checkpoint generation')
     classification = 'released_projection'; matched_release = None
     if checkpoint['lease_state'] == 'active':
         classification = 'stale_active_projection'
         owner = control.get('executor_id'); invocation = checkpoint['execution_continuity']['invocation_id']
-        _equal([original['owner_id'], checkpoint['active_executor'], current['generation']],
-               [owner, owner, generation], 'stale active checkpoint owner or generation differs')
-        if original.get('invocation', {}).get('invocation_id') != invocation: raise ValueError('stale invocation differs')
+        _equal([original['owner_id'], checkpoint['active_executor']],
+               [owner, owner], 'stale active checkpoint owner differs')
+        if (original.get('invocation') or {}).get('invocation_id') != invocation: raise ValueError('stale invocation differs')
         matched_release = releases.get((owner, generation, invocation))
         if matched_release is None: raise ValueError('stale active checkpoint has no genuine original release')
         active = checkpoint.get('active_compute')
@@ -183,11 +231,11 @@ def _collect(source, lease_store, budget_store, policy_authority_store, registra
     elif checkpoint['lease_state'] == 'released':
         if checkpoint.get('active_compute') not in ('', 'none'): raise ValueError('released checkpoint has unresolved compute')
         if original.get('owner_id') is not None:
-            invocation = original.get('invocation', {}).get('invocation_id')
+            invocation = (original.get('invocation') or {}).get('invocation_id')
             matched_release = releases.get((original['owner_id'], generation, invocation))
         else:
             release = original.get('last_release')
-            if release: matched_release = releases.get((release['owner_id'], generation, release['invocation_id']))
+            if release: matched_release = releases.get((release['owner_id'], generation, release.get('invocation_id')))
         if generation and matched_release is None: raise ValueError('released checkpoint lacks authentic historical closure')
         if matched_release:
             for retained, expected in [(control.get('executor_id'), matched_release['release']['owner_id']),
