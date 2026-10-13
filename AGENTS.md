@@ -17,3 +17,15 @@ record actual returns and birth-bound physical closure. Root owns personal save.
 Every substantive Russian report reads fresh clock: Moscow [HH:MM DD.MM].
 RCA101/113 remain OPEN without actual behavioral verification. Historical prior
 instructions are preserved byte-exact in docs/history/agents-through-3.5.3.md.
+
+# Current owner-authorized native UNKNOWN recovery — 2026-10-13
+
+The explicit owner request to extend standard UNKNOWN recovery, qualify/install
+it and finish CDC VPS readiness supersedes the PAUSED command-evidence task
+scope above. Preserve that history. Develop CDC3.6.0 under independently released
+3.5.4 sourcea3193693a1c8747ec8095b4b43c0385b62aa12dc/packagefc56813da3e0d609672b312a2fce46fbac462ff1.
+Read docs/superpowers/specs/2026-10-13-native-unknown-recovery.md and matching plan.
+Use ordered genuine independent SPEC→QUALITY, one exact hosted FULL and native
+release/effect controls. No local FULL, original UNKNOWN replay, invented facts,
+charge reset, private public-export records or unrelated product/scheduler writes.
+Root owns rollout authority, source/release publication and personal installation.
