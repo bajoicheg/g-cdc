@@ -71,12 +71,14 @@ while time.monotonic()<end:
 s['worker_status']='succeeded';result,_,_=b._result(s,rt)
 binding={'repository':s['lease_repository'],'candidate_sha':result,'backend':'local_command','mode':'writer','environment_id':'fixture','check_suite_fingerprint':'sha256:'+'1'*64,'environment_fingerprint':'sha256:'+'2'*64,'check_plan_digest':'sha256:'+'3'*64}
 i=op.prepare(binding,'original-source',s['lease_source_ref'],b._utc());rec=op.verify_readback(i,copy.deepcopy(i),'fixture:durable',b._utc());i=op.transition(i,'submitting',b._utc(),receipt=rec)
-rev,row=store.read();row=l.set_guard(row,s['owner_id'],s['generation'],s['invocation_id'],b._utc(),i,'fixture:durable');rev=store.compare_and_swap(rev,row)
 actual=GitLaneIntegrationPublisher._push_cas
 def lost(self,*args):actual(self,*args);raise SystemExit('transport reply lost')
 GitLaneIntegrationPublisher._push_cas=lost
 try:b._publish(s,result)
 except SystemExit:pass
+# The send was admitted while unguarded. Its lost reply is then durably
+# preserved, as an old submitted journal may already be under an UNKNOWN guard.
+rev,row=store.read();row=l.set_guard(row,s['owner_id'],s['generation'],s['invocation_id'],b._utc(),i,'fixture:durable');rev=store.compare_and_swap(rev,row)
 s.update(result_commit=result,publication=None,state='published');b._save_session(s)
 rev,row=store.read();owner=(s['owner_id'],s['generation'],s['invocation_id']);cp='fixture:checkpoint'
 row=l.begin_finalization(row,*owner,b._utc(),pending_shared_writes=False);rev=store.compare_and_swap(rev,row)

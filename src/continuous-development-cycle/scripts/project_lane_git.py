@@ -276,7 +276,22 @@ class GitLaneIntegrationPublisher(GitLaneResultVerifier):
             if active['status']!='running' or active['active_attempt_id']!=session['attempt_id'] or active['reservation_token']!=session['reservation_token']:raise ValueError('native publication requires exact current running pool authority')
             observation=runtime.observe(session['task_id'],session['attempt_id'])
             if observation['status']!='awaiting_release' or observation.get('pending_terminal_status')!='succeeded':raise ValueError('native publication requires successful worker held by original controller')
+            self._check_product_write()
         return canonical
+
+    def _check_product_write(self):
+        """Fresh native admission; journal clocks cannot renew or waive it."""
+        import managed_host_bridge as bridge
+        import execution_lease_v2 as lease
+        import operation_intent as op
+        op._object(self.native_handle,{'handle_root','handle_id'},'original native publication handle custody')
+        session=bridge._load_session(self.native_handle['handle_root'],self.native_handle['handle_id'])
+        _,record=bridge._lease_store(session).read()
+        if (record is None or record['repository']!=session['lease_repository']
+                or record['source_ref']!=session['lease_source_ref'] or self.source_ref!=session['lease_source_ref']):
+            raise ValueError('native publication exact canonical source lease binding changed')
+        lease.check_record(record,session['owner_id'],session['generation'],session['invocation_id'],
+                           bridge._utc(),action='product_write')
 
     def publication_binding(self):
         return {
@@ -447,6 +462,9 @@ class GitLaneIntegrationPublisher(GitLaneResultVerifier):
                 current["submitted_at_utc"] = self.clock()
             if target in {"confirmed", "rejected", "aborted"}:
                 current["resolved_at_utc"] = self.clock()
+            if target == "submitted":
+                # Recheck after journal reads and on every CAS contention retry.
+                self._check_product_write()
             try:
                 self.attempt_store.compare_and_swap(revision, changed)
                 return copy.deepcopy(current)
@@ -475,6 +493,9 @@ class GitLaneIntegrationPublisher(GitLaneResultVerifier):
     def _push_cas(self, observed, intended):
         config, alias = isolated_remote_args(self.repo, self.remote, self.remote_id)
         env = git_object_environment(GIT_TERMINAL_PROMPT="0")
+        # A denial after submitted consumption leaves that original marker
+        # unresolved. It never grants a transport retry or confirmation.
+        self._check_product_write()
         try:
             result = subprocess.run(
                 ["git", "-C", str(self.repo), *config, "-c", "push.followTags=false",

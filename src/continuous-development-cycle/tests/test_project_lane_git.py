@@ -147,6 +147,87 @@ class NativePublicationTests(unittest.TestCase):
     def publisher(self,cls=None,**kwargs):
         return (cls or project_lane_git.GitLaneIntegrationPublisher)(self.f.repo,'origin','refs/heads/main',self.f.store_id,attempt_store=self.store,quarantine_store=self.f.lease_store,native_handle={'handle_root':str(self.f.root/'handles'),'handle_id':self.handle['handle_id']},**kwargs)
     def publish(self,publisher):return publisher(self.item,self.integrator,self.intent)
+
+    def install_guard(self):
+        import copy,managed_host_bridge as bridge,execution_lease_v2 as lease,operation_intent as op
+        binding={'repository':self.session['lease_repository'],'candidate_sha':self.result,
+                 'backend':'local_command','mode':'writer','environment_id':'fixture',
+                 'check_suite_fingerprint':'sha256:'+'1'*64,'environment_fingerprint':'sha256:'+'2'*64,
+                 'check_plan_digest':'sha256:'+'3'*64}
+        intent=op.prepare(binding,'guarded-publication',self.session['lease_source_ref'],bridge._utc())
+        receipt=op.verify_readback(intent,copy.deepcopy(intent),'fixture:guard-readback',bridge._utc())
+        intent=op.transition(intent,'submitting',bridge._utc(),receipt=receipt)
+        intent=op.transition(intent,'unknown',bridge._utc())
+        revision,row=self.f.lease_store.read()
+        guarded=lease.set_guard(row,self.session['owner_id'],self.session['generation'],self.session['invocation_id'],bridge._utc(),intent,'fixture:guard-readback')
+        self.f.lease_store.compare_and_swap(revision,guarded)
+
+    def expire_ownership(self):
+        from datetime import datetime,timezone
+        now=datetime.now(timezone.utc);revision,row=self.f.lease_store.read()
+        row['expires_at_utc']=now.isoformat().replace('+00:00','Z')
+        self.f.lease_store.compare_and_swap(revision,row)
+
+    def test_native_guard_blocks_direct_product_publication(self):
+        self.install_guard()
+        with self.assertRaisesRegex(ValueError,'unresolved external guard'):self.publish(self.publisher())
+        self.assertEqual(self.f.remote_head(),self.f.base);self.assertIsNone(self.store.read()[0])
+
+    def test_native_expired_ttl_cannot_use_backdated_publisher_clock(self):
+        self.expire_ownership()
+        with self.assertRaisesRegex(ValueError,'ownership is not fresh'):
+            self.publish(self.publisher(clock=lambda:'2000-01-01T00:00:00Z'))
+        self.assertEqual(self.f.remote_head(),self.f.base);self.assertIsNone(self.store.read()[0])
+
+    def test_native_stale_heartbeat_blocks_direct_product_publication(self):
+        from datetime import datetime,timedelta,timezone
+        import managed_host_bridge as bridge
+        # Advance the native clock beyond its heartbeat gate without changing
+        # the issued invocation/acquisition or waiting ten real minutes.
+        at=(datetime.now(timezone.utc)+timedelta(seconds=601)).isoformat().replace('+00:00','Z')
+        with mock.patch.object(bridge,'_utc',return_value=at):
+            with self.assertRaisesRegex(ValueError,'ownership is not fresh'):self.publish(self.publisher())
+        self.assertEqual(self.f.remote_head(),self.f.base);self.assertIsNone(self.store.read()[0])
+
+    def test_guard_racing_submitted_consumption_leaves_prepared_unsent(self):
+        fixture=self
+        class BeforeConsumption(project_lane_git.GitLaneIntegrationPublisher):
+            def _transition_attempt(inner,item,intent,target,allowed):
+                if target=='submitted':fixture.install_guard()
+                return super()._transition_attempt(item,intent,target,allowed)
+        publisher=self.publisher(BeforeConsumption)
+        with self.assertRaisesRegex(ValueError,'unresolved external guard'):self.publish(publisher)
+        self.assertEqual(publisher.publication_attempt(self.intent['operation_id'])['status'],'prepared')
+        self.assertEqual(self.f.remote_head(),self.f.base)
+
+    def test_postsubmitted_guard_denial_stays_unresolved_and_never_replays(self):
+        fixture=self
+        class AfterConsumption(project_lane_git.GitLaneIntegrationPublisher):
+            def _transition_attempt(inner,item,intent,target,allowed):
+                result=super()._transition_attempt(item,intent,target,allowed)
+                if target=='submitted':fixture.install_guard()
+                return result
+        publisher=self.publisher(AfterConsumption)
+        with self.assertRaisesRegex(ValueError,'unresolved external guard'):self.publish(publisher)
+        self.assertEqual(self.f.remote_head(),self.f.base)
+        self.assertEqual(publisher.publication_attempt(self.intent['operation_id'])['status'],'submitted')
+        original=self.store.read()
+        with self.assertRaises(ValueError):self.publish(self.publisher())
+        self.assertEqual(self.store.read(),original)
+        self.f.git('push','origin',self.result+':refs/heads/main')
+        evidence=self.publish(self.publisher())
+        self.assertFalse(evidence['conditional_update']);self.assertEqual(evidence['publication_attempt_state'],'submitted')
+        self.assertEqual(self.store.read(),original)
+
+    def test_guard_appearing_inside_transport_boundary_cannot_send(self):
+        fixture=self
+        class BeforeTransport(project_lane_git.GitLaneIntegrationPublisher):
+            def _push_cas(inner,*args):fixture.install_guard();return super()._push_cas(*args)
+        publisher=self.publisher(BeforeTransport)
+        with self.assertRaisesRegex(ValueError,'unresolved external guard'):self.publish(publisher)
+        self.assertEqual(publisher.publication_attempt(self.intent['operation_id'])['status'],'submitted')
+        self.assertEqual(self.f.remote_head(),self.f.base)
+
     def test_integration_publisher_performs_exact_head_conditional_fast_forward(self):
         publisher=self.publisher();evidence=self.publish(publisher)
         self.assertTrue(evidence['conditional_update']);self.assertEqual(self.f.remote_head(),self.result)

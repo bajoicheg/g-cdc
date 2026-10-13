@@ -144,7 +144,16 @@ the original native session; the result must be the actual clean writer result.
 Transport additionally requires actual current caller birth/boot, exact active
 original lease and running pool authority, a successful original worker held for
 release, and a fresh replay
-check immediately before the one-use submission CAS. The original controller
+check immediately before the one-use submission CAS. Publication must also pass
+native `execution_lease_v2.check_record(action='product_write')`
+with the actual native clock immediately before each SUBMITTED journal CAS and
+again immediately before transport. Exact owner, generation and invocation,
+active finalization, lease TTL, fresh observable heartbeat and absence of an
+external guard are required. The publisher's journal clock cannot waive these
+gates. A post-consumption denial leaves the original SUBMITTED marker unresolved;
+it sends nothing, fabricates no confirmation and cannot replay. Existing guarded
+SUBMITTED history remains observable through the original native custody.
+The original controller
 can send in its own exact birth. Supported same-handle native recovery may finish
 a never-submitted publication after the original PID is physically absent, using
 the existing genuine owned invocation and held supervisor. A live other caller,
