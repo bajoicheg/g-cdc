@@ -3,7 +3,7 @@ schema: development-work-status/v4
 repository: bajoicheg/g-cdc
 branch: cdc/vps-development
 policy_revision: '1'
-policy_digest: 370685279113ae64137f5b80f7455c898268cb863b264110c5c2ba7bd470f42f
+policy_digest: a622d202dc3a750f6b63b6f2f36172f5b1de70b1f725e5dd1695c5dd6db577d1
 observed_at_utc: ''
 orchestration_origin: chat
 active_executor: none

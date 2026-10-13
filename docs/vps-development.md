@@ -12,8 +12,10 @@ Generated Cloud profiles remain UNCONFIGURED and grant no execution authority.
 The former unconfigured profile template is preserved byte-for-byte in
 `docs/history/vps-initial-cloud-profile.json`.
 
-The first code task supplies a portable task-contract builder and checks in
+The first code task supplies a JavaScript portable task-contract builder and Node test checks in
 `examples/vps_compute`. It does not change the runtime package or authorize
 Windows product acceptance. Before that task the generated example-test command
-is preparatory: the example directory does not exist yet. Setup validation uses
+is preparatory: the example directory does not exist yet. Python source placement remains unchanged; the example uses `.mjs` files.
+The registered final check is `diff-check`; the implementation and both independent
+reviews must also inspect actual successful Node test evidence. Setup validation uses
 the native adapter and checkpoint validators and Git whitespace checks.

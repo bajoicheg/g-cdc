@@ -22,8 +22,8 @@ checkpoint:
   schema: development-work-status/v4
 validation:
   quick: git diff --check
-  full: python -B -m unittest discover -s examples/vps_compute/tests -v
-  release: python -B bootstrap/validate_source_repository.py
+  full: /opt/cdc-tools/node-v24.21.0/bin/node --test examples/vps_compute/test-contract.mjs
+  release: /usr/bin/python3 -B bootstrap/validate_release.py --mode full
   final_platform: any
   final_remote_required: true
   evidence_schema: command-evidence/v1
