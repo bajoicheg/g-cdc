@@ -98,6 +98,34 @@ Path(sys.argv[4]).write_text(json.dumps({'handle':h,'release_receipt':receipt}))
         p_rev,doc=publication.read();operation,next_entry=next(iter(doc['attempts'].items()));rev,row=f.lease_store.read()
         pins={'lease_revision':rev,'lease_digest':op._hash(row),'original_lease_revision':rev,'handle_root':str(f.root/'handles'),'handle_id':session['handle_id'],'request_ref':native['request_ref'],'publication_revision':p_rev,'publication_digest':op._hash(next_entry),'operation_id':operation,'source_remote_id':f.store_id,'control_store_id':f.store_id,'owner_decision':{'action':'quarantine_source_unknown_without_replay','guard_digest':op._hash(row['external_guard']),'reference':'sha256:'+'5'*64},'publication_processes':[{'pid':99999993,'birth':'123','boot_id':native['boot_id']}]}
         return f,native,publication,pins
+    def test_missing_or_substituted_custody_never_sends(self):
+        from project_lane_git import GitLaneIntegrationPublisher
+        from git_document_store import GitDocumentStore
+        from git_lease_store import GitLeaseStore
+        from project_lanes import LaneClaim,LaneKind
+        f,native,publication,pins=self.native();candidate=publication.read()[1]['attempts'][pins['operation_id']]['result_commit']
+        f.git('push','origin',f.base+':refs/heads/alternate')
+        fresh=GitDocumentStore(f.repo,'origin','refs/heads/cdc/substitute-journal',f.store_id)
+        integrator=LaneClaim('integrator','invocation',LaneKind.INTEGRATOR,f.base,str(f.repo),'alternate',executor_id='integrator',role='integrator')
+        item={'lane_id':'new-lane','result_commit':candidate};intent=dict(item,operation_id='changed-key',observed_shared_head=f.base,intended_integrated_head=candidate)
+        for store in (None,GitLeaseStore(f.repo,'origin','refs/heads/cdc/substitute-lease')):
+            with self.subTest(omitted=store is None):
+                publisher=GitLaneIntegrationPublisher(f.repo,'origin','refs/heads/alternate',f.store_id,attempt_store=fresh,quarantine_store=store)
+                with self.assertRaises(ValueError):publisher(item,integrator,intent)
+                self.assertEqual(f.git('ls-remote','origin','refs/heads/alternate').split()[0],f.base)
+
+    def test_genuine_unicode_native_request_and_source_quarantine(self):
+        import managed_host_bridge as bridge
+        self.fixture.plan['tasks'][0]['worktree']='managed-worktrees/über-worker'
+        f,native,publication,pins=self.native()
+        from managed_executor_runtime import _digest
+        request=bridge._runtime(bridge._load_session(pins['handle_root'],pins['handle_id']))._request(native['task_id'],native['attempt_id'])
+        self.assertIn('über-worker',request['cwd'])
+        self.assertEqual(native['request_ref'],_digest(request));self.assertNotEqual(native['request_ref'],op._hash(request))
+        capability=SourceTests().api().authenticate_source_publication_quarantine(f.lease_store,terminal_proof=native,publication_store=publication,source_remote='origin',trusted_contract=pins,at=bridge._utc())
+        result=SourceTests().api().quarantine_source_publication_cas(f.lease_store,pins['lease_revision'],capability,'sha256:'+'6'*64,bridge._utc())
+        self.assertEqual(result['outcome'],'UNKNOWN')
+
     def test_real_native_claim_null_quarantine_and_lost_reply_observation(self):
         import managed_host_bridge as bridge
         m=SourceTests().api();f,native,publication,pins=self.native();at=bridge._utc()
@@ -123,19 +151,20 @@ Path(sys.argv[4]).write_text(json.dumps({'handle':h,'release_receipt':receipt}))
         at=bridge._utc()
         m.quarantine_source_publication_cas(f.lease_store,pins['lease_revision'],capability,'sha256:'+'6'*64,at)
         candidate=capability.proof['publication']['result_commit']
-        publisher=GitLaneIntegrationPublisher(f.repo,'origin','refs/heads/other',f.store_id,attempt_store=publication,quarantine_store=f.lease_store)
+        publisher=GitLaneIntegrationPublisher(f.repo,'origin','refs/heads/other',f.store_id,attempt_store=publication,quarantine_store=f.lease_store,native_handle={'handle_root':pins['handle_root'],'handle_id':pins['handle_id']})
         from project_lanes import LaneClaim,LaneKind
         integrator=LaneClaim('integrator','new-invocation',LaneKind.INTEGRATOR,f.base,str(f.repo),'main',executor_id='integrator',role='integrator')
         item={'lane_id':'new-lane','result_commit':candidate};intent={'operation_id':'new-id','lane_id':'new-lane','result_commit':candidate,'observed_shared_head':f.base,'intended_integrated_head':candidate}
         with self.assertRaisesRegex(ValueError,'quarantined'):publisher(item,integrator,intent)
-        # A distinct correction uses a new native durable attempt and real CAS.
-        f.git('checkout','-q','--detach',candidate);(f.repo/'docs/correction.txt').write_text('corrective candidate')
-        f.git('add','docs/correction.txt');f.git('commit','-qm','distinct correction');corrective=f.git('rev-parse','HEAD')
-        from git_document_store import GitDocumentStore
-        fresh=GitDocumentStore(f.repo,'origin','refs/heads/cdc/fresh-publication',f.store_id)
-        publisher=GitLaneIntegrationPublisher(f.repo,'origin','refs/heads/main',f.store_id,attempt_store=fresh,quarantine_store=f.lease_store)
-        item={'lane_id':'corrective-lane','result_commit':corrective};intent={'operation_id':'corrective-op','lane_id':'corrective-lane','result_commit':corrective,'observed_shared_head':candidate,'intended_integrated_head':corrective}
-        evidence=publisher(item,integrator,intent)
+        # A distinct corrective source uses a new genuinely issued native handle,
+        # fresh ownership, canonical journal and one-use expected-head publication.
+        request=f.start_request();plan=copy.deepcopy(request['plan'])
+        plan.update(pool_id='corrective-pool',coordination_ref='refs/heads/cdc/corrective-pool',base_sha=candidate)
+        plan['tasks'][0].update(id='corrective-task',branch='cdc/corrective-worker',worktree='managed-worktrees/corrective-worker')
+        request.update(owner_id='88888888-8888-4888-8888-888888888888',plan=plan,task_id='corrective-task',attempt_id='corrective-a1',reservation_token='corrective-reservation',argv=[sys.executable,'-c',"from pathlib import Path; import subprocess; Path('docs/correction.txt').write_text('corrective'); subprocess.run(['git','add','docs/correction.txt'],check=True); subprocess.run(['git','commit','-qm','distinct correction'],check=True)"])
+        newhandle=bridge.start(request);f.wait_for(newhandle,'awaiting_release')
+        session=bridge._load_session(request['handle_root'],newhandle['handle_id']);corrective,_,_=bridge._result(session,bridge._runtime(session))
+        self.assertNotEqual(corrective,candidate);evidence=bridge._publish(session,corrective)
         self.assertTrue(evidence['conditional_update']);self.assertEqual(f.remote_head(),corrective)
         self.assertEqual(f.lease_store.read()[1]['submission_retirements'][0]['outcome'],'UNKNOWN')
 

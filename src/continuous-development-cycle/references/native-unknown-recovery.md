@@ -49,15 +49,39 @@ remain readable; they cannot conceal consumed authority.
 `trusted_contract` is deployment configuration, obtained independently from the
 original protected channel. Required pins are `original_revision`, `row_digest`,
 `source_revision`, `source_digest`, `creator`, `guardian`, `guardian_nonce`,
-`pool_ref`, and `launch_roots`. Process identities contain `pid`, `birth`, and
-`boot_id`. The canonical source ref/repository and pool endpoint are joined to
-the original native request. Roots include the original journal and handle roots;
-SDK-derived task/attempt identities scope checks inside shared native roots.
-Also include the original protected controller and launch/output directories.
-Optional `artifact_pins` permits only named original static files. A pin can be a
-SHA-256 digest or `{sha256, uid, gid, mode}` for configured custody checks. Every
-other file or symlink in the protected scope blocks disposition. Live, reused,
-zombie, unprobeable, or wrong-boot process identities fail closed.
+`pool_ref`, `launch_roots`, and `custody`. Process identities contain `pid`,
+`birth`, and `boot_id`. `custody` contains deployment-owned `controller_root`,
+`worker_launch_root`, `controller_uid`, and `worker_gid`. The SDK derives the
+controller scope as `controller_root/task_id` and the worker scope as
+`worker_launch_root/executor/task_id`, using the original canonical row.
+`launch_roots` must contain exactly those two scopes plus the original request's
+journal and handle roots. Their exact paths, ownership and write permissions are
+checked; every entry in the controller/worker scopes is inspected recursively.
+The controller group comes from the independently pinned original guardian lock;
+the worker scope uses configured `worker_gid`.
+
+`artifact_pins` names only pre-effect static custody and always uses
+`{sha256, uid, gid, mode}`. Original `guardian.lock`, `record.json`, and
+`registered-record.json` are required and individually pinned. The guardian lock
+must be empty. Registered launch data must match the exact original task,
+executor and native task digest; preparation data must match task ID and original
+source SHA/ref. A prepared checkout, if present, must be clean, detached at the
+original source SHA with no remotes; every existing file is pinned. Committed
+source blobs are compared directly, independently of index cache or
+`assume-unchanged` flags. Only committed files and recognized Git preparation
+metadata paths are static; extra files or directories cannot be pinned away. Git
+inspection disables optional writes, fsmonitor commands and hooks. These checks
+never authorize original task replay.
+
+Native session, gate, lock and task/attempt journal paths must be absent even if
+listed in pins. Their directories, including empty directories, and symlinks also
+block disposition. The worker output directory must be empty and cannot be
+whitelisted. Unknown controller/worker entries, special files, mutable static
+custody or altered pin ownership block disposition. Live, reused, zombie,
+unprobeable, or wrong-boot process identities fail closed. Native start-request
+and runtime-journal hashes use the issuing runtime's original ASCII JSON encoding;
+bridge handle UUID and operation/capability encodings retain their own original
+canonical encodings. Stored legacy digests are never rewritten.
 
 The replay key retains all task fields except `id` and `dependencies`, so changing
 IDs, attempts, dispatch routing, or dependency names cannot replay the same
@@ -105,10 +129,31 @@ never proves the old CAS. Observation time comes from the actual completed
 physical/readback observations. Supply a fresh CAS `at` after issuing the capability;
 do not reuse the timestamp from before network/history reads.
 The native publication journal stays unchanged.
-Native lease intent admission permanently rejects the original operation/candidate;
-managed-host publication supplies `quarantine_store` to
-`GitLaneIntegrationPublisher`, which checks the same native archive before
-readback/admission and submission. Direct configured publisher users must supply
-the canonical quarantine store, including when publishing to another ref.
-A distinct corrective candidate still needs ordinary managed ownership and a
-new one-use, ancestor-only, expected-head publication.
+Native lease intent admission permanently rejects the original operation/candidate.
+Every sending `GitLaneIntegrationPublisher` requires
+`native_handle={handle_root, handle_id}`. It loads the original session, authenticates
+its issued runtime request and original canonical pool claim/ownership, and derives
+the canonical source lease and publication journal. Supplied `quarantine_store`,
+if present, must match that derived lease endpoint/ref. Missing original lease,
+substituted empty custody, alternate source refs, journals, task IDs or operation
+keys fail closed before preparation or transport. Session data cannot substitute
+for the original issued descriptor and canonical ownership history.
+
+The source remote/ref, lane/result, expected HEAD and operation digest must match
+the original native session; the result must be the actual clean writer result.
+Transport additionally requires actual current caller birth/boot, exact active
+original lease and running pool authority, a successful original worker held for
+release, and a fresh replay
+check immediately before the one-use submission CAS. The original controller
+can send in its own exact birth. Supported same-handle native recovery may finish
+a never-submitted publication after the original PID is physically absent, using
+the existing genuine owned invocation and held supervisor. A live other caller,
+reused original PID or original zombie blocks recovery. Recovery never rewrites
+the issued original descriptor or manufactures a replacement terminal proof;
+SUBMITTED and UNKNOWN attempts still cannot send again. Managed-host publication
+supplies this binding automatically. Legacy read methods remain usable without
+handles; matching HEAD without native custody is readback only and never upgrades
+UNKNOWN or SUBMITTED journal entries to conditional authority. The original
+SUBMITTED journal is not rewritten by quarantine. A distinct corrective candidate
+requires a new issued native handle, ownership, canonical one-use journal and
+genuine ancestor-only expected-head publication.

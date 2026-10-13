@@ -6,12 +6,16 @@ are single native CAS writes to the original record; lost replies are read only.
 from __future__ import annotations
 import copy
 import hashlib
+import json
+import re
+import stat
+import subprocess
 import uuid
 from pathlib import Path
 import operation_intent as op
 from git_document_store import GitDocumentStore
 from git_lease_store import GitLeaseStore
-from managed_executor_runtime import _process, _boot
+from managed_executor_runtime import _process, _boot, _digest as native_digest
 
 _SEAL=object()
 INTAKE_SCHEMA='cdc-vps-control/v1'
@@ -69,8 +73,8 @@ def semantic_intake_contract(row):
 
 def _contract(row):
     request=(row.get('operation') or {}).get('start_request')
-    if not isinstance(request,dict) or row['operation'].get('start_request_digest')!=op._hash(request):raise ValueError('original unchanged native start contract required')
-    return op._hash(request)
+    if not isinstance(request,dict) or row['operation'].get('start_request_digest')!=native_digest(request):raise ValueError('original unchanged native start contract required')
+    return native_digest(request)
 
 
 def _physical_and_artifacts(store,row,pins):
@@ -81,46 +85,113 @@ def _physical_and_artifacts(store,row,pins):
     if pins['pool_ref']!=request['plan']['coordination_ref'] or request['plan']['coordination_store_id']!=store.store_id:raise ValueError('original protected pool channel mismatch')
     store._assert_remote_identity();store._git('check-ref-format',pins['pool_ref'])
     if store._git('ls-remote','--refs',store.remote,pins['pool_ref']):raise ValueError('native original pool/runtime effect already exists')
+    custody=pins.get('custody')
+    op._object(custody,{'controller_root','worker_launch_root','controller_uid','worker_gid'},'complete original protected custody')
+    if any(type(custody[k]) is not int or custody[k]<0 for k in ('controller_uid','worker_gid')):raise ValueError('configured custody UID/GID required')
+    task_id=request['task_id'];executor=row['operation']['executor']
+    for name in (task_id,executor):
+        if not isinstance(name,str) or not name or name in {'.','..'} or '/' in name or '\\' in name:raise ValueError('exact original custody identity required')
+    controller=Path(custody['controller_root'])/task_id
+    launch=Path(custody['worker_launch_root'])/executor/task_id
     roots=pins['launch_roots'];allowed=pins.get('artifact_pins',{})
-    if not isinstance(roots,list) or len(roots)!=len(set(roots)) or not {request['journal_root'],request['handle_root']}<=set(roots):raise ValueError('all original native launch roots required')
-    # Shared host roots may contain unrelated operations. Derive the exact native
-    # session, gate, lock and journal identity rather than inspecting other tasks.
-    scoped={}
-    if all(key in request for key in ('repo_root','task_id','attempt_id')) and 'pool_id' in request['plan']:
-        from managed_host_bridge import _canonical
-        identity={'repo_root':str(__import__('git_remote_identity').repository_root(request['repo_root'])),'store':request['plan']['coordination_store_id'],'coordination_ref':request['plan']['coordination_ref'],'pool_id':request['plan']['pool_id'],'task_id':request['task_id'],'attempt_id':request['attempt_id']}
-        handle=str(uuid.uuid5(uuid.NAMESPACE_URL,_canonical(identity)))
-        scoped[request['handle_root']]=[Path(request['handle_root'])/(handle+'.json'),Path(request['handle_root'])/'gates'/handle,Path(request['handle_root'])/'locks'/(handle+'.lock')]
-        key={name:identity[name] for name in ('pool_id','task_id','attempt_id')}
-        scoped[request['journal_root']]=[Path(request['journal_root'])/op._hash(key).split(':',1)[1]]
-        publication_ref='refs/heads/cdc/managed-host-publish-'+handle.replace('-','')
-        if store._git('ls-remote','--refs',store.remote,publication_ref):raise ValueError('original publication journal already exists')
-    seen=set()
-    for raw in roots:
+    expected={request['journal_root'],request['handle_root'],str(controller),str(launch)}
+    if not isinstance(roots,list) or len(roots)!=len(set(roots)) or set(roots)!=expected or not isinstance(allowed,dict):raise ValueError('complete derived original controller/worker/native roots required')
+    from managed_host_bridge import _canonical
+    from git_remote_identity import repository_root
+    identity={'repo_root':str(repository_root(request['repo_root'])),'store':request['plan']['coordination_store_id'],'coordination_ref':request['plan']['coordination_ref'],'pool_id':request['plan']['pool_id'],'task_id':task_id,'attempt_id':request['attempt_id']}
+    handle=str(uuid.uuid5(uuid.NAMESPACE_URL,_canonical(identity)))
+    native_paths=[Path(request['handle_root'])/(handle+'.json'),Path(request['handle_root'])/'gates'/handle,Path(request['handle_root'])/'locks'/(handle+'.lock'),Path(request['journal_root'])/native_digest({name:identity[name] for name in ('pool_id','task_id','attempt_id')}).split(':',1)[1]]
+    publication_ref='refs/heads/cdc/managed-host-publish-'+handle.replace('-','')
+    if store._git('ls-remote','--refs',store.remote,publication_ref):raise ValueError('original publication journal already exists')
+    # Native effect scopes are absent unconditionally, including empty directories
+    # and broken symlinks. Deployment pins can never turn effects into static data.
+    for path in native_paths:
+        if any(p.is_symlink() for p in [path,*path.parents]) or path.exists():raise ValueError('native session/gate/lock/journal effect blocks prelaunch disposition')
+    for raw in [*roots,custody['controller_root'],custody['worker_launch_root']]:
         path=Path(raw)
-        if not path.is_absolute() or path.is_symlink() or str(path.resolve())!=raw:raise ValueError('protected exact launch root required')
+        if not path.is_absolute() or str(path.resolve())!=raw or any(p.is_symlink() for p in [path,*path.parents]):raise ValueError('protected exact launch root required')
         if path.exists() and not path.is_dir():raise ValueError('launch root must be a directory')
-        targets=scoped.get(raw,[path])
-        for target in targets:
-            nodes=[target,*target.rglob('*')] if target.is_dir() else [target]
-            for child in nodes:
-                if child.is_symlink():raise ValueError('contradictory symlink in protected launch root')
-                if not child.exists() or child.is_dir():continue
-                key=str(child);seen.add(key)
-                pin=allowed.get(key)
-                if isinstance(pin,dict):
-                    op._object(pin,{'sha256','uid','gid','mode'},'protected artifact pin')
-                    stat=child.stat()
-                    if (stat.st_uid,stat.st_gid,stat.st_mode & 0o7777)!=(pin['uid'],pin['gid'],pin['mode']):raise ValueError('protected artifact custody/mode drift')
-                    pin=pin['sha256']
-                if pin is None or 'sha256:'+hashlib.sha256(child.read_bytes()).hexdigest()!=pin:raise ValueError('unregistered output/handle/journal artifact blocks disposition')
-    if seen!=set(allowed):raise ValueError('pinned original launch artifact missing')
+    # Original output is an absence fact, never a hash whitelist. Native worker
+    # preparation may create this empty directory before dispatch.
+    output=launch/'output'
+    if output.is_symlink() or output.exists() and (not output.is_dir() or any(output.iterdir())):raise ValueError('original worker output must be empty')
+    static={str(controller/'guardian.lock'),str(launch/'record.json'),str(launch/'registered-record.json')}
+    if not static<=set(allowed):raise ValueError('original controller/preparation/registered static records required')
+    checkout=launch/'worktree'
+    checkout_dirs={checkout}
+    if checkout.exists():
+        if checkout.is_symlink() or not checkout.is_dir():raise ValueError('original static checkout custody required')
+        from git_object_integrity import git_object_environment
+        def checkout_git(*args,check=True,binary=False):
+            result=subprocess.run(['git','--no-optional-locks','-c','safe.directory='+str(checkout),'-c','core.fsmonitor=false','-c','core.hooksPath=/dev/null','-C',str(checkout),*args],env=git_object_environment(GIT_TERMINAL_PROMPT='0',GIT_OPTIONAL_LOCKS='0'),text=not binary,capture_output=True,timeout=20)
+            if check and result.returncode:raise ValueError('original prepared checkout unavailable')
+            return (result.stdout if binary else result.stdout.strip()),result.returncode
+        if checkout_git('rev-parse','--show-toplevel')[0]!=str(checkout) or checkout_git('rev-parse','HEAD')[0]!=row['task']['source_sha'] or checkout_git('symbolic-ref','-q','HEAD',check=False)[1]!=1 or checkout_git('status','--porcelain','--untracked-files=all')[0] or checkout_git('remote')[0]:raise ValueError('prepared static checkout changed or is not isolated')
+        # Index flags or cached stat data cannot turn changed worker bytes into a
+        # static source snapshot. Compare every committed blob independently.
+        tree=checkout_git('ls-tree','-r','-z','HEAD',binary=True)[0]
+        source_files=set()
+        for entry in tree.split(b'\0'):
+            if not entry:continue
+            metadata,name=entry.split(b'\t',1);mode,kind,oid=metadata.split()
+            path=checkout/name.decode('utf-8');source_files.add(path)
+            if mode not in (b'100644',b'100755') or kind!=b'blob' or path.is_symlink() or not path.is_file() or path.read_bytes()!=checkout_git('cat-file','blob',oid.decode(),binary=True)[0]:raise ValueError('original prepared source bytes differ from exact source commit')
+        git_root=checkout/'.git'
+        metadata_names={'HEAD','config','description','index','packed-refs','info/exclude','logs/HEAD'}
+        samples={'applypatch-msg','commit-msg','fsmonitor-watchman','post-update','pre-applypatch','pre-commit','pre-merge-commit','pre-push','pre-rebase','pre-receive','prepare-commit-msg','push-to-checkout','sendemail-validate','update'}
+        metadata_names.update('hooks/'+name+'.sample' for name in samples)
+        metadata=set()
+        for path in git_root.rglob('*'):
+            if not path.is_file():continue
+            name=path.relative_to(git_root).as_posix()
+            is_ref=re.fullmatch(r'(?:logs/)?refs/(?:heads|tags|remotes)/[^\x00-\x20~^:?*\[\\]+',name)
+            is_object=re.fullmatch(r'objects/(?:[0-9a-f]{2}/(?:[0-9a-f]{38}|[0-9a-f]{62})|pack/pack-(?:[0-9a-f]{40}|[0-9a-f]{64})\.(?:pack|idx|rev|bitmap))',name)
+            if name not in metadata_names and not is_ref and not is_object:raise ValueError('unknown file cannot be pinned as static Git metadata')
+            metadata.add(path)
+        files={p for p in checkout.rglob('*') if p.is_file()}
+        if files!=source_files|metadata:raise ValueError('unregistered worker file in prepared source checkout')
+        static.update(str(p) for p in files)
+        checkout_dirs.update(git_root/name for name in ('','branches','hooks','info','logs','objects','objects/info','objects/pack','refs','refs/heads','refs/tags','refs/remotes','logs/refs','logs/refs/heads','logs/refs/tags','logs/refs/remotes'))
+        for path in files:
+            checkout_dirs.update(parent for parent in path.parents if parent==checkout or checkout in parent.parents)
+    if not set(allowed)<=static:raise ValueError('pins may describe only original pre-effect static custody')
+    guardian_pin=allowed[str(controller/'guardian.lock')]
+    op._object(guardian_pin,{'sha256','uid','gid','mode'},'original guardian static custody')
+    seen=set()
+    for root in (controller,launch):
+        expected_gid=guardian_pin['gid'] if root==controller else custody['worker_gid']
+        if not root.is_dir():raise ValueError('complete original protected controller/worker scope missing')
+        for child in [root,*root.rglob('*')]:
+            if child.is_symlink():raise ValueError('contradictory symlink in protected launch root')
+            info=child.lstat()
+            if not (stat.S_ISDIR(info.st_mode) or stat.S_ISREG(info.st_mode)):raise ValueError('special entry in protected custody')
+            if info.st_uid!=custody['controller_uid'] or info.st_gid!=expected_gid or info.st_mode & 0o002:raise ValueError('protected scope ownership/mode drift')
+            if child.is_dir():
+                if child!=output and info.st_mode & 0o020:raise ValueError('static custody must not be worker writable')
+                if root==controller and child!=root:raise ValueError('unregistered controller effect directory')
+                if root==launch and child not in {launch,output}|checkout_dirs:raise ValueError('unregistered worker effect directory')
+                continue
+            key=str(child);seen.add(key);pin=allowed.get(key)
+            op._object(pin,{'sha256','uid','gid','mode'},'protected static artifact pin')
+            if info.st_nlink!=1 or (info.st_uid,info.st_gid,info.st_mode & 0o7777)!=(pin['uid'],pin['gid'],pin['mode']) or info.st_mode & 0o022:raise ValueError('protected static file custody/mode drift')
+            if 'sha256:'+hashlib.sha256(child.read_bytes()).hexdigest()!=pin['sha256']:raise ValueError('original static artifact bytes drift')
+            if child==controller/'guardian.lock' and child.read_bytes()!=b'':raise ValueError('original guardian lock must be empty')
+            if child.name in {'record.json','registered-record.json'} and child.parent==launch:
+                try:record=json.loads(child.read_text())
+                except (ValueError,OSError):raise ValueError('original protected preparation record unavailable') from None
+                if child.name=='registered-record.json':
+                    op._object(record,{'schema','task','registry','task_digest','executor'},'original registered launch record')
+                    if record['schema']!='cdc-vps-launch/v1' or record['task']!=row['task'] or record['task_digest']!=native_digest(row['task']) or record['executor']!=executor or not isinstance(record['registry'],dict):raise ValueError('registered launch record/task/executor mismatch')
+                else:
+                    op._object(record,{'operation_id','profile_id','source_sha','source_ref','profile_digest'},'original preparation record')
+                    if record['operation_id']!=task_id or record['source_sha']!=row['task']['source_sha'] or record['source_ref']!=request['lease_source_ref'] or not isinstance(record['profile_id'],str) or not re.fullmatch('[0-9a-f]{64}',record['profile_digest']):raise ValueError('original preparation record/source mismatch')
+    if seen!=set(allowed):raise ValueError('pinned original static launch artifact missing')
     _identity(pins['creator'],absent=True);_identity(pins['guardian'],absent=True)
 
 
 def _authenticate_intake(store,task_id,source,pins,*,retired=False):
     if type(store) is not GitDocumentStore or type(source) is not GitLeaseStore:raise ValueError('actual configured native stores required')
-    required={'original_revision','row_digest','source_revision','source_digest','creator','guardian','guardian_nonce','pool_ref','launch_roots'}
+    required={'original_revision','row_digest','source_revision','source_digest','creator','guardian','guardian_nonce','pool_ref','launch_roots','custody'}
     if not isinstance(pins,dict) or set(pins) not in (required,required|{'artifact_pins'}):raise ValueError('independent trusted original contract pins required')
     history=_history(store);original=store.read_revision(pins['original_revision']);original_row=_row(original,task_id)
     if op._hash(original_row)!=pins['row_digest'] or _consumed(original_row):raise ValueError('pinned original unconsumed task row required')

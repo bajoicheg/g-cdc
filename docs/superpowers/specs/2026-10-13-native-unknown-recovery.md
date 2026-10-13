@@ -89,6 +89,52 @@ native publication/release evidence precede installation and live disposition.
 
 ## VPS continuation
 
+### Native existing-project budget custody
+
+The same owner-authorized architecture continuation requires a native CAS
+adapter for an existing project budget file or a budget field in an existing
+coordination document. It must use the registered original repository endpoint,
+ref, exact path/field and original task identity; preserve every original event,
+policy and wake; and never replace the budget with a new ledger or mirror.
+Authenticate current Git ancestry and the native budget schema. Append only an
+event allowed by budget.apply_event/decide, using a real non-force sibling CAS
+and immutable readback. Preserve unrelated tree entries, including lease.json,
+and unrelated document fields byte-exact where the selected field permits it.
+An uncertain write is observed on the original key; it supplies no launch grant.
+
+The adapter must reject endpoint/path/task substitution, stale or truncated
+history, counter/policy reset, unrelated edits and replay. Original task-policy
+authority and invocation closure remain separate adoption prerequisites; merely
+reading a valid ledger supplies no product or provider authority. Prospective
+Linux sidecar caps may narrow the original budget. They cannot authorize CI or
+models outside it, turn Linux evidence into Windows acceptance, or relax a
+compute-only project's product-write restrictions. Meaningful local fixture
+fault tests and the same ordered exact-candidate SPEC→QUALITY/FULL gate cover
+this primitive before live use.
+
+### Native project-adoption observation
+
+A separate sealed, revalidated observation joins the registered original Source
+snapshot/policy/checkpoint, canonical lease/history/release, original budget
+binding and explicitly authenticated original task-policy authority. A released
+invocation may retain runnable product work. A stale active checkpoint is only
+classified as a projection when its exact owner/generation/invocation links to
+the genuine canonical release; it is never rewritten or reported complete.
+Sentinel absence is interpreted only according to the native checkpoint schema.
+Pending guards, unresolved intents, foreign ownership, substituted channels,
+unproved policy authority and changed Source block adoption.
+
+The observation is not a terminal proof, lease grant or provider launch
+capability. It permits the host to evaluate a zero-model, zero-CI, read-only
+Linux sidecar against the original task budget; actual reservations/start still
+use their original native one-use contracts. It preserves product continuation,
+remaining work, required final platform and compute-only restrictions. Serialized
+copies or altered observation payloads have no authority. Fresh native channel
+revalidation precedes admission; budget/lease changes are reconciled rather
+than waived. Real isolated Git fixtures cover genuine released+runnable and
+exact stale-projection cases plus every contradictory closure/budget/source
+binding. Include this protocol in the same pre-release ordered qualification.
+
 Install the released SDK beside 3.5.4; install a reviewed explicit VPS upgrade
 with dispatch stopped; apply native dispositions to ORIGINAL records; preserve
 all charges; qualify ordinary code and live restart under ordered result reviews;
@@ -96,3 +142,23 @@ adopt existing product tasks/budgets through native contracts; finish required
 platform acceptance and authorized Fleet operation. Ask only for technically
 unavailable local inputs. No design/release confirmation is needed again: owner
 explicitly delegated this work through readiness.
+
+## Qualification correction: executable native custody
+
+Independent qualification identified optional publication admission and pinnable
+native artifacts. The owner-delegated rollout controller approved the following
+contract strengthening before implementation. Publication sends require an
+original native handle; the SDK derives and authenticates its session/request,
+pool claim, source lease and journal, and enforces the canonical source/ref,
+lane/result and operation binding. Missing or substituted custody fails closed.
+Legacy publication observations stay readable and supply no send or conditional
+update authority. This adds no global blacklist and rewrites no original journal.
+
+Prelaunch trusted configuration supplies controller/worker roots and custody UID/
+GID. The SDK derives complete original task/executor scopes. Native sessions,
+gates, locks, journals and worker output remain unconditional absence facts;
+only explicitly named original static preparation, registration and source
+checkout custody can be pinned. Native start/request and journal derivation use
+the original issuing runtime digest encoding. Capability request comparisons use
+that same runtime digest; capability payload/invocation encodings stay unchanged.
+Genuine Unicode native sessions are qualified end to end.

@@ -739,6 +739,7 @@ def _publish(session, result_commit):
         attempt_store=publication_store,
         attempt_store_id=session["plan"]["coordination_store_id"],
         quarantine_store=_lease_store(session),
+        native_handle={"handle_root":session["handle_root"],"handle_id":session["handle_id"]},
     )
     integrator = LaneClaim(
         lane_id="managed-host-integrator-" + session["handle_id"],

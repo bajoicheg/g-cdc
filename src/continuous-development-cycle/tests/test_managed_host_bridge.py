@@ -168,6 +168,52 @@ subprocess.run(['git','commit','-qm','managed closure'],check=True)
         ).strip()
         return row.split("\t", 1)[0]
 
+    def test_replacement_controller_finishes_original_unsubmitted_native_handle(self):
+        import ctypes,threading
+        libc=ctypes.CDLL(None,use_errno=True);previous=ctypes.c_int()
+        self.assertEqual(libc.prctl(37,ctypes.byref(previous),0,0,0),0)
+        self.assertEqual(libc.prctl(36,1,0,0,0),0)
+        self.addCleanup(lambda:libc.prctl(36,previous.value,0,0,0))
+        request_path=self.root/'recovery-start.json';request_path.write_text(json.dumps(self.start_request()))
+        code="""import json,sys,time,os
+from pathlib import Path
+sys.path.insert(0,sys.argv[1]);import managed_host_bridge as b
+r=json.loads(Path(sys.argv[2]).read_text());h=b.start(r)
+while b.observe({'schema':'managed-host-observe/v1','handle_root':r['handle_root'],'handle_id':h['handle_id']})['runtime_status']!='awaiting_release':time.sleep(.01)
+print(json.dumps({'handle':h,'original_controller':os.getpid()}),flush=True)
+"""
+        original=subprocess.Popen([sys.executable,'-B','-c',code,str(ROOT/'scripts'),str(request_path)],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        self.addCleanup(original.wait,timeout=5)
+        data=json.loads(original.stdout.readline());handle=data['handle']
+        # Do not reap yet: a physically present original zombie must block sends.
+        deadline=time.monotonic()+3
+        while time.monotonic()<deadline:
+            current=runtime_module._process(original.pid)
+            if current is not None and current['state']=='Z':break
+            time.sleep(.01)
+        self.assertEqual(current['state'],'Z')
+        pending=bridge._load_session(str(self.root/'handles'),handle['handle_id']);result,_,_=bridge._result(pending,bridge._runtime(pending))
+        with self.assertRaises(ValueError):bridge._publish(pending,result)
+        self.assertEqual(self.remote_head(),self.base)
+        self.assertEqual(original.wait(timeout=5),0,original.stderr.read())
+        original.stdout.close();original.stderr.close()
+        self.assertFalse(Path('/proc',str(data['original_controller'])).exists())
+        session=bridge._load_session(str(self.root/'handles'),handle['handle_id']);runtime=bridge._runtime(session)
+        issued=Path(runtime._request(session['task_id'],session['attempt_id'])['journal_directory'])/'terminal-capability-descriptor.json';descriptor=issued.read_bytes()
+        self.assertEqual(json.loads(descriptor)['payload']['controller_proc_pid'],data['original_controller'])
+        supervisor=runtime.observe(session['task_id'],session['attempt_id'])['supervisor_proc_pid'];waits=[]
+        def reap():waits.append(os.waitpid(supervisor,0))
+        reaper=threading.Thread(target=reap);reaper.start()
+        def close():
+            self.stop_test_supervisors();reaper.join(timeout=4);self.assertFalse(reaper.is_alive())
+        self.addCleanup(close)
+        finished=bridge.finish(self.finish_request(handle));reaper.join(timeout=3)
+        self.assertEqual(finished['state'],'released');self.assertTrue(finished['scope_complete']);self.assertEqual(issued.read_bytes(),descriptor)
+        self.assertEqual(waits[0][0],supervisor);self.assertIsNone(self.lease_store.read()[1]['owner_id'])
+        self.assertNotEqual(self.remote_head(),self.base)
+        terminal=runtime.verify_terminal(session['task_id'],session['attempt_id'],include_controller=True,lease_store=self.lease_store,release_receipt=finished['release_receipt'])
+        self.assertEqual(terminal['status'],'succeeded')
+
     def test_test_cleanup_waits_for_supervisor_stop_before_temp_directory_removal(self):
         import threading
         request=self.start_request();request['argv']=[sys.executable,'-c','raise SystemExit(7)']

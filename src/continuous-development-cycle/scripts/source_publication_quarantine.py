@@ -10,7 +10,7 @@ import execution_lease_v2 as lease
 from git_document_store import GitDocumentStore
 from git_lease_store import GitLeaseStore
 from git_remote_identity import remote_identity,isolated_remote_args
-from managed_executor_runtime import VerifiedTerminalProof, _utc
+from managed_executor_runtime import VerifiedTerminalProof, _utc, _digest as native_digest
 from project_lane_git import GitLaneIntegrationPublisher
 from submission_recovery import _reference,_fresh,SHA
 from unknown_recovery import _history,_identity
@@ -84,7 +84,7 @@ def _authenticate(store,terminal,publication_store,source_remote,pins,at):
     session=_load_session(pins['handle_root'],pins['handle_id'])
     if (session['handle_id']!=pins['handle_id'] or session['invocation_id']!=release['invocation_id'] or session['publication_ref']!=publication_store.ref or session['plan']['coordination_store_id']!=store.store_id or session['release_receipt']!=terminal._receipt or session['lease_coordination_ref']!=store.ref):raise ValueError('original handle/pool/release/source channel mismatch')
     runtime=_runtime(session);request=runtime._request(session['task_id'],session['attempt_id'])
-    if request is None or op._hash(request)!=pins['request_ref']:raise ValueError('original bridge request/handle mismatch')
+    if request is None or native_digest(request)!=pins['request_ref']:raise ValueError('original bridge request/handle mismatch')
     if remote_identity(store.repo,source_remote)!=pins['source_remote_id']:raise ValueError('source publication endpoint drift')
     publisher=GitLaneIntegrationPublisher(store.repo,source_remote,record['source_ref'],pins['source_remote_id'],attempt_store=publication_store,attempt_store_id=store.store_id)
     p_revision,p_state=publisher._read_attempt_state();historical=publication_store.read_revision(pins['publication_revision'])
@@ -172,7 +172,7 @@ def observe_source_publication_quarantine(store,*,operation_key,evidence_referen
 def assert_source_publication_not_quarantined(store,*,operation_id,result_commit,intended_commit):
     if type(store) is not GitLeaseStore:raise ValueError('native quarantine admission store required')
     _,record=store.read()
-    if record is None:return
+    if record is None:raise ValueError('canonical source quarantine custody missing')
     for entry in record.get('submission_retirements',[]):
         if entry['schema']==SCHEMA:
             old=entry['proof']['publication'];candidate=entry['guard']['intent']['binding']['candidate_sha']

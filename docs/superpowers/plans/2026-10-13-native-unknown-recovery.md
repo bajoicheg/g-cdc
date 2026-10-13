@@ -41,6 +41,28 @@ remain scoped; only genuine required owner input may interrupt execution.
    both executors and live restart, current tasks/budget adoption/platform checks,
    authorized Fleet fallback and sustained operation, final native TS evidence.
 
+### Preserved-project budget primitive before freeze
+
+Implement a native registered existing-budget Git CAS store alongside UNKNOWN
+custody. It appends only native budget events to the original file/field and
+preserves original task identity, event prefix, policy, unrelated document bytes
+and tree entries. Real local bare-Git tests cover parallel/stale writes, lost
+reply observation, endpoint/path/field/task substitution, history truncation,
+counter reset and lease-neighbor preservation. Add its package inventory and
+reference, then freeze and include it in the same SDK exact SPEC→QUALITY and
+single hosted FULL. Root integrates project adoption after authentic invocation
+closure and policy-authority reconciliation, with zero CI/models for restricted
+Linux sidecar checks. No live product migration is inferred from this store.
+
+### Concurrent installed account-routing integration
+
+Fresh installation inventory supersedes the historical c50-only observation:
+the already reviewed account-routing installation is retained as an ancestor
+of the forward VPS upgrade. Preserve its primary/reserve selection, protected
+policy and complete installation inventory. Continue to use c50 as the original
+UNKNOWN publication candidate identity. Do not reinterpret that operation or
+overwrite concurrent installed changes.
+
 ## Progress ledger
 
 - Original baseline: Prior VPS adapter installed; local guardian correction

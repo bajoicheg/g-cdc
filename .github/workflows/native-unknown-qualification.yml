@@ -27,5 +27,9 @@ jobs:
           python3 -B -m unittest discover -s bootstrap/tests -v
       - name: Independent package structure
         run: python3 -B src/continuous-development-cycle/scripts/validate_package.py
+      - name: Three authenticated supported consumer projections
+        run: |
+          package_tree=$(git rev-parse HEAD:src/continuous-development-cycle)
+          python3 -B src/continuous-development-cycle/scripts/supported_consumer_qualification.py --snapshot-root consumer/supported --consumers fleet-1 fleet-2 fleet-3 --package-tree "$package_tree"
       - name: FULL packaged regressions in clean consumer layout
         run: python3 -B bootstrap/consumer_package_checks.py

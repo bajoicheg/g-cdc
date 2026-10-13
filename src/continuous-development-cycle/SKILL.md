@@ -162,6 +162,14 @@ and guardian must enforce that barrier, and old dispatch actors must be stopped.
 Retired contracts/candidates remain permanently excluded from native admission.
 Other unknown effects retain normal reconciliation.
 
+For existing project task adoption, use `references/project-budget-store.md`
+and `references/project-adoption.md`. Authenticate the original policy authority
+and native release before constructing protected registrations. Retain original
+task ledgers, charged UNKNOWN agents and remaining Windows or real AD work.
+Append admission events through the original native budget store, then obtain a
+fresh sealed adoption observation. Adoption grants no launch, terminal proof or
+product acceptance; native lease, pool and one-use start gates remain required.
+
 ## Enforced execution economics
 
 Before planning new validation read `references/execution-efficiency.md`.

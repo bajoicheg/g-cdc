@@ -57,7 +57,8 @@ class _VerifiedManagedTerminalCapability:
         if task is None or task["status"]!="running" or task["active_attempt_id"]!=p["attempt_id"]:
             raise ValueError("managed terminal capability does not bind a durable running attempt")
         request=runtime._request(p["task_id"],p["attempt_id"])
-        if request is None or _digest(request)!=p["request_ref"]:
+        from managed_executor_runtime import _digest as request_digest
+        if request is None or request_digest(request)!=p["request_ref"]:
             raise ValueError("managed terminal capability request binding mismatch")
         observation=runtime.observe(p["task_id"],p["attempt_id"])
         if observation.get("status") not in {"starting","running","awaiting_release"} or observation.get("quiescent") is not False:
@@ -91,7 +92,8 @@ def issue(runtime,task_id,attempt_id,*,lease_repository,lease_source_ref,observe
     task=next((row for row in state["tasks"] if row["id"]==task_id),None)
     if task is None or task["status"]!="running" or task["active_attempt_id"]!=attempt_id:
         raise ValueError("managed pool does not bind the live attempt")
-    request_ref=_digest(request)
+    from managed_executor_runtime import _digest as request_digest
+    request_ref=request_digest(request)
     if observation.get("request_ref")!=request_ref or not isinstance(observation.get("launch_id"),str):
         raise ValueError("managed runtime observation does not bind launch request")
     observed_at=observed_at_utc or observation.get("created_at_utc")

@@ -1,0 +1,335 @@
+"""Native adoption observations against isolated genuine Git histories."""
+import copy
+from datetime import datetime, timedelta, timezone
+import hashlib
+import importlib
+import json
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+
+import yaml
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'scripts'))
+import budget
+import execution_lease_v2 as lease
+import operation_intent as operation
+from git_document_store import GitDocumentStore
+from git_lease_store import GitLeaseStore
+from git_remote_identity import remote_identity
+from live_target import GitSource
+from project_budget_store import GitProjectBudgetStore, ledger_digest
+from validate_adapter import validate_adapter
+
+SOURCE = 'refs/heads/work/retained'
+CONTROL = 'refs/heads/cdc/coordination'
+AUTHORITY = 'refs/heads/cdc/owner-scope'
+OWNER = '11111111-1111-4111-8111-111111111111'
+INVOCATION = 'managed-terminal:fixture-invocation'
+NOW = datetime(2026, 10, 13, 12, 0, tzinfo=timezone.utc)
+
+
+def digest(value):
+    return 'sha256:' + hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+
+
+class ProjectAdoptionTests(unittest.TestCase):
+    def setUp(self):
+        for attribute in ('control_head', 'source_sha'):
+            if hasattr(self, attribute): delattr(self, attribute)
+        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name); self.bare = self.root / 'remote.git'; self.repo = self.root / 'cache'
+        self.git(self.root, 'init', '--bare', str(self.bare)); self.git(self.root, 'init', str(self.repo))
+        self.git(self.repo, 'config', 'user.name', 'Fixture'); self.git(self.repo, 'config', 'user.email', 'fixture@example.invalid')
+        for remote in ['source', 'coordination', 'authority']: self.git(self.repo, 'remote', 'add', remote, str(self.bare))
+        self.endpoint = remote_identity(self.repo, 'coordination'); self.now = NOW
+        policy = {'task_limits': {'compute_starts': 8, 'ci_starts': 0, 'agent_starts': 0},
+                  'wake_limits': {'compute_starts': 4}, 'max_parallel_agents': 0,
+                  'checkpoint_reserve': {'tokens': 0, 'tool_calls': 0},
+                  'provider_max_age_seconds': 90, 'actions_budget': 'conserve'}
+        self.ledger = budget.new_ledger('original-product-task', 'old-wake', policy)
+        if getattr(self, 'fixture_charged', False):
+            policy['task_limits'].update(ci_starts=2, agent_starts=2); policy['max_parallel_agents'] = 2
+            self.ledger = budget.new_ledger('original-product-task', 'old-wake', policy)
+            for kind in ['agent_start', 'ci_start']:
+                self.ledger = budget.apply_event(self.ledger, {
+                    'type': 'reserve', 'event_id': kind, 'task_id': self.ledger['task_id'], 'wake_id': 'old-wake',
+                    'at_utc': '2026-10-13T10:00:00Z', 'operation_key': 'sha256:' + hashlib.sha256(kind.encode()).hexdigest(),
+                    'attempt_id': kind + '-a1', 'kind': kind, 'scope': 'original-product-task',
+                    'recovery_ref': None, 'cost': {'tool_calls': 1, 'tokens': None, 'elapsed_seconds': None}})
+        self.initial = lease.initialize('fixture/product', SOURCE)
+        self.anchor = self.publish_control(self.initial)
+        self.owned = copy.deepcopy(self.initial)
+        self.owned.update(owner_id=OWNER, generation=1, acquired_at_utc='2026-10-13T10:00:01Z',
+                          heartbeat_at_utc='2026-10-13T10:00:01Z', expires_at_utc='2026-10-13T10:20:01Z',
+                          invocation={'invocation_id': INVOCATION, 'automation_id': None, 'conversation_id': 'fixture',
+                                      'execution_surface': 'managed', 'started_at_utc': '2026-10-13T10:00:00Z'},
+                          finalization={'state': 'active', 'pending_shared_writes': False, 'checkpoint_ref': None,
+                                        'external_reconciliation': 'pending', 'completion_reason': None,
+                                        'updated_at_utc': '2026-10-13T10:00:01Z', 'failure': None})
+        lease.validate(self.owned); self.owned_revision = self.publish_control(self.owned)
+        self.ready = copy.deepcopy(self.owned)
+        self.ready['finalization'].update(state='ready', external_reconciliation='none',
+                                         checkpoint_ref='fixture:original-release-checkpoint', completion_reason='scope_complete')
+        lease.validate(self.ready); self.publish_control(self.ready)
+        self.released = lease.release(self.ready, OWNER, 1, INVOCATION, '2026-10-13T10:00:05Z')
+        self.release_revision = self.publish_control(self.released)
+        self.adapter = yaml.safe_load((ROOT / 'templates/development-cycle.yaml').read_text())
+        self.adapter['repository'].update(name='product', remote='fixture/product')
+        self.adapter['validation']['final_platform'] = 'windows'
+        self.adapter['orchestration']['execution_lease'].update(backend='git', remote='coordination', coordination_ref=CONTROL)
+        self.adapter_binding = validate_adapter(self.adapter, skill_version='3.6.0')
+        self.checkpoint = yaml.safe_load((ROOT / 'templates/work-status-v4.md').read_text().split('---')[1])
+        self.checkpoint.update(repository='fixture/product', branch=SOURCE.removeprefix('refs/heads/'),
+                               policy_revision=self.adapter_binding['policy_revision'], policy_digest=self.adapter_binding['policy_digest'],
+                               observed_at_utc='2026-10-13T10:01:00Z', phase='blocked', active_change='Retained product task',
+                               current_task='Complete Windows acceptance', blocker='Windows manual acceptance pending',
+                               next_action='Run the original Windows acceptance kit', active_compute='none')
+        self.checkpoint['control'].update(execution_lease_ref=CONTROL, execution_lease_revision=self.release_revision,
+                                          lease_generation=1, budget_ref='https://github.com/fixture/product/blob/cdc/coordination/budget.json')
+        self.checkpoint['execution_continuity'].update(runnable_next_action=True, meaningful_progress=True,
+                                                      completion_gate='continue', last_progress_ref='fixture:remaining-product-work')
+        self.source_sha = self.publish_source()
+        self.budget_binding = {'schema': 'project-budget-binding/v1', 'repository': 'fixture/product',
+                               'source_ref': SOURCE, 'coordination_ref': CONTROL, 'coordination_store_id': self.endpoint,
+                               'ledger_path': 'budget.json', 'budget_field': None, 'task_id': self.ledger['task_id'],
+                               'anchor_revision': self.anchor, 'anchor_ledger_digest': ledger_digest(self.ledger),
+                               'wake_authorizations': {'connection-wake': 'owner:fixture-new-connection'}}
+        self.source = GitSource(self.repo, 'source', self.endpoint, clock=lambda: self.now)
+        self.lease_store = GitLeaseStore(self.repo, 'coordination', CONTROL)
+        self.budget_store = GitProjectBudgetStore(self.repo, 'coordination', self.budget_binding, protected_refs=[SOURCE])
+        self.authority_store = GitDocumentStore(self.repo, 'authority', AUTHORITY, self.endpoint, protected_refs=[SOURCE, CONTROL])
+        self.authorization = self.authorization_record()
+        self.auth_revision = self.authority_store.compare_and_swap(None, {'project_adoption_authorizations': {'product': self.authorization}})
+        self.registration = self.registration_record()
+
+    def git(self, repo, *args):
+        return subprocess.check_output(['git', '-C', str(repo), *args], stderr=subprocess.PIPE).decode().strip()
+
+    def publish_control(self, value):
+        if hasattr(self, 'control_head'): self.git(self.repo, 'reset', '--hard', self.control_head)
+        (self.repo / 'lease.json').write_text(json.dumps(value) + '\n')
+        (self.repo / 'budget.json').write_text(json.dumps(self.ledger) + '\n')
+        self.git(self.repo, 'add', '.'); self.git(self.repo, 'commit', '--allow-empty', '-m', 'Fixture control')
+        self.control_head = self.git(self.repo, 'rev-parse', 'HEAD')
+        self.git(self.repo, 'push', 'coordination', 'HEAD:' + CONTROL); return self.control_head
+
+    def publish_source(self):
+        if hasattr(self, 'source_sha'): self.git(self.repo, 'reset', '--hard', self.source_sha)
+        (self.repo / 'docs/work-status').mkdir(parents=True, exist_ok=True)
+        (self.repo / 'docs/development-cycle.yaml').write_text(yaml.safe_dump(self.adapter))
+        (self.repo / 'docs/work-status/current.md').write_text('---\n' + yaml.safe_dump(self.checkpoint) + '---\nRetained requirements.\n')
+        self.git(self.repo, 'add', '.'); self.git(self.repo, 'commit', '--allow-empty', '-m', 'Fixture Source')
+        value = self.git(self.repo, 'rev-parse', 'HEAD'); self.git(self.repo, 'push', 'source', 'HEAD:' + SOURCE)
+        return value
+
+    def authorization_record(self):
+        summary = budget.summarize(self.ledger)
+        counts = {key: summary['task'][key] for key in ['compute_starts', 'ci_starts', 'agent_starts']}
+        counts['active_agents'] = summary['active_agents']
+        return {'schema': 'project-adoption-authorization/v1', 'project_id': 'product', 'repository': 'fixture/product',
+                'source_ref': SOURCE, 'source_sha': self.source_sha, 'source_policy_revision': self.adapter_binding['policy_revision'],
+                'source_policy_digest': self.adapter_binding['policy_digest'], 'lease_ref': CONTROL, 'lease_store_id': self.endpoint,
+                'budget_binding_digest': digest(self.budget_binding), 'task_id': self.ledger['task_id'],
+                'budget_policy_digest': self.ledger['policy_digest'], 'anchor_revision': self.anchor,
+                'anchor_ledger_digest': ledger_digest(self.ledger), 'preserved_counts': counts,
+                'owner_decision_ref': 'owner:fixture-explicit-adoption', 'owner_wake_id': 'connection-wake',
+                'owner_wake_ref': 'owner:fixture-new-connection', 'scope': {'role': 'read_only', 'mode': 'COMPUTE_ONLY',
+                'execution_platform': 'linux', 'ci_starts': 0, 'agent_starts': 0, 'product_writes': False, 'check_ids': ['diff-check']},
+                'remaining_work': ['Original Windows acceptance remains pending']}
+
+    def registration_record(self):
+        return {'schema': 'project-adoption-registration/v1', 'project_id': 'product', 'repository': 'fixture/product',
+                'source_ref': SOURCE, 'source_sha': self.source_sha, 'source_store_id': self.endpoint,
+                'lease_ref': CONTROL, 'lease_store_id': self.endpoint, 'budget_binding_digest': digest(self.budget_binding),
+                'authority_store_id': self.endpoint, 'authority_ref': AUTHORITY, 'authority_revision': self.auth_revision,
+                'authority_path': 'project_adoption_authorizations/product', 'authority_digest': digest(self.authorization),
+                'final_platform': 'windows', 'check_ids': ['diff-check']}
+
+    def refresh_authorization(self):
+        self.source_sha = self.publish_source(); self.authorization = self.authorization_record()
+        revision, document = self.authority_store.read(); document['project_adoption_authorizations']['product'] = self.authorization
+        self.auth_revision = self.authority_store.compare_and_swap(revision, document); self.registration = self.registration_record()
+
+    def observe(self, **changes):
+        try: native = importlib.import_module('project_adoption')
+        except ModuleNotFoundError: self.fail('native sealed project-adoption observation is missing')
+        arguments = {'source': self.source, 'lease_store': self.lease_store, 'budget_store': self.budget_store,
+                     'policy_authority_store': self.authority_store, 'registration': self.registration, 'clock': lambda: self.now}
+        arguments.update(changes); return native.observe_project_adoption(**arguments)
+
+    def revalidate(self, proof):
+        return proof.revalidate_for(self.source, self.lease_store, self.budget_store, self.authority_store, self.registration)
+
+    def test_released_runnable_preserves_product_work_and_windows_gate(self):
+        proof = self.observe(); value = self.revalidate(proof)
+        self.assertTrue(value['checkpoint']['execution_continuity']['runnable_next_action'])
+        self.assertEqual(value['checkpoint']['next_action'], 'Run the original Windows acceptance kit')
+        self.assertEqual(value['required_final_platform'], 'windows')
+        self.assertEqual(value['scope']['execution_platform'], 'linux')
+        self.assertFalse(value['authorizes_product_acceptance']); self.assertFalse(value['authorizes_launch'])
+        self.assertIs(proof.budget_store, self.budget_store)
+
+    def test_exact_stale_active_checkpoint_links_original_release(self):
+        self.checkpoint.update(lease_state='active', active_executor=OWNER,
+                               executor_heartbeat_at_utc='2026-10-13T10:00:01Z', execution_lease_until_utc='2026-10-13T10:20:01Z',
+                               active_compute='managed-host:22222222-2222-5222-8222-222222222222')
+        self.checkpoint['control'].update(executor_id=OWNER, execution_lease_revision=self.owned_revision)
+        self.checkpoint['execution_continuity']['invocation_id'] = INVOCATION
+        self.refresh_authorization(); proof = self.observe()
+        self.assertEqual(proof.payload['checkpoint_classification'], 'stale_active_projection')
+        self.assertEqual(proof.payload['checkpoint']['lease_state'], 'active')
+        self.assertEqual(proof.payload['lease_release']['generation'], 1)
+
+    def test_stale_active_wrong_owner_generation_invocation_or_revision_denied(self):
+        for mutation in ['owner', 'generation', 'invocation', 'revision']:
+            with self.subTest(mutation=mutation):
+                self.setUp(); self.checkpoint.update(lease_state='active', active_executor=OWNER,
+                    executor_heartbeat_at_utc='2026-10-13T10:00:01Z', execution_lease_until_utc='2026-10-13T10:20:01Z')
+                self.checkpoint['control'].update(executor_id=OWNER, execution_lease_revision=self.owned_revision)
+                self.checkpoint['execution_continuity']['invocation_id'] = INVOCATION
+                if mutation == 'owner': self.checkpoint['control']['executor_id'] = '33333333-3333-4333-8333-333333333333'
+                elif mutation == 'generation': self.checkpoint['control']['lease_generation'] = 2
+                elif mutation == 'invocation': self.checkpoint['execution_continuity']['invocation_id'] = 'foreign-invocation'
+                else: self.checkpoint['control']['execution_lease_revision'] = self.anchor
+                self.refresh_authorization()
+                with self.assertRaises(ValueError): self.observe()
+
+    def test_unresolved_checkpoint_intents_waits_and_unknown_compute_denied(self):
+        for key, value in [('active_compute', 'unknown-native-start'), ('operation_intent_ref', 'intent:unknown'),
+                           ('operation_key', 'sha256:' + 'a' * 64), ('active_ci_run_id', 'unresolved-run'),
+                           ('waiting_external_kind', 'compute')]:
+            with self.subTest(key=key):
+                self.setUp(); self.checkpoint[key] = value; self.refresh_authorization()
+                with self.assertRaises(ValueError): self.observe()
+
+    def test_source_policy_budget_scope_and_root_authority_substitutions_denied(self):
+        for change in [{'source_sha': '0' * 40}, {'source_ref': 'refs/heads/main'}, {'lease_ref': 'refs/heads/cdc/other'},
+                       {'source_store_id': 'sha256:' + '0' * 64}, {'budget_binding_digest': 'sha256:' + '0' * 64},
+                       {'authority_digest': 'sha256:' + '0' * 64}, {'authority_path': 'project_adoption_authorizations/foreign'},
+                       {'final_platform': 'linux'}, {'check_ids': ['arbitrary-command']}, {'approved': True}]:
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.observe(registration={**self.registration, **change})
+
+    def test_policy_authority_is_actual_immutable_native_document(self):
+        proof = self.observe(); revision, document = self.authority_store.read()
+        document['unrelated_observation'] = 'Root can advance other fields'
+        self.authority_store.compare_and_swap(revision, document)
+        self.assertFalse(self.revalidate(proof)['authorizes_launch'])
+        revision, document = self.authority_store.read(); document['project_adoption_authorizations']['product']['scope']['agent_starts'] = 1
+        self.authority_store.compare_and_swap(revision, document)
+        with self.assertRaises(ValueError): self.revalidate(proof)
+
+    def test_observation_payload_serialization_and_time_cannot_reconstruct_authority(self):
+        proof = self.observe(); raw = proof.payload
+        with self.assertRaises((AttributeError, ValueError)): self.revalidate(raw)
+        proof._payload['scope']['agent_starts'] = 1
+        with self.assertRaises(ValueError): self.revalidate(proof)
+        fresh = self.observe(); self.now += timedelta(seconds=91)
+        with self.assertRaises(ValueError): self.revalidate(fresh)
+
+    def test_native_channels_and_semantic_budget_lease_source_drift_are_revalidated(self):
+        proof = self.observe()
+        with self.assertRaises(ValueError): self.observe(source={'observed': True})
+        with self.assertRaises(ValueError): self.observe(policy_authority_store={'approved': True})
+        revision, _ = self.budget_store.read(); self.budget_store.begin_wake(revision, 'connection-wake')
+        with self.assertRaises(ValueError): self.revalidate(proof)
+        updated = self.observe(); self.git(self.repo, 'reset', '--hard', self.source_sha)
+        (self.repo / 'unrelated-product.txt').write_text('Source changed')
+        self.git(self.repo, 'add', '.'); self.git(self.repo, 'commit', '-m', 'Fixture Source drift'); self.git(self.repo, 'push', 'source', 'HEAD:' + SOURCE)
+        with self.assertRaises(ValueError): self.revalidate(updated)
+
+    def test_older_released_projection_and_new_generation_history_are_supported(self):
+        second = copy.deepcopy(self.owned)
+        second.update(owner_id='33333333-3333-4333-8333-333333333333', generation=2,
+                      last_release=self.released['last_release'])
+        second['invocation']['invocation_id'] = 'managed-terminal:second-native-invocation'
+        second['finalization'] = copy.deepcopy(self.ready['finalization'])
+        self.publish_control(second)
+        released = lease.release(second, second['owner_id'], 2, second['invocation']['invocation_id'], '2026-10-13T10:00:06Z')
+        self.publish_control(released)
+        proof = self.observe()
+        self.assertEqual(proof.payload['checkpoint']['control']['lease_generation'], 1)
+        self.assertEqual(proof.payload['lease_release']['generation'], 1)
+        self.assertFalse(self.revalidate(proof)['authorizes_product_acceptance'])
+
+    def test_live_owner_foreign_binding_and_fabricated_release_history_denied(self):
+        for mutation in ['owner', 'repository', 'guard', 'release']:
+            with self.subTest(mutation=mutation):
+                self.setUp(); changed = copy.deepcopy(self.released)
+                if mutation == 'owner': changed = copy.deepcopy(self.ready)
+                elif mutation == 'repository': changed['repository'] = 'fixture/foreign-product'
+                elif mutation == 'guard':
+                    intent = operation.prepare({'repository': 'fixture/product', 'candidate_sha': 'a' * 40,
+                        'backend': 'codex', 'mode': 'COMPUTE_ONLY', 'check_suite_fingerprint': 'sha256:' + 'b' * 64,
+                        'environment_fingerprint': 'sha256:' + 'c' * 64, 'check_plan_digest': 'sha256:' + 'd' * 64,
+                        'environment_id': 'fixture'}, 'guarded-attempt', SOURCE, '2026-10-13T10:00:01Z')
+                    receipt = operation.verify_readback(intent, copy.deepcopy(intent), 'fixture:intent-readback', '2026-10-13T10:00:02Z')
+                    intent = operation.transition(intent, 'submitting', '2026-10-13T10:00:03Z', receipt=receipt)
+                    intent = operation.transition(intent, 'unknown', '2026-10-13T10:00:04Z')
+                    changed = lease.set_guard(self.owned, OWNER, 1, INVOCATION, '2026-10-13T10:00:04Z', intent, 'fixture:intent')
+                    changed['finalization'] = copy.deepcopy(self.ready['finalization'])
+                    changed['finalization']['external_reconciliation'] = 'unknown_preserved'
+                    changed = lease.release(changed, OWNER, 1, INVOCATION, '2026-10-13T10:00:05Z')
+                    self.assertIsNone(changed['owner_id']); lease.validate(changed)
+                else: changed['last_release']['checkpoint_ref'] = 'fabricated:replacement'
+                self.publish_control(changed)
+                with self.assertRaises(ValueError): self.observe()
+
+    def test_authentic_document_does_not_authorize_foreign_task_policy_counts_or_scope(self):
+        for key, value in [('task_id', 'replacement-task'), ('budget_policy_digest', 'sha256:' + 'b' * 64),
+                           ('source_policy_revision', 'foreign-policy'), ('preserved_counts', {}),
+                           ('owner_wake_ref', 'owner:unregistered-wake'), ('remaining_work', [])]:
+            with self.subTest(key=key):
+                self.setUp(); self.authorization[key] = value
+                revision, document = self.authority_store.read()
+                document['project_adoption_authorizations']['product'] = self.authorization
+                self.auth_revision = self.authority_store.compare_and_swap(revision, document)
+                self.registration = self.registration_record()
+                with self.assertRaises(ValueError): self.observe()
+
+    def test_restored_authority_rewrite_and_serialized_constructor_are_rejected(self):
+        native = importlib.import_module('project_adoption'); proof = self.observe()
+        with self.assertRaises(ValueError):
+            native.ProjectAdoptionObservation(proof.payload, (), self.registration, lambda: NOW)
+        revision, document = self.authority_store.read(); original = copy.deepcopy(document)
+        document['project_adoption_authorizations']['product']['owner_decision_ref'] = 'foreign:decision'
+        revision = self.authority_store.compare_and_swap(revision, document)
+        self.authority_store.compare_and_swap(revision, original)
+        with self.assertRaises(ValueError): self.observe()
+
+    def test_native_channel_substitution_and_endpoint_drift_are_denied(self):
+        proof = self.observe(); replacement = GitSource(self.repo, 'source', self.endpoint, clock=lambda: self.now)
+        with self.assertRaises(ValueError):
+            proof.revalidate_for(replacement, self.lease_store, self.budget_store, self.authority_store, self.registration)
+        self.git(self.repo, 'remote', 'set-url', 'source', str(self.root / 'different.git'))
+        with self.assertRaises(ValueError): self.revalidate(proof)
+
+    def test_historical_task_policy_and_unknown_charges_survive_distinct_owner_wake(self):
+        self.fixture_charged = True; self.setUp(); proof = self.observe()
+        self.assertEqual(proof.payload['budget_summary']['active_agents'], 1)
+        self.assertEqual(proof.payload['budget_summary']['task']['ci_starts'], 1)
+        self.assertEqual(proof.payload['scope']['agent_starts'], 0)
+        old_events = copy.deepcopy(self.ledger['events'])
+        self.budget_store.begin_wake(proof.budget_revision, 'connection-wake')
+        with self.assertRaises(ValueError): self.revalidate(proof)
+        fresh = self.observe(); _, ledger = fresh.budget_store.read()
+        self.assertEqual(ledger['events'], old_events)
+        self.assertEqual(ledger['wake_ids'], ['old-wake', 'connection-wake'])
+        self.assertEqual(fresh.payload['budget_summary']['active_agents'], 1)
+        self.assertFalse(fresh.payload['authorizes_launch'])
+
+    def test_released_projection_cannot_substitute_retained_executor_or_invocation(self):
+        for field in ['executor', 'invocation']:
+            with self.subTest(field=field):
+                self.setUp()
+                if field == 'executor': self.checkpoint['control']['executor_id'] = '33333333-3333-4333-8333-333333333333'
+                else: self.checkpoint['execution_continuity']['invocation_id'] = 'foreign-invocation'
+                self.refresh_authorization()
+                with self.assertRaises(ValueError): self.observe()
+
+
+if __name__ == '__main__': unittest.main()
