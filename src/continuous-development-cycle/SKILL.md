@@ -3,13 +3,14 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.5.4
+# Continuous Development Cycle v3.6.0
 
-This3.5.4 patch preserves separate raw command stdout/stderr and actual exit
-before interpretation. Authentic negative closeout returns nonzero; an optional
-create-only result file retains the complete rejection before bounded references.
-Developed under independently released3.5.3. Runtime reporting/evidence scripts
-change; supported version floor and authority/safety contracts stay unchanged.
+This 3.6.0 release adds native administrative UNKNOWN recovery for original
+source publications and prelaunch intake. Distinct sealed capabilities authenticate
+original custody and forbid replay without inventing terminal outcomes or refunding
+charges. Developed under independently released 3.5.4. Legacy raw command streams,
+actual exits and truthful negative closeout remain supported. The executable floor
+stays 3.3.0; ordinary terminal, lease, budget and one-use authority remain enforced.
 Existing strict administrative Actions UNKNOWN quarantine remains unchanged.
 Missing transport cancellation proof remains UNKNOWN; native evidence and CAS
 retire only the exact read-only pilot without replay or a new submission grant.
