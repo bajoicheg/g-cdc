@@ -170,3 +170,26 @@ checkout custody can be pinned. Native start/request and journal derivation use
 the original issuing runtime digest encoding. Capability request comparisons use
 that same runtime digest; capability payload/invocation encodings stay unchanged.
 Genuine Unicode native sessions are qualified end to end.
+
+
+## CDC 3.6.2: Source-selected retained-project interval
+
+The owner-authorized continuation amends the original adoption history reader.
+A pinned Source checkpoint and immutable Root authorization select the exact
+original lease revision/identity. Derive the observation baseline only from that
+record and its unique strict native owner-to-release closure. An unchanged
+released snapshot must join the actual release and ready predecessor; an owned
+snapshot must join its later original closure. Validate every record and existing
+native history invariant from this baseline through the current head, with
+complete nonshallow first-parent ancestry and unchanged endpoint/Source pins.
+A selected generation-zero initializer remains exact canonical native data.
+
+Older incompatible blobs stay byte-exact, retained and nonauthorizing. They
+are not parsed as present native proof, repaired, reset, reanchored or promoted
+to fabricated ready/terminal history. Selected or later malformed/deleted/restored,
+merged, rewound, downgraded, substituted or nongenuine closure history remains
+fatal. No caller-supplied baseline, fallback flag, terminal capability, current
+CAS waiver or altered charges are introduced. The observation remains read-only
+with no launch/product acceptance authority; all original Windows work and
+UNKNOWN liabilities persist. CDC 3.6.2 is developed under released 3.6.1 and
+requires its own ordered exact SPEC→QUALITY and hosted FULL before deployment.

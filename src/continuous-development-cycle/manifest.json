@@ -1,7 +1,7 @@
 {
-  "description": "Native administrative UNKNOWN recovery with authenticated interrupted writer result custody and permanent replay exclusion.",
+  "description": "Native administrative UNKNOWN recovery and Source-selected retained-project adoption with authenticated original closure and preserved historical custody.",
   "entrypoint": "SKILL.md",
   "name": "continuous-development-cycle",
   "schema": "continuous-development-cycle/v3",
-  "version": "3.6.1"
+  "version": "3.6.2"
 }

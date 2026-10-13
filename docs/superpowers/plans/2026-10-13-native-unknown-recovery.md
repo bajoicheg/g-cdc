@@ -75,3 +75,16 @@ overwrite concurrent installed changes.
   worktree fallback created from the exact independently released SDK.
 - Architecture: separate claim-null source quarantine and prelaunch disposition;
   native barrier CAS, stopped legacy actors, no fabricated terminal facts.
+
+
+### CDC 3.6.2 anchored adoption correction
+
+Use meaningful anonymous bare-Git RED→GREEN to replace gen0-to-current parsing
+with the Source-selected original native interval. Join unchanged released and
+owned checkpoint snapshots to their exact unique strict closure; retain opaque
+older ancestry unchanged. Reject every selected/later contradiction and preserve
+mutation/terminal gates and original budgets. Verify the three authentic registered
+channels read-only with the Source runtime, record timings and head readbacks,
+then run targeted/bootstrap/package/projection checks only. Parent freezes Source,
+orders independent SPEC→QUALITY and one exact hosted FULL, and owns release and
+installation. Do not change the deployed 3.6.1 or prior release bytes.

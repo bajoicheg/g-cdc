@@ -13,7 +13,6 @@ import json
 import re
 
 import budget
-import execution_lease as legacy_lease
 import execution_lease_v2 as native_lease
 from git_document_store import GitDocumentStore
 from git_lease_store import GitLeaseStore, validate_coordination_transition
@@ -58,70 +57,96 @@ def _authority(document, path):
         raise ValueError('registered authorization path is absent') from None
 
 
-def _lease_history(store, current, registration):
+def _lease_history(store, current, registration, original_revision):
+    """Authenticate the Source-selected original interval, never older authority."""
     if store._git('rev-parse', '--is-shallow-repository') != 'false':
         raise ValueError('lease history is shallow')
-    revisions = store._git('rev-list', '--first-parent', current).splitlines()
+    ancestry = [line.split() for line in store._git('rev-list', '--first-parent', '--parents', current).splitlines()]
+    revisions = [row[0] for row in ancestry]
     if not revisions or len(revisions) > 10000: raise ValueError('lease history is incomplete or unbounded')
-    previous = None; records = {}; releases = {}
-    for revision in reversed(revisions):
-        parents = store._git('rev-list', '--parents', '-n', '1', revision).split()
-        # Source ancestry can precede native initialization, including merges.
-        # Only actual absence is Source history; malformed lease entries fail.
-        entry = store._git('ls-tree', '--full-tree', '-z', revision, '--', 'lease.json', raw=True)
-        if not entry:
-            if previous is not None: raise ValueError('native lease was deleted from history')
-            continue
-        if len(parents) > 2: raise ValueError('merged lease history is ambiguous')
-        record = store._read_record(revision)
-        _equal([record['repository'], record['source_ref']],
-               [registration['repository'], registration['source_ref']], 'historical lease binding differs')
-        if previous is None:
-            initializer = native_lease if record['schema'] == 'execution-lease/v2' else legacy_lease
-            _equal(_optional_history_fields(record),
-                   _optional_history_fields(initializer.initialize(record['repository'], record['source_ref'])),
-                   'native lease history must begin at canonical released generation zero')
+    if original_revision not in revisions:
+        raise ValueError('checkpoint lease revision is not authentic original history')
+    parents = {row[0]: row[1:] for row in ancestry}
+    cached = {}
+
+    def read(revision):
+        if revision not in cached:
+            record = store._read_record(revision)
+            _equal([record['repository'], record['source_ref']],
+                   [registration['repository'], registration['source_ref']], 'historical lease binding differs')
+            cached[revision] = record
+        return cached[revision]
+
+    selected = read(original_revision)
+    if selected['schema'] != 'execution-lease/v2':
+        raise ValueError('selected checkpoint requires genuine native v2 closure')
+    baseline = revisions.index(original_revision)
+    if selected['owner_id'] is None:
+        if selected['generation'] == 0:
+            _equal(_optional_history_fields(selected), _optional_history_fields(
+                native_lease.initialize(selected['repository'], selected['source_ref'])),
+                'selected generation zero is not canonical native initialization')
         else:
+            release = selected['last_release']
+            if not isinstance(release, dict) or release['generation'] != selected['generation']:
+                raise ValueError('selected checkpoint lacks genuine original release')
+            # An unchanged released snapshot is not the release edge. Walk back
+            # only through its exact selected identity to the actual predecessor.
+            following = selected
+            for index in range(baseline + 1, len(revisions)):
+                revision = revisions[index]; record = read(revision)
+                if record['generation'] != selected['generation']:
+                    raise ValueError('selected checkpoint lacks genuine original release')
+                if record['owner_id'] is not None:
+                    if (record['owner_id'] != release['owner_id'] or record.get('invocation') is None
+                            or record['invocation']['invocation_id'] != release['invocation_id']):
+                        raise ValueError('selected original release identity differs')
+                    validate_coordination_transition(record, following, expected_revision=revision)
+                    baseline = index
+                    break
+                _equal(record['last_release'], release, 'selected original release was substituted')
+                following = record
+            else:
+                raise ValueError('selected checkpoint lacks genuine original release')
+    previous = None; records = {}; releases = {}
+    for revision in reversed(revisions[:baseline + 1]):
+        if len(parents[revision]) > 1: raise ValueError('merged lease history is ambiguous')
+        # Missing/malformed interval records remain fatal, even when restored.
+        try: record = read(revision)
+        except ValueError as error:
+            if 'requires one regular lease.json' in str(error):
+                raise ValueError('native lease was deleted from selected history') from error
+            raise
+        if record['schema'] != 'execution-lease/v2': raise ValueError('native lease schema downgraded')
+        if previous is not None:
             if record['generation'] < previous['generation']: raise ValueError('lease generation rewound')
+            if record['owner_id'] is not None and (record['owner_id'] != previous['owner_id']
+                    or record['generation'] != previous['generation']):
+                if record['generation'] != previous['generation'] + 1:
+                    raise ValueError('ownership generation must advance exactly once')
+                if record['owner_id'] in (previous['owner_id'], (previous['last_release'] or {}).get('owner_id')):
+                    raise ValueError('native ownership cannot reuse an owner UUID')
             for field in ('submission_claims', 'submission_resolutions', 'submission_retirements'):
                 old = previous.get(field, []); new = record.get(field, [])
                 _equal(new[:len(old)], old, 'lease history was rewritten')
-            if previous['schema'] == 'execution-lease/v2' and record['schema'] != previous['schema']:
-                raise ValueError('native lease schema downgraded')
-            if previous['schema'] == 'execution-lease/v1' and record['schema'] == 'execution-lease/v2':
-                migration = record.get('legacy_migration')
-                if not isinstance(migration, dict): raise ValueError('native migration marker is absent')
-                _equal(_optional_history_fields(record), _optional_history_fields(
-                    native_lease.migrate_v1(previous, migration['migrated_at_utc'])),
-                    'native lease migration is not canonical')
-            elif record['schema'] == previous['schema'] == 'execution-lease/v1':
-                if previous['owner_id'] is not None and record['owner_id'] is None:
-                    _equal(record, legacy_lease.release(previous, previous['owner_id'], previous['generation'],
-                                                       record['last_release']['at_utc']),
-                           'legacy release is not canonical')
-                elif record['last_release'] != previous['last_release']:
-                    raise ValueError('legacy release was substituted')
-                if record['generation'] == previous['generation'] and record['owner_id'] is not None:
-                    _equal(record['owner_id'], previous['owner_id'], 'legacy owned generation identity changed')
-            if record.get('schema') == previous.get('schema') == 'execution-lease/v2':
-                if previous['owner_id'] is not None and record['owner_id'] is None:
-                    validate_coordination_transition(previous, record, expected_revision=parents[1])
-                    release = record['last_release']
-                    releases[(release['owner_id'], release['generation'], release['invocation_id'])] = {
-                        'revision': revision, 'release': copy.deepcopy(release)}
-                elif record.get('last_release') != previous.get('last_release'):
-                    raise ValueError('historical release was substituted')
-                if (previous['owner_id'] is not None and record['owner_id'] is not None
-                        and record['generation'] == previous['generation']):
-                    keys = ('invocation_id', 'execution_surface', 'started_at_utc')
-                    _equal([record['owner_id'], [record['invocation'][key] for key in keys]],
-                           [previous['owner_id'], [previous['invocation'][key] for key in keys]],
-                           'owned generation identity changed')
-                    if record['invocation'] != previous['invocation']:
-                        validate_coordination_transition(previous, record, expected_revision=parents[1])
+            if previous['owner_id'] is not None and record['owner_id'] is None:
+                validate_coordination_transition(previous, record, expected_revision=parents[revision][0])
+                release = record['last_release']
+                key = (release['owner_id'], release['generation'], release['invocation_id'])
+                if key in releases: raise ValueError('duplicate original invocation closure')
+                releases[key] = {'revision': revision, 'release': copy.deepcopy(release)}
+            elif record.get('last_release') != previous.get('last_release'):
+                raise ValueError('historical release was substituted')
+            if (previous['owner_id'] is not None and record['owner_id'] is not None
+                    and record['generation'] == previous['generation']):
+                keys = ('invocation_id', 'execution_surface', 'started_at_utc')
+                _equal([record['owner_id'], [record['invocation'][key] for key in keys]],
+                       [previous['owner_id'], [previous['invocation'][key] for key in keys]],
+                       'owned generation identity changed')
+                if record['invocation'] != previous['invocation']:
+                    validate_coordination_transition(previous, record, expected_revision=parents[revision][0])
         records[revision] = record; previous = record
-    if previous is None: raise ValueError('native lease initialization is absent')
-    return records, releases
+    return records, releases, revisions[baseline]
 
 
 def _optional_history_fields(record):
@@ -209,8 +234,8 @@ def _collect(source, lease_store, budget_store, policy_authority_store, registra
     if (current is None or current.get('schema') != 'execution-lease/v2' or current['owner_id'] is not None
             or current.get('invocation') is not None or current.get('finalization') is not None
             or current.get('external_guard') is not None): raise ValueError('canonical lease is not released and unguarded')
-    records, releases = _lease_history(lease_store, lease_revision, r)
     original_revision = control.get('execution_lease_revision')
+    records, releases, baseline_revision = _lease_history(lease_store, lease_revision, r, original_revision)
     if original_revision not in records: raise ValueError('checkpoint lease revision is not authentic original history')
     original = records[original_revision]
     generation = control.get('lease_generation')
@@ -260,6 +285,8 @@ def _collect(source, lease_store, budget_store, policy_authority_store, registra
             'source_policy_digest': policy['policy_digest'], 'checkpoint': copy.deepcopy(checkpoint),
             'checkpoint_classification': classification, 'lease_revision': lease_revision,
             'lease_release': copy.deepcopy(matched_release['release']) if matched_release else None,
+            'lease_release_revision': matched_release['revision'] if matched_release else None,
+            'lease_baseline_revision': baseline_revision,
             'budget_revision': budget_revision, 'task_id': ledger['task_id'], 'budget_binding_digest': _digest(b),
             'budget_summary': budget.summarize(ledger), 'authority_revision': r['authority_revision'],
             'authority_digest': r['authority_digest'], 'scope': copy.deepcopy(expected_scope),

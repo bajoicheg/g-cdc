@@ -127,18 +127,33 @@ host/testing use; callers cannot provide a different clock at revalidation.
 Source adapter and checkpoint are read at the registered live SHA and validated
 with native CDC 3.6 contracts. Repository, Source branch, policy, lease endpoint,
 lease ref, checkpoint original budget ref, and final platform must agree. The
-complete, nonshallow lease history must reach a canonical released generation
-zero initialization. Source ancestors without `lease.json`, including Source
-merges, may precede that boundary. After initialization, missing or malformed
-lease entries, merges, generation rewind, schema downgrade, and changed bindings
-fail closed. Claims, resolutions and retirements must retain their prefixes.
-An original v1 initialization and exact native v1-to-v2 migration are supported;
-legacy releases and migration markers do not supply v2 invocation closures.
-A genuine v2 owner-to-release edge is validated through the native transactional
-release contract. Native conversation or automation metadata registration is
-supported within an owned generation while its owner, invocation identifier,
-execution surface and start time remain unchanged.
+complete, nonshallow first-parent ancestry must contain the exact Source-selected
+checkpoint lease revision. CDC 3.6.2 derives its native observation interval from
+that immutable revision and the uniquely matching genuine owner/generation/
+invocation closure. For a released snapshot, walk back through the exact retained
+release identity to the actual ready predecessor and release edge; an unchanged
+released snapshot is not the edge. For an owned snapshot, validate the original
+record through its later exact release. A selected generation-zero snapshot must
+be the canonical native initializer.
 
+Every interval record is native-valid. Missing or malformed entries, merges,
+generation rewind, schema downgrade, changed bindings or owner/invocation identity,
+rewritten claims/resolutions/retirements and nontransactional releases fail closed,
+even if later restored. A new owned generation must advance exactly once and use
+a fresh owner UUID. A genuine v2 release uses the unchanged native transactional
+release validator. Native conversation or automation metadata registration may
+change within the same owner/invocation/surface/start-time identity. Earlier
+blobs remain immutable ancestry and supply no present native proof, readiness,
+closure or terminal authority. They are not repaired, reanchored or interpreted
+as current lease permission. Legacy and incompatible records outside the selected
+interval therefore cannot prevent this read-only observation or supply its closure.
+
+No arbitrary baseline argument or registration fallback exists. The registered
+Source SHA and immutable owner authorization already pin the checkpoint that
+selects the original identity and revision. Informational `lease_baseline_revision`
+and `lease_release_revision` identify the authenticated interval and actual
+release. They remain serialized observations, not capabilities. Actual managed
+ownership/start, CAS, reporting and terminal gates are unchanged.
 A released checkpoint may retain runnable next actions and may name an older
 authentic released generation while the current generation is released. An
 active checkpoint projection is supported only when its original lease revision,
@@ -162,7 +177,7 @@ provider permission, a product writer permission, or a launch capability.
 ## Validation
 
 The isolated bare-Git tests exercise authentic typed channels, released runnable
-work, prelease Source ancestry, native v1 migration, independently registered
+work, prelease Source ancestry, older opaque ancestry, Source-selected native closure, independently registered
 budget channels, native invocation metadata registration, exact stale active
 projections across later releases, older historical releases, source/ref/task/
 policy substitutions, guarded/live leases, fabricated release edges, immutable
