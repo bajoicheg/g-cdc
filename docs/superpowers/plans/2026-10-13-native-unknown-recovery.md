@@ -43,13 +43,13 @@ remain scoped; only genuine required owner input may interrupt execution.
 
 ## Progress ledger
 
-- Original baseline: VPS adapter c50 installed; local guardian correction297
+- Original baseline: Prior VPS adapter installed; local guardian correction
   SPEC/QUALITY GREEN; all repository access verified; ordinary task prelaunch
   UNKNOWN and original publication guard retained. Both old source/setup native
   leases released, administrator screen closed.
 - Owner added explicit native SDK development and installation scope; original
   native budget policy replanned without removing events/charges/UNKNOWN holds.
 - Native worktree tool rejected chat cwd as not a Git repository; isolated Git
-  worktree fallback created from exact released SDK a319.
+  worktree fallback created from the exact independently released SDK.
 - Architecture: separate claim-null source quarantine and prelaunch disposition;
   native barrier CAS, stopped legacy actors, no fabricated terminal facts.

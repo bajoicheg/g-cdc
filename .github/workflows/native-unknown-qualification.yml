@@ -1,0 +1,28 @@
+name: Native UNKNOWN recovery qualification
+on:
+  push:
+    branches: [cdc/native-unknown-recovery-20261013]
+permissions:
+  contents: read
+concurrency:
+  group: cdc-native-unknown-qualification
+  cancel-in-progress: false
+jobs:
+  full:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install declared validator dependency
+        run: python3 -m pip install 'PyYAML==6.0.2'
+      - name: Independent bootstrap and release bindings
+        run: |
+          python3 -B bootstrap/validate_release.py --mode full
+          python3 -B -m unittest discover -s bootstrap/tests -v
+      - name: Independent package structure
+        run: python3 -B src/continuous-development-cycle/scripts/validate_package.py
+      - name: FULL packaged regressions in clean consumer layout
+        run: python3 -B bootstrap/consumer_package_checks.py

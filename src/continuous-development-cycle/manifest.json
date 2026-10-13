@@ -1,7 +1,7 @@
 {
-  "name": "continuous-development-cycle",
-  "version": "3.5.4",
-  "schema": "continuous-development-cycle/v3",
+  "description": "Native administrative UNKNOWN recovery with sealed original-history custody and permanent replay exclusion.",
   "entrypoint": "SKILL.md",
-  "description": "Native owner reporting/RCA closeout, receiving CI admission and detached/completed-result phase separation."
+  "name": "continuous-development-cycle",
+  "schema": "continuous-development-cycle/v3",
+  "version": "3.6.0"
 }
