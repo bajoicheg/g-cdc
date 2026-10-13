@@ -184,8 +184,8 @@ def _collect(source, lease_store, budget_store, policy_authority_store, registra
     _equal(snapshot.revision, r['source_sha'], 'registered Source SHA changed')
     adapter = _yaml(source.read_file(snapshot, 'docs/development-cycle.yaml'))
     checkpoint, _ = _checkpoint(source.read_file(snapshot, 'docs/work-status/current.md'))
-    policy = validate_adapter(adapter, skill_version='3.6.0')
-    validate_checkpoint_24(checkpoint, adapter, skill_version='3.6.0')
+    policy = validate_adapter(adapter)
+    validate_checkpoint_24(checkpoint, adapter)
     if checkpoint.get('schema') != 'development-work-status/v4':
         raise ValueError('adoption requires native invocation-bound v4 checkpoint')
     _equal([adapter['repository']['remote'], checkpoint['repository'], checkpoint['branch']],

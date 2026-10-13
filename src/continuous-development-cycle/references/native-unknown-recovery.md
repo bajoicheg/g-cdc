@@ -122,6 +122,16 @@ invent a missing birth or infer complete closure from a wrapper's exit.
 The guard must describe the original native `local_command` writer. Its exact
 environment and contract stay bound through the original trusted lease digest.
 The publication must join the actual integrated writer result and original handle.
+An interrupted legacy controller may leave the informational session result
+empty. Quarantine can accept that missing cache only after fresh native terminal
+proof authenticates the original release and accepted/integrated pool, and the
+original runtime `result.json` digest matches its canonical accepted result.
+The candidate must match that actual writer result. Any contradictory populated
+session result, unaccepted result, substituted pool or altered runtime result
+fails closed. The factory does not repair session bytes. If the session release
+receipt is missing, first use supported `managed_host_bridge.observe` on the
+original handle to reconcile the existing authentic release, then obtain fresh
+native terminal proof; observation grants no replay or Git confirmation.
 The original publication entry must remain exactly SUBMITTED, with original
 expected and intended commits. Fresh target HEAD must be a descendant of the old
 expected HEAD, advance beyond it, and contain the intended candidate. This readback

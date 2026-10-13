@@ -3,12 +3,14 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.6.0
+# Continuous Development Cycle v3.6.1
 
-This 3.6.0 release adds native administrative UNKNOWN recovery for original
-source publications and prelaunch intake. Distinct sealed capabilities authenticate
+This 3.6.1 patch supports native UNKNOWN recovery when an interrupted original
+controller has not saved its informational writer result. Fresh native accepted
+result and original release custody remain mandatory. Native administrative
+recovery covers source publications and prelaunch intake. Distinct sealed capabilities authenticate
 original custody and forbid replay without inventing terminal outcomes or refunding
-charges. Developed under independently released 3.5.4. Legacy raw command streams,
+charges. Developed under independently released 3.6.0. Legacy raw command streams,
 actual exits and truthful negative closeout remain supported. The executable floor
 stays 3.3.0; ordinary terminal, lease, budget and one-use authority remain enforced.
 Existing strict administrative Actions UNKNOWN quarantine remains unchanged.

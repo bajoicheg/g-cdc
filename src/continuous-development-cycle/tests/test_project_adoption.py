@@ -316,6 +316,14 @@ class ProjectAdoptionTests(unittest.TestCase):
         self.assertFalse(value['authorizes_product_acceptance']); self.assertFalse(value['authorizes_launch'])
         self.assertIs(proof.budget_store, self.budget_store)
 
+    def test_original_policy_must_authorize_current_native_reader_version(self):
+        self.adapter['policy']['skill_max_version_exclusive']=(ROOT/'VERSION').read_text().strip()
+        self.adapter['convergence']['target_version']='3.6.0'
+        self.adapter_binding=validate_adapter(self.adapter,skill_version='3.6.0')
+        self.checkpoint.update(policy_revision=self.adapter_binding['policy_revision'],policy_digest=self.adapter_binding['policy_digest'])
+        self.refresh_authorization()
+        with self.assertRaises(ValueError):self.observe()
+
     def test_exact_stale_active_checkpoint_links_original_release(self):
         self.checkpoint.update(lease_state='active', active_executor=OWNER,
                                executor_heartbeat_at_utc='2026-10-13T10:00:01Z', execution_lease_until_utc='2026-10-13T10:20:01Z',
