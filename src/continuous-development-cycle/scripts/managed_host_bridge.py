@@ -738,6 +738,7 @@ def _publish(session, result_commit):
         repo, session["remote"], source_ref, source_id,
         attempt_store=publication_store,
         attempt_store_id=session["plan"]["coordination_store_id"],
+        quarantine_store=_lease_store(session),
     )
     integrator = LaneClaim(
         lane_id="managed-host-integrator-" + session["handle_id"],

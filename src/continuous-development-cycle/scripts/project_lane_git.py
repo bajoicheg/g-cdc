@@ -184,7 +184,7 @@ class GitLaneIntegrationPublisher(GitLaneResultVerifier):
     """Conditional publication with a durable, remote-bound one-shot attempt journal."""
 
     def __init__(self, repo, remote, source_ref, remote_id, *, attempt_store=None,
-                 attempt_store_id=None, clock=None):
+                 attempt_store_id=None, clock=None, quarantine_store=None):
         super().__init__(repo)
         if not isinstance(remote, str) or not remote.strip() or remote.startswith("-"):
             raise ValueError("integration remote must be a configured remote name")
@@ -198,6 +198,10 @@ class GitLaneIntegrationPublisher(GitLaneResultVerifier):
         self.source_ref = source_ref
         self.remote_id = remote_id
         self.attempt_store = attempt_store
+        self.quarantine_store = quarantine_store
+        if quarantine_store is not None:
+            from git_lease_store import GitLeaseStore
+            if type(quarantine_store) is not GitLeaseStore:raise ValueError("native source quarantine store required")
         self.clock = clock or _now_utc
         if remote_identity(self.repo, self.remote) != self.remote_id:
             raise ValueError("integration remote identity drift")
@@ -474,6 +478,10 @@ class GitLaneIntegrationPublisher(GitLaneResultVerifier):
             if status != 0:
                 raise ValueError("intended integration is not a fast-forward containing required ancestry")
 
+        if self.quarantine_store is not None:
+            from source_publication_quarantine import assert_source_publication_not_quarantined
+            assert_source_publication_not_quarantined(self.quarantine_store,operation_id=operation_id,result_commit=result_commit,intended_commit=intended)
+
         current = self._remote_head()
         if current == intended:
             attempt = self._get_attempt(item, intent)
@@ -511,6 +519,9 @@ class GitLaneIntegrationPublisher(GitLaneResultVerifier):
                 return self._evidence(item, intent, attempt=attempt, conditional=False)
             raise ValueError("shared integration ref moved before conditional publication")
 
+        if self.quarantine_store is not None:
+            from source_publication_quarantine import assert_source_publication_not_quarantined
+            assert_source_publication_not_quarantined(self.quarantine_store,operation_id=operation_id,result_commit=result_commit,intended_commit=intended)
         attempt = self._transition_attempt(item, intent, "submitted", {"prepared"})
         try:
             self._push_cas(observed, intended)

@@ -206,7 +206,8 @@ def validate(record):
     from submission_retirement import validate_retirement, _forbids_intent
     for entry in retirements:
         validate_retirement(entry,record)
-        grant_id=entry["guard"]["submission_claim"]["grant_id"]
+        claim=entry["guard"]["submission_claim"]
+        grant_id=claim["grant_id"] if claim is not None else entry["guard"]["operation_key"]
         if grant_id in retired_ids or grant_id in resolved_ids:
             raise ValueError("duplicate or terminal-resolved retirement")
         retired_ids.add(grant_id)

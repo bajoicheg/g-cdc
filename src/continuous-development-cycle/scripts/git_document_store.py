@@ -122,6 +122,10 @@ class GitDocumentStore:
             raise ValueError("historical revision is not in authoritative document ancestry") from None
         if base != revision:
             raise ValueError("historical revision is not in authoritative document ancestry")
+        return self._read_document_object(revision)
+
+    def _read_document_object(self, revision):
+        """Decode a genuine immutable object from an already authenticated snapshot."""
         if self._git("ls-tree", "--name-only", revision).splitlines() != [STATE_FILE]:
             raise ValueError("historical coordination tree must contain only document.json")
         payload = self._git("show", f"{revision}:{STATE_FILE}") + "\n"
@@ -130,11 +134,13 @@ class GitDocumentStore:
             raise ValueError("historical coordination document must have canonical JSON encoding")
         return document
 
-    def compare_and_swap(self, expected_revision, document):
+    def compare_and_swap(self, expected_revision, document, *, recovery_capability=None):
         payload = canonical(document)
-        current, _ = self.read()
+        current, previous = self.read()
         if expected_revision != current:
             raise ValueError("stale expected document revision")
+        from unknown_recovery import validate_intake_transition
+        validate_intake_transition(previous, document, store=self, expected_revision=expected_revision, recovery_capability=recovery_capability)
         blob = self._git("hash-object", "-w", "--stdin", input_text=payload)
         tree = self._git("mktree", input_text=f"100644 blob {blob}\t{STATE_FILE}\n")
         parent = ["-p", expected_revision] if expected_revision else []

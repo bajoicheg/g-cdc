@@ -68,6 +68,9 @@ def _validate_proof(proof, guard, repository, source_ref, release, at):
 
 def validate_retirement(entry, record):
     """Validate immutable history independently of the current generation/clock."""
+    if isinstance(entry,dict) and entry.get('schema')=='source-publication-quarantine/v1':
+        from source_publication_quarantine import validate_source_quarantine
+        return validate_source_quarantine(entry,record)
     if isinstance(entry,dict) and entry.get('schema')=='actions-submission-retirement/v1':
         return _validate_actions_retirement(entry,record)
     op._object(entry,{'schema','outcome','replay_forbidden','guard','original_release','proof',

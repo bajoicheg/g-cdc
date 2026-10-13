@@ -14,6 +14,10 @@ Existing strict administrative Actions UNKNOWN quarantine remains unchanged.
 Missing transport cancellation proof remains UNKNOWN; native evidence and CAS
 retire only the exact read-only pilot without replay or a new submission grant.
 Load `references/unknown-retirement.md` only for that authorized recovery phase.
+For explicitly authorized native source publication quarantine or prelaunch intake
+disposition, load `references/native-unknown-recovery.md`. Its separate sealed
+capabilities preserve UNKNOWN, charges and history; they never supply a launch,
+wait, provider terminal result or conditional Git confirmation.
 Version labels identify bytes; source release, saved activation and adoption require
 separate evidence. Load only current phase references; history remains linked.
 
@@ -150,7 +154,12 @@ pause is binding; supported-consumer tests do not deploy live consumers.
 
 ## Unknown isolated Git submission
 
-Use `references/unknown-retirement.md` only for explicitly owner-authorized administrative isolation of an original returned create-only pilot Git submission on a physically released/quiescent v2 lease. Outcome stays UNKNOWN; do not invent provider terminal evidence or replay the candidate. All other unknown effects retain normal reconciliation.
+Use `references/unknown-retirement.md` only for explicitly owner-authorized administrative isolation of an original returned create-only pilot Git submission on a physically released/quiescent v2 lease. Outcome stays UNKNOWN; do not invent provider terminal evidence or replay the candidate. For native source publication quarantine (including claim-null guards) or
+prelaunch intake disposition, use `references/native-unknown-recovery.md`.
+The original row CAS competes with a one-use start consumption; every controller
+and guardian must enforce that barrier, and old dispatch actors must be stopped.
+Retired contracts/candidates remain permanently excluded from native admission.
+Other unknown effects retain normal reconciliation.
 
 ## Enforced execution economics
 

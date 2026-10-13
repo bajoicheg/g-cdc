@@ -8,15 +8,15 @@ import managed_executor_runtime as runtime
 class TerminalProofTests(unittest.TestCase):
  def setUp(self):
   self.fixture=native.RuntimeTests();self.fixture.setUp();self.addCleanup(self.fixture.doCleanups)
- def start(self):
+ def start(self,delay=.1):
   f=self.fixture;rev,_=f.store.read()
-  return f.rt.start(rev,'a','a1',reservation_token='reserve:a',argv=f.worker('a',delay=.1))
+  return f.rt.start(rev,'a','a1',reservation_token='reserve:a',argv=f.worker('a',delay=delay))
  def verify(self):
   method=getattr(self.fixture.rt,'verify_terminal',None)
   self.assertIsNotNone(method,'authentic birth-bound terminal verifier missing')
   return method('a','a1')
  def test_nonterminal_real_supervisor_is_not_terminal_from_a_wrapper_claim(self):
-  self.start()
+  self.start(delay=2)
   with self.assertRaisesRegex(ValueError,'terminal|quiescen'):self.verify()
  def test_actual_subreaper_terminal_has_births_and_fresh_absence(self):
   self.start();deadline=time.monotonic()+4
