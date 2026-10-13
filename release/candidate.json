@@ -21,9 +21,9 @@
       "bootstrap/consumer_package_checks.py"
     ]
   },
-  "package_tree": "e059e1718234fcf5a4b278e7b4bb7c179db2ab28",
+  "package_tree": "106f193e1909f40b9c691475e4d0e8417ad1c566",
   "schema": "cdc-release-candidate/v1",
-  "source_commit": "6d8b6835444d446d44a726101d9e3ff371682948",
+  "source_commit": "23439a7450d1aaede987df3ed902ec71c3bfb474",
   "status": "candidate",
   "version": "3.6.2"
 }
