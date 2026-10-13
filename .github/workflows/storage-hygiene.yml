@@ -30,8 +30,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
-          PRESERVE_RUN_IDS: ''
-          ARTIFACT_RULES: '[]'
+          PRESERVE_RUN_IDS: ${{ vars.CDC_PRESERVE_RUN_IDS || '' }}
+          ARTIFACT_RULES: '[]' # Deletion is gated by the central private preservation workflow
         shell: bash
         run: |
           set -euo pipefail
