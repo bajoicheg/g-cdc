@@ -8,14 +8,26 @@ from __future__ import annotations
 from collections import OrderedDict
 import json
 import threading
+import zlib
 
 class _HistoryCache:
-    def __init__(self, *, max_bytes=16*1024*1024, max_entries=32):
+    def __init__(self, *, max_bytes=16*1024*1024, max_entries=32, max_decoded_bytes=128*1024*1024):
         self._max_bytes=max_bytes;self._max_entries=max_entries
+        self._max_decoded_bytes=max_decoded_bytes
         self._entries=OrderedDict();self._bytes=0;self._lock=threading.RLock()
     @staticmethod
     def _encode(value):
         return json.dumps(value,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()
+    def _decode(self, raw):
+        try:
+            decoder=zlib.decompressobj()
+            decoded=decoder.decompress(raw,self._max_decoded_bytes+1)
+            if (len(decoded)>self._max_decoded_bytes or decoder.unconsumed_tail
+                    or not decoder.eof or decoder.unused_data):
+                raise ValueError('compact history exceeds its decoding bound or is incomplete')
+            return json.loads(decoded)
+        except (zlib.error,UnicodeError,json.JSONDecodeError) as error:
+            raise ValueError('compact history encoding changed') from error
     def get(self, context):
         key=self._encode(context)
         with self._lock:
@@ -23,14 +35,16 @@ class _HistoryCache:
             if raw is None:return None
             self._entries.move_to_end(key)
         # Detached decoding prevents any caller from changing a shared prefix.
-        return json.loads(raw)
+        return self._decode(raw)
     def put(self, context, snapshot):
-        key=self._encode(context);raw=self._encode(snapshot);size=len(key)+len(raw)
+        key=self._encode(context);decoded=self._encode(snapshot)
+        if len(decoded)>self._max_decoded_bytes:return
+        raw=zlib.compress(decoded,level=1);size=len(key)+len(raw)
         if size>self._max_bytes:return
         with self._lock:
             previous=self._entries.get(key)
             if previous is not None:
-                old=json.loads(previous)['chain'];new=snapshot['chain']
+                old=self._decode(previous)['chain'];new=snapshot['chain']
                 if new[:len(old)]!=old:
                     # A concurrent older reader may finish after a newer one.
                     # Keep the newer observation; never downgrade stored lineage.

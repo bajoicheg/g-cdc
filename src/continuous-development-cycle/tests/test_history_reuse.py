@@ -122,9 +122,26 @@ class CacheBoundsTests(unittest.TestCase):
         self.assertEqual(cache.get({'channel':'actual-large-history'}),snapshot)
         self.assertLessEqual(cache._bytes,4096)
 
+    def test_compact_cache_rejects_overlarge_expansion(self):
+        from immutable_history_cache import _HistoryCache
+        cache=_HistoryCache(max_bytes=4096,max_decoded_bytes=4096)
+        snapshot={'chain':[['first']], 'documents':[['first',{'value':'x'*4096}]]}
+        cache.put({'channel':'large'},snapshot)
+        self.assertIsNone(cache.get({'channel':'large'}))
+        self.assertEqual(cache._bytes,0)
+
+    def test_compact_cache_rejects_corrupted_encoding(self):
+        from immutable_history_cache import _HistoryCache
+        cache=_HistoryCache(max_bytes=4096)
+        context={'channel':'a'};snapshot={'chain':[['first']], 'documents':[['first',{'value':'checked'}]]}
+        cache.put(context,snapshot)
+        key=cache._encode(context);raw=cache._entries[key]
+        cache._entries[key]=raw[:-1]+bytes([raw[-1]^1])
+        with self.assertRaises(ValueError):cache.get(context)
+
     def test_encoded_cache_is_bounded_and_old_read_cannot_downgrade_lineage(self):
         from immutable_history_cache import _HistoryCache
-        cache=_HistoryCache(max_bytes=300,max_entries=2)
+        cache=_HistoryCache(max_bytes=300,max_entries=2,max_decoded_bytes=300)
         first={'chain':[['first']],'documents':[['first',{'value':'x'*30}]]}
         second={'chain':[['first'],['second','first']],'documents':[['first',{}],['second',{}]]}
         cache.put({'channel':'a'},first);cache.put({'channel':'a'},second)

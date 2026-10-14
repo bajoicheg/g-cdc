@@ -3,9 +3,9 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.6.6
+# Continuous Development Cycle v3.6.7
 
-This 3.6.6 patch reuses bounded process-local immutable history and authenticates
+This 3.6.7 patch stores bounded process-local immutable history compactly and authenticates
 retired intake rows in one fresh snapshot. Fresh endpoint/ref/head, complete
 linear ancestry, UNKNOWN history and native capabilities remain mandatory. It
 retains the 3.6.5 patch that eliminates repeated accumulated-prefix copying during private

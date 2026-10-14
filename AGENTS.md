@@ -50,3 +50,11 @@ Develop 3.6.6 under independently released 3.6.5; this is the separately
 authorized authenticated-history stage above. Preserve all original gates,
 liabilities and immutable releases. Runtime adoption requires the separate
 qualified Root binding; draft cache data grants no permissions.
+
+## Actual large history cache qualification
+
+Develop 3.6.7 under independently released 3.6.6. The observed 93-revision
+intake contains 37,953,759 document bytes and exceeds the prior 16 MiB cache.
+Keep the stored cache bounded at 16 MiB and each decoded snapshot at 128 MiB;
+reject damaged or overlarge compact observations without granting any authority.
+Preserve all existing native custody, liabilities, releases and freshness gates.

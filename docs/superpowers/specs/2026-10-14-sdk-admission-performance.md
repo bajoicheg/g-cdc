@@ -70,3 +70,8 @@ to a fresh typed native snapshot. It scans every relevant historical state for
 consumption, rearm, deletion or changed/restored tombstones, and rechecks the head
 at completion. Single-row and structural APIs retain their roles. Root will use
 one batch for its retired rows; original task/index/queue contracts stay intact.
+
+Actual history follow-up: the current 93-revision intake has 37,953,759 bytes.
+Use compact process-local storage under the same 16 MiB LRU limit, with an
+independent 128 MiB decoded-snapshot limit. Compression never caches permissions
+and never skips fresh endpoint, current-head, complete-ancestry or terminal gates.
