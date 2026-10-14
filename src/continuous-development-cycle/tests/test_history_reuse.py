@@ -111,6 +111,17 @@ class ProjectBudgetHistoryReuseTests(unittest.TestCase):
         self.assertNotIn(old,[call.args[0] for call in read.call_args_list])
 
 class CacheBoundsTests(unittest.TestCase):
+    def test_large_repeated_history_fits_compact_storage_and_is_detached(self):
+        from immutable_history_cache import _HistoryCache
+        cache=_HistoryCache(max_bytes=4096)
+        snapshot={'chain':[['first']], 'documents':[['first',{'value':'already verified history '*8000}]]}
+        cache.put({'channel':'actual-large-history'},snapshot)
+        result=cache.get({'channel':'actual-large-history'})
+        self.assertEqual(result,snapshot)
+        result['documents'][0][1]['value']='changed'
+        self.assertEqual(cache.get({'channel':'actual-large-history'}),snapshot)
+        self.assertLessEqual(cache._bytes,4096)
+
     def test_encoded_cache_is_bounded_and_old_read_cannot_downgrade_lineage(self):
         from immutable_history_cache import _HistoryCache
         cache=_HistoryCache(max_bytes=300,max_entries=2)
