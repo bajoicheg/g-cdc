@@ -44,3 +44,11 @@ give it distinct bounded task ledgers without changing completed task ledgers.
 Reserve external effects before submission. Unknown replies are observe-only.
 Public tests use anonymous fixtures; private controls, credentials and raw model
 sessions are excluded. Independent reviews cover exact source and delivery tools.
+
+
+The release-receiving commit must not contain GitHub Actions skip instructions.
+An earlier source publication carrying `[skip ci]` is retained as its completed
+original native operation; its suppressed CI cannot qualify installation or
+be replayed. A separately reviewed forward commit receives the one release FULL.
+Long native controller invocations retain an independent durable parent wait;
+loss of an outer tool recorder never becomes a fabricated controller exit code.
