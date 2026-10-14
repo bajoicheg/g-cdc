@@ -40,7 +40,7 @@ actual `GitDocumentStore`. Its public APIs are:
 
 All guardian/controller entrypoints must enforce the native barrier. Stop old
 creators and guardians before issuing a prelaunch proof; a check followed by
-`Popen` supplies no start authority. Any controller history, including the legacy
+`Popen` supplies no start authority. Any canonical controller history, including the legacy
 `controllers` field, a controller identity, native handle, checkpoint, finish
 result, start consumption, or actual native pool blocks prelaunch retirement.
 Prepared-to-submitting intent history and the exact pinned observational metadata
@@ -82,6 +82,49 @@ unprobeable, or wrong-boot process identities fail closed. Native start-request
 and runtime-journal hashes use the issuing runtime's original ASCII JSON encoding;
 bridge handle UUID and operation/capability encodings retain their own original
 canonical encodings. Stored legacy digests are never rewritten.
+
+CDC 3.6.3 also supports independently configured Root intake and project lease/
+pool endpoints. Add `channels={intake_store_id, intake_ref, lease_store_id,
+lease_ref, pool_store_id, pool_ref}` to the trusted contract. The SDK joins the
+Root pins to the actual intake store and the project pins to the original
+request's repository directory, coordination remote, lease ref and plan endpoint/
+pool ref. Supply the actual original typed `GitLeaseStore`; matching repository
+labels or a supplied empty store are insufficient. Native pool and publication
+absence probes run on that original project channel. Omitted independent pins,
+foreign endpoints/refs and drift fail closed. Legacy single-endpoint contracts
+remain supported. Historical observation derives the archived original project
+channel; it never substitutes the Root endpoint or grants a new start.
+
+A controller can fail before canonical consumption without creating a native
+worker. Its genuine protected wait artifacts are a separate documentary class,
+never static pins or a terminal proof. This branch requires `channels` and
+`preconsume_exit={schema: native-preconsume-controller-exit/v1, controller,
+receipt_sha256, stdout_sha256, stderr_sha256, guardian_stdout_sha256,
+guardian_stderr_sha256}`. Hashes include the `sha256:` prefix; `controller` is
+its independently observed original `{pid,birth,boot_id}`. Pin the original
+receipt and streams from protected custody, not reconstructed or copied claims.
+Only original nonce-derived `.receipt.json`, `.stdout`, `.stderr`,
+`.guardian.stdout` and `.guardian.stderr` names are admitted. The receipt must
+join the canonical task, exact guardian nonce/birth, exact child birth, actual
+exit 2, UTC observation and exact stream paths/digests. Controller stdout and
+both guardian streams must be empty; controller stderr must be exactly the
+fixed preconsume rejection marker. Files must be regular, singly linked,
+protected by the configured controller UID/group, mode 0600 or 0640, and match
+all independent digest pins. Extra/missing files, altered status/schema/birth,
+mutable custody, wrong raw bytes or live/reused/zombie/unprobeable processes fail.
+All creators, guardians and that controller must be physically absent when the
+proof is issued and revalidated. A live current/replacement creator blocks it.
+
+This branch still rejects ANY canonical controller/controllers, consumption,
+handle, result, checkpoint or finish history, even if later erased. All native
+session/gate/lock/journal/pool/publication effects must remain absent; worker
+output stays empty. Original source lease revision/content and all task/budget
+fields remain unchanged. The actual controller wait is archived documentary
+evidence only: `original_effect=UNKNOWN` and native `actual_wait=null` remain.
+Retirement uses the same sealed capability and original-row CAS, racing native
+start consumption. Lost replies are observed without another CAS or original
+contract replay. No project-budget outcome, refund or terminal authority is
+created by this administrative transition.
 
 The replay key retains all task fields except `id` and `dependencies`, so changing
 IDs, attempts, dispatch routing, or dependency names cannot replay the same

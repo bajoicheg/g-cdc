@@ -193,3 +193,23 @@ CAS waiver or altered charges are introduced. The observation remains read-only
 with no launch/product acceptance authority; all original Windows work and
 UNKNOWN liabilities persist. CDC 3.6.2 is developed under released 3.6.1 and
 requires its own ordered exact SPEC→QUALITY and hosted FULL before deployment.
+
+
+## 3.6.3 independent-channel preconsume amendment
+
+Owner-authorized extension: authenticate the original Root intake separately
+from the immutable request's project lease/pool endpoints. Add explicit trusted
+channel pins; derive project native effect probes from the actual typed original
+lease. Preserve single-endpoint readers. Permit only a distinct protected,
+nonce/task/birth/hash-bound preconsume controller wait2 artifact class with empty
+worker output, physical creator/guardian/controller absence and no canonical
+consumption/controller/native effect anywhere in original history. Static pins
+cannot waive these gates. Preserve UNKNOWN, native wait null, all charges and
+same-row native retirement/start CAS fencing; no terminal proof or replay.
+
+Use real independent bare-Git stores and actual child/guardian waits for targeted
+RED→GREEN. Cover forged channels, receipt/status/identity/mode/raw bytes, native
+project effects, consumed history, source/budget drift and lost CAS replies.
+Require package/bootstrap/projection closure for 3.6.3 under the independently
+qualified 3.6.2 base; no local FULL or live effects. Root owns ordered independent
+SPEC/QUALITY, exact hosted FULL, publication and installation.

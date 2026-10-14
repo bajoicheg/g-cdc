@@ -8,6 +8,8 @@ import copy
 import hashlib
 import json
 import re
+import os
+from datetime import datetime, timezone, timedelta
 import stat
 import subprocess
 import uuid
@@ -77,14 +79,73 @@ def _contract(row):
     return native_digest(request)
 
 
-def _physical_and_artifacts(store,row,pins):
+def _intake_channels(store,row,pins,source=None):
+    """Join independent configured channels to the original immutable request."""
+    request=row['operation']['start_request'];channels=pins.get('channels')
+    if channels is None:
+        if 'preconsume_exit' in pins or source is not None and source.store_id!=store.store_id:
+            raise ValueError('independent original intake/project channel pins required')
+        return
+    op._object(channels,{'intake_store_id','intake_ref','lease_store_id','lease_ref','pool_store_id','pool_ref'},'original intake/project channels')
+    expected={'intake_store_id':store.store_id,'intake_ref':store.ref,
+        'lease_store_id':request['plan']['coordination_store_id'],'lease_ref':request['lease_coordination_ref'],
+        'pool_store_id':request['plan']['coordination_store_id'],'pool_ref':request['plan']['coordination_ref']}
+    if channels!=expected:raise ValueError('original intake/project channel binding mismatch')
+    if source is not None:
+        from git_remote_identity import repository_root
+        if type(source) is not GitLeaseStore or source.store_id!=channels['lease_store_id'] or source.ref!=channels['lease_ref'] or source.repo!=repository_root(request['repo_root']) or source.remote!=request.get('coordination_remote',request['remote']):
+            raise ValueError('original typed project lease channel substituted')
+        source._assert_remote_identity()
+
+
+def _preconsume_artifacts(row,pins,controller,guardian_pin):
+    """A protected infrastructure wait is documentary, never a terminal wait."""
+    evidence=pins.get('preconsume_exit')
+    if evidence is None:return {}
+    op._object(evidence,{'schema','controller','receipt_sha256','stdout_sha256','stderr_sha256','guardian_stdout_sha256','guardian_stderr_sha256'},'original preconsume controller exit')
+    if evidence['schema']!='native-preconsume-controller-exit/v1':raise ValueError('unsupported preconsume exit evidence')
+    identity=evidence['controller'];_identity(identity,absent=True)
+    if identity['pid'] in {pins['guardian']['pid'],pins['creator']['pid']}:raise ValueError('distinct original controller birth required')
+    nonce=pins['guardian_nonce']
+    if not isinstance(nonce,str) or re.fullmatch('[0-9a-f]{32}',nonce) is None:raise ValueError('original controller nonce must be canonical')
+    names={'receipt':nonce+'.receipt.json','stdout':nonce+'.stdout','stderr':nonce+'.stderr',
+        'guardian_stdout':nonce+'.guardian.stdout','guardian_stderr':nonce+'.guardian.stderr'}
+    raw={}
+    for label,name in names.items():
+        digest=evidence[label+'_sha256']
+        if not isinstance(digest,str) or re.fullmatch('sha256:[0-9a-f]{64}',digest) is None:raise ValueError('original preconsume artifact digest required')
+        path=controller/name
+        try:
+            fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW)
+            with os.fdopen(fd,'rb') as stream:
+                info=os.fstat(stream.fileno())
+                if not stat.S_ISREG(info.st_mode) or info.st_nlink!=1 or info.st_uid!=pins['custody']['controller_uid'] or info.st_gid!=guardian_pin['gid'] or stat.S_IMODE(info.st_mode) not in (0o600,0o640):raise ValueError('protected original wait artifact custody required')
+                raw[label]=stream.read(65537)
+        except OSError:raise ValueError('original wait artifact unavailable') from None
+        if len(raw[label])>65536 or 'sha256:'+hashlib.sha256(raw[label]).hexdigest()!=digest:raise ValueError('original wait artifact bytes changed')
+    try:receipt=json.loads(raw['receipt'],object_pairs_hook=op._unique_object)
+    except (ValueError,UnicodeError):raise ValueError('original controller wait is not authentic JSON') from None
+    op._object(receipt,{'schema','task_id','identity','controller','exit_code','observed_at_utc','stdout_path','stdout_sha256','stderr_path','stderr_sha256'},'original controller wait')
+    if receipt['schema']!='cdc-vps-controller-wait/v1' or receipt['task_id']!=row['task']['id'] or receipt['identity']!=pins['guardian'] or receipt['controller']!=identity or type(receipt['exit_code']) is not int or receipt['exit_code']!=2:raise ValueError('original nonce/task/birth preconsume wait mismatch')
+    observed=op._timestamp(receipt['observed_at_utc'],'original controller wait time')
+    if observed>datetime.now(timezone.utc)+timedelta(seconds=5):raise ValueError('original controller wait observation is in the future')
+    for label in ('stdout','stderr'):
+        if receipt[label+'_path']!=str(controller/names[label]) or receipt[label+'_sha256']!=evidence[label+'_sha256'].split(':',1)[1]:raise ValueError('original controller stream path/digest mismatch')
+    if raw['stdout'] or raw['guardian_stdout'] or raw['guardian_stderr'] or raw['stderr']!=b'CDC_VPS_ORIGINAL_CONTROLLER_RECONCILIATION_REQUIRED\n':raise ValueError('only original preconsume controller rejection artifacts are admissible')
+    _identity(identity,absent=True)
+    return {str(controller/name):raw[label] for label,name in names.items()}
+
+
+def _physical_and_artifacts(store,row,pins,source_store=None):
     request=row['operation']['start_request']
     _identity(pins['creator'],absent=True);_identity(pins['guardian'],absent=True)
     guardian=row['operation'].get('guardian')
     if not isinstance(guardian,dict) or guardian.get('nonce')!=pins['guardian_nonce'] or guardian.get('identity')!=pins['guardian']:raise ValueError('original canonical guardian nonce/identity required')
-    if pins['pool_ref']!=request['plan']['coordination_ref'] or request['plan']['coordination_store_id']!=store.store_id:raise ValueError('original protected pool channel mismatch')
-    store._assert_remote_identity();store._git('check-ref-format',pins['pool_ref'])
-    if store._git('ls-remote','--refs',store.remote,pins['pool_ref']):raise ValueError('native original pool/runtime effect already exists')
+    _intake_channels(store,row,pins,source_store)
+    channel=source_store or store
+    if pins['pool_ref']!=request['plan']['coordination_ref'] or request['plan']['coordination_store_id']!=channel.store_id:raise ValueError('original protected pool channel mismatch')
+    channel._assert_remote_identity();channel._git('check-ref-format',pins['pool_ref'])
+    if channel._git('ls-remote','--refs',channel.remote,pins['pool_ref']):raise ValueError('native original pool/runtime effect already exists')
     custody=pins.get('custody')
     op._object(custody,{'controller_root','worker_launch_root','controller_uid','worker_gid'},'complete original protected custody')
     if any(type(custody[k]) is not int or custody[k]<0 for k in ('controller_uid','worker_gid')):raise ValueError('configured custody UID/GID required')
@@ -102,7 +163,7 @@ def _physical_and_artifacts(store,row,pins):
     handle=str(uuid.uuid5(uuid.NAMESPACE_URL,_canonical(identity)))
     native_paths=[Path(request['handle_root'])/(handle+'.json'),Path(request['handle_root'])/'gates'/handle,Path(request['handle_root'])/'locks'/(handle+'.lock'),Path(request['journal_root'])/native_digest({name:identity[name] for name in ('pool_id','task_id','attempt_id')}).split(':',1)[1]]
     publication_ref='refs/heads/cdc/managed-host-publish-'+handle.replace('-','')
-    if store._git('ls-remote','--refs',store.remote,publication_ref):raise ValueError('original publication journal already exists')
+    if channel._git('ls-remote','--refs',channel.remote,publication_ref):raise ValueError('original publication journal already exists')
     # Native effect scopes are absent unconditionally, including empty directories
     # and broken symlinks. Deployment pins can never turn effects into static data.
     for path in native_paths:
@@ -157,7 +218,8 @@ def _physical_and_artifacts(store,row,pins):
     if not set(allowed)<=static:raise ValueError('pins may describe only original pre-effect static custody')
     guardian_pin=allowed[str(controller/'guardian.lock')]
     op._object(guardian_pin,{'sha256','uid','gid','mode'},'original guardian static custody')
-    seen=set()
+    documentary=_preconsume_artifacts(row,pins,controller,guardian_pin)
+    seen=set();seen_documentary=set()
     for root in (controller,launch):
         expected_gid=guardian_pin['gid'] if root==controller else custody['worker_gid']
         if not root.is_dir():raise ValueError('complete original protected controller/worker scope missing')
@@ -171,7 +233,11 @@ def _physical_and_artifacts(store,row,pins):
                 if root==controller and child!=root:raise ValueError('unregistered controller effect directory')
                 if root==launch and child not in {launch,output}|checkout_dirs:raise ValueError('unregistered worker effect directory')
                 continue
-            key=str(child);seen.add(key);pin=allowed.get(key)
+            key=str(child)
+            if key in documentary:
+                if child.read_bytes()!=documentary[key]:raise ValueError('original wait artifact changed during authentication')
+                seen_documentary.add(key);continue
+            seen.add(key);pin=allowed.get(key)
             op._object(pin,{'sha256','uid','gid','mode'},'protected static artifact pin')
             if info.st_nlink!=1 or (info.st_uid,info.st_gid,info.st_mode & 0o7777)!=(pin['uid'],pin['gid'],pin['mode']) or info.st_mode & 0o022:raise ValueError('protected static file custody/mode drift')
             if 'sha256:'+hashlib.sha256(child.read_bytes()).hexdigest()!=pin['sha256']:raise ValueError('original static artifact bytes drift')
@@ -185,14 +251,15 @@ def _physical_and_artifacts(store,row,pins):
                 else:
                     op._object(record,{'operation_id','profile_id','source_sha','source_ref','profile_digest'},'original preparation record')
                     if record['operation_id']!=task_id or record['source_sha']!=row['task']['source_sha'] or record['source_ref']!=request['lease_source_ref'] or not isinstance(record['profile_id'],str) or not re.fullmatch('[0-9a-f]{64}',record['profile_digest']):raise ValueError('original preparation record/source mismatch')
-    if seen!=set(allowed):raise ValueError('pinned original static launch artifact missing')
+    if seen!=set(allowed) or seen_documentary!=set(documentary):raise ValueError('pinned original static/documentary launch artifact missing')
     _identity(pins['creator'],absent=True);_identity(pins['guardian'],absent=True)
+    if documentary:_identity(pins['preconsume_exit']['controller'],absent=True)
 
 
 def _authenticate_intake(store,task_id,source,pins,*,retired=False):
     if type(store) is not GitDocumentStore or type(source) is not GitLeaseStore:raise ValueError('actual configured native stores required')
     required={'original_revision','row_digest','source_revision','source_digest','creator','guardian','guardian_nonce','pool_ref','launch_roots','custody'}
-    if not isinstance(pins,dict) or set(pins) not in (required,required|{'artifact_pins'}):raise ValueError('independent trusted original contract pins required')
+    if not isinstance(pins,dict) or not required<=set(pins) or set(pins)-required-{'artifact_pins','channels','preconsume_exit'}:raise ValueError('independent trusted original contract pins required')
     history=_history(store);original=store.read_revision(pins['original_revision']);original_row=_row(original,task_id)
     if op._hash(original_row)!=pins['row_digest'] or _consumed(original_row):raise ValueError('pinned original unconsumed task row required')
     from managed_host_bridge import _validate_start
@@ -244,8 +311,8 @@ def _authenticate_intake(store,task_id,source,pins,*,retired=False):
     if retired:
         sdoc=source.read_revision(pins['source_revision']);srev=pins['source_revision']
     if srev!=pins['source_revision'] or op._hash(sdoc)!=pins['source_digest'] or sdoc['owner_id'] is not None or sdoc['external_guard'] is not None or sdoc['repository']!=request['lease_repository'] or sdoc['source_ref']!=request['lease_source_ref']:raise ValueError('unchanged canonical absent-native source lease required')
-    if source.store_id!=store.store_id:raise ValueError('original source/control endpoint mismatch')
-    _physical_and_artifacts(store,original_row,pins)
+    _intake_channels(store,original_row,pins,source)
+    _physical_and_artifacts(store,original_row,pins,source)
     return revision,current
 
 
@@ -329,7 +396,9 @@ def observe_prelaunch_intake_disposition(store,task_id,*,contract_digest,source_
     if entry['contract_digest']!=contract_digest:raise ValueError('original disposition contract mismatch')
     if source_store is None:
         request=row['operation']['start_request']
-        source_store=GitLeaseStore(store.repo,store.remote,request.get('lease_coordination_ref','refs/heads/cdc/source-lease'))
+        if entry['trusted_contract'].get('channels') is not None:
+            source_store=GitLeaseStore(request['repo_root'],request.get('coordination_remote',request['remote']),request['lease_coordination_ref'])
+        else:source_store=GitLeaseStore(store.repo,store.remote,request.get('lease_coordination_ref','refs/heads/cdc/source-lease'))
     return PrelaunchIntakeDispositionProof(_SEAL,store,task_id,source_store,entry['trusted_contract'],entry['retired_at_utc'],retired=True)
 
 
@@ -390,6 +459,7 @@ def validate_prelaunch_disposition(store_or_row,task_id=None,row=None):
     if row is not None and current!=row:raise ValueError('serialized disposition differs from authoritative original row')
     entry=_validate_prelaunch_disposition_row(current)
     original=_row(store.read_revision(entry['original_revision']),task_id)
+    _intake_channels(store,original,entry['trusted_contract'])
     if original!=entry['original_row'] or entry['task_id']!=task_id:raise ValueError('disposition original ancestry/task mismatch')
     found=False
     for _,historical in _history(store):
