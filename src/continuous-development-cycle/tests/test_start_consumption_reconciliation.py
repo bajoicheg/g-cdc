@@ -75,5 +75,43 @@ class ConsumptionAcknowledgementTests(unittest.TestCase):
         self.assertEqual(len(sends), 1)
         self.assertEqual(self.store.read()[0], self.rev)
 
+    def unresolved(self):
+        m = self.api(); original = self.store._git
+        def uncertain(*args, **kwargs):
+            if 'push' in args: raise ValueError('original reply unavailable')
+            return original(*args, **kwargs)
+        with patch.object(self.store, '_git', side_effect=uncertain):
+            with self.assertRaises(m.IntakeStartConsumptionFailure) as failure:
+                m.consume_intake_start(self.store, self.rev, 'task-one',
+                    start_request_digest=_digest(self.req), controller_identity=self.identity())
+        return m, failure.exception
+
+    def test_matching_consumption_by_another_proposal_cannot_confirm_original(self):
+        m, failure = self.unresolved()
+        changed = copy.deepcopy(failure._document)
+        other = m.consume_intake_start(self.store, self.rev, 'task-one',
+            start_request_digest=_digest(self.req), controller_identity=self.identity())
+        self.assertNotEqual(other, failure._proposal)
+        with self.assertRaises(ValueError): m.reconcile_intake_start_consumption(failure)
+
+    def test_advanced_unconsumed_sibling_allows_only_same_original_retry(self):
+        m, failure = self.unresolved()
+        changed = copy.deepcopy(self.store.read()[1]); changed['sibling'] = 'accepted other work'
+        revision = self.store.compare_and_swap(self.rev, changed)
+        proof = m.reconcile_intake_start_consumption(failure)
+        self.assertEqual(proof['state'], 'unconsumed_after_head_advance')
+        self.assertTrue(proof['retry_original_consumption'])
+        self.assertEqual(proof.revalidate_for(self.store, 'task-one', _digest(self.req), self.identity())['revision'], revision)
+        self.assertEqual(self.store.read()[1]['tasks']['task-one'], self.row)
+
+    def test_failure_mutation_and_registry_changes_cannot_authorize_retry(self):
+        m, failure = self.unresolved()
+        original = failure._task; failure._task = 'foreign'
+        with self.assertRaises(ValueError): m.reconcile_intake_start_consumption(failure)
+        failure._task = original
+        changed = copy.deepcopy(self.store.read()[1]); changed['registry_digest'] = 'sha256:' + 'b'*64
+        self.store.compare_and_swap(self.rev, changed)
+        with self.assertRaises(ValueError): m.reconcile_intake_start_consumption(failure)
+
 
 if __name__ == '__main__': unittest.main()

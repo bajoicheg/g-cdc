@@ -110,7 +110,7 @@ sys.exit(code)
         self.assertEqual(observed._source.store_id,self.source.store_id)
         self.assertEqual(observed.revalidate_for(self.store,'task-one')['state'],'retired_unknown')
 
-    def test_actual_creator_guardian_wait_is_documentary_and_preserved(self):
+    def creator_wait(self):
         path = self.controller / (self.nonce + '.guardian-wait.json')
         value = {'schema': 'cdc-vps-guardian-wait/v1', 'task_id': 'task-one',
             'identity': self.guardian, 'nonce': self.nonce, 'exit_code': 2,
@@ -120,13 +120,49 @@ sys.exit(code)
             raw = self.controller / (self.nonce + '.guardian.' + stream)
             value[stream + '_path'] = str(raw)
             value[stream + '_sha256'] = hashlib.sha256(raw.read_bytes()).hexdigest()
-        path.write_text(json.dumps(value)); path.chmod(0o640); before = path.read_bytes()
+        path.write_text(json.dumps(value)); path.chmod(0o640)
+        self.pins['creator_guardian_wait'] = {'schema': 'native-creator-guardian-wait/v1', 'sha256': self.hash(path)}
+        return path, value
+
+    def test_actual_creator_guardian_wait_is_documentary_and_preserved(self):
+        path, _ = self.creator_wait(); before = path.read_bytes()
         proof = self.authenticate()
         result = self.api().retire_prelaunch_intake_cas(self.store, self.rev, 'task-one', proof, at=proof._at)
         self.assertEqual(path.read_bytes(), before)
         self.assertEqual(result['row']['budget'], self.row['budget'])
         self.assertIsNone(result['row']['result']['administrative_disposition']['actual_wait'])
         self.assertEqual(result['row']['result']['administrative_disposition']['original_effect'], 'UNKNOWN')
+
+    def test_creator_wait_fields_and_explicit_hash_cannot_be_substituted(self):
+        path, value = self.creator_wait()
+        for kind in ('schema', 'task_id', 'identity', 'nonce', 'exit_code', 'observed_at_utc',
+                     'authorizes_slot_release', 'stdout_path', 'stderr_sha256', 'extra', 'hash', 'pin'):
+            with self.subTest(kind=kind):
+                changed = copy.deepcopy(value); pins = copy.deepcopy(self.pins)
+                if kind == 'identity': changed[kind]['birth'] = '999'
+                elif kind == 'exit_code': changed[kind] = 0
+                elif kind == 'authorizes_slot_release': changed[kind] = True
+                elif kind == 'observed_at_utc': changed[kind] = '2000-01-01T00:00:00Z'
+                elif kind == 'extra': changed[kind] = 'unregistered'
+                elif kind not in ('hash', 'pin'): changed[kind] = 'foreign'
+                path.write_text(json.dumps(changed))
+                pins['creator_guardian_wait']['sha256'] = self.hash(path)
+                if kind == 'hash': pins['creator_guardian_wait']['sha256'] = 'sha256:' + '0'*64
+                if kind == 'pin': del pins['creator_guardian_wait']
+                with self.assertRaises(ValueError): self.authenticate(pins)
+
+    def test_creator_wait_nonregular_or_mutable_custody_is_rejected(self):
+        path, value = self.creator_wait(); raw = path.read_bytes()
+        for kind in ('mode', 'symlink', 'fifo', 'hardlink'):
+            with self.subTest(kind=kind):
+                path.unlink()
+                extra = self.root / ('creator-' + kind)
+                if kind == 'symlink': extra.write_bytes(raw); path.symlink_to(extra)
+                elif kind == 'fifo': os.mkfifo(path, 0o640)
+                else:
+                    path.write_bytes(raw); path.chmod(0o660 if kind == 'mode' else 0o640)
+                    if kind == 'hardlink': os.link(path, extra)
+                with self.assertRaises(ValueError): self.authenticate()
 
     def test_channels_cannot_be_omitted_substituted_or_borrowed_from_root(self):
         for key in (None,'intake_store_id','intake_ref','lease_store_id','lease_ref','pool_store_id','pool_ref'):

@@ -139,9 +139,51 @@ def _preconsume_artifacts(row,pins,controller,guardian_pin):
     if observed>datetime.now(timezone.utc)+timedelta(seconds=5):raise ValueError('original controller wait observation is in the future')
     for label in ('stdout','stderr'):
         if receipt[label+'_path']!=str(controller/names[label]) or receipt[label+'_sha256']!=evidence[label+'_sha256'].split(':',1)[1]:raise ValueError('original controller stream path/digest mismatch')
-    if raw['stdout'] or raw['guardian_stdout'] or raw['guardian_stderr'] or raw['stderr']!=b'CDC_VPS_ORIGINAL_CONTROLLER_RECONCILIATION_REQUIRED\n':raise ValueError('only original preconsume controller rejection artifacts are admissible')
+    marker=b'CDC_VPS_ORIGINAL_CONTROLLER_RECONCILIATION_REQUIRED\n'
+    codes=('INTAKE_OBSERVATION_CHANGED','INTAKE_CONSUMPTION_UNRESOLVED','HOST_IO_REJECTED','CONTRACT_OR_SCOPE_REJECTED')
+    accepted={marker}|{marker+('CDC_VPS_REJECTION_CODE='+code+'\n').encode() for code in codes}
+    if raw['stdout'] or raw['guardian_stdout'] or raw['guardian_stderr'] or raw['stderr'] not in accepted:raise ValueError('only original preconsume controller rejection artifacts are admissible')
     _identity(identity,absent=True)
-    return {str(controller/name):raw[label] for label,name in names.items()}
+    documentary={str(controller/name):raw[label] for label,name in names.items()}
+    creator_wait=controller/(nonce+'.guardian-wait.json')
+    pin=pins.get('creator_guardian_wait')
+    if creator_wait.exists() or creator_wait.is_symlink() or pin is not None:
+        op._object(pin,{'schema','sha256'},'original creator guardian wait pin')
+        if pin['schema']!='native-creator-guardian-wait/v1':raise ValueError('original creator wait schema required')
+        op._digest(pin['sha256'],'original creator wait digest')
+        try:
+            fd=os.open(creator_wait,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+            with os.fdopen(fd,'rb') as stream:
+                before=os.fstat(stream.fileno())
+                if (not stat.S_ISREG(before.st_mode) or before.st_nlink!=1
+                        or before.st_uid!=pins['custody']['controller_uid'] or before.st_gid!=guardian_pin['gid']
+                        or stat.S_IMODE(before.st_mode) not in (0o600,0o640)):
+                    raise ValueError('protected original creator wait custody required')
+                payload=stream.read(65537);after=os.fstat(stream.fileno())
+        except OSError:raise ValueError('original creator wait unavailable') from None
+        stable=('st_dev','st_ino','st_mode','st_uid','st_gid','st_nlink','st_size','st_mtime_ns','st_ctime_ns')
+        if (any(getattr(before,name)!=getattr(after,name) for name in stable) or len(payload)>65536
+                or 'sha256:'+hashlib.sha256(payload).hexdigest()!=pin['sha256']):
+            raise ValueError('original creator wait bytes changed')
+        try:wait=json.loads(payload,object_pairs_hook=op._unique_object)
+        except (ValueError,UnicodeError):raise ValueError('original creator wait JSON required') from None
+        fields={'schema','task_id','identity','nonce','exit_code','observed_at_utc','authorizes_slot_release',
+                'stdout_path','stdout_sha256','stderr_path','stderr_sha256'}
+        op._object(wait,fields,'original creator guardian wait')
+        if (wait['schema']!='cdc-vps-guardian-wait/v1' or wait['task_id']!=row['task']['id']
+                or op._hash(wait['identity'])!=op._hash(pins['guardian']) or wait['nonce']!=nonce
+                or type(wait['exit_code']) is not int or wait['exit_code']!=2
+                or wait['authorizes_slot_release'] is not False):
+            raise ValueError('original creator wait identity/status/authority changed')
+        timestamp=op._timestamp(wait['observed_at_utc'],'original creator wait time')
+        if timestamp<observed or timestamp>datetime.now(timezone.utc)+timedelta(seconds=5):
+            raise ValueError('original creator wait time changed')
+        for label in ('stdout','stderr'):
+            if (wait[label+'_path']!=str(controller/names['guardian_'+label])
+                    or wait[label+'_sha256']!=evidence['guardian_'+label+'_sha256'].split(':',1)[1]):
+                raise ValueError('original creator wait stream binding changed')
+        documentary[str(creator_wait)]=payload
+    return documentary
 
 
 def _bootstrap_artifacts(row,pins,controller,guardian_pin):
@@ -350,7 +392,8 @@ def _physical_and_artifacts(store,row,pins,source_store=None):
 def _authenticate_intake(store,task_id,source,pins,*,retired=False,project_budget_store=None):
     if type(store) is not GitDocumentStore or type(source) is not GitLeaseStore:raise ValueError('actual configured native stores required')
     required={'original_revision','row_digest','source_revision','source_digest','creator','guardian','guardian_nonce','pool_ref','launch_roots','custody'}
-    if not isinstance(pins,dict) or not required<=set(pins) or set(pins)-required-{'artifact_pins','channels','preconsume_exit','guardian_bootstrap_failure','preparation_budget'}:raise ValueError('independent trusted original contract pins required')
+    if not isinstance(pins,dict) or not required<=set(pins) or set(pins)-required-{'artifact_pins','channels','preconsume_exit','guardian_bootstrap_failure','preparation_budget','creator_guardian_wait'}:raise ValueError('independent trusted original contract pins required')
+    if 'creator_guardian_wait' in pins and 'preconsume_exit' not in pins:raise ValueError('creator wait requires the exact original preconsume controller wait')
     history=_history(store);original=store.read_revision(pins['original_revision']);original_row=_row(original,task_id)
     if op._hash(original_row)!=pins['row_digest'] or _consumed(original_row):raise ValueError('pinned original unconsumed task row required')
     from managed_host_bridge import _validate_start
@@ -525,22 +568,109 @@ def assert_intake_start_allowed(store,task_id,start_request_digest):
 
 def consume_intake_start(store,expected_revision,task_id,*,start_request_digest,controller_identity):
     if type(store) is not GitDocumentStore:raise ValueError('actual native intake store required')
-    row=assert_intake_start_allowed(store,task_id,start_request_digest);_identity(controller_identity,absent=False)
-    revision,document=store.read()
-    if revision!=expected_revision or _row(document,task_id)!=row:raise ValueError('stale start consumption revision')
+    try:
+        row=assert_intake_start_allowed(store,task_id,start_request_digest);_identity(controller_identity,absent=False)
+        revision,document=store.read()
+        if revision!=expected_revision or _row(document,task_id)!=row:raise ValueError('stale start consumption revision')
+    except ValueError as error:
+        if str(error) not in {'coordination ref moved during read','native history moved during authentication','stale start consumption revision'}:raise
+        raise IntakeStartConsumptionFailure(_SEAL,store,expected_revision,task_id,start_request_digest,
+            controller_identity,'before_cas',None,None,error) from error
     changed=copy.deepcopy(document);changed['tasks'][task_id]['operation']['start_consumption']={'schema':'native-intake-start-consumption/v1','contract_digest':start_request_digest,'controller':copy.deepcopy(controller_identity)}
     capability=_StartConsumption(_SEAL,store,expected_revision,task_id,changed,controller_identity)
-    return store.compare_and_swap(expected_revision,changed,recovery_capability=capability)
+    try:return store.compare_and_swap(expected_revision,changed,recovery_capability=capability)
+    except ValueError as error:
+        raise IntakeStartConsumptionFailure(_SEAL,store,expected_revision,task_id,start_request_digest,
+            controller_identity,'cas',capability.proposal,changed,error) from error
 
 
 class _StartConsumption:
     def __init__(self,seal,store,revision,task_id,document,identity):
         if seal is not _SEAL:raise ValueError('native one-use start required')
-        self.store=store;self.revision=revision;self.task_id=task_id;self.document=copy.deepcopy(document);self.identity=copy.deepcopy(identity)
+        self.store=store;self.revision=revision;self.task_id=task_id;self.document=copy.deepcopy(document);self.identity=copy.deepcopy(identity);self.proposal=None
+    def _bind_proposal(self,store,revision,commit):
+        if store is not self.store or revision!=self.revision or self.proposal is not None:raise ValueError('original start proposal binding changed')
+        self.proposal=commit
     def revalidate(self,store,revision,task_id,document):
         if store is not self.store or revision!=self.revision or task_id!=self.task_id or document!=self.document:raise ValueError('native start CAS binding changed')
         _identity(self.identity,absent=False)
         assert_intake_start_allowed(store,task_id,document['tasks'][task_id]['operation']['start_request_digest'])
+
+
+class IntakeStartConsumptionFailure(ValueError):
+    """Process-local original call evidence; serialized exceptions grant nothing."""
+    native_reconciliation_kind='sdk-intake-consumption-failure/v1'
+    def __init__(self,seal,store,revision,task_id,digest,identity,phase,proposal,document,error):
+        if seal is not _SEAL:raise ValueError('SDK-issued original consumption failure required')
+        super().__init__('original intake start consumption requires native reconciliation')
+        self._seal=seal;self._store=store;self._revision=revision;self._task=task_id
+        self._digest=digest;self._identity=copy.deepcopy(identity);self._phase=phase
+        self._proposal=proposal;self._document=copy.deepcopy(document)
+        self._evidence=self._values();self.original_error_type=type(error).__name__
+    def _values(self):
+        return op._hash({'revision':self._revision,'task':self._task,'digest':self._digest,
+            'identity':self._identity,'phase':self._phase,'proposal':self._proposal,'document':self._document})
+
+
+def _observe_original_consumption(failure):
+    if type(failure) is not IntakeStartConsumptionFailure or failure._seal is not _SEAL or failure._values()!=failure._evidence:
+        raise ValueError('unaltered SDK-issued original call evidence required')
+    store=failure._store;identity=failure._identity
+    if type(store) is not GitDocumentStore or identity.get('pid')!=os.getpid():raise ValueError('original live consumption caller required')
+    _identity(identity,absent=False)
+    history=_history(store)
+    indexes={revision:index for index,(revision,_) in enumerate(history)}
+    if failure._revision not in indexes:raise ValueError('original consumption anchor is outside current history')
+    segment=history[indexes[failure._revision]:];before=segment[0][1];row=_row(before,failure._task)
+    if before.get('schema')!=INTAKE_SCHEMA:raise ValueError('original native intake schema required')
+    if _consumed(row) or _contract(row)!=failure._digest:raise ValueError('original unconsumed contract changed')
+    import budget
+    budget.validate_ledger(row['budget']);registry=before.get('registry_digest')
+    after=copy.deepcopy(row);after['operation']['start_consumption']={'schema':'native-intake-start-consumption/v1',
+        'contract_digest':failure._digest,'controller':copy.deepcopy(identity)}
+    proposal=failure._proposal;confirmed=proposal is not None and proposal in indexes
+    if confirmed:
+        if failure._document is None or store.read_revision(proposal)!=failure._document:
+            raise ValueError('original issued proposal document changed')
+        if store._git('rev-list','--parents','-n','1',proposal).split()!=[proposal,failure._revision]:
+            raise ValueError('original consumption proposal parent changed')
+    consumed=False
+    for revision,document in segment:
+        if (document.get('registry_digest')!=registry or ('registry_digest' in document)!=('registry_digest' in before)
+                or document.get('schema')!=INTAKE_SCHEMA):raise ValueError('original registry changed during consumption')
+        if confirmed and revision==proposal:consumed=True
+        expected=after if consumed else row
+        if _row(document,failure._task)!=expected:raise ValueError('original task, charged budget or consumption history changed')
+    revision,current=store.read()
+    if revision!=history[-1][0] or current!=history[-1][1]:raise ValueError('native consumption observation moved')
+    _identity(identity,absent=False)
+    if confirmed:state='confirmed_original';retry=False
+    elif failure._phase=='before_cas' or proposal is None:state='unconsumed_before_effect';retry=True
+    elif revision!=failure._revision:state='unconsumed_after_head_advance';retry=True
+    else:state='unresolved_original';retry=False
+    return {'schema':'native-intake-consumption-observation/v1','task_id':failure._task,
+        'contract_digest':failure._digest,'controller':copy.deepcopy(identity),'revision':revision,
+        'original_revision':failure._revision,'original_proposal':proposal,'state':state,
+        'retry_original_consumption':retry,'new_attempts':0,'new_budget_reservations':0}
+
+
+class IntakeStartConsumptionObservation(dict):
+    def __init__(self,seal,failure):
+        if seal is not _SEAL:raise ValueError('native original consumption observation required')
+        super().__init__(_observe_original_consumption(failure));self._seal=seal;self._failure=failure
+        self._evidence=copy.deepcopy(dict(self))
+    def revalidate_for(self,store,task_id,digest,identity):
+        f=self._failure
+        if (self._seal is not _SEAL or dict(self)!=self._evidence or store is not f._store
+                or task_id!=f._task or digest!=f._digest or identity!=f._identity):
+            raise ValueError('original consumption observation substituted or mutated')
+        current=_observe_original_consumption(f)
+        if current!=self._evidence:raise ValueError('original consumption observation is no longer current')
+        return current
+
+
+def reconcile_intake_start_consumption(failure):
+    return IntakeStartConsumptionObservation(_SEAL,failure)
 
 
 def migrate_intake_registry_cas(store,expected_revision,old_digest,new_digest):
