@@ -2,14 +2,14 @@
   "canonical_repository": "owner/canonical-cdc",
   "entries": [
     {
-      "blob_sha1": "0f44168a4d54427731b95473ed03e4730fe645b6",
+      "blob_sha1": "d15b8b06fa347d6fdb062184febdbe5fef95c4ad",
       "mode": "100644",
       "path": "VERSION",
       "size": 6
     }
   ],
   "hash_algorithm": "git-sha1",
-  "package_tree": "11cc3a57229c51633492e25ce406793d2f572f68",
+  "package_tree": "af55d5388ed1e697a79b33039aa6ce4e3945be4e",
   "release_commit": "0000000000000000000000000000000000000000",
   "release_ref": "refs/heads/release/v3.6.5",
   "schema": "cdc-package-transport/v1",
