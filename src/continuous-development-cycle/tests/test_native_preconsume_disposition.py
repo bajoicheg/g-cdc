@@ -110,6 +110,24 @@ sys.exit(code)
         self.assertEqual(observed._source.store_id,self.source.store_id)
         self.assertEqual(observed.revalidate_for(self.store,'task-one')['state'],'retired_unknown')
 
+    def test_actual_creator_guardian_wait_is_documentary_and_preserved(self):
+        path = self.controller / (self.nonce + '.guardian-wait.json')
+        value = {'schema': 'cdc-vps-guardian-wait/v1', 'task_id': 'task-one',
+            'identity': self.guardian, 'nonce': self.nonce, 'exit_code': 2,
+            'observed_at_utc': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+            'authorizes_slot_release': False}
+        for stream in ('stdout', 'stderr'):
+            raw = self.controller / (self.nonce + '.guardian.' + stream)
+            value[stream + '_path'] = str(raw)
+            value[stream + '_sha256'] = hashlib.sha256(raw.read_bytes()).hexdigest()
+        path.write_text(json.dumps(value)); path.chmod(0o640); before = path.read_bytes()
+        proof = self.authenticate()
+        result = self.api().retire_prelaunch_intake_cas(self.store, self.rev, 'task-one', proof, at=proof._at)
+        self.assertEqual(path.read_bytes(), before)
+        self.assertEqual(result['row']['budget'], self.row['budget'])
+        self.assertIsNone(result['row']['result']['administrative_disposition']['actual_wait'])
+        self.assertEqual(result['row']['result']['administrative_disposition']['original_effect'], 'UNKNOWN')
+
     def test_channels_cannot_be_omitted_substituted_or_borrowed_from_root(self):
         for key in (None,'intake_store_id','intake_ref','lease_store_id','lease_ref','pool_store_id','pool_ref'):
             with self.subTest(key=key):

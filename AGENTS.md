@@ -58,3 +58,17 @@ intake contains 37,953,759 document bytes and exceeds the prior 16 MiB cache.
 Keep the stored cache bounded at 16 MiB and each decoded snapshot at 128 MiB;
 reject damaged or overlarge compact observations without granting any authority.
 Preserve all existing native custody, liabilities, releases and freshness gates.
+
+## Useful-load startup qualification correction
+
+The owner-authorized stability stage exposed original preconsume controller
+failures and a creator guardian-wait documentary recovery gap. Develop 3.6.8
+under independently qualified 3.6.7, with the separately qualified Root 1.3.7
+consumer. Preserve exact original UNKNOWN liabilities, attempts, charges,
+immutable releases and one-use/lease/pool/CAS gates. Native observations may
+confirm only an actual original proposal by its original live controller, or
+prove an original pre-effect retry safe; dictionaries grant no authority.
+Retain actual creator/guardian/controller waits and never make a worker wait.
+Use meaningful hosted RED, ordered genuine SPEC then QUALITY including exact
+private delivery artifacts, ONE exact hosted FULL/bootstrap/package/projections,
+and native Source/release/install controls. No local FULL or product writes.
