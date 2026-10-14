@@ -1,7 +1,7 @@
 name: Native UNKNOWN recovery qualification
 on:
   push:
-    branches: [cdc/native-unknown-recovery-20261013, cdc/native-unknown-recovery-364-20261014]
+    branches: [cdc/native-unknown-recovery-20261013, cdc/native-unknown-recovery-364-20261014, cdc/sdk-admission-budget-20261014]
 permissions:
   contents: read
 concurrency:
@@ -36,16 +36,16 @@ jobs:
           python3 -B - <<'PYREADER'
           import json, os, pathlib, subprocess, tarfile, io
           lock=json.loads(pathlib.Path('release/source.lock.json').read_text())
-          commit=lock['base_validation_commit']
+          commit='edefea0c4e1aa75ce609600f645ab6c938323126'
           actual=subprocess.check_output(['git','rev-parse',commit+':src/continuous-development-cycle'],text=True).strip()
-          assert actual == lock['base_package_tree']
+          assert actual == 'c55b9d1f78079c4d57d39180795d26293986c8d5'
           root=pathlib.Path(os.environ['RUNNER_TEMP'])/'cdc-development-baseline-reader'
           root.mkdir()
           archive=subprocess.check_output(['git','archive',commit,'src/continuous-development-cycle'])
           with tarfile.open(fileobj=io.BytesIO(archive)) as stream:
               stream.extractall(root,filter='data')
           package=root/'src/continuous-development-cycle'
-          assert (package/'VERSION').read_text().strip() == lock['development_driver_version']
+          assert (package/'VERSION').read_text().strip() == '3.6.3'
           with open(os.environ['GITHUB_ENV'],'a') as out:
               out.write('CDC_TEST_LEGACY_SDK_363_ROOT='+str(package)+'\n')
           PYREADER

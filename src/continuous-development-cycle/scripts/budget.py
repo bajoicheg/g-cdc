@@ -271,7 +271,7 @@ def _scope(ledger,event):
         raise ValueError('event timestamp regresses')
 
 
-def _append(ledger,event):
+def _append(ledger,event,*,_validation_replay=False):
     _validate_event(event)
     # Exact replay is idempotent even after a later wake; it never grants a new launch.
     for old in ledger['events']:
@@ -302,7 +302,10 @@ def _append(ledger,event):
         failure = failures.get(event['scope'])
         if failure is None or event['signature'] != failure['failure']['signature']:
             raise ValueError('remedy must reference the current recorded failure')
-    result = copy.deepcopy(ledger); result['events'].append(copy.deepcopy(event))
+    # validate_ledger owns its replay scratch. Public append/apply still return
+    # fully isolated copies, including all prior nested policy/event objects.
+    result = ledger if _validation_replay else copy.deepcopy(ledger)
+    result['events'].append(copy.deepcopy(event))
     return result
 
 
@@ -324,7 +327,7 @@ def validate_ledger(ledger):
         index = wakes.index(event['wake_id'])
         if index < position: raise ValueError('event belongs to an earlier wake')
         replay['wake_ids'] = wakes[:index+1]; position = index
-        length = len(replay['events']); replay = _append(replay,event)
+        length = len(replay['events']); replay = _append(replay,event,_validation_replay=True)
         if len(replay['events']) == length: raise ValueError('duplicate event in stored ledger')
 
 

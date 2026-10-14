@@ -29,3 +29,16 @@ Use ordered genuine independent SPEC→QUALITY, one exact hosted FULL and native
 release/effect controls. No local FULL, original UNKNOWN replay, invented facts,
 charge reset, private public-export records or unrelated product/scheduler writes.
 Root owns rollout authority, source/release publication and personal installation.
+
+# Owner-authorized admission performance — 2026-10-14
+
+The owner authorized qualifying/installing private budget replay acceleration,
+then authenticated-history reuse and bounded useful-work stability. This distinct
+scope supersedes the completed UNKNOWN development task for this worktree.
+Develop CDC 3.6.5 under independently released 3.6.4. Preserve all old bytes,
+UNKNOWN charges/replay bans, native lease/pool/intent and public copy semantics.
+Read docs/superpowers/specs/2026-10-14-sdk-admission-performance.md and its plan.
+Use meaningful hosted RED/GREEN, ordered independent SPEC then QUALITY, ONE
+exact frozen hosted FULL/bootstrap/package/projection/compatibility gate, and
+native publication/release/install controls. No local FULL or unrelated product
+implementation. Review includes exact private delivery tool hashes.
