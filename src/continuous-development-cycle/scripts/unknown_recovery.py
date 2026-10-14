@@ -25,20 +25,28 @@ DISPOSITION_SCHEMA='prelaunch-intake-disposition/v1'
 
 
 def _history(store):
-    """Authenticate every ancestor, rejecting shallow, merged or truncated history."""
+    """Fresh channel/graph authentication; reuse only an immutable decoded prefix."""
     if type(store) not in (GitDocumentStore,GitLeaseStore):raise ValueError('actual native Git store required')
-    current,_=store.read()
+    from immutable_history_cache import _cache,_context,_linear_chain
+    current,current_document=store.read()
     if current is None:raise ValueError('original native history missing')
     if store._git('rev-parse','--is-shallow-repository')!='false':raise ValueError('complete native history required')
     rows=store._git('rev-list','--parents',current).splitlines()
     if len(rows)>10000:raise ValueError('native history exceeds authentication bound')
-    result=[]
-    for row in reversed(rows):
-        fields=row.split()
-        if len(fields)>2:raise ValueError('native coordination history must be linear')
-        document=store._read_document_object(fields[0]) if type(store) is GitDocumentStore else store._read_record(fields[0])
-        result.append((fields[0],document))
+    chain=_linear_chain(reversed(rows))
+    if not chain or chain[-1][0]!=current:raise ValueError('complete native history required')
+    context=_context(store,'document' if type(store) is GitDocumentStore else 'lease')
+    prior=_cache.get(context)
+    if prior is not None and chain[:len(prior['chain'])]!=prior['chain']:
+        raise ValueError('native history rewound or rewritten')
+    result=[] if prior is None else [(revision,document) for revision,document in prior['documents']]
+    for parts in chain[len(result):]:
+        revision=parts[0]
+        document=(current_document if revision==current else
+                  store._read_document_object(revision) if type(store) is GitDocumentStore else store._read_record(revision))
+        result.append((revision,document))
     if current!=store.read()[0]:raise ValueError('native history moved during authentication')
+    _cache.put(context,{'chain':chain,'documents':result})
     return result
 
 
@@ -551,23 +559,14 @@ def migrate_intake_registry_cas(store,expected_revision,old_digest,new_digest):
     return {'revision':revision,'document':changed}
 
 
-def validate_prelaunch_disposition(store_or_row,task_id=None,row=None):
-    """Read validation authenticates immutable native custody, never terminal facts.
-
-    The row-only form checks structure for the native transition validator. Hosts
-    must use (native_store, task_id, row) to authenticate authoritative history.
-    """
-    if task_id is None:return _validate_prelaunch_disposition_row(store_or_row)
-    store=store_or_row
-    if type(store) is not GitDocumentStore:raise ValueError('actual original native intake channel required')
-    _,document=store.read();current=_row(document,task_id)
-    if row is not None and current!=row:raise ValueError('serialized disposition differs from authoritative original row')
+def _disposition_from_history(store, task_id, current, history, documents):
     entry=_validate_prelaunch_disposition_row(current)
-    original=_row(store.read_revision(entry['original_revision']),task_id)
+    if entry['original_revision'] not in documents:raise ValueError('disposition original ancestry/task mismatch')
+    original=_row(documents[entry['original_revision']],task_id)
     _intake_channels(store,original,entry['trusted_contract'])
     if original!=entry['original_row'] or entry['task_id']!=task_id:raise ValueError('disposition original ancestry/task mismatch')
     found=False
-    for _,historical in _history(store):
+    for _,historical in history:
         historic=historical.get('tasks',{}).get(task_id)
         if historic is None:
             if found:raise ValueError('native tombstone/history deleted')
@@ -578,14 +577,47 @@ def validate_prelaunch_disposition(store_or_row,task_id=None,row=None):
         elif found:raise ValueError('native tombstone was rearmed')
         elif _consumed(historic):raise ValueError('prelaunch disposition has consumed controller/effect ancestry')
     if not found:raise ValueError('native disposition not authoritative')
-    return entry
+    return copy.deepcopy(entry)
+
+
+def validate_prelaunch_dispositions(store, expected_revision, rows):
+    """Authenticate selected tombstones against one fresh native history snapshot.
+
+    Returned entries remain structural observations: no wait, terminal or send
+    capability is created. The exact caller head and every supplied row must
+    match the independently read native channel, including at the end.
+    """
+    if type(store) is not GitDocumentStore or not isinstance(rows,dict):raise ValueError('actual original native intake channel and rows required')
+    history=_history(store)
+    revision,document=history[-1]
+    if revision!=expected_revision:raise ValueError('serialized disposition snapshot differs from authoritative head')
+    documents=dict(history);result={}
+    for task_id,row in rows.items():
+        current=_row(document,task_id)
+        if current!=row:raise ValueError('serialized disposition differs from authoritative original row')
+        result[task_id]=_disposition_from_history(store,task_id,current,history,documents)
+    if store.read()[0]!=revision:raise ValueError('native disposition head moved during validation')
+    return result
+
+
+def validate_prelaunch_disposition(store_or_row,task_id=None,row=None):
+    """Original single-row API; structural form never grants native authority."""
+    if task_id is None:return _validate_prelaunch_disposition_row(store_or_row)
+    store=store_or_row
+    if type(store) is not GitDocumentStore:raise ValueError('actual original native intake channel required')
+    history=_history(store);revision,document=history[-1];current=_row(document,task_id)
+    if row is not None and current!=row:raise ValueError('serialized disposition differs from authoritative original row')
+    result=_disposition_from_history(store,task_id,current,history,dict(history))
+    if store.read()[0]!=revision:raise ValueError('native disposition head moved during validation')
+    return result
 
 
 def assert_new_intake_allowed(store,task):
     if type(store) is not GitDocumentStore:raise ValueError('native intake admission store required')
-    _,document=store.read()
+    revision,document=store.read()
+    retired={task_id:row for task_id,row in document['tasks'].items() if row.get('state')=='retired_unknown'}
+    if retired:validate_prelaunch_dispositions(store,revision,retired)
     for task_id,row in document['tasks'].items():
         if row.get('state')=='retired_unknown':
-            validate_prelaunch_disposition(store,task_id,row)
             if semantic_intake_contract({'task':task})==semantic_intake_contract(row):raise ValueError('retired original task contract replay prohibited')
     return True

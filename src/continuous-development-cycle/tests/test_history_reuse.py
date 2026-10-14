@@ -91,4 +91,38 @@ class BatchDispositionTests(unittest.TestCase):
         changed=copy.deepcopy(row);changed['task']['goal']='substituted'
         with self.assertRaises(ValueError):function(fixture.store,revision,{'task-one':changed})
 
+class ProjectBudgetHistoryReuseTests(unittest.TestCase):
+    def fixture(self):
+        from test_project_budget_store import ProjectBudgetStoreTests
+        f=ProjectBudgetStoreTests();f.setUp();self.addCleanup(f.doCleanups)
+        return f
+    def test_same_budget_head_does_not_redecode_verified_ledger(self):
+        f=self.fixture();store=f.store();expected=store.read()
+        with patch.object(store,'_object',wraps=store._object) as read:
+            actual=store.read()
+        self.assertEqual(actual,expected);self.assertEqual(read.call_count,0)
+    def test_budget_forward_head_only_checks_the_new_ledger(self):
+        import budget
+        f=self.fixture();store=f.store();old,_=store.read()
+        value=budget.apply_event(f.ledger,f.event());revision=f.publish_ledger(value)
+        with patch.object(store,'_object',wraps=store._object) as read:
+            actual=store.read()
+        self.assertEqual(actual,(revision,value));self.assertEqual(read.call_count,1)
+        self.assertNotIn(old,[call.args[0] for call in read.call_args_list])
+
+class CacheBoundsTests(unittest.TestCase):
+    def test_encoded_cache_is_bounded_and_old_read_cannot_downgrade_lineage(self):
+        from immutable_history_cache import _HistoryCache
+        cache=_HistoryCache(max_bytes=300,max_entries=2)
+        first={'chain':[['first']],'documents':[['first',{'value':'x'*30}]]}
+        second={'chain':[['first'],['second','first']],'documents':[['first',{}],['second',{}]]}
+        cache.put({'channel':'a'},first);cache.put({'channel':'a'},second)
+        cache.put({'channel':'a'},first)
+        self.assertEqual(cache.get({'channel':'a'})['chain'],second['chain'])
+        for name in ['b','c','d']:cache.put({'channel':name},first)
+        self.assertLessEqual(cache._bytes,300);self.assertLessEqual(len(cache._entries),2)
+        self.assertIsNone(cache.get({'channel':'a'}))
+        huge={'chain':[['large']],'documents':[['large',{'value':'x'*1000}]]}
+        cache.put({'channel':'large'},huge);self.assertIsNone(cache.get({'channel':'large'}))
+
 if __name__=='__main__':unittest.main()

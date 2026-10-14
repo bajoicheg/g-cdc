@@ -1,7 +1,7 @@
 {
-  "description": "Efficient private budget replay preserving public isolation and all native budget, ownership and UNKNOWN gates.",
+  "description": "Bounded authenticated immutable-history reuse and batch UNKNOWN read validation; all fresh native authority and original liabilities remain enforced.",
   "entrypoint": "SKILL.md",
   "name": "continuous-development-cycle",
   "schema": "continuous-development-cycle/v3",
-  "version": "3.6.5"
+  "version": "3.6.6"
 }

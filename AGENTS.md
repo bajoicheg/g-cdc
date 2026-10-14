@@ -42,3 +42,11 @@ Use meaningful hosted RED/GREEN, ordered independent SPEC then QUALITY, ONE
 exact frozen hosted FULL/bootstrap/package/projection/compatibility gate, and
 native publication/release/install controls. No local FULL or unrelated product
 implementation. Review includes exact private delivery tool hashes.
+
+## Admission history reuse stage
+
+Budget acceleration 3.6.5 and its Root 1.3.5 binding are qualified and installed.
+Develop 3.6.6 under independently released 3.6.5; this is the separately
+authorized authenticated-history stage above. Preserve all original gates,
+liabilities and immutable releases. Runtime adoption requires the separate
+qualified Root binding; draft cache data grants no permissions.

@@ -11,7 +11,7 @@
   "hash_algorithm": "git-sha1",
   "package_tree": "af55d5388ed1e697a79b33039aa6ce4e3945be4e",
   "release_commit": "0000000000000000000000000000000000000000",
-  "release_ref": "refs/heads/release/v3.6.5",
+  "release_ref": "refs/heads/release/v3.6.6",
   "schema": "cdc-package-transport/v1",
-  "version": "3.6.5"
+  "version": "3.6.6"
 }

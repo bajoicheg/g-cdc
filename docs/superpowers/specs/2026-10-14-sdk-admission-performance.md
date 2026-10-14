@@ -52,3 +52,21 @@ original native operation; its suppressed CI cannot qualify installation or
 be replayed. A separately reviewed forward commit receives the one release FULL.
 Long native controller invocations retain an independent durable parent wait;
 loss of an outer tool recorder never becomes a fabricated controller exit code.
+
+## History 3.6.6 implementation boundary
+
+Reuse is process-local, limited to 32 entries and 16 MiB of encoded values and
+keys. Decoded working snapshots are detached. Keys bind typed channel, actual
+repository, remote name, endpoint and ref; budget keys additionally bind the
+complete trusted registration digest. Every read freshly authenticates current
+remote/ref and the complete linear parent graph. Cache hits may reuse a verified
+immutable prefix, never current permissions, policy authority, PID, lease or
+terminal capabilities. New suffixes still receive canonical decoding and all
+ledger/UNKNOWN transition checks. An observed rewind or diverged chain rejects;
+shallow histories reject. Cache eviction rebuilds ordinary native validation.
+
+The new batch disposition API binds exact caller revision and all supplied rows
+to a fresh typed native snapshot. It scans every relevant historical state for
+consumption, rearm, deletion or changed/restored tombstones, and rechecks the head
+at completion. Single-row and structural APIs retain their roles. Root will use
+one batch for its retired rows; original task/index/queue contracts stay intact.
