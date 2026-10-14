@@ -195,6 +195,31 @@ sys.exit(code)
                 with self.assertRaises(ValueError):self.authenticate()
                 self.git('push','origin',':'+ref,cwd=self.source.repo)
 
+    def test_fifo_receipt_is_rejected_without_waiting_for_a_writer(self):
+        self.wait_path.unlink();os.mkfifo(self.wait_path,0o640)
+        probe=self.root/'fifo-probe.json'
+        probe.write_text(json.dumps({'row':self.row,'pins':self.pins,'controller':str(self.controller),
+            'guardian_pin':self.pins['artifact_pins'][str(self.controller/'guardian.lock')]}))
+        code="""import json,pathlib,sys
+sys.path.insert(0,sys.argv[1]);import unknown_recovery
+value=json.loads(pathlib.Path(sys.argv[2]).read_text())
+print('ARTIFACT_PROBE_STARTED',flush=True)
+try:unknown_recovery._preconsume_artifacts(value['row'],value['pins'],pathlib.Path(value['controller']),value['guardian_pin'])
+except ValueError as error:
+ assert str(error)=='protected original wait artifact custody required',str(error)
+ print('NONREGULAR_ARTIFACT_REJECTED',flush=True)
+else:raise AssertionError('FIFO accepted as original wait receipt')
+"""
+        child=subprocess.Popen([sys.executable,'-B','-c',code,str(Path(__file__).resolve().parents[1]/'scripts'),str(probe)],
+            stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        try:stdout,stderr=child.communicate(timeout=2)
+        except subprocess.TimeoutExpired:
+            child.kill();stdout,stderr=child.communicate()
+            self.assertIn('ARTIFACT_PROBE_STARTED',stdout)
+            self.fail('artifact validator blocked on FIFO before regular-file validation')
+        self.assertEqual(child.returncode,0,stdout+stderr)
+        self.assertIn('NONREGULAR_ARTIFACT_REJECTED',stdout)
+
     def test_changed_native_source_budget_fails_without_administrative_outcome(self):
         revision,ledger=self.project_budget.read()
         event={'type':'outcome','event_id':'contradictory-close','task_id':ledger['task_id'],'wake_id':'wake-one',

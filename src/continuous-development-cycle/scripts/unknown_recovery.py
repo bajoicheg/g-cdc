@@ -116,7 +116,7 @@ def _preconsume_artifacts(row,pins,controller,guardian_pin):
         if not isinstance(digest,str) or re.fullmatch('sha256:[0-9a-f]{64}',digest) is None:raise ValueError('original preconsume artifact digest required')
         path=controller/name
         try:
-            fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW)
+            fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
             with os.fdopen(fd,'rb') as stream:
                 info=os.fstat(stream.fileno())
                 if not stat.S_ISREG(info.st_mode) or info.st_nlink!=1 or info.st_uid!=pins['custody']['controller_uid'] or info.st_gid!=guardian_pin['gid'] or stat.S_IMODE(info.st_mode) not in (0o600,0o640):raise ValueError('protected original wait artifact custody required')
