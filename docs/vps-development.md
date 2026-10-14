@@ -19,3 +19,12 @@ is preparatory: the example directory does not exist yet. Python source placemen
 The registered final check is `diff-check`; the implementation and both independent
 reviews must also inspect actual successful Node test evidence. Setup validation uses
 the native adapter and checkpoint validators and Git whitespace checks.
+
+The independent offline readiness-report example is documented in
+`examples/vps_compute/readiness-README.md`. Pipe native `cdc-vps status` JSON into
+`readiness.mjs` to obtain deterministic counts and readiness observations; run
+`/opt/cdc-tools/node-v24.21.0/bin/node --test --test-isolation=none examples/vps_compute/test-readiness.mjs`
+for its checks. Administrative `retired_unknown` remains unresolved and blocks
+readiness. This example preserves the historical PAUSED source-package scope,
+UNKNOWN records, retired contract-generator attempt, and failed readiness task
+and its charges; it grants no scheduler authority or Windows final acceptance.
