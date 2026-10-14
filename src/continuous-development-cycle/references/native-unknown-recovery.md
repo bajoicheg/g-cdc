@@ -219,3 +219,40 @@ UNKNOWN or SUBMITTED journal entries to conditional authority. The original
 SUBMITTED journal is not rewritten by quarantine. A distinct corrective candidate
 requires a new issued native handle, ownership, canonical one-use journal and
 genuine ancestor-only expected-head publication.
+
+
+CDC 3.6.4 adds a separate unconsumed guardian bootstrap-failure branch. Use
+`guardian_bootstrap_failure={schema: native-guardian-bootstrap-failure/v1,
+stdout_sha256, stderr_sha256}` with the same six explicit `channels` pins.
+It is mutually exclusive with `preconsume_exit`. Only the original nonce-derived
+`.guardian.stdout` and `.guardian.stderr` are documentary custody: stdout is empty
+and stderr is the original UTF-8 Python traceback ending in the fixed native
+`ValueError: original guardian birth never persisted; no child launch` marker.
+Pin actual original raw hashes independently. Neither stream asserts a wait,
+controller birth or terminal outcome. Both require regular single-link protected
+files, original controller UID/guardian group and mode 0600 or 0640. Opens are
+nonblocking and reject FIFOs. Extra files and static pins cannot substitute for
+these streams. This branch accepts the original `running` administrative row
+only after the original creator and guardian are physically absent and all
+canonical/native consumption and effect barriers above still pass.
+
+When the original operation has a durable project-budget preparation, supply
+`project_budget_store` as the actual original `GitProjectBudgetStore` to
+`authenticate_prelaunch_intake`, and add
+`preparation_budget={binding, registration_digest}` to the trusted contract.
+The binding is the independently registered original project-budget binding;
+the digest is the protected Root registration digest. The SDK authenticates the
+queued Root predecessor, first reserved/prepared row, original eligible native
+budget revision, exact one unresolved original reservation event and its real
+receipt revision. Only the exact monotonic addition of that receipt and the
+original prepared-to-submitting native readback transition are admitted. Receipt
+removal, replacement, altered registration, foreign channels, outcomes or any
+controller consumption fail closed. Observation reserves nothing and closes no
+charge. `observe_prelaunch_intake_disposition` accepts the same optional typed
+store or derives it from the archived original request and binding.
+
+The tombstone schema remains `prelaunch-intake-disposition/v1`, with original
+operation, task and budgets archived, `original_effect=UNKNOWN` and
+`actual_wait=null`. The independently released 3.6.3 historical reader accepts
+this canonical tombstone and continues to reject its original contract under a
+new ID; its runtime need not be upgraded to mint or reinterpret this proof.

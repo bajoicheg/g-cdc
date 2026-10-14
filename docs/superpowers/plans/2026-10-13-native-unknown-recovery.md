@@ -108,3 +108,24 @@ project effects, consumed history, source/budget drift and lost CAS replies.
 Require package/bootstrap/projection closure for 3.6.3 under the independently
 qualified 3.6.2 base; no local FULL or live effects. Root owns ordered independent
 SPEC/QUALITY, exact hosted FULL, publication and installation.
+
+
+## 3.6.4 unconsumed bootstrap and preparation amendment
+
+A guardian may fail its original birth handshake before any child controller,
+canonical consumption or native effect, leaving only two protected bootstrap
+streams and no wait receipt. Authenticate those exact nonce-derived documentary
+streams separately from static custody and from the existing preconsume wait
+protocol. Independently pin their raw hashes, creator/guardian identities and
+Root/project channels; require physical absence and every existing native-effect
+barrier. Preserve the running original row as UNKNOWN with no invented wait.
+
+Authenticate original durable reservation preparation through the genuine
+registered GitProjectBudgetStore: queued predecessor, prepared Root boundary,
+exact eligible project event, original receipt and monotonic native readback.
+No general operation-field exception or arbitrary file whitelist is permitted.
+The sealed administrative CAS and replay exclusion remain unchanged. Keep the
+v1 tombstone readable by the actual independently released 3.6.3 reader, proved
+in a separate interpreter; Root runtime may remain 3.6.3. Qualify this 3.6.4
+candidate independently before side-by-side administrative use. No replay,
+terminal success, refund, fabricated wait or historical receipt is authorized.

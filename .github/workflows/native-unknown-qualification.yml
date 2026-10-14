@@ -1,7 +1,7 @@
 name: Native UNKNOWN recovery qualification
 on:
   push:
-    branches: [cdc/native-unknown-recovery-20261013]
+    branches: [cdc/native-unknown-recovery-20261013, cdc/native-unknown-recovery-364-20261014]
 permissions:
   contents: read
 concurrency:
@@ -31,5 +31,23 @@ jobs:
         run: |
           package_tree=$(git rev-parse HEAD:src/continuous-development-cycle)
           python3 -B src/continuous-development-cycle/scripts/supported_consumer_qualification.py --snapshot-root consumer/supported --consumers fleet-1 fleet-2 fleet-3 --package-tree "$package_tree"
+      - name: Stage immutable development-baseline reader for compatibility regression
+        run: |
+          python3 -B - <<'PYREADER'
+          import json, os, pathlib, subprocess, tarfile, io
+          lock=json.loads(pathlib.Path('release/source.lock.json').read_text())
+          commit=lock['base_validation_commit']
+          actual=subprocess.check_output(['git','rev-parse',commit+':src/continuous-development-cycle'],text=True).strip()
+          assert actual == lock['base_package_tree']
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])/'cdc-development-baseline-reader'
+          root.mkdir()
+          archive=subprocess.check_output(['git','archive',commit,'src/continuous-development-cycle'])
+          with tarfile.open(fileobj=io.BytesIO(archive)) as stream:
+              stream.extractall(root,filter='data')
+          package=root/'src/continuous-development-cycle'
+          assert (package/'VERSION').read_text().strip() == lock['development_driver_version']
+          with open(os.environ['GITHUB_ENV'],'a') as out:
+              out.write('CDC_TEST_LEGACY_SDK_363_ROOT='+str(package)+'\n')
+          PYREADER
       - name: FULL packaged regressions in clean consumer layout
         run: python3 -B bootstrap/consumer_package_checks.py

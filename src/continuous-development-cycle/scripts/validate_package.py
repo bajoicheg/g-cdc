@@ -96,6 +96,7 @@ REQUIRED = [
     'scripts/unknown_recovery.py', 'scripts/source_publication_quarantine.py',
     'references/native-unknown-recovery.md',
     'tests/test_native_unknown_recovery.py', 'tests/test_native_preconsume_disposition.py',
+    'tests/test_native_bootstrap_disposition.py',
     'tests/test_source_publication_quarantine.py',
     'scripts/project_budget_store.py', 'tests/test_project_budget_store.py',
     'references/project-budget-store.md',
