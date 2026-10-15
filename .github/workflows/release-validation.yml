@@ -23,10 +23,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  release-validation:
-    name: Bootstrap + package + supported Fleet projections
+  candidate-main:
+    name: Full candidate tests (exact remaining partition)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      inventory: ${{ steps.tests.outputs.inventory_sha256 }}
+      total: ${{ steps.tests.outputs.total_tests }}
+      selected: ${{ steps.tests.outputs.selected_tests }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,28 +38,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Validate repository code and test placement
         run: python -B bootstrap/repository_layout.py
-
       - name: Independent bootstrap before candidate imports
         run: |
           python -B bootstrap/validate_release.py --mode bootstrap
           python -B -m unittest discover -s bootstrap/tests -v
-
       - name: Install validator dependency
         run: python -m pip install -r src/continuous-development-cycle/scripts/requirements.txt
-
       - name: Validate candidate package
         working-directory: src/continuous-development-cycle
         run: python -B scripts/validate_package.py
-
-      - name: Full candidate tests
-        run: python -B -m unittest discover -s src/continuous-development-cycle/tests -v
-
+      - name: Full candidate tests excluding exactly the host bridge module
+        id: tests
+        run: python -B bootstrap/run_candidate_tests.py --partition remaining
       - name: Full bootstrap binding
         run: python -B bootstrap/validate_release.py --mode full
-
       - name: Validate three supported Fleet projections
         shell: bash
         run: |
@@ -65,3 +63,61 @@ jobs:
             --snapshot-root consumer/supported \
             --consumers fleet-1 fleet-2 fleet-3 \
             --package-tree "$PACKAGE_TREE"
+
+  candidate-host-bridge:
+    name: Full candidate tests (exact host bridge partition)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      inventory: ${{ steps.tests.outputs.inventory_sha256 }}
+      total: ${{ steps.tests.outputs.total_tests }}
+      selected: ${{ steps.tests.outputs.selected_tests }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate repository code and test placement
+        run: python -B bootstrap/repository_layout.py
+      - name: Independent bootstrap before candidate imports
+        run: |
+          python -B bootstrap/validate_release.py --mode bootstrap
+          python -B -m unittest discover -s bootstrap/tests -v
+      - name: Install validator dependency
+        run: python -m pip install -r src/continuous-development-cycle/scripts/requirements.txt
+      - name: Full candidate tests for exactly the host bridge module
+        id: tests
+        run: python -B bootstrap/run_candidate_tests.py --partition host-bridge
+
+  release-validation:
+    name: Bootstrap + package + supported Fleet projections
+    needs: [candidate-main, candidate-host-bridge]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Require both complete successful partitions and identical inventories
+        env:
+          MAIN_RESULT: ${{ needs.candidate-main.result }}
+          BRIDGE_RESULT: ${{ needs.candidate-host-bridge.result }}
+          MAIN_INVENTORY: ${{ needs.candidate-main.outputs.inventory }}
+          BRIDGE_INVENTORY: ${{ needs.candidate-host-bridge.outputs.inventory }}
+          MAIN_TOTAL: ${{ needs.candidate-main.outputs.total }}
+          BRIDGE_TOTAL: ${{ needs.candidate-host-bridge.outputs.total }}
+          MAIN_SELECTED: ${{ needs.candidate-main.outputs.selected }}
+          BRIDGE_SELECTED: ${{ needs.candidate-host-bridge.outputs.selected }}
+        run: |
+          python -B - <<'PY'
+          import os, re
+          values = os.environ
+          assert values['MAIN_RESULT'] == values['BRIDGE_RESULT'] == 'success', 'both partitions must succeed'
+          digest = values['MAIN_INVENTORY']
+          assert re.fullmatch(r'[0-9a-f]{64}', digest) and digest == values['BRIDGE_INVENTORY'], 'discovery inventories differ'
+          names = ('MAIN_TOTAL', 'BRIDGE_TOTAL', 'MAIN_SELECTED', 'BRIDGE_SELECTED')
+          assert all(re.fullmatch(r'[1-9][0-9]*', values[name]) for name in names), 'partition counts are absent or empty'
+          assert values['MAIN_TOTAL'] == values['BRIDGE_TOTAL'], 'discovery totals differ'
+          assert int(values['MAIN_SELECTED']) + int(values['BRIDGE_SELECTED']) == int(values['MAIN_TOTAL']), 'partition union is incomplete'
+          print('FULL_CANDIDATE_GREEN: both exact partitions completed without skipped tests')
+          PY
