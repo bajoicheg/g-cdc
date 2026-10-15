@@ -5,3 +5,18 @@ Owner authorized3.5.0 Fleet floor cleanup under independently released3.4.0. Exe
 Source release, personal installation and safe Fleet delivery are separate gates. One frozen one-parent integration, ordered independent SPEC then distinct QUALITY, one hosted FULL. Active owners/guards are not bypassed; original UNKNOWN remains nonreplayable. Retired Supervisor and paused schedulers remain unchanged.
 
 See2026-10-11-fleet-floor-cleanup design/plan. Previous roadmap bytes: docs/history/roadmap-through-3.4.0.md.
+
+## Multi-provider modernization
+
+Phase1 implements the provider-neutral native-bound contract, Codex/Gemini CLI
+adapters, isolated worktrees, bounded parallelism, independent code review and
+persistent original-attempt recovery. Current acceptance uses deterministic
+native process tests and packaged host examples. Real Gemini connection is
+deferred by the owner; live two-provider acceptance and production rollout
+remain later gates. See docs/multiprovider.md.
+
+Phase2 may evaluate LiteLLM/Jev for measured routing after provider qualification.
+Phase3 may add n8n triggers through CDC authority, with Temporal considered only
+for a demonstrated durability gap. Phase4 is independently approved fleet
+rollout and cost-per-verified-task benchmarking. These future phases and
+downstream product modifications are not implemented here.

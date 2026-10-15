@@ -29,3 +29,17 @@ Use ordered genuine independent SPEC→QUALITY, one exact hosted FULL and native
 release/effect controls. No local FULL, original UNKNOWN replay, invented facts,
 charge reset, private public-export records or unrelated product/scheduler writes.
 Root owns rollout authority, source/release publication and personal installation.
+
+# Owner-authorized multi-provider foundation — 2026-10-15
+
+Phase1 adds provider-neutral model tasks and Codex/Gemini adapters at the existing
+native argv boundary. Read docs/multiprovider.md and the packaged
+references/agent-workers.md. Preserve existing native records, runtime/store
+proof types, Source/lease/pool/CAS/budget/UNKNOWN gates and release metadata.
+The owner explicitly deferred real Gemini connection; use deterministic
+synthetic processes for current qualification. Do not run models, login/API
+setup, install a new scheduler, change downstream projects or adopt this
+candidate into production. Live provider acceptance and security-sensitive
+production adoption are separate later gates. Use hosted checks and ordered
+independent SPEC then QUALITY. Canonical source publication uses the original
+receiving-event, budget, guard and one-use claim controls.

@@ -85,6 +85,20 @@ from consumer_adoption import assess as assess_consumer_adoption
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
+    'scripts/agent_contract.py',
+    'scripts/agent_cli_adapters.py',
+    'scripts/agent_worker.py',
+    'scripts/agent_check_runner.py',
+    'tests/test_agent_cli_adapters.py',
+    'tests/test_agent_worker.py',
+    'tests/test_agent_check_runner.py',
+    'schemas/agent-task-v1.schema.json',
+    'references/agent-workers.md',
+    'templates/agent-task-v1.json',
+    'templates/agent-review-task-v1.json',
+    'templates/agent-developer-pool-v1.json',
+    'templates/agent-reviewer-pool-v1.json',
+
     "scripts/reporting_contract.py", "scripts/receiving_ci_preflight.py",
     "references/systemic-closeout.md", "tests/reporting_fixtures.py",
     "tests/test_systemic_reporting.py", "tests/test_receiving_ci_preflight.py",
