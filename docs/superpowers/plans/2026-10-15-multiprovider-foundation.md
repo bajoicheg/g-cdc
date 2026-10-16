@@ -52,3 +52,29 @@ No package/runtime behavior, release binding, installed service, account, model
 connection, main merge, deployment or existing fleet contract changes are part
 of this follow-up. Splitting retains coverage; it is not proof of a future
 runtime margin until the new exact candidate has executed.
+
+
+## Owner continuation — Kimi Code
+
+The owner requested Kimi and Phase1 completion after deferring real Gemini.
+The live acceptance pair is Codex+Kimi, with Gemini retained and deferred.
+The owner independently buys Plus and performs browser authorization; no paid
+API fallback or Extra Usage is enabled by CDC.
+
+1. Extend the same strict contract and original AgentWorker with pinned official
+   Kimi Code2.2.0 argv, explicit role tools and strict completed-turn JSONL.
+2. Prove hosted RED→GREEN, including real native Git/process fixtures in both
+   developer/reviewer directions. Bind exact package and three projections.
+3. Review frozen source with independent ordered SPEC then distinct QUALITY;
+   publish through a fresh original Source scope and observe one automatic FULL.
+4. Qualify isolated UID/home/config/credentials, native leases, deterministic
+   checks and actual physical finality in a new bounded synthetic VPS lab.
+5. With verified account access, run at most four initial model starts: parallel
+   Codex/Kimi developers, checked scoped host commits, opposite-provider reviews.
+   Retain null unknown usage, every original outcome and recovery observation.
+6. Publish non-secret source/recovery/evidence privately and prepare a concrete
+   qualified deployment/rollback. Security-sensitive production adoption requires
+   owner approval; installed Root/SDK/config/budgets remain separate.
+
+Targeted acceptance on the first implementation source:80 tests passed with
+synthetic CLIs. This is no claim of live qualification or production adoption.
