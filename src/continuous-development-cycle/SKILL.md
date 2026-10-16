@@ -3,12 +3,33 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.6.0
+# Continuous Development Cycle v3.6.9
 
-This 3.6.0 release adds native administrative UNKNOWN recovery for original
-source publications and prelaunch intake. Distinct sealed capabilities authenticate
+The 3.6.9 candidate adds provider-neutral Codex/Gemini/Kimi agent tasks while
+retaining the released 3.6.8 native recovery and history controls below. Read
+`references/agent-workers.md` for model/check/review boundaries. Actual provider
+eligibility and host containment remain independent admission requirements.
+
+This 3.6.8 patch reconciles only the original live controller’s issued consumption
+proposal after a lost acknowledgement. A fresh typed SDK observation may confirm
+that exact proposal or prove a pre-effect retry safe; an unresolved send stays
+UNKNOWN. Strict hash-bound creator guardian waits remain documentary and never
+grant worker terminal authority. It retains the 3.6.7 patch that stores bounded process-local immutable history compactly and authenticates
+retired intake rows in one fresh snapshot. Fresh endpoint/ref/head, complete
+linear ancestry, UNKNOWN history and native capabilities remain mandatory. It
+retains the 3.6.5 patch that eliminates repeated accumulated-prefix copying during private
+budget validation replay. Every event check, denial and public deep-copy
+isolation contract remains enforced. It retains the 3.6.4 patch that authenticates unconsumed guardian bootstrap-failure streams
+and monotonic original project-budget preparation receipts. It preserves UNKNOWN, charges,
+independently authenticated Root/project channels, protected preconsume custody,
+all native absence/consumption barriers and replay exclusion. It also authenticates retained-project observation from the pinned
+Source-selected original native interval while preserving older blobs as
+non-authorizing history. It includes the 3.6.1 native UNKNOWN recovery fix when an interrupted original
+controller has not saved its informational writer result. Fresh native accepted
+result and original release custody remain mandatory. Native administrative
+recovery covers source publications and prelaunch intake. Distinct sealed capabilities authenticate
 original custody and forbid replay without inventing terminal outcomes or refunding
-charges. Developed under independently released 3.5.4. Legacy raw command streams,
+charges. Developed under independently released 3.6.8. Legacy raw command streams,
 actual exits and truthful negative closeout remain supported. The executable floor
 stays 3.3.0; ordinary terminal, lease, budget and one-use authority remain enforced.
 Existing strict administrative Actions UNKNOWN quarantine remains unchanged.

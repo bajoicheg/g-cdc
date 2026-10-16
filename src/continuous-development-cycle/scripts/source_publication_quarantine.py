@@ -92,7 +92,15 @@ def _authenticate(store,terminal,publication_store,source_remote,pins,at):
     if not isinstance(publication,dict) or op._hash(publication)!=pins['publication_digest'] or publication.get('status')!='submitted' or p_state['attempts'].get(pins['operation_id'])!=publication:raise ValueError('exact immutable original SUBMITTED journal required')
     from managed_host_bridge import _read
     result=_read(__import__('pathlib').Path(request['journal_directory'])/'result.json')
-    if publication['lane_id']!=session['task_id'] or publication['observed_shared_head']!=session['plan']['base_sha'] or publication['result_commit']!=session['result_commit'] or result.get('result_commit')!=publication['result_commit'] or verified['task_id']!=session['task_id'] or verified['attempt_id']!=session['attempt_id'] or next(t for t in session['plan']['tasks'] if t['id']==session['task_id'])['role']!='writer':raise ValueError('original source publication must join actual integrated writer result and handle')
+    if (runtime.store.store_id,runtime.store.ref,runtime.plan['pool_id'])!=(terminal._runtime.store.store_id,terminal._runtime.store.ref,terminal._runtime.plan['pool_id']):raise ValueError('original native result pool channel substituted')
+    pool_revision,pool_state=runtime.store.read()
+    accepted=next((row for row in pool_state['tasks'] if row['id']==session['task_id']),None)
+    if (not isinstance(result,dict) or accepted is None or accepted['status']!='succeeded' or not accepted['integrated'] or
+        accepted['accepted_result_ref']!=native_digest(result) or result.get('task_id')!=session['task_id'] or result.get('attempt_id')!=session['attempt_id']):raise ValueError('original source publication requires exact native accepted/integrated result')
+    # An interrupted publisher can leave this informational cache empty after
+    # genuine runtime release/acceptance. Never fill it from journal claims; the
+    # fresh sealed proof and original pool/result digest remain mandatory.
+    if publication['lane_id']!=session['task_id'] or publication['observed_shared_head']!=session['plan']['base_sha'] or session['result_commit'] not in (None,publication['result_commit']) or result.get('result_commit')!=publication['result_commit'] or verified['task_id']!=session['task_id'] or verified['attempt_id']!=session['attempt_id'] or next(t for t in session['plan']['tasks'] if t['id']==session['task_id'])['role']!='writer':raise ValueError('original source publication must join actual integrated writer result and handle')
     seen=False;previous=None
     for _,document in _history(publication_store):
         entry=document.get('attempts',{}).get(pins['operation_id'])
@@ -115,7 +123,7 @@ def _authenticate(store,terminal,publication_store,source_remote,pins,at):
     head=publisher._remote_head();config,remote=isolated_remote_args(store.repo,source_remote,pins['source_remote_id'])
     store._git(*config,'fetch','--no-tags','--no-write-fetch-head','--refmap=',remote,record['source_ref'])
     if head==publication['observed_shared_head'] or store._git('merge-base',publication['observed_shared_head'],head)!=publication['observed_shared_head'] or store._git('merge-base',publication['intended_integrated_head'],head)!=publication['intended_integrated_head']:raise ValueError('fresh target must advance original expected HEAD and retain candidate')
-    if head!=publisher._remote_head() or p_revision!=publication_store.read()[0] or revision!=store.read()[0]:raise ValueError('native source observations moved during authentication')
+    if head!=publisher._remote_head() or p_revision!=publication_store.read()[0] or revision!=store.read()[0] or pool_revision!=runtime.store.read()[0]:raise ValueError('native source observations moved during authentication')
     # Finish physical observations after all network/history reads; archive the
     # actual completion clock, never the timestamp supplied before those reads.
     for process in verified['processes']:_identity({'pid':process['pid'],'birth':process['birth'],'boot_id':verified['boot_id']},absent=True)

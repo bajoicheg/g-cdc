@@ -53,7 +53,7 @@ class NativeSourceTests(unittest.TestCase):
     def setUp(self):
         from test_managed_host_bridge import ManagedHostBridgeTests
         self.fixture=ManagedHostBridgeTests();self.fixture.setUp();self.addCleanup(self.fixture.doCleanups)
-    def native(self):
+    def native(self,interrupted=False):
         import json,subprocess
         import managed_host_bridge as bridge
         f=self.fixture;path=f.root/'start.json';path.write_text(json.dumps(f.start_request()));output=f.root/'finished.json'
@@ -64,6 +64,7 @@ sys.path.insert(0,sys.argv[1]);sys.path.insert(0,sys.argv[2])
 import managed_host_bridge as b,execution_lease_v2 as l,operation_intent as op
 from project_lane_git import GitLaneIntegrationPublisher
 r=json.loads(Path(sys.argv[3]).read_text());h=b.start(r);s=b._load_session(r['handle_root'],h['handle_id']);rt=b._runtime(s);store=b._lease_store(s)
+interrupted=sys.argv[5]=='interrupted'
 end=time.monotonic()+8
 while time.monotonic()<end:
  if rt.observe(s['task_id'],s['attempt_id'])['status']=='awaiting_release':break
@@ -79,7 +80,8 @@ except SystemExit:pass
 # The send was admitted while unguarded. Its lost reply is then durably
 # preserved, as an old submitted journal may already be under an UNKNOWN guard.
 rev,row=store.read();row=l.set_guard(row,s['owner_id'],s['generation'],s['invocation_id'],b._utc(),i,'fixture:durable');rev=store.compare_and_swap(rev,row)
-s.update(result_commit=result,publication=None,state='published');b._save_session(s)
+if not interrupted:
+ s.update(result_commit=result,publication=None,state='published');b._save_session(s)
 rev,row=store.read();owner=(s['owner_id'],s['generation'],s['invocation_id']);cp='fixture:checkpoint'
 row=l.begin_finalization(row,*owner,b._utc(),pending_shared_writes=False);rev=store.compare_and_swap(rev,row)
 row=l.record_checkpoint(row,*owner,b._utc(),checkpoint_ref=cp,pending_shared_writes=False);rev=store.compare_and_swap(rev,row)
@@ -87,19 +89,88 @@ row=l.reconcile_finalization(row,*owner,b._utc(),external_reconciliation='unknow
 continuity=b._continuity(s,result,cp,None,released=False)
 row=l.mark_ready(row,*owner,b._utc(),continuity_state=continuity);rev=store.compare_and_swap(rev,row)
 receipt=rt.release_execution_lease(store,rev,s['lease_repository'],s['lease_source_ref'],*owner,s['task_id'],s['attempt_id'],b._utc())['release_receipt']
-s.update(state='released',release_receipt=receipt,lease_revision=receipt['lease_revision']);b._save_session(s)
+if not interrupted:
+ s.update(state='released',release_receipt=receipt,lease_revision=receipt['lease_revision']);b._save_session(s)
 b._wait_terminal(rt,s);b._complete_pool(s,rt,result,['out:closure'],['test:closure'])
 Path(sys.argv[4]).write_text(json.dumps({'handle':h,'release_receipt':receipt}))
 ''')
-        p=subprocess.run([sys.executable,'-B',str(code),str(ROOT/'scripts'),str(ROOT/'tests'),str(path),str(output)],capture_output=True,timeout=40)
+        p=subprocess.run([sys.executable,'-B',str(code),str(ROOT/'scripts'),str(ROOT/'tests'),str(path),str(output),'interrupted' if interrupted else 'saved'],capture_output=True,timeout=40)
         self.assertEqual(p.returncode,0,p.stderr.decode())
-        data=json.loads(output.read_text());session=bridge._load_session(str(f.root/'handles'),data['handle']['handle_id']);runtime=bridge._runtime(session)
+        data=json.loads(output.read_text());session=bridge._load_session(str(f.root/'handles'),data['handle']['handle_id'])
+        if interrupted:
+            # The controller never saved either informational result or release.
+            # Only supported observation reconciles the authentic runtime release.
+            self.assertIsNone(session['result_commit']);self.assertIsNone(session['release_receipt'])
+            observed=bridge.observe({'schema':'managed-host-observe/v1','handle_root':str(f.root/'handles'),'handle_id':data['handle']['handle_id']})
+            self.assertTrue(observed['quiescent']);self.assertFalse(observed['lease_owned'])
+            session=bridge._load_session(str(f.root/'handles'),data['handle']['handle_id'])
+            self.assertIsNone(session['result_commit']);self.assertEqual(session['release_receipt'],data['release_receipt'])
+        runtime=bridge._runtime(session)
         native=runtime.verify_terminal(session['task_id'],session['attempt_id'],include_controller=True,lease_store=f.lease_store,release_receipt=data['release_receipt'])
         from git_document_store import GitDocumentStore
         publication=GitDocumentStore(f.repo,'origin',session['publication_ref'],f.store_id)
         p_rev,doc=publication.read();operation,next_entry=next(iter(doc['attempts'].items()));rev,row=f.lease_store.read()
         pins={'lease_revision':rev,'lease_digest':op._hash(row),'original_lease_revision':rev,'handle_root':str(f.root/'handles'),'handle_id':session['handle_id'],'request_ref':native['request_ref'],'publication_revision':p_rev,'publication_digest':op._hash(next_entry),'operation_id':operation,'source_remote_id':f.store_id,'control_store_id':f.store_id,'owner_decision':{'action':'quarantine_source_unknown_without_replay','guard_digest':op._hash(row['external_guard']),'reference':'sha256:'+'5'*64},'publication_processes':[{'pid':99999993,'birth':'123','boot_id':native['boot_id']}]}
         return f,native,publication,pins
+
+    def test_interrupted_result_cache_uses_fresh_native_accepted_result_without_repair(self):
+        import managed_host_bridge as bridge
+        m=SourceTests().api();f,native,publication,pins=self.native(interrupted=True)
+        session_path=bridge._session_path(pins['handle_root'],pins['handle_id']);session_bytes=session_path.read_bytes()
+        original_publication=publication.read();original_source=f.remote_head();original_lease=f.lease_store.read()
+        capability=m.authenticate_source_publication_quarantine(f.lease_store,terminal_proof=native,publication_store=publication,source_remote='origin',trusted_contract=pins,at=bridge._utc())
+        self.assertEqual(session_path.read_bytes(),session_bytes)
+        self.assertEqual(capability.proof['publication']['result_commit'],original_source)
+        self.assertEqual(capability.proof['terminal']['status'],'succeeded')
+        result=m.quarantine_source_publication_cas(f.lease_store,pins['lease_revision'],capability,'sha256:'+'6'*64,bridge._utc())
+        self.assertEqual(result['outcome'],'UNKNOWN');self.assertFalse(result['conditional_update'])
+        self.assertEqual(result['record']['submission_retirements'][0]['guard'],original_lease[1]['external_guard'])
+        self.assertEqual(publication.read(),original_publication);self.assertEqual(f.remote_head(),original_source)
+        self.assertEqual(session_path.read_bytes(),session_bytes)
+
+    def test_interrupted_cache_cannot_replace_result_acceptance_or_original_release(self):
+        import json,managed_host_bridge as bridge
+        m=SourceTests().api();f,native,publication,pins=self.native(interrupted=True)
+        session=bridge._load_session(pins['handle_root'],pins['handle_id']);runtime=bridge._runtime(session)
+        path=bridge._session_path(pins['handle_root'],pins['handle_id']);original_session=path.read_bytes()
+        def authenticate():return m.authenticate_source_publication_quarantine(f.lease_store,terminal_proof=native,publication_store=publication,source_remote='origin',trusted_contract=pins,at=bridge._utc())
+        for field,value in [('result_commit',f.base),('release_receipt',None)]:
+            changed=copy.deepcopy(session);changed[field]=value;path.write_text(json.dumps(changed))
+            try:
+                with self.subTest(field=field),self.assertRaises(ValueError):authenticate()
+            finally:path.write_bytes(original_session)
+        request=runtime._request(session['task_id'],session['attempt_id']);result_path=Path(request['journal_directory'])/'result.json';original_result=result_path.read_bytes()
+        changed=json.loads(original_result);changed['result_commit']=f.base;result_path.write_text(json.dumps(changed))
+        try:
+            with self.assertRaisesRegex(ValueError,'actual accepted/integrated'):authenticate()
+        finally:result_path.write_bytes(original_result)
+        revision,state=runtime.store.read();unintegrated=copy.deepcopy(state);unintegrated['revision']+=1
+        next(row for row in unintegrated['tasks'] if row['id']==session['task_id'])['integrated']=False
+        runtime.store.compare_and_swap(revision,unintegrated)
+        with self.assertRaisesRegex(ValueError,'actual accepted/integrated'):authenticate()
+        self.assertIsNotNone(f.lease_store.read()[1]['external_guard'])
+        self.assertEqual(publication.read()[1]['attempts'][pins['operation_id']]['status'],'submitted')
+
+    def test_interrupted_result_tampering_after_fresh_proof_is_rejected(self):
+        import json,managed_host_bridge as bridge
+        from unittest.mock import patch
+        m=SourceTests().api();f,native,publication,pins=self.native(interrupted=True)
+        session=bridge._load_session(pins['handle_root'],pins['handle_id']);runtime=bridge._runtime(session)
+        path=Path(runtime._request(session['task_id'],session['attempt_id'])['journal_directory'])/'result.json'
+        original=path.read_bytes();actual=native.revalidate_for
+        def changed_after_verification(*args):
+            evidence=actual(*args);changed=json.loads(original)
+            # Even a changed evidence field with the same candidate cannot
+            # borrow acceptance of the original native result digest.
+            changed['evidence_refs']=['fixture:substituted-evidence'];path.write_text(json.dumps(changed))
+            return evidence
+        try:
+            with patch.object(native,'revalidate_for',side_effect=changed_after_verification):
+                with self.assertRaisesRegex(ValueError,'exact native accepted/integrated result'):
+                    m.authenticate_source_publication_quarantine(f.lease_store,terminal_proof=native,publication_store=publication,source_remote='origin',trusted_contract=pins,at=bridge._utc())
+        finally:path.write_bytes(original)
+        self.assertIsNotNone(f.lease_store.read()[1]['external_guard'])
+        self.assertEqual(publication.read()[1]['attempts'][pins['operation_id']]['status'],'submitted')
     def test_missing_or_substituted_custody_never_sends(self):
         from project_lane_git import GitLaneIntegrationPublisher
         from git_document_store import GitDocumentStore

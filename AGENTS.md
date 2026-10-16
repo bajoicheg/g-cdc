@@ -55,3 +55,17 @@ is authorized. Preserve original attempts, charges, native custody and all Sourc
 gates. Qualify isolated profiles, exact CLI pins and host containment before live
 starts. Retain ordered SPEC then distinct QUALITY, hosted checks, and concrete
 owner approval for security-sensitive production adoption.
+
+# Owner continuation: forward Phase1 release preparation — 2026-10-16
+
+The owner requested continued modernization after actual isolated Codex+Kimi
+acceptance and asked for sustained work across independent tasks. Prepare a
+forward3.6.9 composition over independently released3.6.8, preserving its newer
+native recovery/history code and the exact accepted agent modules. Read
+`docs/superpowers/plans/2026-10-16-phase1-forward-sdk.md`. This authorizes source
+preparation and qualification; retain new original Source/receiving/budget/guard
+admission for publication and concrete approval for security-sensitive production
+adoption. Never reuse the completed Phase1 acceptance IDs, old Source attempts or
+budgets. Legacy task contracts, installed services, accounts and downstream project
+policies remain outside preparation. Keep portable checks hosted and unchanged
+source FULL evidence reusable; any new composition needs its own exact gate.

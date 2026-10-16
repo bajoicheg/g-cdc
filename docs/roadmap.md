@@ -10,10 +10,10 @@ See2026-10-11-fleet-floor-cleanup design/plan. Previous roadmap bytes: docs/hist
 
 Phase1 implements the provider-neutral native-bound contract, Codex/Gemini/Kimi CLI
 adapters, isolated worktrees, bounded parallelism, independent code review and
-persistent original-attempt recovery. Current acceptance uses deterministic
-native process tests and packaged host examples. Real Gemini connection is
-deferred by the owner. The owner continuation requests live Codex+Kimi
-acceptance; production rollout retains its separate qualification/approval gate. See docs/multiprovider.md.
+persistent original-attempt recovery. Deterministic native process tests, packaged host examples and the actual isolated
+Codex+Kimi pair have passed foundation acceptance. Real Gemini connection is
+deferred by the owner. Forward SDK integration and production rollout retain their separate exact
+qualification/approval gates. See docs/multiprovider.md.
 
 Phase2 may evaluate LiteLLM/Jev for measured routing after provider qualification.
 Phase3 may add n8n triggers through CDC authority, with Temporal considered only

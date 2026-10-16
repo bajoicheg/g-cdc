@@ -174,24 +174,37 @@ class GitProjectBudgetStore:
         if ledger['task_id'] != self.binding['task_id']: raise ValueError('original budget task changed')
         return ledger, payload, span, text, mode
 
-    def _history(self, current):
+    def _history(self, current, *, historical=False):
+        from immutable_history_cache import _cache,_context,_linear_chain
         anchor = self.binding['anchor_revision']
+        if self._git('rev-parse','--is-shallow-repository').decode().strip()!='false':
+            raise ValueError('complete project budget history required')
         if self._git('merge-base', anchor, current).decode().strip() != anchor:
             raise ValueError('original budget anchor is outside canonical ancestry')
         if self._last_observed is not None and self._git('merge-base', self._last_observed, current).decode().strip() != self._last_observed:
             raise ValueError('canonical budget history rewound')
-        previous = self._object(anchor)[0]
-        if ledger_digest(previous) != self.binding['anchor_ledger_digest']:
-            raise ValueError('original budget anchor digest mismatch')
-        revisions = self._git('rev-list', '--reverse', '--ancestry-path', anchor + '..' + current).decode().splitlines()
-        prior_revision = anchor
-        for revision in revisions:
-            parents = self._git('show', '-s', '--format=%P', revision).decode().split()
-            if parents != [prior_revision]: raise ValueError('budget ancestry must preserve one original parent chain')
-            value = self._object(revision)[0]; _extends(previous, value)
+        rows=self._git('rev-list','--reverse','--ancestry-path','--parents',anchor+'..'+current).decode().splitlines()
+        chain=[[anchor]]+_linear_chain(rows,anchor=anchor)
+        if chain[-1][0]!=current:raise ValueError('original budget parent chain incomplete')
+        context=_context(self,'project-budget',ledger_digest(self.binding))
+        prior=_cache.get(context)
+        if prior is not None:
+            if historical and prior['chain'][:len(chain)]==chain:
+                return copy.deepcopy(dict(prior['ledgers'])[current])
+            if chain[:len(prior['chain'])]!=prior['chain']:
+                raise ValueError('canonical budget history rewound or rewritten')
+            ledgers=prior['ledgers'];previous=ledgers[-1][1]
+        else:
+            previous=self._object(anchor)[0]
+            if ledger_digest(previous)!=self.binding['anchor_ledger_digest']:
+                raise ValueError('original budget anchor digest mismatch')
+            ledgers=[[anchor,previous]]
+        for parts in chain[len(ledgers):]:
+            revision=parts[0];value=self._object(revision)[0];_extends(previous,value)
             if any(wake not in self.binding['wake_authorizations'] for wake in value['wake_ids'][len(previous['wake_ids']):]):
                 raise ValueError('new budget wake lacks trusted owner authorization')
-            previous = value; prior_revision = revision
+            ledgers.append([revision,value]);previous=value
+        if not historical:_cache.put(context,{'chain':chain,'ledgers':ledgers})
         return previous
 
     def read(self):
@@ -210,7 +223,7 @@ class GitProjectBudgetStore:
             raise ValueError('historical budget revision outside canonical ancestry')
         # _history also ensures the requested revision is at/after the trusted anchor.
         latest = self._last_observed; self._last_observed = None
-        try: value = self._history(revision)
+        try: value = self._history(revision,historical=True)
         finally: self._last_observed = latest
         if self._remote_revision() != current: raise ValueError('budget ref moved during historical read')
         return copy.deepcopy(value)

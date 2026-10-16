@@ -146,6 +146,11 @@ class GitDocumentStore:
         parent = ["-p", expected_revision] if expected_revision else []
         commit = self._git("commit-tree", tree, *parent,
                            input_text="Update CDC coordination\n\nCAS proposal: " + secrets.token_hex(32) + "\n")
+        # Only the SDK-issued one-use consumption can retain its own proposal.
+        # This non-secret local commit identity is not a launch permission.
+        from unknown_recovery import _StartConsumption
+        if type(recovery_capability) is _StartConsumption:
+            recovery_capability._bind_proposal(self, expected_revision, commit)
         # Revalidate immediately before the side effect; never force-update the ref.
         self._assert_remote_identity()
         config, remote = isolated_remote_args(self.repo, self.remote, self.store_id)

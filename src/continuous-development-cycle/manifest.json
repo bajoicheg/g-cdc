@@ -1,7 +1,7 @@
 {
-  "description": "Native administrative UNKNOWN recovery with sealed original-history custody and permanent replay exclusion.",
+  "description": "Provider-neutral Codex/Gemini/Kimi agents over retained authenticated native history, budget and original-attempt recovery controls.",
   "entrypoint": "SKILL.md",
   "name": "continuous-development-cycle",
   "schema": "continuous-development-cycle/v3",
-  "version": "3.6.0"
+  "version": "3.6.9"
 }

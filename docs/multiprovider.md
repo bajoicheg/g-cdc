@@ -89,3 +89,19 @@ native exit zero and check receipts. Never execute the hint. Missing, mixed,
 truncated, duplicate or retry-bearing streams stay unaccepted. No token usage
 is emitted; retain null. The terminal witness is source-derived for2.2.0 and
 must be requalified before any CLI upgrade.
+
+## Forward runtime integration
+
+The Phase1 Codex+Kimi pair passed isolated native acceptance on2026-10-16:
+two parallel developers, two opposite-provider approvals, fixed checks, genuine
+controller/worker closure and original lease release. The workload was public
+synthetic constant assignments; this does not qualify private production work.
+
+The forward3.6.9 candidate retains the released3.6.8 native implementation and
+the exact accepted Phase1 agent modules and role profiles. It preserves newer
+authenticated-history reuse, budget and original-consumption recovery behavior
+that is absent from the original3.6.0-based foundation candidate. The combined
+package needs its own exact qualification and release binding before adoption.
+Root integration additionally requires one native launch owner, the original
+canonical budget, distinct executor identities and an explicit compatible task
+contract. Adapter readiness does not by itself alter the production controller.

@@ -8,6 +8,8 @@ import copy
 import hashlib
 import json
 import re
+import os
+from datetime import datetime, timezone, timedelta
 import stat
 import subprocess
 import uuid
@@ -23,20 +25,28 @@ DISPOSITION_SCHEMA='prelaunch-intake-disposition/v1'
 
 
 def _history(store):
-    """Authenticate every ancestor, rejecting shallow, merged or truncated history."""
+    """Fresh channel/graph authentication; reuse only an immutable decoded prefix."""
     if type(store) not in (GitDocumentStore,GitLeaseStore):raise ValueError('actual native Git store required')
-    current,_=store.read()
+    from immutable_history_cache import _cache,_context,_linear_chain
+    current,current_document=store.read()
     if current is None:raise ValueError('original native history missing')
     if store._git('rev-parse','--is-shallow-repository')!='false':raise ValueError('complete native history required')
     rows=store._git('rev-list','--parents',current).splitlines()
     if len(rows)>10000:raise ValueError('native history exceeds authentication bound')
-    result=[]
-    for row in reversed(rows):
-        fields=row.split()
-        if len(fields)>2:raise ValueError('native coordination history must be linear')
-        document=store._read_document_object(fields[0]) if type(store) is GitDocumentStore else store._read_record(fields[0])
-        result.append((fields[0],document))
+    chain=_linear_chain(reversed(rows))
+    if not chain or chain[-1][0]!=current:raise ValueError('complete native history required')
+    context=_context(store,'document' if type(store) is GitDocumentStore else 'lease')
+    prior=_cache.get(context)
+    if prior is not None and chain[:len(prior['chain'])]!=prior['chain']:
+        raise ValueError('native history rewound or rewritten')
+    result=[] if prior is None else [(revision,document) for revision,document in prior['documents']]
+    for parts in chain[len(result):]:
+        revision=parts[0]
+        document=(current_document if revision==current else
+                  store._read_document_object(revision) if type(store) is GitDocumentStore else store._read_record(revision))
+        result.append((revision,document))
     if current!=store.read()[0]:raise ValueError('native history moved during authentication')
+    _cache.put(context,{'chain':chain,'documents':result})
     return result
 
 
@@ -77,14 +87,198 @@ def _contract(row):
     return native_digest(request)
 
 
-def _physical_and_artifacts(store,row,pins):
+def _intake_channels(store,row,pins,source=None):
+    """Join independent configured channels to the original immutable request."""
+    request=row['operation']['start_request'];channels=pins.get('channels')
+    if channels is None:
+        if ('preconsume_exit' in pins or 'guardian_bootstrap_failure' in pins) or source is not None and source.store_id!=store.store_id:
+            raise ValueError('independent original intake/project channel pins required')
+        return
+    op._object(channels,{'intake_store_id','intake_ref','lease_store_id','lease_ref','pool_store_id','pool_ref'},'original intake/project channels')
+    expected={'intake_store_id':store.store_id,'intake_ref':store.ref,
+        'lease_store_id':request['plan']['coordination_store_id'],'lease_ref':request['lease_coordination_ref'],
+        'pool_store_id':request['plan']['coordination_store_id'],'pool_ref':request['plan']['coordination_ref']}
+    if channels!=expected:raise ValueError('original intake/project channel binding mismatch')
+    if source is not None:
+        from git_remote_identity import repository_root
+        if type(source) is not GitLeaseStore or source.store_id!=channels['lease_store_id'] or source.ref!=channels['lease_ref'] or source.repo!=repository_root(request['repo_root']) or source.remote!=request.get('coordination_remote',request['remote']):
+            raise ValueError('original typed project lease channel substituted')
+        source._assert_remote_identity()
+
+
+def _preconsume_artifacts(row,pins,controller,guardian_pin):
+    """A protected infrastructure wait is documentary, never a terminal wait."""
+    evidence=pins.get('preconsume_exit')
+    if evidence is None:return {}
+    op._object(evidence,{'schema','controller','receipt_sha256','stdout_sha256','stderr_sha256','guardian_stdout_sha256','guardian_stderr_sha256'},'original preconsume controller exit')
+    if evidence['schema']!='native-preconsume-controller-exit/v1':raise ValueError('unsupported preconsume exit evidence')
+    identity=evidence['controller'];_identity(identity,absent=True)
+    if identity['pid'] in {pins['guardian']['pid'],pins['creator']['pid']}:raise ValueError('distinct original controller birth required')
+    nonce=pins['guardian_nonce']
+    if not isinstance(nonce,str) or re.fullmatch('[0-9a-f]{32}',nonce) is None:raise ValueError('original controller nonce must be canonical')
+    names={'receipt':nonce+'.receipt.json','stdout':nonce+'.stdout','stderr':nonce+'.stderr',
+        'guardian_stdout':nonce+'.guardian.stdout','guardian_stderr':nonce+'.guardian.stderr'}
+    raw={}
+    for label,name in names.items():
+        digest=evidence[label+'_sha256']
+        if not isinstance(digest,str) or re.fullmatch('sha256:[0-9a-f]{64}',digest) is None:raise ValueError('original preconsume artifact digest required')
+        path=controller/name
+        try:
+            fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+            with os.fdopen(fd,'rb') as stream:
+                info=os.fstat(stream.fileno())
+                if not stat.S_ISREG(info.st_mode) or info.st_nlink!=1 or info.st_uid!=pins['custody']['controller_uid'] or info.st_gid!=guardian_pin['gid'] or stat.S_IMODE(info.st_mode) not in (0o600,0o640):raise ValueError('protected original wait artifact custody required')
+                raw[label]=stream.read(65537)
+        except OSError:raise ValueError('original wait artifact unavailable') from None
+        if len(raw[label])>65536 or 'sha256:'+hashlib.sha256(raw[label]).hexdigest()!=digest:raise ValueError('original wait artifact bytes changed')
+    try:receipt=json.loads(raw['receipt'],object_pairs_hook=op._unique_object)
+    except (ValueError,UnicodeError):raise ValueError('original controller wait is not authentic JSON') from None
+    op._object(receipt,{'schema','task_id','identity','controller','exit_code','observed_at_utc','stdout_path','stdout_sha256','stderr_path','stderr_sha256'},'original controller wait')
+    if receipt['schema']!='cdc-vps-controller-wait/v1' or receipt['task_id']!=row['task']['id'] or receipt['identity']!=pins['guardian'] or receipt['controller']!=identity or type(receipt['exit_code']) is not int or receipt['exit_code']!=2:raise ValueError('original nonce/task/birth preconsume wait mismatch')
+    observed=op._timestamp(receipt['observed_at_utc'],'original controller wait time')
+    if observed>datetime.now(timezone.utc)+timedelta(seconds=5):raise ValueError('original controller wait observation is in the future')
+    for label in ('stdout','stderr'):
+        if receipt[label+'_path']!=str(controller/names[label]) or receipt[label+'_sha256']!=evidence[label+'_sha256'].split(':',1)[1]:raise ValueError('original controller stream path/digest mismatch')
+    marker=b'CDC_VPS_ORIGINAL_CONTROLLER_RECONCILIATION_REQUIRED\n'
+    codes=('INTAKE_OBSERVATION_CHANGED','INTAKE_CONSUMPTION_UNRESOLVED','HOST_IO_REJECTED','CONTRACT_OR_SCOPE_REJECTED')
+    accepted={marker}|{marker+('CDC_VPS_REJECTION_CODE='+code+'\n').encode() for code in codes}
+    if raw['stdout'] or raw['guardian_stdout'] or raw['guardian_stderr'] or raw['stderr'] not in accepted:raise ValueError('only original preconsume controller rejection artifacts are admissible')
+    _identity(identity,absent=True)
+    documentary={str(controller/name):raw[label] for label,name in names.items()}
+    creator_wait=controller/(nonce+'.guardian-wait.json')
+    pin=pins.get('creator_guardian_wait')
+    if creator_wait.exists() or creator_wait.is_symlink() or pin is not None:
+        op._object(pin,{'schema','sha256'},'original creator guardian wait pin')
+        if pin['schema']!='native-creator-guardian-wait/v1':raise ValueError('original creator wait schema required')
+        op._digest(pin['sha256'],'original creator wait digest')
+        try:
+            fd=os.open(creator_wait,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+            with os.fdopen(fd,'rb') as stream:
+                before=os.fstat(stream.fileno())
+                if (not stat.S_ISREG(before.st_mode) or before.st_nlink!=1
+                        or before.st_uid!=pins['custody']['controller_uid'] or before.st_gid!=guardian_pin['gid']
+                        or stat.S_IMODE(before.st_mode) not in (0o600,0o640)):
+                    raise ValueError('protected original creator wait custody required')
+                payload=stream.read(65537);after=os.fstat(stream.fileno())
+        except OSError:raise ValueError('original creator wait unavailable') from None
+        stable=('st_dev','st_ino','st_mode','st_uid','st_gid','st_nlink','st_size','st_mtime_ns','st_ctime_ns')
+        if (any(getattr(before,name)!=getattr(after,name) for name in stable) or len(payload)>65536
+                or 'sha256:'+hashlib.sha256(payload).hexdigest()!=pin['sha256']):
+            raise ValueError('original creator wait bytes changed')
+        try:wait=json.loads(payload,object_pairs_hook=op._unique_object)
+        except (ValueError,UnicodeError):raise ValueError('original creator wait JSON required') from None
+        fields={'schema','task_id','identity','nonce','exit_code','observed_at_utc','authorizes_slot_release',
+                'stdout_path','stdout_sha256','stderr_path','stderr_sha256'}
+        op._object(wait,fields,'original creator guardian wait')
+        if (wait['schema']!='cdc-vps-guardian-wait/v1' or wait['task_id']!=row['task']['id']
+                or op._hash(wait['identity'])!=op._hash(pins['guardian']) or wait['nonce']!=nonce
+                or type(wait['exit_code']) is not int or wait['exit_code']!=2
+                or wait['authorizes_slot_release'] is not False):
+            raise ValueError('original creator wait identity/status/authority changed')
+        timestamp=op._timestamp(wait['observed_at_utc'],'original creator wait time')
+        if timestamp<observed or timestamp>datetime.now(timezone.utc)+timedelta(seconds=5):
+            raise ValueError('original creator wait time changed')
+        for label in ('stdout','stderr'):
+            if (wait[label+'_path']!=str(controller/names['guardian_'+label])
+                    or wait[label+'_sha256']!=evidence['guardian_'+label+'_sha256'].split(':',1)[1]):
+                raise ValueError('original creator wait stream binding changed')
+        documentary[str(creator_wait)]=payload
+    return documentary
+
+
+def _bootstrap_artifacts(row,pins,controller,guardian_pin):
+    evidence=pins['guardian_bootstrap_failure']
+    if 'preconsume_exit' in pins:raise ValueError('bootstrap streams cannot substitute for a controller wait')
+    op._object(evidence,{'schema','stdout_sha256','stderr_sha256'},'original guardian bootstrap streams')
+    if evidence['schema']!='native-guardian-bootstrap-failure/v1':raise ValueError('unsupported guardian bootstrap evidence')
+    nonce=pins['guardian_nonce']
+    if not isinstance(nonce,str) or re.fullmatch('[0-9a-f]{32}',nonce) is None:raise ValueError('original guardian nonce must be canonical')
+    documentary={}
+    for label in ('stdout','stderr'):
+        path=controller/(nonce+'.guardian.'+label);digest=evidence[label+'_sha256']
+        op._digest(digest,'original guardian stream digest')
+        try:
+            fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+            with os.fdopen(fd,'rb') as stream:
+                info=os.fstat(stream.fileno())
+                if not stat.S_ISREG(info.st_mode) or info.st_nlink!=1 or info.st_uid!=pins['custody']['controller_uid'] or info.st_gid!=guardian_pin['gid'] or stat.S_IMODE(info.st_mode) not in (0o600,0o640):raise ValueError('protected original bootstrap stream custody required')
+                data=stream.read(65537)
+        except OSError:raise ValueError('original guardian bootstrap stream unavailable') from None
+        if len(data)>65536 or 'sha256:'+hashlib.sha256(data).hexdigest()!=digest:raise ValueError('original guardian bootstrap bytes changed')
+        if label=='stdout' and data:raise ValueError('original bootstrap stdout must be empty')
+        if label=='stderr':
+            marker=b'ValueError: original guardian birth never persisted; no child launch\n'
+            if b'\0' in data or not data.startswith(b'Traceback (most recent call last):\n') or not data.endswith(marker) or data.count(marker)!=1:raise ValueError('original no-child bootstrap traceback required')
+            try:data.decode('utf-8')
+            except UnicodeError:raise ValueError('original bootstrap traceback encoding invalid') from None
+        documentary[str(path)]=data
+    return documentary
+
+
+def _preparation_receipt(store,row,pins,budget_store,history):
+    """Observe an original event; this never reserves, closes or grants launch."""
+    preparation=row['operation'].get('reservation_preparation')
+    if preparation is None:
+        if 'preparation_budget' in pins or budget_store is not None:raise ValueError('unexpected original preparation budget channel')
+        return None
+    op._object(preparation,{'schema','root_parent_revision','project_budget'},'original reservation preparation')
+    if preparation['schema']!='cdc-vps-reservation-preparation/v1':raise ValueError('original reservation preparation schema required')
+    proposal=preparation['project_budget']
+    if proposal is None:
+        if 'preparation_budget' in pins or budget_store is not None or 'project_budget' in row['operation']:raise ValueError('unexpected original project receipt')
+        return None
+    from project_budget_store import GitProjectBudgetStore
+    trusted=pins.get('preparation_budget')
+    op._object(trusted,{'binding','registration_digest'},'trusted original preparation budget')
+    op._digest(trusted['registration_digest'],'original registration digest')
+    request=row['operation']['start_request'];task=row['task'];intent=row['operation']['intent']
+    if type(budget_store) is not GitProjectBudgetStore or budget_store.binding!=trusted['binding'] or budget_store.repo!=Path(request['repo_root']).resolve() or budget_store.remote!=request.get('coordination_remote',request['remote']):raise ValueError('actual original typed preparation budget required')
+    binding=budget_store.binding
+    if binding['repository']!=request['lease_repository'] or binding['source_ref']!=request['lease_source_ref'] or binding['coordination_store_id']!=request['plan']['coordination_store_id']:raise ValueError('original project budget/source channel mismatch')
+    fields={'schema','project_id','project_task_id','root_task_id','attempt_id','operation_key','registration_digest','budget_binding_digest','start_request_digest','prepared_budget_revision','event','event_digest','authorizes_launch'}
+    op._object(proposal,fields,'original project budget proposal')
+    receipt=row['operation'].get('project_budget')
+    op._object(receipt,fields-{'prepared_budget_revision'}|{'reservation_revision'},'original project budget receipt')
+    if proposal['authorizes_launch'] is not False or receipt['authorizes_launch'] is not False:raise ValueError('original preparation never authorizes launch')
+    prepared=budget_store.read_revision(proposal['prepared_budget_revision'])
+    event=proposal['event']
+    expected_event={'type':'reserve','event_id':'vps-'+task['id']+'-original-compute-start','task_id':binding['task_id'],
+        'wake_id':prepared['wake_ids'][-1],'at_utc':event['at_utc'],'operation_key':intent['operation_key'],
+        'attempt_id':request['attempt_id'],'kind':'compute_start','scope':'registered-vps-project-adoption:'+task['id'],
+        'recovery_ref':None,'cost':{'tool_calls':task['budget']['tool_calls'],'tokens':None,'elapsed_seconds':task['max_runtime_seconds']}}
+    expected={'schema':'cdc-vps-project-budget-preparation/v1','project_id':task['project_id'],
+        'project_task_id':binding['task_id'],'root_task_id':task['id'],'attempt_id':request['attempt_id'],
+        'operation_key':intent['operation_key'],'registration_digest':trusted['registration_digest'],
+        'budget_binding_digest':native_digest(binding),'start_request_digest':_contract(row),
+        'prepared_budget_revision':proposal['prepared_budget_revision'],'event':expected_event,
+        'event_digest':native_digest(expected_event),'authorizes_launch':False}
+    if proposal!=expected:raise ValueError('original prepared project event/receipt contract mismatch')
+    expected_receipt=copy.deepcopy(expected);expected_receipt.update(schema='cdc-vps-original-project-budget/v1',reservation_revision=receipt['reservation_revision']);del expected_receipt['prepared_budget_revision']
+    if receipt!=expected_receipt:raise ValueError('original project receipt is not the exact preparation progress')
+    import budget
+    if any(e.get('event_id')==event['event_id'] or (e.get('operation_key'),e.get('attempt_id'))==(event['operation_key'],event['attempt_id']) for e in prepared['events']) or not budget.decide(prepared,event)['allow_reservation']:raise ValueError('original event did not follow eligible project preparation')
+    recorded=budget_store.read_revision(receipt['reservation_revision']);_,current=budget_store.read()
+    for ledger in (recorded,current):
+        if sum(e==event for e in ledger['events'])!=1 or any(e['type']=='outcome' and e['reservation_id']==event['event_id'] for e in ledger['events']):raise ValueError('exact original unresolved project reservation required')
+    parent=preparation['root_parent_revision'];parent_row=_row(store.read_revision(parent),task['id'])
+    if parent_row['state']!='queued' or parent_row['task']!=task or parent_row.get('operation') is not None or parent_row.get('result') is not None or parent_row['budget']['events']:raise ValueError('original queued preparation predecessor required')
+    first=next(((revision,_row(document,task['id'])) for revision,document in history if (document.get('tasks',{}).get(task['id']) or {}).get('operation') is not None),None)
+    if first is None:raise ValueError('original prepared Root row absent')
+    revision,initial=first;operation=initial['operation']
+    if store._git('rev-parse',revision+'^')!=parent or initial['state']!='reserved' or operation['intent']['state']!='prepared' or operation.get('guardian') is not None or 'project_budget' in operation:raise ValueError('original project preparation boundary changed')
+    return {'receipt':receipt,'prepared_revision':revision,'prepared_intent':operation['intent']}
+
+
+def _physical_and_artifacts(store,row,pins,source_store=None):
     request=row['operation']['start_request']
     _identity(pins['creator'],absent=True);_identity(pins['guardian'],absent=True)
     guardian=row['operation'].get('guardian')
     if not isinstance(guardian,dict) or guardian.get('nonce')!=pins['guardian_nonce'] or guardian.get('identity')!=pins['guardian']:raise ValueError('original canonical guardian nonce/identity required')
-    if pins['pool_ref']!=request['plan']['coordination_ref'] or request['plan']['coordination_store_id']!=store.store_id:raise ValueError('original protected pool channel mismatch')
-    store._assert_remote_identity();store._git('check-ref-format',pins['pool_ref'])
-    if store._git('ls-remote','--refs',store.remote,pins['pool_ref']):raise ValueError('native original pool/runtime effect already exists')
+    _intake_channels(store,row,pins,source_store)
+    channel=source_store or store
+    if pins['pool_ref']!=request['plan']['coordination_ref'] or request['plan']['coordination_store_id']!=channel.store_id:raise ValueError('original protected pool channel mismatch')
+    channel._assert_remote_identity();channel._git('check-ref-format',pins['pool_ref'])
+    if channel._git('ls-remote','--refs',channel.remote,pins['pool_ref']):raise ValueError('native original pool/runtime effect already exists')
     custody=pins.get('custody')
     op._object(custody,{'controller_root','worker_launch_root','controller_uid','worker_gid'},'complete original protected custody')
     if any(type(custody[k]) is not int or custody[k]<0 for k in ('controller_uid','worker_gid')):raise ValueError('configured custody UID/GID required')
@@ -102,7 +296,7 @@ def _physical_and_artifacts(store,row,pins):
     handle=str(uuid.uuid5(uuid.NAMESPACE_URL,_canonical(identity)))
     native_paths=[Path(request['handle_root'])/(handle+'.json'),Path(request['handle_root'])/'gates'/handle,Path(request['handle_root'])/'locks'/(handle+'.lock'),Path(request['journal_root'])/native_digest({name:identity[name] for name in ('pool_id','task_id','attempt_id')}).split(':',1)[1]]
     publication_ref='refs/heads/cdc/managed-host-publish-'+handle.replace('-','')
-    if store._git('ls-remote','--refs',store.remote,publication_ref):raise ValueError('original publication journal already exists')
+    if channel._git('ls-remote','--refs',channel.remote,publication_ref):raise ValueError('original publication journal already exists')
     # Native effect scopes are absent unconditionally, including empty directories
     # and broken symlinks. Deployment pins can never turn effects into static data.
     for path in native_paths:
@@ -157,7 +351,8 @@ def _physical_and_artifacts(store,row,pins):
     if not set(allowed)<=static:raise ValueError('pins may describe only original pre-effect static custody')
     guardian_pin=allowed[str(controller/'guardian.lock')]
     op._object(guardian_pin,{'sha256','uid','gid','mode'},'original guardian static custody')
-    seen=set()
+    documentary=(_bootstrap_artifacts(row,pins,controller,guardian_pin) if 'guardian_bootstrap_failure' in pins else _preconsume_artifacts(row,pins,controller,guardian_pin))
+    seen=set();seen_documentary=set()
     for root in (controller,launch):
         expected_gid=guardian_pin['gid'] if root==controller else custody['worker_gid']
         if not root.is_dir():raise ValueError('complete original protected controller/worker scope missing')
@@ -171,7 +366,11 @@ def _physical_and_artifacts(store,row,pins):
                 if root==controller and child!=root:raise ValueError('unregistered controller effect directory')
                 if root==launch and child not in {launch,output}|checkout_dirs:raise ValueError('unregistered worker effect directory')
                 continue
-            key=str(child);seen.add(key);pin=allowed.get(key)
+            key=str(child)
+            if key in documentary:
+                if child.read_bytes()!=documentary[key]:raise ValueError('original wait artifact changed during authentication')
+                seen_documentary.add(key);continue
+            seen.add(key);pin=allowed.get(key)
             op._object(pin,{'sha256','uid','gid','mode'},'protected static artifact pin')
             if info.st_nlink!=1 or (info.st_uid,info.st_gid,info.st_mode & 0o7777)!=(pin['uid'],pin['gid'],pin['mode']) or info.st_mode & 0o022:raise ValueError('protected static file custody/mode drift')
             if 'sha256:'+hashlib.sha256(child.read_bytes()).hexdigest()!=pin['sha256']:raise ValueError('original static artifact bytes drift')
@@ -185,14 +384,16 @@ def _physical_and_artifacts(store,row,pins):
                 else:
                     op._object(record,{'operation_id','profile_id','source_sha','source_ref','profile_digest'},'original preparation record')
                     if record['operation_id']!=task_id or record['source_sha']!=row['task']['source_sha'] or record['source_ref']!=request['lease_source_ref'] or not isinstance(record['profile_id'],str) or not re.fullmatch('[0-9a-f]{64}',record['profile_digest']):raise ValueError('original preparation record/source mismatch')
-    if seen!=set(allowed):raise ValueError('pinned original static launch artifact missing')
+    if seen!=set(allowed) or seen_documentary!=set(documentary):raise ValueError('pinned original static/documentary launch artifact missing')
     _identity(pins['creator'],absent=True);_identity(pins['guardian'],absent=True)
+    if 'preconsume_exit' in pins:_identity(pins['preconsume_exit']['controller'],absent=True)
 
 
-def _authenticate_intake(store,task_id,source,pins,*,retired=False):
+def _authenticate_intake(store,task_id,source,pins,*,retired=False,project_budget_store=None):
     if type(store) is not GitDocumentStore or type(source) is not GitLeaseStore:raise ValueError('actual configured native stores required')
     required={'original_revision','row_digest','source_revision','source_digest','creator','guardian','guardian_nonce','pool_ref','launch_roots','custody'}
-    if not isinstance(pins,dict) or set(pins) not in (required,required|{'artifact_pins'}):raise ValueError('independent trusted original contract pins required')
+    if not isinstance(pins,dict) or not required<=set(pins) or set(pins)-required-{'artifact_pins','channels','preconsume_exit','guardian_bootstrap_failure','preparation_budget','creator_guardian_wait'}:raise ValueError('independent trusted original contract pins required')
+    if 'creator_guardian_wait' in pins and 'preconsume_exit' not in pins:raise ValueError('creator wait requires the exact original preconsume controller wait')
     history=_history(store);original=store.read_revision(pins['original_revision']);original_row=_row(original,task_id)
     if op._hash(original_row)!=pins['row_digest'] or _consumed(original_row):raise ValueError('pinned original unconsumed task row required')
     from managed_host_bridge import _validate_start
@@ -203,7 +404,8 @@ def _authenticate_intake(store,task_id,source,pins,*,retired=False):
     budget.validate_ledger(original_row['budget'])
     original_intent=original_row['operation']['intent'];op.validate_intent(original_intent)
     if original_intent['binding']['repository']!=request['lease_repository'] or original_intent['binding']['candidate_sha']!=request['plan']['base_sha'] or original_intent['source_ref']!=request['lease_source_ref'] or original_intent['attempt_id']!=request['attempt_id']:raise ValueError('original native intake intent/start contract mismatch')
-    digest=_contract(original_row);seen=False;admitted=False;intent_rank=-1
+    progress=_preparation_receipt(store,original_row,pins,project_budget_store,history)
+    digest=_contract(original_row);seen=False;admitted=False;intent_rank=-1;receipt_seen=False;submitted=None
     for revision,doc in history:
         rows=doc.get('tasks',{})
         row=rows.get(task_id)
@@ -221,6 +423,22 @@ def _authenticate_intake(store,task_id,source,pins,*,retired=False):
         if _consumed(row) and not (retired and row['state']=='retired_unknown'):raise ValueError('original controller/start/output history consumed')
         historical=copy.deepcopy(row['operation']);canonical=copy.deepcopy(original_row['operation'])
         historical.pop('guardian',None);canonical.pop('guardian',None)
+        if progress is not None:
+            receipt=historical.pop('project_budget',None);canonical.pop('project_budget')
+            if receipt is not None:
+                if receipt!=progress['receipt']:raise ValueError('original preparation receipt history changed')
+                receipt_seen=True
+            elif receipt_seen:raise ValueError('original preparation receipt was removed')
+            initial=progress['prepared_intent'];current_intent=historical['intent']
+            if current_intent['state']=='prepared':
+                if current_intent!=initial or receipt is not None or row['operation'].get('guardian') is not None:raise ValueError('original prepared progress changed')
+            elif current_intent['state']=='submitting':
+                at=current_intent['updated_at_utc']
+                readback=op.verify_readback(initial,initial,store.ref+'@'+progress['prepared_revision']+':tasks/'+task_id+'/operation/intent',at)
+                expected=op.transition(initial,'submitting',at,receipt=readback)
+                if current_intent!=expected or receipt is None or submitted is not None and submitted!=current_intent:raise ValueError('original submitted preparation/readback changed')
+                submitted=copy.deepcopy(current_intent)
+            else:raise ValueError('original preparation intent is not monotonic')
         if historical.get('observation') is not None and historical['observation']!=canonical.get('observation'):raise ValueError('original observational history changed')
         historical.pop('observation',None);canonical.pop('observation',None)
         historical_intent=historical.get('intent');original_intent=canonical.get('intent')
@@ -239,33 +457,34 @@ def _authenticate_intake(store,task_id,source,pins,*,retired=False):
             if not isinstance(old_events,list) or not isinstance(events,list) or events[:len(old_events)]!=old_events or revision==pins['original_revision']:raise ValueError('original budget event ancestry changed')
     revision,document=store.read();current=_row(document,task_id)
     if retired:validate_prelaunch_disposition(current)
-    elif current!=original_row or current.get('state') not in ('unknown','starting','start_unknown'):raise ValueError('exact original prelaunch UNKNOWN row required')
+    elif current!=original_row or current.get('state') not in (('unknown','starting','start_unknown','running') if 'guardian_bootstrap_failure' in pins else ('unknown','starting','start_unknown')):raise ValueError('exact original prelaunch UNKNOWN row required')
     srev,sdoc=source.read()
     if retired:
         sdoc=source.read_revision(pins['source_revision']);srev=pins['source_revision']
     if srev!=pins['source_revision'] or op._hash(sdoc)!=pins['source_digest'] or sdoc['owner_id'] is not None or sdoc['external_guard'] is not None or sdoc['repository']!=request['lease_repository'] or sdoc['source_ref']!=request['lease_source_ref']:raise ValueError('unchanged canonical absent-native source lease required')
-    if source.store_id!=store.store_id:raise ValueError('original source/control endpoint mismatch')
-    _physical_and_artifacts(store,original_row,pins)
+    _intake_channels(store,original_row,pins,source)
+    _physical_and_artifacts(store,original_row,pins,source)
     return revision,current
 
 
 class PrelaunchIntakeDispositionProof(dict):
     """Ephemeral administrative slot custody, distinct from terminal proof."""
-    def __init__(self,seal,store,task_id,source,pins,at,*,retired=False):
+    def __init__(self,seal,store,task_id,source,pins,at,*,retired=False,project_budget_store=None):
         if seal is not _SEAL:raise ValueError('package issued prelaunch disposition required')
-        revision,row=_authenticate_intake(store,task_id,source,pins,retired=retired)
+        revision,row=_authenticate_intake(store,task_id,source,pins,retired=retired,project_budget_store=project_budget_store)
         super().__init__(schema=DISPOSITION_SCHEMA,task_id=task_id,contract_digest=_contract(row),original_effect='UNKNOWN',actual_wait=None,original_revision=pins['original_revision'])
         self._evidence=copy.deepcopy(dict(self))
+        self._budget=project_budget_store
         self._seal=seal;self._store=store;self._source=source;self._pins=copy.deepcopy(pins);self._at=at;self._revision=revision;self._retired=retired
     def revalidate_for(self,store,task_id):
         if dict(self)!=self._evidence:raise ValueError('native disposition evidence capability was mutated')
         if self._seal is not _SEAL or store is not self._store or task_id!=self['task_id']:raise ValueError('original native disposition endpoint/task substituted')
-        return _authenticate_intake(store,task_id,self._source,self._pins,retired=self._retired)[1]
+        return _authenticate_intake(store,task_id,self._source,self._pins,retired=self._retired,project_budget_store=self._budget)[1]
 
 
-def authenticate_prelaunch_intake(store,task_id,*,source_store,trusted_contract,at):
+def authenticate_prelaunch_intake(store,task_id,*,source_store,trusted_contract,at,project_budget_store=None):
     op._timestamp(at,'administrative disposition time')
-    return PrelaunchIntakeDispositionProof(_SEAL,store,task_id,source_store,trusted_contract,at)
+    return PrelaunchIntakeDispositionProof(_SEAL,store,task_id,source_store,trusted_contract,at,project_budget_store=project_budget_store)
 
 
 def _validate_prelaunch_disposition_row(row):
@@ -319,18 +538,24 @@ def retire_prelaunch_intake_cas(store,expected_revision,task_id,proof,*,at):
     revision=store.compare_and_swap(expected_revision,changed,recovery_capability=proof)
     actual,readback=store.read()
     if actual!=revision or readback!=changed:raise ValueError('native disposition readback moved; observe without replay')
-    retired_proof=observe_prelaunch_intake_disposition(store,task_id,contract_digest=_contract(row),source_store=proof._source)
+    retired_proof=observe_prelaunch_intake_disposition(store,task_id,contract_digest=_contract(row),source_store=proof._source,project_budget_store=proof._budget)
     return {'revision':revision,'row':new,'proof':retired_proof}
 
 
-def observe_prelaunch_intake_disposition(store,task_id,*,contract_digest,source_store=None):
+def observe_prelaunch_intake_disposition(store,task_id,*,contract_digest,source_store=None,project_budget_store=None):
     if type(store) is not GitDocumentStore:raise ValueError('actual native intake store required')
     _,document=store.read();row=_row(document,task_id);entry=validate_prelaunch_disposition(row)
     if entry['contract_digest']!=contract_digest:raise ValueError('original disposition contract mismatch')
     if source_store is None:
         request=row['operation']['start_request']
-        source_store=GitLeaseStore(store.repo,store.remote,request.get('lease_coordination_ref','refs/heads/cdc/source-lease'))
-    return PrelaunchIntakeDispositionProof(_SEAL,store,task_id,source_store,entry['trusted_contract'],entry['retired_at_utc'],retired=True)
+        if entry['trusted_contract'].get('channels') is not None:
+            source_store=GitLeaseStore(request['repo_root'],request.get('coordination_remote',request['remote']),request['lease_coordination_ref'])
+        else:source_store=GitLeaseStore(store.repo,store.remote,request.get('lease_coordination_ref','refs/heads/cdc/source-lease'))
+    if project_budget_store is None and entry['trusted_contract'].get('preparation_budget') is not None:
+        from project_budget_store import GitProjectBudgetStore
+        request=row['operation']['start_request']
+        project_budget_store=GitProjectBudgetStore(request['repo_root'],request.get('coordination_remote',request['remote']),entry['trusted_contract']['preparation_budget']['binding'])
+    return PrelaunchIntakeDispositionProof(_SEAL,store,task_id,source_store,entry['trusted_contract'],entry['retired_at_utc'],retired=True,project_budget_store=project_budget_store)
 
 
 def assert_intake_start_allowed(store,task_id,start_request_digest):
@@ -343,22 +568,109 @@ def assert_intake_start_allowed(store,task_id,start_request_digest):
 
 def consume_intake_start(store,expected_revision,task_id,*,start_request_digest,controller_identity):
     if type(store) is not GitDocumentStore:raise ValueError('actual native intake store required')
-    row=assert_intake_start_allowed(store,task_id,start_request_digest);_identity(controller_identity,absent=False)
-    revision,document=store.read()
-    if revision!=expected_revision or _row(document,task_id)!=row:raise ValueError('stale start consumption revision')
+    try:
+        row=assert_intake_start_allowed(store,task_id,start_request_digest);_identity(controller_identity,absent=False)
+        revision,document=store.read()
+        if revision!=expected_revision or _row(document,task_id)!=row:raise ValueError('stale start consumption revision')
+    except ValueError as error:
+        if str(error) not in {'coordination ref moved during read','native history moved during authentication','stale start consumption revision'}:raise
+        raise IntakeStartConsumptionFailure(_SEAL,store,expected_revision,task_id,start_request_digest,
+            controller_identity,'before_cas',None,None,error) from error
     changed=copy.deepcopy(document);changed['tasks'][task_id]['operation']['start_consumption']={'schema':'native-intake-start-consumption/v1','contract_digest':start_request_digest,'controller':copy.deepcopy(controller_identity)}
     capability=_StartConsumption(_SEAL,store,expected_revision,task_id,changed,controller_identity)
-    return store.compare_and_swap(expected_revision,changed,recovery_capability=capability)
+    try:return store.compare_and_swap(expected_revision,changed,recovery_capability=capability)
+    except ValueError as error:
+        raise IntakeStartConsumptionFailure(_SEAL,store,expected_revision,task_id,start_request_digest,
+            controller_identity,'cas',capability.proposal,changed,error) from error
 
 
 class _StartConsumption:
     def __init__(self,seal,store,revision,task_id,document,identity):
         if seal is not _SEAL:raise ValueError('native one-use start required')
-        self.store=store;self.revision=revision;self.task_id=task_id;self.document=copy.deepcopy(document);self.identity=copy.deepcopy(identity)
+        self.store=store;self.revision=revision;self.task_id=task_id;self.document=copy.deepcopy(document);self.identity=copy.deepcopy(identity);self.proposal=None
+    def _bind_proposal(self,store,revision,commit):
+        if store is not self.store or revision!=self.revision or self.proposal is not None:raise ValueError('original start proposal binding changed')
+        self.proposal=commit
     def revalidate(self,store,revision,task_id,document):
         if store is not self.store or revision!=self.revision or task_id!=self.task_id or document!=self.document:raise ValueError('native start CAS binding changed')
         _identity(self.identity,absent=False)
         assert_intake_start_allowed(store,task_id,document['tasks'][task_id]['operation']['start_request_digest'])
+
+
+class IntakeStartConsumptionFailure(ValueError):
+    """Process-local original call evidence; serialized exceptions grant nothing."""
+    native_reconciliation_kind='sdk-intake-consumption-failure/v1'
+    def __init__(self,seal,store,revision,task_id,digest,identity,phase,proposal,document,error):
+        if seal is not _SEAL:raise ValueError('SDK-issued original consumption failure required')
+        super().__init__('original intake start consumption requires native reconciliation')
+        self._seal=seal;self._store=store;self._revision=revision;self._task=task_id
+        self._digest=digest;self._identity=copy.deepcopy(identity);self._phase=phase
+        self._proposal=proposal;self._document=copy.deepcopy(document)
+        self._evidence=self._values();self.original_error_type=type(error).__name__
+    def _values(self):
+        return op._hash({'revision':self._revision,'task':self._task,'digest':self._digest,
+            'identity':self._identity,'phase':self._phase,'proposal':self._proposal,'document':self._document})
+
+
+def _observe_original_consumption(failure):
+    if type(failure) is not IntakeStartConsumptionFailure or failure._seal is not _SEAL or failure._values()!=failure._evidence:
+        raise ValueError('unaltered SDK-issued original call evidence required')
+    store=failure._store;identity=failure._identity
+    if type(store) is not GitDocumentStore or identity.get('pid')!=os.getpid():raise ValueError('original live consumption caller required')
+    _identity(identity,absent=False)
+    history=_history(store)
+    indexes={revision:index for index,(revision,_) in enumerate(history)}
+    if failure._revision not in indexes:raise ValueError('original consumption anchor is outside current history')
+    segment=history[indexes[failure._revision]:];before=segment[0][1];row=_row(before,failure._task)
+    if before.get('schema')!=INTAKE_SCHEMA:raise ValueError('original native intake schema required')
+    if _consumed(row) or _contract(row)!=failure._digest:raise ValueError('original unconsumed contract changed')
+    import budget
+    budget.validate_ledger(row['budget']);registry=before.get('registry_digest')
+    after=copy.deepcopy(row);after['operation']['start_consumption']={'schema':'native-intake-start-consumption/v1',
+        'contract_digest':failure._digest,'controller':copy.deepcopy(identity)}
+    proposal=failure._proposal;confirmed=proposal is not None and proposal in indexes
+    if confirmed:
+        if failure._document is None or store.read_revision(proposal)!=failure._document:
+            raise ValueError('original issued proposal document changed')
+        if store._git('rev-list','--parents','-n','1',proposal).split()!=[proposal,failure._revision]:
+            raise ValueError('original consumption proposal parent changed')
+    consumed=False
+    for revision,document in segment:
+        if (document.get('registry_digest')!=registry or ('registry_digest' in document)!=('registry_digest' in before)
+                or document.get('schema')!=INTAKE_SCHEMA):raise ValueError('original registry changed during consumption')
+        if confirmed and revision==proposal:consumed=True
+        expected=after if consumed else row
+        if _row(document,failure._task)!=expected:raise ValueError('original task, charged budget or consumption history changed')
+    revision,current=store.read()
+    if revision!=history[-1][0] or current!=history[-1][1]:raise ValueError('native consumption observation moved')
+    _identity(identity,absent=False)
+    if confirmed:state='confirmed_original';retry=False
+    elif failure._phase=='before_cas' or proposal is None:state='unconsumed_before_effect';retry=True
+    elif revision!=failure._revision:state='unconsumed_after_head_advance';retry=True
+    else:state='unresolved_original';retry=False
+    return {'schema':'native-intake-consumption-observation/v1','task_id':failure._task,
+        'contract_digest':failure._digest,'controller':copy.deepcopy(identity),'revision':revision,
+        'original_revision':failure._revision,'original_proposal':proposal,'state':state,
+        'retry_original_consumption':retry,'new_attempts':0,'new_budget_reservations':0}
+
+
+class IntakeStartConsumptionObservation(dict):
+    def __init__(self,seal,failure):
+        if seal is not _SEAL:raise ValueError('native original consumption observation required')
+        super().__init__(_observe_original_consumption(failure));self._seal=seal;self._failure=failure
+        self._evidence=copy.deepcopy(dict(self))
+    def revalidate_for(self,store,task_id,digest,identity):
+        f=self._failure
+        if (self._seal is not _SEAL or dict(self)!=self._evidence or store is not f._store
+                or task_id!=f._task or digest!=f._digest or identity!=f._identity):
+            raise ValueError('original consumption observation substituted or mutated')
+        current=_observe_original_consumption(f)
+        if current!=self._evidence:raise ValueError('original consumption observation is no longer current')
+        return current
+
+
+def reconcile_intake_start_consumption(failure):
+    return IntakeStartConsumptionObservation(_SEAL,failure)
 
 
 def migrate_intake_registry_cas(store,expected_revision,old_digest,new_digest):
@@ -377,22 +689,14 @@ def migrate_intake_registry_cas(store,expected_revision,old_digest,new_digest):
     return {'revision':revision,'document':changed}
 
 
-def validate_prelaunch_disposition(store_or_row,task_id=None,row=None):
-    """Read validation authenticates immutable native custody, never terminal facts.
-
-    The row-only form checks structure for the native transition validator. Hosts
-    must use (native_store, task_id, row) to authenticate authoritative history.
-    """
-    if task_id is None:return _validate_prelaunch_disposition_row(store_or_row)
-    store=store_or_row
-    if type(store) is not GitDocumentStore:raise ValueError('actual original native intake channel required')
-    _,document=store.read();current=_row(document,task_id)
-    if row is not None and current!=row:raise ValueError('serialized disposition differs from authoritative original row')
+def _disposition_from_history(store, task_id, current, history, documents):
     entry=_validate_prelaunch_disposition_row(current)
-    original=_row(store.read_revision(entry['original_revision']),task_id)
+    if entry['original_revision'] not in documents:raise ValueError('disposition original ancestry/task mismatch')
+    original=_row(documents[entry['original_revision']],task_id)
+    _intake_channels(store,original,entry['trusted_contract'])
     if original!=entry['original_row'] or entry['task_id']!=task_id:raise ValueError('disposition original ancestry/task mismatch')
     found=False
-    for _,historical in _history(store):
+    for _,historical in history:
         historic=historical.get('tasks',{}).get(task_id)
         if historic is None:
             if found:raise ValueError('native tombstone/history deleted')
@@ -403,14 +707,47 @@ def validate_prelaunch_disposition(store_or_row,task_id=None,row=None):
         elif found:raise ValueError('native tombstone was rearmed')
         elif _consumed(historic):raise ValueError('prelaunch disposition has consumed controller/effect ancestry')
     if not found:raise ValueError('native disposition not authoritative')
-    return entry
+    return copy.deepcopy(entry)
+
+
+def validate_prelaunch_dispositions(store, expected_revision, rows):
+    """Authenticate selected tombstones against one fresh native history snapshot.
+
+    Returned entries remain structural observations: no wait, terminal or send
+    capability is created. The exact caller head and every supplied row must
+    match the independently read native channel, including at the end.
+    """
+    if type(store) is not GitDocumentStore or not isinstance(rows,dict):raise ValueError('actual original native intake channel and rows required')
+    history=_history(store)
+    revision,document=history[-1]
+    if revision!=expected_revision:raise ValueError('serialized disposition snapshot differs from authoritative head')
+    documents=dict(history);result={}
+    for task_id,row in rows.items():
+        current=_row(document,task_id)
+        if current!=row:raise ValueError('serialized disposition differs from authoritative original row')
+        result[task_id]=_disposition_from_history(store,task_id,current,history,documents)
+    if store.read()[0]!=revision:raise ValueError('native disposition head moved during validation')
+    return result
+
+
+def validate_prelaunch_disposition(store_or_row,task_id=None,row=None):
+    """Original single-row API; structural form never grants native authority."""
+    if task_id is None:return _validate_prelaunch_disposition_row(store_or_row)
+    store=store_or_row
+    if type(store) is not GitDocumentStore:raise ValueError('actual original native intake channel required')
+    history=_history(store);revision,document=history[-1];current=_row(document,task_id)
+    if row is not None and current!=row:raise ValueError('serialized disposition differs from authoritative original row')
+    result=_disposition_from_history(store,task_id,current,history,dict(history))
+    if store.read()[0]!=revision:raise ValueError('native disposition head moved during validation')
+    return result
 
 
 def assert_new_intake_allowed(store,task):
     if type(store) is not GitDocumentStore:raise ValueError('native intake admission store required')
-    _,document=store.read()
+    revision,document=store.read()
+    retired={task_id:row for task_id,row in document['tasks'].items() if row.get('state')=='retired_unknown'}
+    if retired:validate_prelaunch_dispositions(store,revision,retired)
     for task_id,row in document['tasks'].items():
         if row.get('state')=='retired_unknown':
-            validate_prelaunch_disposition(store,task_id,row)
             if semantic_intake_contract({'task':task})==semantic_intake_contract(row):raise ValueError('retired original task contract replay prohibited')
     return True
