@@ -353,6 +353,27 @@ else:
         self.assertEqual(self.bs.read()[1]['events'], [])
         self.assertFalse(list((self.root / 'journal').glob('*/request.json')))
 
+    def test_reconstructed_kimi_cannot_collect_after_inactive_role_file_changes(self):
+        import agent_cli_adapters
+        from unittest import mock
+        self.contract['provider'] = 'kimi'
+        self.contract['review']['provider'] = 'codex'
+        profiles = self.root / 'isolated-kimi-recovery' / 'templates'
+        profiles.mkdir(parents=True)
+        for role in ('developer', 'reviewer'):
+            (profiles / ('kimi-' + role + '-v220.yaml')).write_text('original profile')
+        module = profiles.parent / 'scripts' / 'agent_cli_adapters.py'
+        with mock.patch.object(agent_cli_adapters, '__file__', str(module)):
+            original = self.start()
+            self.wait()
+            self.assertEqual(original.collect_result('a1')['status'], 'succeeded')
+            (profiles / 'kimi-reviewer-v220.yaml').write_text('changed inactive role')
+            reconstructed = self.facade()
+            for observe in (reconstructed.get_status, reconstructed.collect_result):
+                with self.assertRaisesRegex(ValueError, 'original launch contract/provider/prompt substituted'):
+                    observe('a1')
+        self.assertEqual(len(self.bs.read()[1]['events']), 1)
+
     def test_lost_check_receipt_cannot_retain_review_approval(self):
         self.configure_review();facade=self.start();self.wait()
         result=facade.collect_result('a1')
