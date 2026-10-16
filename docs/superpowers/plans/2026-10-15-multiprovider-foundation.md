@@ -76,5 +76,5 @@ API fallback or Extra Usage is enabled by CDC.
    qualified deployment/rollback. Security-sensitive production adoption requires
    owner approval; installed Root/SDK/config/budgets remain separate.
 
-Targeted acceptance on the first implementation source:80 tests passed with
-synthetic CLIs. This is no claim of live qualification or production adoption.
+Targeted acceptance after the reconstructed-role binding regression fix:81
+tests passed with synthetic CLIs. This is no claim of live qualification or production adoption.
