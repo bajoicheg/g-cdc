@@ -285,6 +285,90 @@ class EventTests(unittest.TestCase):
 
 
 
+class KimiAdapterTests(unittest.TestCase):
+    def events(self):
+        return [
+            {'role': 'meta', 'type': 'system.version', 'version': '2.2.0'},
+            {'role': 'assistant', 'content': 'Reading first.', 'tool_calls': [
+                {'type': 'function', 'id': 'read-1', 'function': {
+                    'name': 'Read', 'arguments': '{"file_path":"src/example.py"}'}}]},
+            {'role': 'tool', 'tool_call_id': 'read-1', 'content': 'actual contents'},
+            {'role': 'assistant', 'content': '{"verdict":"approved","findings":[]}'},
+            {'role': 'meta', 'type': 'session.resume_hint', 'session_id': 'kimi-actual',
+             'command': 'kimi -r kimi-actual', 'content': 'To resume this session: kimi -r kimi-actual'},
+        ]
+
+    def test_contract_accepts_all_distinct_provider_pairs(self):
+        for provider in ('codex', 'gemini', 'kimi'):
+            for opposite in ('codex', 'gemini', 'kimi'):
+                for role in ('developer', 'reviewer'):
+                    value = task(provider, role)
+                    value['review']['provider'] = opposite
+                    if value['review_of']:
+                        value['review_of']['developer_provider'] = opposite
+                    with self.subTest(provider=provider, opposite=opposite, role=role):
+                        if provider == opposite:
+                            with self.assertRaises(ValueError): validate_task(value)
+                        else:
+                            self.assertEqual(validate_task(value), value)
+
+    def test_headless_command_binds_trusted_role_agent_and_complete_task(self):
+        for role in ('developer', 'reviewer'):
+            value = task('kimi', role)
+            context = 'diff --git a/a b/a\n+actual' if role == 'reviewer' else None
+            argv = build_command(value, '/opt/provider/kimi', review_context=context)
+            self.assertEqual(argv[:5], ['/opt/provider/kimi', '--output-format', 'stream-json',
+                                       '--model', 'explicit-model'])
+            self.assertEqual(argv[5], '--agent-file')
+            self.assertEqual(Path(argv[6]).name, 'kimi-' + role + '-v220.yaml')
+            self.assertTrue(Path(argv[6]).is_file())
+            self.assertEqual(argv[7], '-p')
+            payload = json.loads(argv[-1].split('\n', 1)[1])
+            self.assertEqual(payload, {'task': value, 'review_context': context} if context else value)
+            self.assertTrue(set(argv).isdisjoint({'--yolo', '--auto', '--plan', '--continue', '--resume'}))
+
+    def test_pinned_completed_turn_preserves_session_and_unknown_usage(self):
+        self.assertEqual(parse_events('kimi', stream(*self.events())), {
+            'status': 'succeeded', 'session_id': 'kimi-actual', 'usage': None,
+            'final_message': '{"verdict":"approved","findings":[]}', 'error': None})
+
+    def test_missing_wrong_or_duplicate_version_and_terminal_are_unknown(self):
+        cases = [self.events()[1:], self.events()[:-1], self.events() + [self.events()[-1]],
+                 [self.events()[0], *self.events()], self.events() + [self.events()[3]]]
+        events = self.events(); events[0]['version'] = '2.2.1'; cases.append(events)
+        events = self.events(); events[-1]['session_id'] = ''; cases.append(events)
+        events = self.events(); events[3]['content'] = ''; cases.append(events)
+        for events in cases:
+            with self.subTest(events=events):
+                self.assertEqual(parse_events('kimi', stream(*events))['status'], 'unknown')
+
+    def test_tool_progress_pending_or_forged_tool_results_cannot_be_final_answer(self):
+        cases = []
+        events = self.events(); del events[3]; cases.append(events)
+        events = self.events(); del events[2]; cases.append(events)
+        events = self.events(); events[2]['tool_call_id'] = 'unrequested'; cases.append(events)
+        events = self.events(); events[1]['tool_calls'] *= 2; cases.append(events)
+        events = self.events(); events[1]['tool_calls'][0]['function']['arguments'] = 'bad'; cases.append(events)
+        for events in cases:
+            with self.subTest(events=events):
+                self.assertEqual(parse_events('kimi', stream(*events))['status'], 'unknown')
+
+    def test_retry_and_mixed_or_malformed_stream_cannot_succeed(self):
+        events = self.events()
+        retry = {'role': 'meta', 'type': 'turn.step.retrying', 'failed_attempt': 1,
+                 'next_attempt': 2, 'max_attempts': 10, 'delay_ms': 1000,
+                 'error_name': 'ExampleError', 'error_message': 'retry forbidden'}
+        for text in (stream(events[0], retry, *events[1:]),
+                     stream(*events) + '{broken',
+                     stream(events[0], {'type': 'turn.completed'}, *events[1:]),
+                     stream(*events).replace('"version": "2.2.0"',
+                                            '"version": "2.2.0", "version": "2.2.0"'),
+                     stream(*events).replace('"version": "2.2.0"',
+                                            '"version": "2.2.0", "untrusted": NaN')):
+            with self.subTest(text=text):
+                self.assertNotEqual(parse_events('kimi', text)['status'], 'succeeded')
+
+
 class AntigravityAdapterTests(unittest.TestCase):
     def command(self, value, **kwargs):
         try:

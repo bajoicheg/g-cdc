@@ -57,7 +57,11 @@ if barrier.exists():
 started=time.monotonic()
 time.sleep(.1)
 (p/'interval.json').write_text(json.dumps([started,time.monotonic()]))
-if '--output-format' in sys.argv:
+if task['provider']=='kimi':
+ print(json.dumps({'role':'meta','type':'system.version','version':'2.2.0'}))
+ print(json.dumps({'role':'assistant','content':'done'}))
+ print(json.dumps({'role':'meta','type':'session.resume_hint','session_id':'fixture-kimi','command':'kimi -r fixture-kimi','content':'To resume this session: kimi -r fixture-kimi'}))
+elif '--output-format' in sys.argv:
  print(json.dumps({'type':'init','session_id':'fixture-gemini'}))
  print(json.dumps({'type':'message','role':'assistant','content':'done','delta':True}))
  print(json.dumps({'type':'result','status':'success'}))
@@ -239,13 +243,13 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':3,'output_toke
         self.assertIn('+synthetic proposal',request['argv'][-1])
         self.assertEqual(self.git('status','--porcelain'),'')
 
-    def _exercise_developer_to_opposite_default_reviewer(self, provider):
+    def _exercise_developer_to_opposite_default_reviewer(self, provider, reviewer_provider=None):
         # Real Git, original native starts, checks, scoped host commit and exact
         # handoff; only the external coding CLIs are synthetic executables.
         import subprocess
         developer = self.contract
         developer['provider'] = provider
-        reviewer_provider = 'gemini' if provider == 'codex' else 'codex'
+        reviewer_provider = reviewer_provider or ('gemini' if provider == 'codex' else 'codex')
         developer['review']['provider'] = reviewer_provider
         facade = self.start()
         terminal = self.wait()
@@ -287,7 +291,11 @@ assert 'synthetic only' in sys.argv[-1]
 assert 'check-0.stdout.log' in sys.argv[-1]
 assert 'check-0.stderr.log' in sys.argv[-1]
 verdict=json.dumps({'verdict':'approved','findings':[]})
-if '--output-format' in sys.argv:
+if '--agent-file' in sys.argv:
+ print(json.dumps({'role':'meta','type':'system.version','version':'2.2.0'}))
+ print(json.dumps({'role':'assistant','content':verdict}))
+ print(json.dumps({'role':'meta','type':'session.resume_hint','session_id':'fixture-kimi-review','command':'kimi -r fixture-kimi-review','content':'To resume this session: kimi -r fixture-kimi-review'}))
+elif '--output-format' in sys.argv:
  print(json.dumps({'type':'init','session_id':'fixture-gemini-review'}))
  print(json.dumps({'type':'message','role':'assistant','content':verdict,'delta':True}))
  print(json.dumps({'type':'result','status':'success'}))
@@ -317,6 +325,12 @@ else:
 
     def test_gemini_developer_to_codex_reviewer_with_actual_check_evidence(self):
         self._exercise_developer_to_opposite_default_reviewer('gemini')
+
+    def test_codex_developer_to_kimi_reviewer_with_actual_check_evidence(self):
+        self._exercise_developer_to_opposite_default_reviewer('codex', 'kimi')
+
+    def test_kimi_developer_to_codex_reviewer_with_actual_check_evidence(self):
+        self._exercise_developer_to_opposite_default_reviewer('kimi', 'codex')
 
     def test_lost_check_receipt_cannot_retain_review_approval(self):
         self.configure_review();facade=self.start();self.wait()
