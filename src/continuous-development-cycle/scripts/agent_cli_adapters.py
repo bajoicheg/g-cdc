@@ -52,6 +52,11 @@ def build_command(task, executable, *, review_context=None, cli_variant=None):
                         'run only required_tests, and preserve the exact source/branch/worktree assignment. '
                         'Do not commit, push, merge, release, delegate, invoke CI, change authentication, '
                         'acquire leases, or retry. Report actual evidence and unavailable observations.')
+    if task['provider'] == 'kimi':
+        # Native requests persist argv, including this first prompt line. A
+        # reconstructed facade must reject changed agent bytes at the same path.
+        agents = cli_configuration('kimi', executable, cli_variant)['kimi_2_2_0_agents']
+        instructions += ' Kimi2.2.0 immutable role hashes: ' + json.dumps(agents, sort_keys=True, separators=(',', ':'))
     prompt = instructions + '\n' + json.dumps(payload, sort_keys=True, separators=(',', ':'),
                                               ensure_ascii=False, allow_nan=False)
     # Linux limits one argument to roughly 128 KiB; reject before native claim.
