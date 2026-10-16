@@ -115,7 +115,8 @@
     "provider": {
       "enum": [
         "codex",
-        "gemini"
+        "gemini",
+        "kimi"
       ]
     },
     "model": {
@@ -218,7 +219,8 @@
         "provider": {
           "enum": [
             "codex",
-            "gemini"
+            "gemini",
+            "kimi"
           ]
         },
         "max_iterations": {
@@ -267,7 +269,8 @@
             "developer_provider": {
               "enum": [
                 "codex",
-                "gemini"
+                "gemini",
+                "kimi"
               ]
             },
             "test_evidence": {
@@ -370,7 +373,8 @@
               "developer_provider": {
                 "enum": [
                   "codex",
-                  "gemini"
+                  "gemini",
+                  "kimi"
                 ]
               },
               "test_evidence": {
@@ -404,7 +408,10 @@
           "review": {
             "properties": {
               "provider": {
-                "const": "gemini"
+                "enum": [
+                  "gemini",
+                  "kimi"
+                ]
               }
             }
           },
@@ -414,12 +421,15 @@
                 "type": "null"
               },
               {
+                "type": "object",
                 "properties": {
                   "developer_provider": {
-                    "const": "gemini"
+                    "enum": [
+                      "gemini",
+                      "kimi"
+                    ]
                   }
-                },
-                "type": "object"
+                }
               }
             ]
           }
@@ -439,7 +449,10 @@
           "review": {
             "properties": {
               "provider": {
-                "const": "codex"
+                "enum": [
+                  "codex",
+                  "kimi"
+                ]
               }
             }
           },
@@ -449,12 +462,56 @@
                 "type": "null"
               },
               {
+                "type": "object",
                 "properties": {
                   "developer_provider": {
-                    "const": "codex"
+                    "enum": [
+                      "codex",
+                      "kimi"
+                    ]
                   }
-                },
-                "type": "object"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": {
+            "const": "kimi"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "review": {
+            "properties": {
+              "provider": {
+                "enum": [
+                  "codex",
+                  "gemini"
+                ]
+              }
+            }
+          },
+          "review_of": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "developer_provider": {
+                    "enum": [
+                      "codex",
+                      "gemini"
+                    ]
+                  }
+                }
               }
             ]
           }

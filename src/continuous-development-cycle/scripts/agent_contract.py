@@ -7,7 +7,7 @@ import re
 from parallel_task_planner import portable_path_key, validate_write_path
 
 SCHEMA = 'cdc-agent-task/v1'
-PROVIDERS = frozenset(('codex', 'gemini'))
+PROVIDERS = frozenset(('codex', 'gemini', 'kimi'))
 FIELDS = frozenset((
     'schema', 'task_id', 'project_id', 'repository', 'base_sha', 'branch', 'worktree',
     'objective', 'acceptance_criteria', 'allowed_files', 'allowed_operations',

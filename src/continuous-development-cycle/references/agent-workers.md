@@ -81,4 +81,30 @@ After verified original terminal/quiescent evidence, the host appends one `outco
 
 Automated tests use real local Git repositories, native CAS and actual supervised processes with synthetic CLI executables. They cover both developer→opposite-reviewer directions, actual check-reference transfer, concurrent isolated worktrees, conflicting claims, cancellation/timeout, provider failure and reconstruction during an active original invocation. They do not prove real Google eligibility or live model behavior.
 
-The owner deferred live Gemini connection. No model, API, login or consumer subscription route is required to run these deterministic tests. The optional explicit Antigravity parser/command variant is an unadopted technical prototype; consumer subscription wrapping inside third-party agent applications is unsupported by Google's documentation. Production rollout and live qualification remain separate later gates. Repository `docs/multiprovider.md` records the current delivery scope and rollout/rollback procedure.
+The owner deferred live Gemini connection and subsequently requested Kimi Code as the second live provider. Deterministic tests require no login or model invocation; live Codex+Kimi qualification is a distinct acceptance gate. The optional explicit Antigravity parser/command variant is an unadopted technical prototype; consumer subscription wrapping inside third-party agent applications is unsupported by Google's documentation. Production rollout retains a separate concrete qualification and owner approval gate. Repository `docs/multiprovider.md` records the current delivery scope and rollout/rollback procedure.
+
+
+## Kimi Code host policy
+
+Use only source-qualified official CLI2.2.0 with the packaged explicit developer
+or reviewer agent file. The reviewer tools are Read/Glob/Grep; developer tools
+add Write/Edit. Neither profile exposes shell, skills or delegation. The native
+check runner executes the registered checks after the provider exits. Agent
+file hashes are bound into the original Kimi operation key and immutable CLI
+configuration; changing them cannot attach to an earlier attempt.
+
+Print mode internally uses auto permissions. The host must enforce native OS
+containment, immutable packaged agents, isolated HOME/KIMI_CODE_HOME, an empty
+explicit skills directory, verified retry-limited config and no hooks/MCP/user
+extensions. Set max_attempts_per_step=1 and compaction_max_attempts=1 in the
+profile's loop_control section; set KIMI_LOOP_MAX_ATTEMPTS_PER_STEP=1,
+KIMI_CODE_INFINITE_RETRY=0 and KIMI_CODE_NO_AUTO_UPDATE=1. There is no CLI config
+flag. Pin profile/config/environment in the trusted host wrapper without
+recording credential contents. Internal credential/media recovery is not proven
+absent; observable retry metadata is rejected.
+
+Kimi JSONL success requires first system.version2.2.0, completed tool calls, a
+final assistant answer and one last session.resume_hint, plus native exit/check
+evidence. The hint is never executed; session resume/retry is not authorized.
+The witness is qualified from pinned source, not a stable documented result
+schema. Usage stays null. Requalify before any CLI upgrade.

@@ -2,7 +2,7 @@
 
 ## Current scope
 
-This candidate adds Codex and Gemini model workers to existing CDC native execution. The owner explicitly deferred real Gemini connection. Current delivery is implementation, deterministic native-process validation, operator examples and a canonical draft PR. Live model qualification and production adoption are later gates; neither is claimed by synthetic tests. No login, model invocation, API provisioning or new paid service is required for the current validation.
+This candidate adds Codex, Gemini and Kimi model workers to existing CDC native execution. The owner deferred real Gemini connection and subsequently requested Kimi plus Phase1 completion with Codex+Kimi. Implementation, deterministic validation, real provider acceptance and production adoption are separate gates. Synthetic tests do not prove live acceptance. The owner handles the Kimi subscription and browser login; no purchase or paid API fallback is authorized.
 
 The existing release version, native v1 records and installed consumers remain separate. This change adds no scheduler, provider fallback engine, database, MCP service, n8n, Jev or LiteLLM. Downstream projects are outside this Phase1 rollout.
 
@@ -20,7 +20,7 @@ Codex command construction uses explicit `exec --json --sandbox workspace-write|
 
 CLI approval settings and separate worktrees are not an operating-system security sandbox. Before real providers, qualify least-privilege UID/profile isolation, filesystem and network boundaries, hooks/configuration and exact credential exposure. Authentication remains external to task JSON. Google interactive subscription quotas are separate from API quotas. Never store credentials or raw model sessions in source.
 
-An explicit nondefault `antigravity-cli` variant preserves the same provider/schema and binds its parser/command choice into the operation key and immutable CLI configuration. It remains an unadopted technical prototype. Google's [FAQ](https://antigravity.google/docs/faq/) excludes consumer-plan wrapping inside third-party coding agents/applications. Do not use consumer subscriptions as this CDC worker connection. No real-provider configuration is part of current delivery.
+An explicit nondefault `antigravity-cli` variant preserves the same provider/schema and binds its parser/command choice into the operation key and immutable CLI configuration. It remains an unadopted technical prototype. Google's [FAQ](https://antigravity.google/docs/faq/) excludes consumer-plan wrapping inside third-party coding agents/applications. Do not use consumer subscriptions as this CDC worker connection. Real Gemini configuration remains deferred.
 
 Prompts bind the whole canonical task; reviewers also receive the actual Git diff. Input over96KiB is blocked before native claim. Strict JSONL parsing requires genuine session/final/terminal evidence. Mixed streams, duplicate fields, malformed/nonfinite usage, missing terminal events or contradictory errors cannot prove success. Usage is copied only when observed.
 
@@ -53,3 +53,39 @@ Run focused checks through hosted CI. The canonical draft PR's existing release-
 No fleet installation is authorized by this candidate. Before later live acceptance, use approved synthetic data, verified account identity, fresh eligibility/quota and original model admission. Complete real scenarios in both directions and retain genuine exits/check/review evidence. Before production adoption, freeze and qualify a release under existing package/projection, hosted and actual host gates; present that concrete security-sensitive deployment for owner approval.
 
 Until adoption, rollback means stop new launches, reconcile original attempts, retain dirty/untracked worktrees and all charge/UNKNOWN evidence, and keep installed SDK/controller policy unchanged. After adoption, use the existing reviewed release/consumer rollback process. Never replace credentials under an active worker, reset a budget or replay an uncertain effect.
+
+## Owner continuation: Kimi Code
+
+The owner subsequently requested a Kimi adapter and live Phase1 completion using
+Codex and Kimi. Gemini remains available in the contract with its real connection
+deferred. The owner handles the Plus subscription and browser authorization;
+CDC does not buy a plan, enable Extra Usage or fall back to a paid API.
+
+The Kimi protocol is pinned to official `@moonshot-ai/kimi-code@2.2.0` (Node
+>=22.19.0). Headless argv uses `--output-format stream-json --model MODEL
+--agent-file PINNED_ROLE_FILE -p PROMPT`. Print mode uses auto permissions
+internally. The explicit packaged developer agent exposes Read/Glob/Grep/Write/Edit;
+the reviewer exposes only Read/Glob/Grep. Both forbid subagents. Deterministic
+checks run afterward through the original CDC check runner, not a model shell.
+The explicit agent file must be immutable to the provider UID; filesystem
+containment remains mandatory.
+
+The host must qualify an isolated HOME and KIMI_CODE_HOME with no project/user
+extensions, hooks or MCP configuration, an empty explicit skills directory,
+verified `config.toml` with `loop_control.max_attempts_per_step=1` and
+`compaction_max_attempts=1`, `KIMI_LOOP_MAX_ATTEMPTS_PER_STEP=1`,
+`KIMI_CODE_INFINITE_RETRY=0` and `KIMI_CODE_NO_AUTO_UPDATE=1`. There is no CLI
+config-file flag in this version. Bind the executable/package tree, agent files,
+profile config and environment in the host sandbox's immutable launch record.
+Never place credentials in that record. One-attempt controls do not prove that
+all credential/media/context recovery paths disappear; observable retry events
+cannot produce adapter success.
+
+Ordinary JSONL contains chat messages rather than turn result envelopes. The
+pinned implementation emits `system.version` first and `session.resume_hint`
+only after its internal completed turn. Require the exact version, completed
+tool calls, a final assistant answer and one last resume hint, alongside genuine
+native exit zero and check receipts. Never execute the hint. Missing, mixed,
+truncated, duplicate or retry-bearing streams stay unaccepted. No token usage
+is emitted; retain null. The terminal witness is source-derived for2.2.0 and
+must be requalified before any CLI upgrade.

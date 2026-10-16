@@ -332,6 +332,24 @@ class KimiAdapterTests(unittest.TestCase):
             'status': 'succeeded', 'session_id': 'kimi-actual', 'usage': None,
             'final_message': '{"verdict":"approved","findings":[]}', 'error': None})
 
+    def test_tool_only_assistant_and_empty_tool_output_are_supported(self):
+        events = self.events()
+        del events[1]['content']
+        events[2]['content'] = ''
+        self.assertEqual(parse_events('kimi', stream(*events))['status'], 'succeeded')
+
+    def test_role_profiles_exclude_shell_delegation_and_reviewer_edits(self):
+        import yaml
+        root = Path(__file__).resolve().parents[1] / 'templates'
+        for role, tools in [('developer', ['Read', 'Glob', 'Grep', 'Write', 'Edit']),
+                            ('reviewer', ['Read', 'Glob', 'Grep'])]:
+            text = (root / ('kimi-' + role + '-v220.yaml')).read_text()
+            _, metadata, body = text.split('---', 2)
+            profile = yaml.safe_load(metadata)
+            self.assertEqual(profile['tools'], tools)
+            self.assertEqual(profile['subagents'], [])
+            self.assertTrue(profile['description'] and body.strip())
+
     def test_missing_wrong_or_duplicate_version_and_terminal_are_unknown(self):
         cases = [self.events()[1:], self.events()[:-1], self.events() + [self.events()[-1]],
                  [self.events()[0], *self.events()], self.events() + [self.events()[3]]]

@@ -332,6 +332,27 @@ else:
     def test_kimi_developer_to_codex_reviewer_with_actual_check_evidence(self):
         self._exercise_developer_to_opposite_default_reviewer('kimi', 'codex')
 
+    def test_kimi_agent_definition_change_rejects_original_binding_before_start(self):
+        import agent_cli_adapters
+        from unittest import mock
+        self.contract['provider'] = 'kimi'
+        self.contract['review']['provider'] = 'codex'
+        profiles = self.root / 'isolated-kimi-package' / 'templates'
+        profiles.mkdir(parents=True)
+        for role in ('developer', 'reviewer'):
+            (profiles / ('kimi-' + role + '-v220.yaml')).write_text('original profile')
+        module = profiles.parent / 'scripts' / 'agent_cli_adapters.py'
+        with mock.patch.object(agent_cli_adapters, '__file__', str(module)):
+            facade = self.facade()
+            original_key = facade.operation_key('a1')
+            (profiles / 'kimi-reviewer-v220.yaml').write_text('changed tool policy')
+            with self.assertRaisesRegex(ValueError, 'immutable provider CLI configuration'):
+                facade.operation_key('a1')
+            replacement = self.facade()
+            self.assertNotEqual(replacement.operation_key('a1'), original_key)
+        self.assertEqual(self.bs.read()[1]['events'], [])
+        self.assertFalse(list((self.root / 'journal').glob('*/request.json')))
+
     def test_lost_check_receipt_cannot_retain_review_approval(self):
         self.configure_review();facade=self.start();self.wait()
         result=facade.collect_result('a1')

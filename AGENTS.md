@@ -43,3 +43,15 @@ candidate into production. Live provider acceptance and security-sensitive
 production adoption are separate later gates. Use hosted checks and ordered
 independent SPEC then QUALITY. Canonical source publication uses the original
 receiving-event, budget, guard and one-use claim controls.
+
+# Owner-authorized Kimi extension — 2026-10-16
+
+The owner's explicit request adds Kimi Code and completes Phase1 using the live
+Codex+Kimi pair; real Gemini connection remains deferred. This supersedes the
+previous no-model/no-login restriction only for separately admitted synthetic
+Phase1 acceptance. The owner buys Plus independently. No purchase, paid API
+fallback, Extra Usage, credential movement or installed production-policy change
+is authorized. Preserve original attempts, charges, native custody and all Source
+gates. Qualify isolated profiles, exact CLI pins and host containment before live
+starts. Retain ordered SPEC then distinct QUALITY, hosted checks, and concrete
+owner approval for security-sensitive production adoption.

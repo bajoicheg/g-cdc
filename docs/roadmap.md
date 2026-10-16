@@ -8,12 +8,12 @@ See2026-10-11-fleet-floor-cleanup design/plan. Previous roadmap bytes: docs/hist
 
 ## Multi-provider modernization
 
-Phase1 implements the provider-neutral native-bound contract, Codex/Gemini CLI
+Phase1 implements the provider-neutral native-bound contract, Codex/Gemini/Kimi CLI
 adapters, isolated worktrees, bounded parallelism, independent code review and
 persistent original-attempt recovery. Current acceptance uses deterministic
 native process tests and packaged host examples. Real Gemini connection is
-deferred by the owner; live two-provider acceptance and production rollout
-remain later gates. See docs/multiprovider.md.
+deferred by the owner. The owner continuation requests live Codex+Kimi
+acceptance; production rollout retains its separate qualification/approval gate. See docs/multiprovider.md.
 
 Phase2 may evaluate LiteLLM/Jev for measured routing after provider qualification.
 Phase3 may add n8n triggers through CDC authority, with Temporal considered only

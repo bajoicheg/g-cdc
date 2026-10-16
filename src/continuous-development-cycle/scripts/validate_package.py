@@ -98,6 +98,8 @@ REQUIRED = [
     'templates/agent-review-task-v1.json',
     'templates/agent-developer-pool-v1.json',
     'templates/agent-reviewer-pool-v1.json',
+    'templates/kimi-developer-v220.yaml',
+    'templates/kimi-reviewer-v220.yaml',
 
     "scripts/reporting_contract.py", "scripts/receiving_ci_preflight.py",
     "references/systemic-closeout.md", "tests/reporting_fixtures.py",

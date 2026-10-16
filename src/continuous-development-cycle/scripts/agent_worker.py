@@ -16,7 +16,7 @@ import subprocess
 import sys
 
 from agent_contract import validate_task
-from agent_cli_adapters import build_command, parse_events, validate_cli_variant
+from agent_cli_adapters import build_command, parse_events, validate_cli_variant, cli_configuration
 from git_object_integrity import git_object_environment
 from managed_executor_runtime import ManagedExecutorRuntime, LocalCommandBackend
 from managed_executor_store import GitManagedExecutorStore
@@ -132,7 +132,7 @@ class AgentWorker:
         self.executable = executable
         validate_cli_variant(self.contract['provider'], cli_variant)
         self.cli_variant = cli_variant
-        self.cli_configuration_digest = _digest({'executable': executable, 'cli_variant': cli_variant})
+        self.cli_configuration_digest = _digest(cli_configuration(self.contract['provider'], executable, cli_variant))
         self.project_id, self.repository = project_id, repository
         self.model_budget_binding = copy.deepcopy(model_budget_binding)
         self.model_budget_binding_digest = _digest(self.model_budget_binding)
@@ -142,7 +142,7 @@ class AgentWorker:
 
     def _bind(self):
         c, plan = self.contract, self.runtime.plan
-        if _digest({'executable': self.executable, 'cli_variant': self.cli_variant}) != self.cli_configuration_digest:
+        if _digest(cli_configuration(c['provider'], self.executable, self.cli_variant)) != self.cli_configuration_digest:
             raise ValueError('immutable provider CLI configuration changed')
         if _digest(c) != self.contract_digest or _digest(plan) != self.plan_digest:
             raise ValueError('immutable contract or native plan changed')
@@ -188,6 +188,8 @@ class AgentWorker:
                    'model_budget_binding': self.model_budget_binding_digest, 'attempt_id': attempt_id}
         if self.cli_variant is not None:
             binding['cli_variant'] = self.cli_variant
+        if self.contract['provider'] == 'kimi':
+            binding['cli_configuration'] = self.cli_configuration_digest
         return _digest(binding)
 
     def start(self, expected_revision, attempt_id, *, reservation_token,

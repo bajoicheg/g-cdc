@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import math
+from pathlib import Path
 
 from agent_contract import PROVIDERS, validate_task
 
@@ -11,6 +13,17 @@ from agent_contract import PROVIDERS, validate_task
 def validate_cli_variant(provider, cli_variant):
     if cli_variant is not None and (provider != 'gemini' or cli_variant != 'antigravity-cli'):
         raise ValueError('unsupported explicit provider CLI variant')
+
+
+def cli_configuration(provider, executable, cli_variant):
+    """Freeze Kimi role definitions as well as the original executable selection."""
+    value = {'executable': executable, 'cli_variant': cli_variant}
+    if provider == 'kimi':
+        root = Path(__file__).resolve().parents[1] / 'templates'
+        value['kimi_2_2_0_agents'] = {
+            role: hashlib.sha256((root / ('kimi-' + role + '-v220.yaml')).read_bytes()).hexdigest()
+            for role in ('developer', 'reviewer')}
+    return value
 
 
 def build_command(task, executable, *, review_context=None, cli_variant=None):
@@ -47,6 +60,10 @@ def build_command(task, executable, *, review_context=None, cli_variant=None):
     if task['provider'] == 'codex':
         return [executable, 'exec', '--json', '--sandbox', task['execution_profile'],
                 '--model', task['model'], '--ignore-user-config', prompt]
+    if task['provider'] == 'kimi':
+        agent = Path(__file__).resolve().parents[1] / 'templates' / ('kimi-' + task['role'] + '-v220.yaml')
+        return [executable, '--output-format', 'stream-json', '--model', task['model'],
+                '--agent-file', str(agent), '-p', prompt]
     if cli_variant == 'antigravity-cli':
         mode = 'plan' if task['role'] == 'reviewer' else 'accept-edits'
         return [executable, '--output-format', 'stream-json', '--mode', mode, '--sandbox',
@@ -157,6 +174,88 @@ def _antigravity_events(text):
         return result
 
 
+def _kimi_events(text):
+    """Source-qualified Kimi Code2.2.0 print protocol; never execute resume hints.
+
+    The last meta record is emitted only after the internal completed turn.
+    Native exit/check/custody gates remain independently mandatory. This stream
+    emits no usage counters; null is retained rather than estimated.
+    """
+    result = {'status': 'unknown', 'session_id': None, 'usage': None,
+              'final_message': None, 'error': None}
+    initialized = terminal = False
+    pending, seen = set(), set()
+    try:
+        if not isinstance(text, str):
+            raise ValueError('event stream must be text')
+        for line in text.splitlines():
+            if not line.strip():
+                continue
+            event = json.loads(line, object_pairs_hook=_pairs, parse_constant=_constant,
+                               parse_float=_finite_float)
+            if not isinstance(event, dict) or terminal:
+                raise ValueError('invalid event or event follows terminal provider event')
+            if not initialized:
+                if event != {'role': 'meta', 'type': 'system.version', 'version': '2.2.0'}:
+                    raise ValueError('pinned Kimi2.2.0 version must initialize stream')
+                initialized = True
+                continue
+            role = event.get('role')
+            if role == 'meta':
+                if event.get('type') == 'turn.step.retrying':
+                    raise ValueError('provider retry violates original no-retry contract')
+                if event.get('type') != 'session.resume_hint':
+                    raise ValueError('unsupported Kimi metadata')
+                if pending or not result['final_message']:
+                    raise ValueError('completion missing final answer or unresolved tool calls')
+                result['session_id'] = _message(event.get('session_id'))
+                _message(event.get('command'))
+                _message(event.get('content'))
+                terminal = True
+                result['status'] = 'succeeded'
+            elif role == 'assistant' and 'type' not in event:
+                if pending:
+                    raise ValueError('assistant precedes pending tool results')
+                content, calls = event.get('content'), event.get('tool_calls')
+                if content is not None:
+                    _message(content)
+                if calls is not None:
+                    if not isinstance(calls, list) or not calls:
+                        raise ValueError('tool calls must be a nonempty list')
+                    for call in calls:
+                        if not isinstance(call, dict) or call.get('type') != 'function':
+                            raise ValueError('malformed tool call')
+                        identity = _message(call.get('id'))
+                        if identity in seen:
+                            raise ValueError('duplicate tool call identity')
+                        function = call.get('function')
+                        if not isinstance(function, dict):
+                            raise ValueError('malformed tool function')
+                        _message(function.get('name'))
+                        arguments = json.loads(_message(function.get('arguments')),
+                            object_pairs_hook=_pairs, parse_constant=_constant, parse_float=_finite_float)
+                        if not isinstance(arguments, dict):
+                            raise ValueError('tool arguments must be an object')
+                        pending.add(identity)
+                        seen.add(identity)
+                elif content is None:
+                    raise ValueError('assistant has no content or tool calls')
+                # Narration that precedes tools cannot become the final review.
+                result['final_message'] = content if calls is None else None
+            elif role == 'tool' and 'type' not in event:
+                identity = event.get('tool_call_id')
+                if not isinstance(identity, str) or identity not in pending or not isinstance(event.get('content'), str):
+                    raise ValueError('unexpected or malformed tool result')
+                pending.remove(identity)
+                result['final_message'] = None
+            else:
+                raise ValueError('unsupported or mixed Kimi event')
+        return result
+    except (ValueError, TypeError, UnicodeError, RecursionError) as exc:
+        result.update(status='unknown', usage=None, error='malformed provider stream: ' + str(exc))
+        return result
+
+
 def parse_events(provider, text, *, cli_variant=None):
     """Normalize genuine JSONL evidence; process outcome is an additional native gate.
 
@@ -170,6 +269,8 @@ def parse_events(provider, text, *, cli_variant=None):
     validate_cli_variant(provider, cli_variant)
     if cli_variant == 'antigravity-cli':
         return _antigravity_events(text)
+    if provider == 'kimi':
+        return _kimi_events(text)
     result = {'status': 'unknown', 'session_id': None, 'usage': None,
               'final_message': None, 'error': None}
     terminal = None
