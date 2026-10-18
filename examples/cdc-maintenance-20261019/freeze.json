@@ -1,0 +1,26 @@
+{
+  "schema": "cdc-maintenance-freeze/v1",
+  "source_head": "919e883c73d17092b1956d2dd091ac3d7eb95dfa",
+  "algorithm": "sha256",
+  "files": {
+    "README.md": "f7027a5c725a900019e2d0f6ff49c7d5316ae4fa3b2e631d5b0b11bf914a4657",
+    "maintenance.py": "793861fbf58e837328865c96229e203a8bde825853afd47d31333776ff1e080e",
+    "result.json": "a474bca1b5784c98db947d8f3c0f603bfccc248d954067b198e4031ed01bb048",
+    "test_maintenance.py": "8c7c584c8cb66cdc57213501a067d1515e0f7960ede324915fcd18d702464c0d"
+  },
+  "qualification_intent": [
+    "python3",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "examples/cdc-maintenance-20261019",
+    "-p",
+    "test_maintenance.py",
+    "-v"
+  ],
+  "effects": "fake only; hosted controller execution pending",
+  "commit_binding": "external fixed entrypoint only; no future commit claimed",
+  "status": "PREQUALIFICATION"
+}
