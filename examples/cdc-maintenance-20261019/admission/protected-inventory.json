@@ -1,0 +1,42 @@
+{
+  "operator_quota": {
+    "path": "/opt/cdc-tools/cdc-operator/src/cdc_operator/quota.py",
+    "sha256": "9550ef1c39d90e7b929a70fcfd45f592b3e505cd0c1fba9fcdb857373dab38a0",
+    "bytes": 7075
+  },
+  "operator_runtime": {
+    "path": "/opt/cdc-tools/cdc-operator/src/cdc_operator/runtime.py",
+    "sha256": "71651068562bc2139d561e2ec4356b1993c1be9439a96eca396ef63e91793a55",
+    "bytes": 14138
+  },
+  "operator_session": {
+    "path": "/opt/cdc-tools/cdc-operator/src/cdc_operator/session.py",
+    "sha256": "b72a1d4e6e9c73b7aa4c31c328b7956fe884eb1eaf393241121035757ba4e574",
+    "bytes": 8045
+  },
+  "metadata_projection": {
+    "path": "/opt/cdc-tools/cdc-operator/src/cdc_operator/kimi_metadata.py",
+    "sha256": "90f53492493ede26bccd1a7edf5b328a3c8931a1aa0cf665f6f636684da3188b",
+    "bytes": 10101
+  },
+  "sdk_cache": {
+    "path": "/opt/cdc-tools/cdc-3.6.8/scripts/immutable_history_cache.py",
+    "sha256": "2e31a22bc5c14f7e0963c477c5bef0ce6c2299d756f3d9bc8ebac3d848c1d9dd",
+    "bytes": 3755
+  },
+  "sdk_history": {
+    "path": "/opt/cdc-tools/cdc-3.6.8/scripts/unknown_recovery.py",
+    "sha256": "55e96f0dc76ee2c7dcc4c294eac88009347c48a9ddcab49ace8df59e120d65c9",
+    "bytes": 62474
+  },
+  "operator_ownership": {
+    "path": "/opt/cdc-tools/cdc-operator/src/cdc_operator/ownership.py",
+    "sha256": "a6b001e954dc395eda879ede1eef3094327860c6119a252d814cfbcdf9f54889",
+    "bytes": 6605
+  },
+  "operator_handover": {
+    "path": "/opt/cdc-tools/cdc-operator/src/cdc_operator/handover.py",
+    "sha256": "b0a2100c68b2cef2373d6c13efe504d05b5528b0f87e64fb5ec2fa16a5bc6f14",
+    "bytes": 3488
+  }
+}

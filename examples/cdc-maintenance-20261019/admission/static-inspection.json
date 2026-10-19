@@ -1,0 +1,60 @@
+{
+  "schema": "cdc-packet-static-inspection/v1",
+  "kind": "text/hash transformation inspection only; no tests or authored module execution",
+  "source_head": "598cdb0976544c6143bb425818e40ae678351b50",
+  "unchanged_wip_files": {
+    "maintenance.py": "793861fbf58e837328865c96229e203a8bde825853afd47d31333776ff1e080e",
+    "test_maintenance.py": "8c7c584c8cb66cdc57213501a067d1515e0f7960ede324915fcd18d702464c0d",
+    "admission/candidate/immutable_history_cache.py": "4d3bab9e505ed0d73006b63d6116778e6ad9ac0ac1c9798b91721df15ea784d7",
+    "admission/tests/test_sdk_boundary.py": "805771b7d3581128deea6f9259e18efce5d8d095c6383e5b91b1903276b4431b",
+    "admission/sdk-source-pins.json": "d380a3699de88d86968182e8b13d700ba3c0a5afc7c37d64c86aa449f3dbd9b4",
+    "admission/protected-inventory.json": "b0f0499b62de9a272608f0034f0ce3ff811391ebfdc07af34d221e3dd552530f",
+    "wip-evidence.json": "c70c8bfcff047d7e0288f4054cd3d3be367047edae99088b458e25026812b632",
+    "admission/baseline/immutable_history_cache.py": "2e31a22bc5c14f7e0963c477c5bef0ce6c2299d756f3d9bc8ebac3d848c1d9dd",
+    "admission/baseline/session.py": "b72a1d4e6e9c73b7aa4c31c328b7956fe884eb1eaf393241121035757ba4e574",
+    "admission/baseline/ownership.py": "a6b001e954dc395eda879ede1eef3094327860c6119a252d814cfbcdf9f54889",
+    "admission/baseline/normalization.py": "bfa0638aa0807b409dfe924d7d36e4b0793328e30f9e437ae7d2e41a399f1d02",
+    "admission/baseline/handover.py": "b0a2100c68b2cef2373d6c13efe504d05b5528b0f87e64fb5ec2fa16a5bc6f14",
+    "admission/baseline/quota.py": "9550ef1c39d90e7b929a70fcfd45f592b3e505cd0c1fba9fcdb857373dab38a0"
+  },
+  "original_archive_exact": true,
+  "python_ast_parse_only": [
+    "admission/baseline/handover.py",
+    "admission/baseline/immutable_history_cache.py",
+    "admission/baseline/normalization.py",
+    "admission/baseline/ownership.py",
+    "admission/baseline/quota.py",
+    "admission/baseline/session.py",
+    "admission/candidate/immutable_history_cache.py",
+    "admission/candidate/quota.py",
+    "admission/qualify.py",
+    "admission/tests/test_admission.py",
+    "admission/tests/test_sdk_boundary.py",
+    "maintenance.py",
+    "test_maintenance.py"
+  ],
+  "patches": [
+    {
+      "patch": "quota.py.patch",
+      "context_lines": 0,
+      "exact_reconstruction": true,
+      "sha256": "43fb7e5dfe8a4a5fc5d51e17c75ad39b2fd2185a3d591a1be8ffe8d3b07d6a6a"
+    },
+    {
+      "patch": "immutable_history_cache.py.patch",
+      "context_lines": 0,
+      "exact_reconstruction": true,
+      "sha256": "cc98a15e9f934c5a99fae492744ce1c1af99dc4d10c0ffc9b68139ae74bf403d"
+    }
+  ],
+  "trailing_whitespace_lines": [],
+  "cache_test_block_unchanged": true,
+  "normalization_test_block_unchanged": true,
+  "tests_executed": false,
+  "native_final_checks_executed": false,
+  "spec_executed": false,
+  "quality_executed": false,
+  "hosted_executed": false,
+  "installation": false,
+  "actual_kimi_exercise": false
+}

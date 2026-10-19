@@ -1,0 +1,74 @@
+--- a/immutable_history_cache.py
++++ b/immutable_history_cache.py
+@@ -38,0 +39,62 @@
++    def _bounded_compact(self, value, *, encoded_limit):
++        """Optional entry: cheap conservative refusal before any JSON allocation.
++
++        At most six UTF-8/JSON bytes per string codepoint. A depth bound avoids
++        recursion attacks; no document is removed from the caller's history.
++        Streaming compression avoids a complete decoded string/bytes copy.
++        """
++        remaining = self._max_decoded_bytes
++        active = set()
++        def charge(size):
++            nonlocal remaining
++            remaining -= size
++            return remaining >= 0
++        def fits(item, depth=0):
++            if depth > 256:
++                return False
++            if isinstance(item, str):
++                return charge(2 + 6 * len(item))
++            if item is None or type(item) is bool:
++                return charge(5)
++            if type(item) is int:
++                return charge(2 + item.bit_length())
++            if type(item) is float:
++                return charge(32)
++            if type(item) not in (dict, list, tuple) or id(item) in active:
++                return False
++            active.add(id(item))
++            try:
++                if not charge(2):
++                    return False
++                if type(item) is dict:
++                    return all(type(k) is str and fits(k, depth+1) and charge(2)
++                               and fits(v, depth+1) for k, v in item.items())
++                return all(charge(1) and fits(v, depth+1) for v in item)
++            finally:
++                active.remove(id(item))
++        if encoded_limit <= 0 or not fits(value):
++            return None
++        compressor = zlib.compressobj(level=1)
++        pieces = []; size = 0; decoded_size = 0
++        encoder = json.JSONEncoder(sort_keys=True, separators=(',', ':'),
++                                   ensure_ascii=False, allow_nan=False)
++        for part in encoder.iterencode(value):
++            # Preflight bounds the largest encoder string; byte conversion and
++            # compressor input use small slices rather than another full copy.
++            for offset in range(0, len(part), 16384):
++                data = part[offset:offset+16384].encode('utf-8')
++                decoded_size += len(data)
++                if decoded_size > self._max_decoded_bytes:
++                    return None
++                chunk = compressor.compress(data)
++                size += len(chunk)
++                if size > encoded_limit:
++                    return None
++                if chunk:
++                    pieces.append(chunk)
++        chunk = compressor.flush(); size += len(chunk)
++        if size > encoded_limit:
++            return None
++        pieces.append(chunk)
++        return b''.join(pieces)
++
+@@ -40,4 +102,4 @@
+-        key=self._encode(context);decoded=self._encode(snapshot)
+-        if len(decoded)>self._max_decoded_bytes:return
+-        raw=zlib.compress(decoded,level=1);size=len(key)+len(raw)
+-        if size>self._max_bytes:return
++        key=self._encode(context)
++        raw=self._bounded_compact(snapshot, encoded_limit=self._max_bytes-len(key))
++        if raw is None:return
++        size=len(key)+len(raw)

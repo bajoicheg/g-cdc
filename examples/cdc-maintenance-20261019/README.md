@@ -1,168 +1,224 @@
-# Maintenance repair continuation — PREQUALIFICATION — 2026-10-19
+# PREQUALIFICATION — conservative quota correction and admission bounds
 
-This isolated standard-library Python kit is **unqualified and inactive**. It does
-not repair the installed runtime or close the original task. No provider, model,
-CI, installation, scheduler, or live process operation was executed to build it.
-The fixed controller entrypoint owns checks, freeze/commit, and subsequent reviews.
+Source anchor: `598cdb0976544c6143bb425818e40ae678351b50`.
+Parent: `cdc-runtime-signal-admission-repair-20261019`.
+Only this example directory changed. No local tests, models, provider requests,
+CI, submit, installation, scheduler, Git metadata writes or native-store writes.
+The fixed entrypoint owns diff checks, commit, independent SPEC then distinct
+QUALITY. This packet does not claim any of those stages passed.
 
-## Artifacts and trusted boundary
+The reviewed maintenance implementation and its tests are unchanged. Its previous
+README/result/freeze are preserved byte-for-byte in `admission/evidence/prior-kit/`.
+Those records describe earlier work, not acceptance of this changed packet.
 
-`maintenance.py` provides callable candidates with no import-time effects:
+## Concrete source and apply contract
 
-* `signal_owned`: pidfd pin, birth recheck, same PID namespace and same UID checks,
-  TERM/KILL only, explicit EPERM/absence/unknown outcomes. The caller must supply
-  a **live supervisor-owned descendant**, never an arbitrary input PID. A sent
-  signal is not closure. This reduces PID reuse risk without adding CAP_KILL.
-* `Ledger`: durable SQLite aggregate reservation across threads per registered task,
-  immutable original baseline/limits, one-use thread+turn, UNKNOWN charge retained
-  after failure. `execute` reserves before native authorization and effect. The
-  effect must consume the real native capability; adapters are trusted Python
-  controller code. They cannot be sourced from untrusted JSON or user flags.
-* `interrupt`: one exact reserved thread+turn attempt, durable intent before RPC,
-  unsupported/owner-dialogue refusal. A crash before/after RPC leaves uncertain
-  interruption spent. No fallback to stopping a thread/service, no automatic retry.
-* `maintenance_step`: one scoped admitted operation followed by native verification;
-  exceptions return UNKNOWN without granting closure/replay. No observer loop.
-* `recovery_assessment`: bounded diagnostic containing a digest, not a native proof.
-* `usage`: separate total/input/cached/uncached/output; reasoning is already output.
+`admission/baseline/` holds exact installed code copies; `admission/candidate/`
+holds replacement modules. `admission/quota.py.patch` and
+`admission/immutable_history_cache.py.patch` are exact unified diffs.
+`admission/apply-manifest.json` binds before/after hashes and byte lengths.
+`admission/protected-inventory.json` pins the inspected integration boundaries;
+`admission/sdk-source-pins.json` freezes the credential-free SDK scripts/tests
+needed by the hosted runner. Never apply to a different before hash.
+No application command in this packet writes the protected installation.
+Patches use zero context to avoid staged trailing-context whitespace violations;
+exact before/after hashes are mandatory, and application requires support for
+zero-context unified patches. `admission/activation-contract.json` binds the
+qualification overlay, installation prerequisites and real-exercise separation.
 
-The SQLite database is additional local enforcement for **cooperating calls through
-this wrapper only**. Place it in a dedicated controller-owned directory on durable
-local disk, never a shared/untrusted path or network filesystem. Do not replace,
-copy backward, delete, or reinitialize it to obtain allowance. Baselines must come
-from authenticated original per-task aggregates; unknown baselines deny enrollment.
-Use integer dimensions for calls, starts, time ceilings and token ceilings as
-appropriate. A charge is a conservative reservation, not actual billing. All
-status values, including RETURNED, remain charged. Observed usage never refunds.
-If no genuine pre-effect turn hook exists, Desktop enforcement remains unavailable.
-This code cannot intercept arbitrary existing Desktop turns or enforce a token
-ceiling inside an already running turn. It claims no savings or exact billing.
+### A: bounded conservative local timestamp correction
 
-## Runtime finding and proposed integration
+This is an owner-authorized change in LOCAL continuity policy, not a provider
+reset or a claim that two actual provider buckets are semantically identical.
+`kimi_metadata.project_quota` copies the official reset_time string unchanged;
+`runtime._epoch` parses absolute ISO8601 without rounding. The recorded one-second
+change is real input. Conversion precision is not established as its cause.
 
-Read-only inspected SDK3.6.8 `scripts/managed_executor_runtime.py`, `_supervise`
-lines 324–332: `os.kill(current['signal_pid'], sig)` handles only ProcessLookupError.
-EPERM therefore escapes the supervision loop. The provided crash is consistent
-with that path. Root cause of permission denial itself is **not established**:
-UID/namespace/LSM/seccomp/capability constraints need sanitized native observation.
-Do not infer a permission fix from process absence.
+For each account/window, the original stored deadline is the immutable anchor A.
+Legacy snapshots without local metadata seed A from their existing deadline.
+Every accepted within-bound Kimi observation must satisfy abs(raw_deadline-A)<=1
+second; comparison is never against the previous observation. Account/provider,
+mandatory window names and durations retain their exact bindings. Codex does not
+receive a timestamp-correction allowance. Old-copy observations and usage rollback
+are denied. Caller-supplied local continuity metadata is rejected.
 
-Candidate integration into a separately reviewed runtime source (never this install):
-replace only that signal operation with `signal_owned(target, identity['birth'],
-sig, expected_uid=<frozen isolated worker uid>)`, using fresh descendants from the
-live supervisor. Maintain the existing original waitpid loop and all proof logic.
-Persist denied/unknown outcomes as nonterminal diagnostics before continuing the
-live supervisor's bounded supervision. Do not label a denial success, change
-`verify_terminal`, or emit `waitpid_ECHILD` unless the original wait actually returns
-ECHILD. Avoid unbounded denied-signal retries: at the admitted deadline, retain the
-supervisor/controller and existing lease in a blocked nonquiescent state pending
-owner remediation. Any later retries need separately bounded native policy.
-This module alone does not implement that live hold; activation requires the
-runtime integration and hosted behavioral test of that boundary.
+The effective hold H becomes max(A, previous_H, fresh_raw_deadline). Consumed usage
+U is a monotonic high-water within this local epoch; a lower raw value is denied,
+never treated as new credit. After the effective hold expires, a within-bound observation is denied even
+with unchanged usage: it cannot extend admission, reanchor or create reset credit. A genuinely later deadline outside the correction
+bound can start a new epoch only after the old effective hold has expired and all
+existing fresh/future-reset conditions pass. Duration changes remain denied even
+at reset. Before expiry, any out-of-bound change remains denied.
 
-For cold-path execution the native `admit` adapter must validate registration,
-expected source, claim/CAS, lease/one-use, original UNKNOWN gates, UID and dedicated
-aggregate cgroup, deadline, account/quota and all budget dimensions **before any
-operation**. Keep controller alive through start/observe/finish. `verify_and_record`
-must retain actual stdout/stderr/exit and require birth-bound aggregate closure,
-including detached descendants, native authentic terminal proof and readback.
-An arbitrary callback return or diagnostic file cannot satisfy it. No new generic
-native authority is implemented here.
+Both the fresh official RAW normalized observation and the effective state are
+assessed. An expired raw deadline is denied even if H is later. Returned severity
+is the worse of raw/effective assessments, remaining allowance the minimum, and
+runway the minimum available. Burn history is matched by the immutable anchor for
+the effective assessment, so lengthening H cannot erase measured burn. The raw
+assessment separately uses original raw observations with their actual deadlines.
+Neither historical provider deadlines nor percentages are rewritten.
 
-No installed native postlaunch recovery endpoint was established: TaskStore
-`complete_administrative` requires PrelaunchIntakeDispositionProof; `complete`
-requires VerifiedTerminalProof. Both must remain unchanged. Recovery needs a
-separately designed package-owned authenticated monotonic recovery capability,
-binding original journal/request/launch, lease generation, aggregate closure and
-new disposition. It must never mean success or authorize replay. Until then leave
-the original task and receipt UNKNOWN/nonquiescent. Known PID absence is insufficient.
-Use new recovery evidence files only; old receipt/journal/copies remain immutable.
+Proof within an epoch: U_new>=U_old and U_new>=raw_used, hence
+100-U_new<=min(100-U_old,100-raw_used), independently in every mandatory window.
+H_new>=max(A,H_old,raw_deadline), so no earlier reset/hold is introduced. Taking
+the worst assessment preserves every raw reserve refusal and the effective burn
+reserve. A changed timestamp introduces zero additional starts, requests, session
+seconds or native credit. At a true reset only the pre-existing expiry conditions
+can permit new allowance, with the additional within-bound no-reanchor rule.
+This proves conservative usable percentage/credit, not provider bucket identity.
+For example, repeated +1,+1 changes would otherwise drift: A+1 is accepted with
+A unchanged, A+2 before H expires is rejected. A+1 observed just after A expires
+with lower usage is also rejected rather than counted as a new reset.
 
-## Exact portable qualification and activation
+The existing SQLite schema/file is reused. Stored account rowids are preserved by
+UPDATE; history rows are append-only, including legacy seeding. No six-hour deletion
+or silent eviction remains: the existing 1024-row limit denies transactionally when
+full, requiring separately authorized retention work rather than discarded history.
+Raw normalized observations and per-window anchors are stored with each new snapshot;
+legacy rows are not rewritten. All failed validation rolls back the transaction.
+No live database is opened by this packet. The five encrypted DB histories remain
+untouched. Session/native budget and security modules are unchanged.
 
-1. Fixed entrypoint records final kit tree/commit and `freeze.json` binding. No stage,
-   commit, push or Git metadata writes by this worker. `result.json` describes the
-   implementation, not a passing qualification. No RED/GREEN is claimed.
-2. Controller schedules **one hosted compute start**, no CI start, frozen kit-only
-   intent: `python3 -B -m unittest discover -s examples/cdc-maintenance-20261019 -p
-   'test_maintenance.py' -v`, Linux Python 3.11+ with SQLite. This command has no
-   provider effects and uses temporary hosted storage and fakes. Run the permitted
-   diff check as fixed entrypoint policy requires. Capture separate stdout/stderr,
-   true exit, source/kit digest and actual return; no local test execution on VPS.
-3. Controller obtains independent SPEC, then distinct QUALITY against the same
-   frozen tree. Worker used no agents. Budget total: compute 1, agent starts 3
-   including implementation/SPEC/QUALITY, CI 0, calls 40, 900 seconds. Existing
-   parent allocations remain unchanged. No automatic repeated qualification.
-4. Native integration is a **separate activation gate**, not part of portable fake
-   tests: qualify EPERM survivor/nonquiescence, namespace/UID mismatch, PID reuse,
-   detached cgroup member, cold-path no-effect denial, durable crash at each charge/
-   native grant/effect/RPC boundary, genuine account/quota denial, and historical
-   UNKNOWN rejection. Establish the supported RPC schema and exact turn identity
-   readback before enabling `turn/interrupt`; RPC transport alone is insufficient.
-5. Owner authorizes a separately registered isolated activation only after native
-   adapters and genuine managed expected-head release. Never resubmit the parent
-   contract, original native submit or Kimi stage. Do not use the maintenance kit to
-   take the infrastructure lease held by the original active handle.
+### B: refuse an oversized optional cache entry before serialization
 
-The fixed entrypoint owns new final checks and commit after writer return.
-Portable qualification has not run and is an explicit deployment blocker.
-Native activation remains blocked by the missing integrations and physical closure
-proof. External native acceptance cannot be conferred by any file in this kit.
+SDK3.6.8 `_history` authenticates the fresh endpoint/head, nonshallow full parent
+chain, cached prefix and final head readback before calling `_HistoryCache.put`.
+The old `put` materializes all documents through `json.dumps(...).encode()` before
+checking 128 MiB. The replacement retains `_history` and every authentication gate
+byte-exact. It performs a bounded conservative size preflight, then incremental
+JSON encoding/compression. Strings cost at most six bytes per codepoint; numbers,
+containers and punctuation also count. A conservative estimate may refuse a valid
+small optional entry. Depth >256, unsupported/cyclic data or an excessive estimate
+also refuses caching. This never removes mandatory caller history or grants intake.
 
+Passing preflight bounds the largest JSON encoder allocation; compressor input
+uses 16,384-character slices. Decoded output is counted independently and compact
+output cannot exceed the existing total-byte bound minus its key. No full decoded
+snapshot string/bytes pair is constructed. The old lock, detached decoding,
+monotonic-prefix/concurrent-old-reader handling, divergence refusal, LRU and byte/
+entry/decoded bounds remain. An oversized update leaves any old cached snapshot
+intact. Fresh authentication still runs on every read. This reduces the *optional
+cache insertion* peak; it does not eliminate the mandatory history's memory cost,
+all decode peaks, or arbitrary host memory failures.
 
-## SPEC-001 repair: finite native interruption bridge
+Reported read-only measurements: failures at 512 MiB and 2 GiB during dumps;
+ALLOW at 4 GiB with peak RSS 2,979,920 KiB. These are owner-supplied diagnostics,
+not reproduced here and not proof of generic CDC_VPS_REQUEST_REJECTED causality.
+The named deterministic collector export was absent during writing; its absence
+is recorded, not substituted with fabricated native evidence.
 
-`Ledger.interrupt` accepts exactly `NativeInterruptRPC`, rather than an arbitrary
-adapter callback. Its dedicated AF_UNIX stream is nonblocking. One monotonic
-budget, explicitly configured in `(0, 5]` seconds, covers connection, partial send,
-and bounded response read. Every readiness wait uses the remaining deadline;
-there is no background worker, subprocess, reconnect, or retry. Socket closure
-occurs on every return. This bounds transport waiting subject to ordinary host
-scheduling, not a hard real-time execution guarantee. SQLite reservation may take
-its existing finite lock timeout before RPC begins.
+## Changed-boundary matrix
 
-The trusted controller must pin a private, authenticated-by-local-permissions
-native bridge endpoint in the same host monotonic clock domain. This is a new
-explicit integration contract, not a claim that the existing WebSocket service
-implements it. Request: one UTF-8 JSON line, at most 4096 bytes:
-`{"method":"turn/interrupt","params":{"threadId":"<exact>","turnId":"<exact>"},"deadline_monotonic_ns":123}`.
-The bridge must reject expired or unadmitted work before effect, never defer or
-replay it, and preserve native provider/account/permission/quality gates. It must
-independently verify that this is the admitted autonomous turn, not owner dialogue.
-Only an exact JSON acknowledgement
-`{"status":"acknowledged","threadId":"<exact>","turnId":"<exact>"}` is accepted.
-The response cap is 4096 bytes. This acknowledgement never proves cancellation or
-closure. Timeout, EOF, connection failure, malformed/oversized response, or wrong
-identity returns explicit `uncertain`, with `replay_allowed:false`. The committed
-stop row and original budget charge survive all such outcomes, including restart.
-A timeout may follow a delivered effect; close does not retract the request.
-Only native observation of the original turn can resolve that uncertainty.
+| Boundary | Change | Frozen qualification | Remaining limit |
+|---|---|---|---|
+| Kimi reset/account ledger | Fixed original-anchor bound, monotonic hold/usage, dual assessment | Recorded case, drift, expiry, rollback/rowids, concurrency, old copies, all reserve negatives | Local policy authored; provider bucket equivalence not asserted |
+| Session admission | Unchanged real SessionBudget module | Bound correction at start; invalid identity/out-of-bound and reserve denials, UNKNOWN, cap3/cap4, deadline and no restart | No actual protected service or Kimi exercise |
+| SDK optional cache | Conservative preflight and streaming compression | Eager-encode RED, memory child, concurrency, detached copies, old snapshots, all bounds | Mandatory history/decode memory still exists |
+| Fresh history/retirement | No code changes | Pinned native real-Git suites plus oversized-cache integration | No new disposition capability or task mutation |
+| Existing maintenance kit | Implementation/tests preserved | Full prior kit tests in same hosted packet | Prior native integration/physical closure blockers remain |
 
-Hosted tests now include a real unresponsive socketpair, EOF, identity mismatch,
-finite configuration refusal, and durable no-replay/charge retention after reopen.
-They use no threads, native service, GUI, or provider. Existing behavior tests are
-retained; none were executed on this VPS. Native integration must additionally
-qualify blocked connect/send/read, slow partial frames, bridge-side expiry,
-permission denials, durable crash boundaries, and actual GUI owner/autonomous turn
-identity and pre-effect hooks. Portable fakes cannot supply actual GUI coverage.
+## One combined hosted qualification, authored only
 
-## Continuation provenance and evidence boundary
+After fixed native checks and ordered independent SPEC → distinct QUALITY on one
+frozen candidate, reserve exactly one hosted compute start for:
 
-This is `cdc-maintenance-runtime-kit-fix-20261019`, linked to FAILED task
-`cdc-maintenance-runtime-kit-20261019`, rejected candidate
-`f50a68f9949cd7b4dbe256f087bb49f86eaa2b6f` (SPEC RED). All five source files were
-copied only after verifying byte lengths and SHA-256 against its frozen
-`candidate-evidence.json`. That external record preserves the original exit-0
-`git diff --check`; it proves nothing about changed continuation code. No old
-history, native UNKNOWN counters, terminal proof, or lease release is rewritten.
-The new allowance is compute 1 / agent 3 / tools 40 / seconds 900 / CI 0; previous
-allowances remain spent. No subagents were started by this writer.
+```
+python3 -B examples/cdc-maintenance-20261019/admission/qualify.py --sdk-source <credential-free-pinned-SDK-export> --receipts <new-external-receipt-directory>
+```
 
-The optional `/opt/cdc-tools/candidates/cdc-maintenance-runtime-kit-fix-evidence.json`
-export was unavailable during writing. This is an evidence gap, not a failed check.
-Reviewers must inspect this source and actual fixed-entrypoint final-check evidence
-externally bound to the resulting candidate and frozen intent. No future commit
-SHA or controller-receipt self-reference is embedded. Ordered native SPEC and
-separate QUALITY own acceptance; future hosted portable qualification and genuine
-native integration remain deployment blockers. The original crashed supervisor
-cannot now supply its authentic waitpid_ECHILD; original UNKNOWN stays unresolved.
+Linux, Python 3.11+, Git and SQLite; no network/provider access. The runner checks
+packet freeze and all external SDK source pins, creates a hosted temporary overlay,
+then runs **two expected old RED cases** (eager cache allocation and refusal of the
+recorded conservative correction), all new candidate packet tests, the exact SDK history/UNKNOWN/budget
+suites plus new oversized-history integration tests, and the preserved maintenance
+suite. This is the full frozen candidate *packet*, not an SDK-wide FULL/bootstrap,
+installed integration test, or a real provider exercise.
+Old quota RED means the baseline rejects the recorded correction; candidate GREEN
+must accept it conservatively while preserving all negative coverage.
+The 140 MiB child test asserts incremental insertion RSS <32 MiB above allocated
+input; only hosted execution can establish that claim. All tests are authored,
+none executed. No test result, RSS improvement or RED/GREEN is claimed here.
+
+Each subprocess receives separate stdout/stderr files, SHA-256 and its actual
+exit before interpretation. A timeout retains logs, null unavailable exit and an
+explicit timeout marker; it cannot pass. Aggregate subprocess wait allowance is
+600 seconds. The hosted compute/controller must enforce its own outer budget and
+physical closure; this runner is not a process-supervision replacement. New receipt
+directory only; no receipt overwrite or automatic rerun. `qualification-manifest.json`
+is the frozen intent, not a scheduling or admission capability. Native diff check,
+SPEC and QUALITY remain separate from hosted evidence.
+
+## Historical disposition and activation
+
+The earlier `cdc-kimi-quota-continuity-repair-20261019` queued contract is immutable:
+source919e883, operation=null, empty native budget events. Actual source advanced
+to598cdb0 through prior native publication. SDK `_authenticate_intake` requires
+an original operation/start_request and an exact prelaunch UNKNOWN/start state;
+its existing retirement capability cannot retire this stale queued/null-operation
+row. Do not manufacture a proof, relabel it UNKNOWN, alter its source, rearm it or
+resubmit it. Supported stale-queued disposition remains a separate missing native
+capability, not fixed by faster history caching.
+
+`cdc-kimi-quota-continuity-598cdb0-20261019` returned CDC_VPS_REQUEST_REJECTED;
+canonical866759c1ad1f540a916e83fab6bd2e35a9e4930c reportedly contains no task row.
+The operator claim remains spent/UNKNOWN: row absence does not refund or permit
+retry. All five encrypted DB histories and rowids, accounts, provider cap3, prompt
+cap4, old UNKNOWNs, task budgets and claims remain authoritative and untouched.
+The unrelated original supervisor cannot acquire authentic waitpid_ECHILD from
+these files; RCA101 and RCA113 remain OPEN.
+
+Final activation gates (not performed by this worker):
+
+1. Fixed entrypoint binds the final tree, performs its native diff checks/commit,
+   then genuine independent SPEC and distinct QUALITY; preserve actual receipts.
+2. One prospectively admitted hosted packet run with exact freeze and SDK pins.
+   Inspect every old failure and candidate result. No retry allowance is implied.
+3. Independently register native integration/application work. Reinventory protected
+   operator quota/runtime/session/metadata collector and SDK cache/unknown_recovery
+   against `protected-inventory.json`, all SDK pins, and the current whole operator
+   package/deployment policy. Obtain new reviewed whole-package pins and protected
+   service/package bindings; old whole-package pins cannot authorize changed code.
+   Apply only the manifest's exact before/after modules through the authorized
+   deployment mechanism, never patch this live installation from this packet.
+4. Validate native fresh endpoints/full parent chain/retirement refusals, five DB
+   inventory/rowid preservation, original UNKNOWN gates, all quota/account/provider/
+   freshness/required-window/duration/hard-reserve/paid-fallback/reset refusals,
+   concurrency and old-copy behavior under the protected installation. No DB copy
+   backward, reset, new DB or migration is part of this source change.
+5. This changed local policy requires qualification and authorized protected
+   application before use. Any genuinely new Kimi exercise needs fresh original
+   authorization, unchanged native budgets/claims and actual ACP acknowledgement
+   of **K2.8 Preview / Thinking Max** before sending the prompt. A requested model
+   label alone is insufficient. Never retry either historical contract.
+   Record application and actual Kimi exercise separately from source, review,
+   hosted and native integration. Keep controller alive through start/observe/
+   finish; require actual returns and birth-bound aggregate closure. Genuine
+   managed expected-head finish alone may advance main. Schedulers stay PAUSED.
+
+Budget ceiling: compute1 / agents3 / CI0 / tools40 / 900 seconds. Writer used no
+subagents/model observers and performed no compute start. Fixed native stages own
+SPEC/QUALITY. This packet confers no authority to spend historical allocations.
+
+## Preserved failed writer and source-review status
+
+The frozen WIP was copied first from
+`/opt/cdc-tools/candidates/cdc-admission-quota-wip-4b5be4d2`.
+`wip-evidence.json` retains the original actual staged diff-check exit2 and both
+trailing-context failures. `admission/evidence/original-wip-bytes.json` preserves
+changed original packet bytes with SHA-256/base64, including the whitespace-bearing
+patch, without reintroducing those spaces into a newly added patch file. SDK candidate,
+SDK boundary tests, maintenance implementation/tests and baseline pins are unchanged.
+The quota diagnostic/tests were minimally superseded for the authorized policy;
+the old diagnostic test source remains archived, not claimed as current behavior.
+
+Original handle `4b5be4d2-c8a3-552c-a4be-146a986d75f3` is FAILED/quiescent;
+lease release and all original budgets remain spent and preserved. Owner-recorded
+writer runtime495.4039869s, usage876497 total /857503 input /809728 cached /
+47775 uncached /18994 output,23 commands. Native diff-check0 preceded the staged
+failure; no original SPEC/QUALITY or publication occurred. No task was restarted.
+
+Current source has only writer text/hash inspection; fixed native final checks,
+commit and genuine independent SPEC then distinct QUALITY are pending. Hosted
+qualification is separately pending. Installation has not occurred. Real Kimi
+exercise has not occurred. Those four statuses must never be conflated. The optional
+current native receipt export is observational only and conveys no launch authority.

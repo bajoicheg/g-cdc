@@ -1,0 +1,100 @@
+{
+  "schema": "cdc-kimi-reset-continuity-facts/v1",
+  "at": "2026-10-18T23:38:20.042685+00:00",
+  "failed_stage": "kimi-02f3128c4def4c71b5b27ccb1644b999",
+  "failure": "unverified reset change before original reset",
+  "requests_before_failure": 0,
+  "native_submits": 0,
+  "pre_prompt_failure_reconciled": "Original CLAIM preserved; appended FAILED, no refund/replay",
+  "previous_accepted_snapshot": {
+    "provider": "kimi",
+    "account_id": "db8eokcgj9bakvr2drbg",
+    "observed_at": 1792364996.322916,
+    "ordinary_usage_allowed": true,
+    "paid_fallback": false,
+    "required_windows": [
+      "limit_5h",
+      "limit_month_total",
+      "limit_month_code"
+    ],
+    "windows": [
+      {
+        "name": "limit_5h",
+        "used_percent": 0.0,
+        "resets_at": 1792382893.0,
+        "window_seconds": 18000
+      },
+      {
+        "name": "limit_month_total",
+        "used_percent": 1.53,
+        "resets_at": 1794787200.0,
+        "window_seconds": 2678400.0
+      },
+      {
+        "name": "limit_month_code",
+        "used_percent": 1.31,
+        "resets_at": 1794787200.0,
+        "window_seconds": 2678400.0
+      }
+    ]
+  },
+  "current_official_normalized_snapshot": {
+    "provider": "kimi",
+    "account_id": "db8eokcgj9bakvr2drbg",
+    "observed_at": 1792366697.299121,
+    "ordinary_usage_allowed": true,
+    "paid_fallback": false,
+    "required_windows": [
+      "limit_5h",
+      "limit_month_total",
+      "limit_month_code"
+    ],
+    "windows": [
+      {
+        "name": "limit_5h",
+        "used_percent": 0.2,
+        "resets_at": 1792382892.0,
+        "window_seconds": 18000
+      },
+      {
+        "name": "limit_month_total",
+        "used_percent": 1.54,
+        "resets_at": 1794787200.0,
+        "window_seconds": 2678400.0
+      },
+      {
+        "name": "limit_month_code",
+        "used_percent": 1.32,
+        "resets_at": 1794787200.0,
+        "window_seconds": 2678400.0
+      }
+    ]
+  },
+  "raw_metadata_keys": [
+    "schema",
+    "status",
+    "observed_at",
+    "binding",
+    "identity",
+    "quota",
+    "extra_usage",
+    "model_requests",
+    "refresh_requests",
+    "authorizes_execution",
+    "actual_acp_nodes",
+    "egress_probe",
+    "request_guard_sha256",
+    "actual_uid",
+    "tools_enabled",
+    "extra_usage_policy",
+    "access_expires_at",
+    "cli_package_tree",
+    "node_sha256",
+    "egress_blocked"
+  ],
+  "quota_history_rows_before": 6,
+  "quota_history_not_written": true,
+  "quota_account_original_snapshot_sha256": "3cbd991668945bb91c0ee7f1e7ceb25b2b911a12eb3621e2242ea98cd8b9946f",
+  "official_observation_is_not_admission": true,
+  "collector_correction": "Normalize now after the metadata call, never before; the earlier fresh-metadata rejection affected this read helper only, not the original reset mismatch."
+}

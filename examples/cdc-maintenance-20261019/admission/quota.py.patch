@@ -1,0 +1,93 @@
+--- a/quota.py
++++ b/quota.py
+@@ -69,0 +70,40 @@
++
++# Local continuity policy, not a claim about provider bucket equivalence.
++# This field is produced only from transactional stored state, never caller input.
++_STATE = '_local_continuity_v1'
++
++
++def _anchor(snapshot, window):
++    state = snapshot.get(_STATE)
++    return (state['anchors'][window['name']] if state is not None
++            else window['resets_at'])
++
++
++def _history_for(history, value):
++    """Match burn history by immutable local anchor, including legacy copies.
++
++    Changing a hold deadline must not erase a previously measured burn rate.
++    Old epochs remain stored but cannot contribute new-epoch credit.
++    """
++    current = {w['name']: w for w in value['windows']}
++    result = []
++    for observation in history:
++        item = copy.deepcopy(observation)
++        for w in item['windows']:
++            v = current.get(w['name'])
++            if (v is not None and _anchor(observation, w) == _anchor(value, v)
++                    and w['window_seconds'] == v['window_seconds']):
++                w['resets_at'] = v['resets_at']
++        result.append(item)
++    return result
++
++
++def _both(raw, effective):
++    severity = {'ALLOW': 0, 'ROTATE': 1, 'PAUSE': 2, 'STOP': 3}
++    runways = [v['hours_above_hard_reserve'] for v in (raw, effective)
++               if v['hours_above_hard_reserve'] is not None]
++    return {'mode': max((raw['mode'], effective['mode']), key=severity.__getitem__),
++            'remaining_percent': min(raw['remaining_percent'], effective['remaining_percent']),
++            'hours_above_hard_reserve': min(runways, default=None)}
++
++
+@@ -88,0 +129,2 @@
++        if not isinstance(snapshot, dict) or _STATE in snapshot:
++            raise ValueError('official raw snapshot required; local state is not input')
+@@ -92,0 +135 @@
++            anchors={w['name']:w['resets_at'] for w in value['windows']}
+@@ -101,7 +144,22 @@
+-                    p=prior[w['name']]
+-                    if p['resets_at']==w['resets_at']:
+-                        if p['window_seconds']!=w['window_seconds']:
+-                            raise ValueError('window binding changed')
+-                        w['used_percent']=max(w['used_percent'],p['used_percent'])
+-                    elif p['resets_at']>now:
+-                        raise ValueError('unverified reset change before original reset')
++                    p=prior[w['name']]; anchor=_anchor(previous,p)
++                    if p['window_seconds']!=w['window_seconds']:
++                        raise ValueError('window binding changed')
++                    within_bound=abs(w['resets_at']-anchor)<=1
++                    if p['resets_at']<=now and within_bound:
++                        raise ValueError('expired continuity hold; genuine reset required')
++                    if p['resets_at']>now or within_bound:
++                        # Only the measured fixed bound, against ORIGINAL anchor.
++                        # Never infer a provider reset or accumulate rolling drift.
++                        if (w['resets_at'] != anchor and
++                                (value['provider'] != 'kimi' or abs(w['resets_at']-anchor)>1)):
++                            raise ValueError('unverified reset change before original reset')
++                        if w['used_percent']<p['used_percent']:
++                            raise ValueError('usage rollback before conservative reset')
++                        anchors[w['name']]=anchor
++                        w['resets_at']=max(anchor,p['resets_at'],w['resets_at'])
++                    # A within-bound observation remains continuity even after
++                    # expiry: it cannot roll the anchor or mint reset credit.
++                    # Otherwise existing true-reset conditions apply: fresh raw
++                    # future deadline, previous effective hold expired. Only here
++                    # can usage fall and a new immutable anchor be established.
++            value[_STATE]={'anchors':anchors,'raw':copy.deepcopy(snapshot)}
+@@ -113,2 +170,0 @@
+-            db.execute('DELETE FROM history WHERE provider=? AND account=? AND observed_at<?',
+-                       (*key,now-21600))
+@@ -121,2 +177,9 @@
+-            db.execute('INSERT OR REPLACE INTO accounts VALUES (?,?,?)',(*key,json.dumps(value,allow_nan=False)))
+-        return assess(value,now=now,history=history)
++            raw_history=[h.get(_STATE,{}).get('raw',h) for h in history]
++            raw_decision=assess(snapshot,now=now,history=raw_history)
++            decision=_both(raw_decision, assess(value,now=now,history=_history_for(history,value)))
++            if old:
++                db.execute('UPDATE accounts SET snapshot=? WHERE provider=? AND account=?',
++                           (json.dumps(value,allow_nan=False),*key))
++            else:
++                db.execute('INSERT INTO accounts VALUES (?,?,?)',(*key,json.dumps(value,allow_nan=False)))
++        return decision

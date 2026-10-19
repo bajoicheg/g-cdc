@@ -1,0 +1,41 @@
+{
+  "schema": "cdc-admission-hosted-qualification-intent/v1",
+  "status": "AUTHORED_NOT_EXECUTED",
+  "compute_starts": 1,
+  "ci_starts": 0,
+  "provider_requests": 0,
+  "entrypoint": [
+    "python3",
+    "-B",
+    "examples/cdc-maintenance-20261019/admission/qualify.py",
+    "--sdk-source",
+    "<pinned-export>",
+    "--receipts",
+    "<new-external-directory>"
+  ],
+  "platform": "Linux Python3.11+ Git SQLite; network/provider disabled by hosted controller",
+  "ordered_stages": [
+    "fixed native diff checks/commit",
+    "independent SPEC",
+    "distinct QUALITY",
+    "one hosted runner"
+  ],
+  "old_expected_red": [
+    "eager snapshot serialization",
+    "baseline refuses recorded bounded conservative correction"
+  ],
+  "candidate_green": [
+    "all test_admission tests",
+    "test_history_reuse",
+    "test_native_unknown_recovery",
+    "test_project_budget_store",
+    "test_sdk_boundary",
+    "all preserved test_maintenance tests"
+  ],
+  "test_source_pins": "sdk-source-pins.json + packet freeze.json",
+  "subprocess_wait_total_seconds": 600,
+  "native_installation": false,
+  "actual_kimi_exercise": false,
+  "policy": "local original-anchor 1second bound; no new provider semantics",
+  "activation_contract": "activation-contract.json"
+}

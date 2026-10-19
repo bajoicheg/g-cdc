@@ -1,0 +1,180 @@
+{
+  "status": "FAILED_NATIVE_STAGED_WIP_UNREVIEWED_NOT_INSTALLED",
+  "task_id": "cdc-admission-bounds-and-kimi-quota-20261019",
+  "handle_id": "4b5be4d2-c8a3-552c-a4be-146a986d75f3",
+  "original_state": "failed",
+  "source_sha": "598cdb0976544c6143bb425818e40ae678351b50",
+  "freeze_path": "/opt/cdc-tools/candidates/cdc-admission-quota-wip-4b5be4d2",
+  "checks": [
+    {
+      "argv": [
+        "/usr/bin/git",
+        "-c",
+        "core.fsmonitor=false",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-C",
+        "/var/lib/cdc-vps-launch/cdcexec2/cdc-admission-bounds-and-kimi-quota-20261019/output/worker-worktree",
+        "add",
+        "--",
+        "examples/cdc-maintenance-20261019"
+      ],
+      "pid": 3995337,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/git",
+        "-c",
+        "core.fsmonitor=false",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-C",
+        "/var/lib/cdc-vps-launch/cdcexec2/cdc-admission-bounds-and-kimi-quota-20261019/output/worker-worktree",
+        "diff",
+        "--cached",
+        "--check"
+      ],
+      "pid": 3995338,
+      "timed_out": false,
+      "exit_code": 2,
+      "stdout": "examples/cdc-maintenance-20261019/admission/quota.py.patch:5: trailing whitespace.\n+ \nexamples/cdc-maintenance-20261019/admission/quota.py.patch:6: trailing whitespace.\n+ \n",
+      "stderr": ""
+    }
+  ],
+  "files": [
+    {
+      "name": "examples/cdc-maintenance-20261019/README.md",
+      "bytes": 11603,
+      "sha256": "ddb979f4b9d2f0b0ea4533191c1780a1a5f69b688100b615010d31f28655c6ce"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/apply-manifest.json",
+      "bytes": 1467,
+      "sha256": "73c35cd81984aaa87ebd51c260c51f3b49021bee4e50225674a23eb521ebbd6d"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/baseline/handover.py",
+      "bytes": 3488,
+      "sha256": "b0a2100c68b2cef2373d6c13efe504d05b5528b0f87e64fb5ec2fa16a5bc6f14"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/baseline/immutable_history_cache.py",
+      "bytes": 3755,
+      "sha256": "2e31a22bc5c14f7e0963c477c5bef0ce6c2299d756f3d9bc8ebac3d848c1d9dd"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/baseline/normalization.py",
+      "bytes": 2219,
+      "sha256": "bfa0638aa0807b409dfe924d7d36e4b0793328e30f9e437ae7d2e41a399f1d02"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/baseline/ownership.py",
+      "bytes": 6605,
+      "sha256": "a6b001e954dc395eda879ede1eef3094327860c6119a252d814cfbcdf9f54889"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/baseline/quota.py",
+      "bytes": 7075,
+      "sha256": "9550ef1c39d90e7b929a70fcfd45f592b3e505cd0c1fba9fcdb857373dab38a0"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/baseline/session.py",
+      "bytes": 8045,
+      "sha256": "b72a1d4e6e9c73b7aa4c31c328b7956fe884eb1eaf393241121035757ba4e574"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/candidate/immutable_history_cache.py",
+      "bytes": 6424,
+      "sha256": "4d3bab9e505ed0d73006b63d6116778e6ad9ac0ac1c9798b91721df15ea784d7"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/candidate/quota.py",
+      "bytes": 9280,
+      "sha256": "8cdb5053ca05a12d66be7ded1a90904f43874a2d26578e352c44476a67581d59"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/evidence/prior-kit/README.md",
+      "bytes": 11539,
+      "sha256": "f7027a5c725a900019e2d0f6ff49c7d5316ae4fa3b2e631d5b0b11bf914a4657"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/evidence/prior-kit/freeze.json",
+      "bytes": 876,
+      "sha256": "862439e186a6f126ae9bf3f703e4c6f39e0d1ed8c7c23226af164836a610332a"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/evidence/prior-kit/result.json",
+      "bytes": 5626,
+      "sha256": "a474bca1b5784c98db947d8f3c0f603bfccc248d954067b198e4031ed01bb048"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/evidence/reset-facts.json",
+      "bytes": 2800,
+      "sha256": "3246a7145e91c1a739cea4938f1212ce89fa65a5ff0eb05962adf6ac583026b8"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/immutable_history_cache.py.patch",
+      "bytes": 3581,
+      "sha256": "b462416968c027857ea9cb209f381c3ed506761a59c3f7bd592a845418c0bf8e"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/protected-inventory.json",
+      "bytes": 1606,
+      "sha256": "b0f0499b62de9a272608f0034f0ce3ff811391ebfdc07af34d221e3dd552530f"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/qualification-manifest.json",
+      "bytes": 1128,
+      "sha256": "cb9a8f85ad70258c36250512c1d2a68ab57fcef2fc92ecf40e87ab5887a0a0b5"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/qualify.py",
+      "bytes": 5004,
+      "sha256": "280eddf8d1d5d92a8e90a768c3cea9cce7d0d84aef46fc402ceaa442e3d2d084"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/quota.py.patch",
+      "bytes": 2930,
+      "sha256": "debe36af18b04e256d38a1925382cc4b96b1e4ac74e6adcbaae2a6c9883e26d6"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/sdk-source-pins.json",
+      "bytes": 28301,
+      "sha256": "d380a3699de88d86968182e8b13d700ba3c0a5afc7c37d64c86aa449f3dbd9b4"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/tests/test_admission.py",
+      "bytes": 12234,
+      "sha256": "cb84c272aefae1abc5d7f8287bd851348c78d5b6d3491fec5dc5a6ed0ffad3bb"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/admission/tests/test_sdk_boundary.py",
+      "bytes": 1774,
+      "sha256": "805771b7d3581128deea6f9259e18efce5d8d095c6383e5b91b1903276b4431b"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/freeze.json",
+      "bytes": 3181,
+      "sha256": "430e8e945f86f9a554f6e4f9506879fc2e99e1f9cdd046d0c082932952b3bc00"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/maintenance.py",
+      "bytes": 13699,
+      "sha256": "793861fbf58e837328865c96229e203a8bde825853afd47d31333776ff1e080e"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/result.json",
+      "bytes": 4122,
+      "sha256": "9f2404cf65b900f45a6bf4393900492d7cdd9269ba280417d365a3e57b279c4e"
+    },
+    {
+      "name": "examples/cdc-maintenance-20261019/test_maintenance.py",
+      "bytes": 9478,
+      "sha256": "8c7c584c8cb66cdc57213501a067d1515e0f7960ede324915fcd18d702464c0d"
+    }
+  ]
+}

@@ -1,129 +1,117 @@
 {
-  "schema": "cdc-independent-maintenance-result/v1",
-  "source_head": "919e883c73d17092b1956d2dd091ac3d7eb95dfa",
+  "schema": "cdc-admission-conservative-prequalification/v1",
+  "source_head": "598cdb0976544c6143bb425818e40ae678351b50",
   "scope": "examples/cdc-maintenance-20261019",
-  "status": "PREQUALIFICATION",
-  "committed_by_worker": false,
-  "tests_executed": false,
-  "red_green_claimed": false,
-  "installed_source_tree_supplied": "e68078eef63f53aedbcb246ca9a6310863d8fb6c",
-  "known_cause": "EPERM escapes supervisor signal loop; only ProcessLookupError is caught",
-  "unknown_cause": [
-    "actual permission policy causing EPERM",
-    "generic CONTRACT_OR_SCOPE_REJECTED exact field and causality"
-  ],
-  "native_capabilities_observed": {
-    "local_observe": "unknown when original supervisor unavailable",
-    "terminal_verification": "authentic original supervisor ECHILD required",
-    "administrative_completion": "prelaunch proof only",
-    "completion": "native VerifiedTerminalProof only",
-    "operator_rpc": "new nonblocking AF_UNIX bridge contract supplied; native integration unestablished",
-    "exact_turn_interrupt": "not established; candidate disabled unless independently qualified",
-    "desktop_pre_effect_hook": "not established; wrapper only"
+  "parent": "cdc-runtime-signal-admission-repair-20261019",
+  "status": "AUTHORED_UNQUALIFIED_INACTIVE",
+  "operator": {
+    "status": "LOCAL_CONSERVATIVE_POLICY_AUTHORED_NOT_QUALIFIED",
+    "provider_equivalence_claimed": false,
+    "fixed_bound_seconds": 1,
+    "rolling_anchor": false,
+    "dual_raw_effective_assessment": true,
+    "new_credit_before_effective_expiry": false,
+    "ledger_migration": false,
+    "history_eviction": false
   },
-  "originals": {
-    "parent": "cdc-runtime-signal-admission-repair-20261019",
-    "contract": "40b24dd0cfc39e000f1ce2bb7d241ea6ec31a291",
-    "contract_state": "queued; never resubmit",
-    "native_task": "cdc-gui-spend-enforcement-20261019",
-    "native_submits": "1/1 spent UNKNOWN",
-    "kimi": "kimi-6b9b1f2f7589489a9d981f84a7777c0b UNKNOWN spent",
-    "active_task": "cdc-gui-spend-native-authorized-20261019/a1",
-    "active_handle": "2db18ad6-2070-5ad2-ab3e-cfa2104cfbb7",
-    "infrastructure_blocked": true,
-    "journal": "cc7283e5379a869fb5aca1e93350ab11bff0f434ffe370734b8b947669f98d81",
-    "launch": "sha256:029b2ce5dce188f7105fa113081ef94e6e8d766d3f955e096b8f94bcd3802f26",
-    "known_births": [
-      [
-        3074589,
-        "55853831"
-      ],
-      [
-        3074601,
-        "55853841"
-      ]
-    ],
-    "closure": "UNKNOWN; reported later absence is not aggregate closure"
+  "sdk": {
+    "status": "BOUNDED_OPTIONAL_CACHE_SOURCE_IMPLEMENTED_NOT_EXECUTED",
+    "authentication_changed": false,
+    "limits_increased": false,
+    "mechanism": "conservative allocation-free size preflight then incremental JSON compression",
+    "remaining_memory": "mandatory history and detached decode allocations remain"
+  },
+  "apply_manifest": "admission/apply-manifest.json",
+  "protected_source_inventory": "admission/protected-inventory.json",
+  "hosted_intent": "admission/qualification-manifest.json",
+  "previous_kit_evidence": "admission/evidence/prior-kit",
+  "tests": {
+    "authored": true,
+    "executed": false,
+    "red_green_claimed": false,
+    "old_red_meaning": "cache eager serialization; baseline refuses recorded conservative correction"
+  },
+  "native_diff_check": "fixed entrypoint only; not executed by writer",
+  "spec": "fixed independent native stage pending",
+  "quality": "fixed distinct native stage after SPEC pending",
+  "hosted": "one combined start pending; no CI",
+  "native_integration": "not performed",
+  "application": "not performed",
+  "actual_kimi_exercise": "not performed; K2.8 Preview / Thinking Max required prospectively",
+  "collector_export": {
+    "path": "/opt/cdc-tools/candidates/cdc-admission-quota-conservative-fix-evidence.json",
+    "status": "NOT_READ_BY_WRITER",
+    "authority": false
+  },
+  "measurement": {
+    "provenance": "owner supplied, not reproduced",
+    "readonly_allow_peak_rss_kib": 2979920,
+    "memory_limit_gib": 4,
+    "generic_server_rejection_causality": "NOT_ESTABLISHED"
+  },
+  "historical_preservation": {
+    "queued_contract": "cdc-kimi-quota-continuity-repair-20261019 source919e883 operation=null empty native budget events; immutable",
+    "queued_disposition": "current authenticated prelaunch UNKNOWN retirement API does not support stale queued/null-operation row",
+    "rejected_contract": "cdc-kimi-quota-continuity-598cdb0-20261019; claim spent UNKNOWN, never retry",
+    "canonical_head_reported": "866759c1ad1f540a916e83fab6bd2e35a9e4930c; no task row does not refund claim",
+    "five_encrypted_db_history": "untouched; no DB files read or written",
+    "quotas_budgets_claims_rowids": "untouched",
+    "old_runtime_kit": "maintenance.py and test_maintenance.py unchanged; old metadata archived byte-exact"
   },
   "changed_boundary_matrix": [
     {
-      "boundary": "isolated Python/UID",
-      "candidate": "pidfd birth and same UID checks",
-      "coverage": "fake EPERM, reuse, UID, sent/absence",
-      "missing": "native same-namespace isolated behavioral qualification"
+      "boundary": "operator quota",
+      "change": "bounded immutable-anchor continuity; monotonic hold/usage; dual assessment; append-only history",
+      "remaining": "native independent review, hosted qualification and protected application pending"
     },
     {
-      "boundary": "aggregate cgroups/cold path",
-      "candidate": "mandatory native admit/verify adapters",
-      "coverage": "operation failure retains UNKNOWN",
-      "missing": "native cgroup descendant and pre-effect denial integration"
+      "boundary": "SDK cache",
+      "change": "bounded preflight/streaming insertion",
+      "remaining": "hosted behavioral/RSS qualification pending"
     },
     {
-      "boundary": "facts+cache",
-      "candidate": "immutable baseline and durable aggregate reservations; recovery facts digest",
-      "coverage": "reopen, aggregate, replay, immutable policy, invalid counters",
-      "missing": "authenticated baseline import and native capability binding"
+      "boundary": "native history/retirement",
+      "change": "none",
+      "remaining": "stale queued disposition unsupported"
     },
     {
-      "boundary": "new-file recovery+old copies",
-      "candidate": "diagnostic only; no native receipt rewrite",
-      "coverage": "absence never authorizes release/replay",
-      "missing": "native authenticated monotonic postlaunch disposition"
+      "boundary": "protected installation/Kimi",
+      "change": "none",
+      "remaining": "separate authorized application and exercise"
     }
   ],
-  "no_replay_properties": [
-    "turn primary key",
-    "UNKNOWN reservations remain charged",
-    "no refund/reset/rearm API",
-    "no original task mutation",
-    "recovery grants no success/release/start"
-  ],
-  "desktop_thread": "01a14dc6-e95f-7110-a2a7-358118af1ee5",
-  "limitations": [
-    "cooperating wrapper only",
-    "trusted native adapters required",
-    "no universal interception",
-    "no exact billing or savings claim",
-    "owner dialogue cannot be interrupted",
-    "original profiles/fallback refusal/quota/context-ci gates remain binding"
-  ],
-  "activation_contract": "README.md: Exact portable qualification and activation",
   "budget_ceiling": {
-    "compute_starts": 1,
-    "agent_starts": 3,
-    "ci_starts": 0,
-    "calls": 40,
+    "compute": 1,
+    "agents": 3,
+    "CI": 0,
+    "tools": 40,
     "seconds": 900
   },
+  "writer_subagents": 0,
+  "writer_model_observers": 0,
+  "writer_compute_starts": 0,
   "effects_executed": [],
-  "next_action": "fixed entrypoint new final checks and commit; external native SPEC then distinct QUALITY; prospectively authorized hosted qualification before activation",
+  "git_metadata_writes": false,
   "rca101": "OPEN",
   "rca113": "OPEN",
-  "task_id": "cdc-maintenance-runtime-kit-fix-20261019",
-  "continuation_of": {
-    "task_id": "cdc-maintenance-runtime-kit-20261019",
-    "candidate_sha": "f50a68f9949cd7b4dbe256f087bb49f86eaa2b6f",
-    "disposition": "FAILED after SPEC RED",
-    "five_source_hashes_verified_before_copy": true,
-    "prior_budgets": "spent; immutable"
+  "scheduler": "PAUSED",
+  "next_action": "fixed entrypoint native final checks/commit; genuine independent SPEC then distinct QUALITY; prospective hosted packet; no automatic application",
+  "original_failed_writer": {
+    "handle": "4b5be4d2-c8a3-552c-a4be-146a986d75f3",
+    "status": "FAILED_QUIESCENT_LEASE_RELEASED",
+    "runtime_seconds": 495.4039869,
+    "total_tokens": 876497,
+    "input_tokens": 857503,
+    "cached_tokens": 809728,
+    "uncached_tokens": 47775,
+    "output_tokens": 18994,
+    "commands": 23,
+    "native_diff_check": 0,
+    "staged_diff_check": 2,
+    "spec_ran": false,
+    "quality_ran": false,
+    "candidate_published": false,
+    "evidence": "wip-evidence.json"
   },
-  "spec_001": {
-    "mechanism": "concrete NativeInterruptRPC; nonblocking connect/send/receive; one explicit monotonic deadline <=5s; bounded frames; no workers/retry",
-    "failure": "timeout/transport uncertainty retains durable one-use stop and original charge",
-    "tests": "created, not executed"
-  },
-  "final_check_evidence": {
-    "old_candidate_diff_check_exit": 0,
-    "old_check_applies_to_changed_source": false,
-    "new_checks": "external fixed entrypoint after writer return; not observed",
-    "writer_phase_export": "unavailable during writing",
-    "acceptance": "external native SPEC then distinct QUALITY; not conferred by source"
-  },
-  "deployment_blockers": [
-    "unexecuted hosted portable qualification",
-    "unimplemented/unqualified native bridge with same-host deadline enforcement and all admission guards",
-    "actual GUI autonomous identity, owner dialogue and pre-effect coverage missing",
-    "native signal/cgroup/closure integration unqualified",
-    "original UNKNOWN unresolved; no authentic original supervisor ECHILD or native recovery capability"
-  ]
+  "activation_contract": "admission/activation-contract.json"
 }
