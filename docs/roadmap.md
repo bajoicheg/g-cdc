@@ -15,17 +15,20 @@ As of **2026-10-22 (Europe/Moscow)**. See [current status](current-status.md) fo
 
 | Scope | Evidence and limit |
 | --- | --- |
-| Immutable SDK | VERSION `3.6.8`, `cdc-3.6.8-intakefold-20261020`, TREE `0a39d44175d3b7fe7131670dd65980d582505db7`; not a 3.6.9 installation. |
+| Immutable SDK | VERSION `3.6.8`, `cdc-3.6.8-prehandle-20261022`, TREE `145ba560e7d711d8f611d0a2b7b4d0b44592a0d9`; not a 3.6.9 installation. |
 | 20 October operational fixes | Compact TaskStore/status; authenticated UNKNOWN administrative dispositions retaining original UNKNOWN; typed Kimi artifact consumer and scheduler registration; backup/heartbeat manifest repair with ordinary/Cloud recovery. Exact private evidence refs are in current status. |
 | 21–22 October operational fixes | Widened bounded efficiency/scanner cache, safe prelaunch diagnostics, heartbeat semantic filtering. Private codex-compute operational source; not automatically in canonical package 3.6.9. |
-| 22 October controller repair | Existing authorised Kimi executor-status route replaces direct owner metadata IPC; six affected tests passed. Installed mutable fix only. Registered dispatch is currently paused; status API active. |
-| Separate execution proof | Kimi CLI accepted and actual ACP COMPLETE artifact proved. Registered native scheduler success unproved; `phase1_done=false`. |
+| 22 October controller repair | Existing authorised Kimi executor-status route replaces direct owner metadata IPC; six affected tests passed. Installed mutable fix only. Registered dispatch restored after supported prehandle recovery; status API active. |
+| 22 October prehandle recovery | SDK-issued consumed/pre-handle UNKNOWN closure and unconsumed reserved cancellation installed; 18 changed-risk tests passed. Exact original IDs/operation/budgets retained; dispatch restored. [Operational source](https://github.com/bajoicheg/codex-compute/commit/3cd5c97578b306be4e68b48f9ce4120d7dfecda2). |
+| Native OAuth profile fit | Fixed guarded profile preparation immediately before native model; six focused tests passed; read-only credentials and quota admission retained. [Installed source](https://github.com/bajoicheg/codex-compute/commit/e870388cf7de0c0a80e98b72c318fda5232c1510). |
+| Native private profile modes | Fixed helper uses umask0077 and restores caller mask; one new focused test passed, original config0600 restored without credential reads/copies. [Installed source](https://github.com/bajoicheg/codex-compute/commit/2567f8bef9ff3907e59581dd0cf8dacad13676f5). |
+| Separate execution proof and quickstart | Registered Kimi documentation task `cdc-kimi-quickstart-private-profile-20261022` made3 actual model requests and an edit, then failed at internal maxSteps3. The operator applied retained changes and remaining facts after genuine lease release; native scope remains incomplete. [Actual publication](https://github.com/bajoicheg/codex-compute/commit/f916bb1cd444991102081c97e5d7b45e26f27faa). Broad `phase1_done=false`. |
 
 ## Remaining selection
 
 No new unresolved active P0 is established by the bounded audit. Highest useful remaining P1 work:
 
-1. Close the demonstrated consumed/pre-handle UNKNOWN gap through supported administrative custody, preserving original UNKNOWN/IDs/spent and proving producer/session absence; cancel the unconsumed reserved Codex attempt through supported authority. Preserve supported quiescent Kimi maintenance under the authorised identity for stale metadata. Restore currently paused dispatch only after these boundaries are resolved. Then obtain a genuine registered Kimi result on useful new work; no original replay or repeated CLI/ACP acceptance. See the [exact incident](current-status.md#registered-kimi-attempt-22-october).
+1. Finish useful registered Kimi native completion after the demonstrated internal maxSteps3 method limit, preserving the failed original and its applied artifact; use a finite continuation on new useful work, no replay of completed CLI/ACP acceptance.
 2. Resolve #100's exact hosted Cloud setup/policy binding through supported GUI configuration. Readiness remains UNKNOWN. Authentication/backend binding and the exhausted configuration-reader search do not justify another login, API search or inventory sweep.
 3. Exercise #113's authentic report/RCA producer/consumer callback at the next authorized real execution boundary. Preserve original requirements until behavioral acceptance exists.
 4. Reconcile installed operational fixes into a future canonical release only after genuine scope selection, compatibility assessment and required gates. No version is selected and no consolidation release is claimed.

@@ -4,7 +4,7 @@ Canonical source status as of **2026-10-22 (Europe/Moscow)**: `bajoicheg/g-cdc` 
 
 The [candidate manifest](release/candidate.json) remains labeled `candidate`, with preparation source `445820c43da276fa525447dee91957c0707cab3c`. Preparation metadata is distinct from published ref/source evidence and is not an installation or adoption receipt. See the [source lock](release/source.lock.json).
 
-The current VPS immutable SDK is **VERSION 3.6.8**, root `cdc-3.6.8-intakefold-20261020`, TREE `0a39d44175d3b7fe7131670dd65980d582505db7`, with separately installed mutable host/operator/checkpoint fixes from 20–22 October. This is **not a 3.6.9 VPS installation**. These documentation changes do not move the release ref or constitute a new release.
+The current VPS immutable SDK is **VERSION 3.6.8**, root `cdc-3.6.8-prehandle-20261022`, TREE `145ba560e7d711d8f611d0a2b7b4d0b44592a0d9`, with separately installed mutable host/operator/checkpoint fixes from 20–22 October. This is **not a 3.6.9 VPS installation**. These documentation changes do not move the release ref or constitute a new release.
 
 See [current status and evidence](docs/current-status.md) and the [roadmap](docs/roadmap.md). Original documentation remains in Git history.
 
@@ -18,6 +18,6 @@ Preparation returns one typed next action, not execution authority. Continue thr
 
 ## Operational boundaries
 
-See [multi-provider guidance](docs/multiprovider.md). `KIMI_PRIMARY_CLI_ACCEPTED` and an actual ACP COMPLETE artifact result are proved; full registered native Kimi scheduler success is unproved and `phase1_done=false`. Fleet remains paused by the owner; real Gemini connection remains deferred. Provider permissions, account boundaries, existing pauses and separate product/GAD ownership remain in force. Source publication, installation, execution and consumer adoption require separate evidence and gates.
+See [multi-provider guidance](docs/multiprovider.md). CLI/ACP evidence is preserved. A registered Kimi run made3 actual model requests and a useful edit; the operator applied its retained patch and remaining facts to the corrected [operator quickstart](https://github.com/bajoicheg/codex-compute/blob/f916bb1cd444991102081c97e5d7b45e26f27faa/docs/operator-quickstart.md) after genuine failed-task lease release; exact evidence is in [current status](docs/current-status.md#registered-kimi-attempt-22-october). The native attempt remains failed at internal maxSteps3; full native completion is unproved; `phase1_done=false`, Fleet remains paused and real Gemini remains deferred. Source publication, installation, execution and consumer adoption remain separate.
 
-Registered VPS dispatch is currently **PAUSED** after a consumed/pre-handle Kimi UNKNOWN blocked its executor slot. The status API remains active. A bounded controller permission repair is installed, but no new native Kimi success or guide publication is claimed. See the [incident and next P1](docs/current-status.md#registered-kimi-attempt-22-october).
+Registered VPS dispatch is **RESTORED**. Supported administrative prehandle closure preserves original UNKNOWN/IDs/spent; the unconsumed reserve is cancelled. The new installed SDK snapshot remains VERSION 3.6.8; canonical release refs are unchanged. See [recovery and native evidence](docs/current-status.md#registered-kimi-attempt-22-october).
