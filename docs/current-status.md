@@ -1,5 +1,7 @@
 # Current CDC status
 
+Operational update22October2026: the existing active goal was extended by four hours to **19:38UTC /22:38Moscow**, preserving its original thread, creation time and accumulated spending. CDC broker custody is now **Codex @bajoicheg**, generation69→73 RUNNING, with the original custody session, pending UNKNOWN and all1,308 ledger rows unchanged. New operator connections are pinned to the isolated bajoicheg profile; the current desktop connection still requires a supported profile reconnection. No GUI account switch, credentials/goal database copying, Kimi run, native model start or canonical release change is claimed. [Applied receipt](https://github.com/bajoicheg/codex-compute/blob/fac3d27bd25b901f3382bc2f9cd536c92e1c55a1/ops/operator/operator-bajoicheg-extension-20261022/result.json).
+
 **22 October 2026.** Source, installation, native execution and consumer adoption are separate evidence. Full prior observations, original IDs/UNKNOWN/spent and section links remain in [the immutable history index](status-evidence-history.md).
 
 ## Current installation and release

@@ -13,7 +13,7 @@ Installed bounded slices include supported original UNKNOWN retirement/reserve c
 
 ## Remaining selection
 
-Take a demonstrated active P0 first. No new unresolved active P0 is established by the current bounded evidence; otherwise choose the highest-benefit authorised P1, without Kimi, questions about task choice or replay of completed acceptance during the owner's eight-hour window.
+Take a demonstrated active P0 first. No new unresolved active P0 is established by the current bounded evidence; otherwise choose the highest-benefit authorised P1, without Kimi, questions about task choice or replay of completed acceptance during the owner's extended twelve-hour window, ending22October2026 at19:38UTC /22:38Moscow (original eight hours plus the explicitly authorized four-hour extension).
 
 | Issue | Remaining boundary and next useful action |
 | --- | --- |
