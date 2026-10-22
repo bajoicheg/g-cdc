@@ -19,3 +19,5 @@ Preparation returns one typed next action, not execution authority. Continue thr
 ## Operational boundaries
 
 See [multi-provider guidance](docs/multiprovider.md). `KIMI_PRIMARY_CLI_ACCEPTED` and an actual ACP COMPLETE artifact result are proved; full registered native Kimi scheduler success is unproved and `phase1_done=false`. Fleet remains paused by the owner; real Gemini connection remains deferred. Provider permissions, account boundaries, existing pauses and separate product/GAD ownership remain in force. Source publication, installation, execution and consumer adoption require separate evidence and gates.
+
+Registered VPS dispatch is currently **PAUSED** after a consumed/pre-handle Kimi UNKNOWN blocked its executor slot. The status API remains active. A bounded controller permission repair is installed, but no new native Kimi success or guide publication is claimed. See the [incident and next P1](docs/current-status.md#registered-kimi-attempt-22-october).

@@ -1,6 +1,6 @@
 # Current CDC status
 
-As of **2026-10-22 (Europe/Moscow)**, based on the operator's bounded evidence summary. Source presence, source acceptance, installation, actual execution and consumer adoption are distinct. This refresh adds no release, installation, fresh model/CI acceptance or provider readiness.
+As of **2026-10-22 (Europe/Moscow)**, based on the operator's bounded evidence summary. Source presence, source acceptance, installation, actual execution and consumer adoption are distinct. This update records a bounded installed controller repair and unsuccessful registered task attempts. It adds no canonical release, native Kimi success proof or fresh provider/model acceptance.
 
 ## Three layers
 
@@ -25,6 +25,21 @@ Source is the [private evidence: codex-compute operational branch](https://githu
 | 2026-10-21 | Safe prelaunch diagnostics preserved through terminal receipt and fast summary | `native-safe-failure-20261021`; [private evidence: `4aa3c25c28049a4012861a9d9b6c4f11198a9eb4`](https://github.com/bajoicheg/codex-compute/commit/4aa3c25c28049a4012861a9d9b6c4f11198a9eb4) |
 | 2026-10-22 | Heartbeat semantic filtering; unchanged commits do not trigger a model | `retrospective-heartbeat-filter-20261022`; [private evidence: `24f7c4e22e598d6b51be5cc04079410c2aebea4f`](https://github.com/bajoicheg/codex-compute/commit/24f7c4e22e598d6b51be5cc04079410c2aebea4f) |
 
+## Registered Kimi attempt, 22 October
+
+Installed controller repair: the prestart check uses its existing authorised Kimi executor-status route instead of direct owner metadata IPC. Six targeted tests passed, without repeating CLI/ACP acceptance or changing Unix/sudo permissions, credentials or immutable SDK bytes. [Private operational source: 356bd9177a61990a62302dc5955def28e26be42f](https://github.com/bajoicheg/codex-compute/commit/356bd9177a61990a62302dc5955def28e26be42f). Fresh mandatory quota admission and worker lifecycle checks still apply. Stale status fails closed; a supported quiescent maintenance path under its authorised identity remains necessary.
+
+| Original task / attempt | Actual recorded result |
+| --- | --- |
+| `cdc-kimi-quickstart-p1-20261022` / `cdc-kimi-quickstart-p1-20261022-a1` | Registered Kimi; start consumed, then PermissionError before bridge.start. No handle or worker artifacts. Original UNKNOWN, original identities, charge and evidence preserved; no replay. UNKNOWN occupies both its project and executor slots. |
+| `cdc-kimi-native-guide-20261022` / `cdc-kimi-native-guide-20261022-a1` | Scheduler chose Codex reserve because Kimi was occupied. Stopped while reserved, before start consumption, handle or model request. Reservation retained; no guide or requested Kimi result delivered. |
+
+The status API is active; **dispatch_enabled=false** prevents the reserved fallback from continuing automatically. No TaskStore row, quota or budget was reset. Both original producer scopes were absent and both output directories empty at the bounded safe-hold observation (00:33:34Z). This is a blocked operational state, not completion of the requested P1 through Kimi.
+
+**Next P1:** add supported administrative closure for consumed/pre-handle UNKNOWN while preserving UNKNOWN/IDs/spent and proving no possible original producer/session; cancel the unconsumed reserved attempt through supported authority. Keep supported quiescent Kimi maintenance under its authorised identity. Restore dispatch only after these custody boundaries are resolved, then run useful newly admitted Kimi work once. Existing retirement requires either unconsumed prelaunch custody or an actual postlaunch session; neither may be fabricated for this incident.
+
+Actual executor expense for these attempts: two submissions/reservations, one consumed start, zero native handles/model requests, six passing targeted controller tests and zero CI starts. There was also one failed new-test fixture run before its list-shape correction; the passing checks were reused for the lock-delayed apply. Two supported profile-maintenance requests reported model_requests=0. Provider token billing is unavailable; operator app usage is recorded separately in the local task result. No token or monetary savings are claimed.
+
 See also the [public heartbeat update](https://github.com/bajoicheg/g-cdc/issues/101#issuecomment-6329229148). No new savings or measurement is claimed. Administrative disposition does not convert original UNKNOWN into successful execution or permit replay.
 
 ## Open acceptance boundaries
@@ -33,7 +48,7 @@ See also the [public heartbeat update](https://github.com/bajoicheg/g-cdc/issues
 | --- | --- | --- |
 | #86 | Published [lease store source](../src/continuous-development-cycle/scripts/git_lease_store.py) preserves non-lease root entries, original lease mode and expected-parent push. | Full original live-layout/consumer adoption unproved. Conditional on an affected legacy migration; no newly observed active P0. |
 | #100 | Cloud read authentication/backend binding proved; supported configuration-reader search exhausted. | P1: exact hosted Cloud setup/policy binding through supported GUI configuration. Readiness UNKNOWN; no repeated login/API search. |
-| #101 | Published source and installed operational scopes above are distinct completed slices. | P1: first genuine registered Kimi result on useful newly admitted work; scope future canonical reconciliation only after compatibility and required gates. Broader efficiency acceptance remains open. |
+| #101 | Published source and installed operational scopes above are distinct completed slices. | P1: supported closure of consumed/pre-handle UNKNOWN and cancellation of the unconsumed reserved fallback, then restore dispatch and obtain genuine registered Kimi execution. Broad efficiency and future canonical reconciliation remain open. |
 | #111 | Published [receiving preflight](../src/continuous-development-cycle/scripts/receiving_ci_preflight.py), [release delivery](../src/continuous-development-cycle/scripts/release_delivery.py) and [host bridge](../src/continuous-development-cycle/scripts/managed_host_bridge.py) contain receiving admission and cumulative workflow/budget candidate binding. | Conditional on next actual authorized receiving delivery. No confirmed new active callsite defect; full original end-to-end acceptance unproved. |
 | #112 | Bounded installed VPS/host/operator callsite search on 20 October found no active wrong-phase caller. | Conditional on next real receiving delivery: original detached-preview/assigned-branch result end-to-end acceptance stays open. |
 | #113 | Published [reporting contract](../src/continuous-development-cycle/scripts/reporting_contract.py), [final response gate](../src/continuous-development-cycle/scripts/final_response_gate.py) and [host bridge](../src/continuous-development-cycle/scripts/managed_host_bridge.py) contain fresh reporting and authenticated durable RCA inventory/final boundary. | P1: authentic current execution producer/consumer report/RCA callback at the next authorized real boundary. Full original live consumer and all-project adoption unproved. |
