@@ -4,7 +4,7 @@ Canonical source status as of **2026-10-22 (Europe/Moscow)**: `bajoicheg/g-cdc` 
 
 The [candidate manifest](release/candidate.json) remains labeled `candidate`, with preparation source `445820c43da276fa525447dee91957c0707cab3c`. Preparation metadata is distinct from published ref/source evidence and is not an installation or adoption receipt. See the [source lock](release/source.lock.json).
 
-The current VPS immutable SDK is **VERSION 3.6.8**, root `cdc-3.6.8-reportfresh-20261022`, TREE `565288391ea560d5ae9723ebd15a4a17f26fb30e`, with separately installed mutable host/operator/checkpoint fixes from 20–22 October. This is **not a 3.6.9 VPS installation**. These documentation changes do not move the release ref or constitute a new release.
+The current VPS immutable SDK is **VERSION 3.6.8**, root `cdc-3.6.8-reportref-20261022`, TREE `3fe9cba7643ea5094a9dc8ff2f784fd9b3721ebd` (prior reportfresh snapshot retained), with separately installed mutable host/operator/checkpoint fixes from 20–22 October. This is **not a 3.6.9 VPS installation**. These documentation changes do not move the release ref or constitute a new release.
 
 See [current status and evidence](docs/current-status.md) and the [roadmap](docs/roadmap.md). Original documentation remains in Git history.
 
@@ -14,6 +14,9 @@ Installed optional Codex provider usage now follows original checkpoint-pinned s
 
 <!-- CDC_RETROSPECTIVE_PROVIDER_USAGE_20261022 -->
 The retrospective now retains the same saved usage UNKNOWN, original IDs, coverage and complete totals atomically. [Installed consumer evidence](docs/current-status.md#saved-provider-usage-in-retrospective-22-october) is distinct from live billing and canonical release.
+
+<!-- CDC_REPORTING_ALIGNMENT_AND_COLLECTION_20261022 -->
+[Registered-project reporting audit](docs/reporting-adoption-audit.md) records Source/package/instruction drift and explicit UNKNOWN client adoption. The installed per-report reference correction and actual native-collection consumer are documented separately from canonical release.
 
 ## Cloud entry
 
