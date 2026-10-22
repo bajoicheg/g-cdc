@@ -29,14 +29,14 @@ For a new Source branch, first use one separately admitted native metadata owner
 
 - [x] Compare all package paths against the common base and preserve both released and installed object identities.
 - [x] Create an isolated checkout at current main `74a39244fa1c7097d3ea2e37708219e0de785455`; preserve all existing worktrees and original Source records.
-- [ ] Materialize a separate exact released 3.6.9 driver, then import the 32 necessary installed package paths with original modes.
-- [ ] Update repository/package version, manifest, agent metadata, development and transport template metadata, source lock and compatibility matrix to 3.6.10 developed under 3.6.9. Preserve historical version statements as history.
-- [ ] Add the imported test files to the existing required inventory. Run the stdlib bootstrap first, then inventory-only discovery without executing old tests or starting providers.
-- [ ] Commit implementation, calculate its exact package tree, and make a separate metadata-only commit binding `release/candidate.json` and all three supported projections. Keep actual consumer locks unchanged.
-- [ ] Obtain ordered whole-composition SPEC and QUALITY. Resolve only concrete findings and retain their original evidence.
-- [ ] Read current canonical Source authority, then use fresh task/budget/receiving/guard/one-use bindings and the existing reviewed native path. Do not treat object creation or an operator push as native publication.
-- [ ] Observe one exact hosted composition gate to terminal. Preserve original failures/UNKNOWN and all charges; never replay a consumed effect on an observation timeout.
-- [ ] Publish/release only through actual admitted managed expected-head finish and original guarded effects. Record exact results; update status/backlog and actual scoped spending. Installation and downstream adoption remain separate authorized steps.
+- [x] Materialize a separate exact released 3.6.9 driver, then import the 32 necessary installed package paths with original modes.
+- [x] Update repository/package version, manifest, agent metadata, development and transport template metadata, source lock and compatibility matrix to 3.6.10 developed under 3.6.9. Preserve historical version statements as history.
+- [x] Add the imported test files to the existing required inventory. Run the stdlib bootstrap first, then inventory-only discovery without executing old tests or starting providers.
+- [x] Commit implementation, calculate its exact package tree, and make a separate metadata-only commit binding `release/candidate.json` and all three supported projections. Keep actual consumer locks unchanged.
+- [x] Obtain ordered whole-composition SPEC and QUALITY. Resolve only concrete findings and retain their original evidence.
+- [x] Read current canonical Source authority, then use fresh task/budget/receiving/guard/one-use bindings and the existing reviewed native path. Do not treat object creation or an operator push as native publication.
+- [x] Observe one exact hosted composition gate to terminal. Preserve original failures/UNKNOWN and all charges; never replay a consumed effect on an observation timeout.
+- [x] Publish/release only through actual admitted managed expected-head finish and original guarded effects. Record exact results; update status/backlog and actual scoped spending. Installation and downstream adoption remain separate authorized steps.
 
 **Completion evidence:** Exact source/package/driver identities, component provenance, actual scoped checks/reviews and admitted Source/receiving/terminal/release receipts. Missing authority or output remains explicitly pending; a prepared candidate is not a release.
 
@@ -51,3 +51,9 @@ Correct only that existing fixture to advance both clocks consistently. Keep eve
 Candidate `5b8925fd5d154c38bc2572d70b0267fd84f4daa1`, CI `39812225230` attempt1, completed both partitions:42 bridge cases passed;1756 remaining cases completed with11 failing methods. Preserve this failed gate and its original native records, UNKNOWN and spent. The first gate's remaining partition also timed out; its partial output is not a passing result.
 
 Correct seven existing test files to observe the current object-pipe transport, distinguish fresh current-head reads from historical reads, and inject actual head movement at the intended historical boundary. Make the existing host-consumer test portable using the pinned, byte-exact read-method closure and generic validators in `bootstrap/fixtures/cdc-taskstore`; exclude deployment configuration and effect methods. All11 identified methods passed targeted checks. Production package bytes and all1798 case IDs remain unchanged. Previous provider/component acceptance and local FULL are not replayed. A new prospective residual Source budget and exact receiving CI gate remain pending; neither failed scope is reset or enlarged.
+
+## Actual canonical completion
+
+Source `17100b2d77bf83ae3260a4dbb5564ac0d82c9d8d`, package `4fe2be3c1687b970e800ee894acd9ac97adbf6d8`, passed exact hosted run39818534904 and the original native candidate/main/release physical proofs. The VPS then applied that exact package through the supported runtime-only CAS; [actual installed receipt](https://github.com/bajoicheg/codex-compute/blob/20360c550e9262d23373eebee0d7eb69b4206520/ops/operator/sdk3610-canonical-adoption-20261022/installed.json). Both failed runs39808077714 and39812225230, original CLI errors, UNKNOWN and spent remain retained. Broader #101/#113 and client/per-project adoption remain open.
+
+The original release worker4b436c09-a554-5da9-a2bc-ed16557f8c7b failed after successfully creating the release ref: conservative max(reserved, observed) elapsed accounting exhausted its scope before the evidence-blob reservation, guard, claim or send. Its failed physical proof, unadmitted intent, closed budget and charges are retained. Separate reviewed native residual scopes completed only the four remaining evidence effects with the exact original artifact SHAs. The three-object residual e9badaeb-521c-52a6-b6b3-ca411451f6d0 failed the stock ownership-freshness check before the final ref claim/send; its original failed physical proof, guard and charges were retained. The final native owner inherited the same unclaimed guard and performed its first submission after a stock renew tied to unique durable native activity, preserving the original operation/attempt and unchanged freshness/one-use checks. No CI, candidate/main, release-ref creation or object POST was repeated.
