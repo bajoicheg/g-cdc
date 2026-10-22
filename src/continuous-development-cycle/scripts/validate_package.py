@@ -494,6 +494,14 @@ REQUIRED = [
     'tests/test_streaming_dispositions.py',
     'tests/test_streaming_intake.py',
     'tests/test_supervisor_signal_failure.py',
+    'scripts/_cdc_vendor/__init__.py',
+    'scripts/_cdc_vendor/orjson/LICENSE-APACHE',
+    'scripts/_cdc_vendor/orjson/LICENSE-MIT',
+    'scripts/_cdc_vendor/orjson/LICENSE-MPL-2.0',
+    'scripts/_cdc_vendor/orjson/__init__.py',
+    'scripts/_cdc_vendor/orjson/orjson.cpython-312-x86_64-linux-gnu.so',
+    'scripts/_cdc_vendor/orjson/provenance.json',
+    'tests/test_packaged_decoder.py',
 ]
 
 

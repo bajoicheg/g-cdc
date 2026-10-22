@@ -12,6 +12,12 @@ import select
 import subprocess
 import time
 
+# Optional pinned local decoder; the original canonical encoder stays authoritative.
+try:
+    from _cdc_vendor.orjson import loads as _json_loads
+except ImportError:
+    _json_loads = json.loads
+
 from git_remote_identity import isolated_remote_args, remote_identity, repository_root
 from parallel_task_planner import portable_path_key
 
@@ -373,7 +379,7 @@ class GitDocumentStore:
                     # Decode valid history in C; preserve the original strict
                     # decoder and its error ordering for every rejected payload.
                     try:
-                        document = json.loads(payload)
+                        document = _json_loads(payload)
                         exact = canonical(document) == payload
                     except (ValueError, TypeError, RecursionError):
                         exact = False

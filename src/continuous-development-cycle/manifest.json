@@ -1,7 +1,7 @@
 {
-  "description": "Qualified native history, UNKNOWN recovery, budget and rejection-closure fixes composed over the released provider-neutral 3.6.9 package.",
+  "description": "Qualified optional decoder-only acceleration with unchanged canonical encoder, strict fallback and native authority over released 3.6.10.",
   "entrypoint": "SKILL.md",
   "name": "continuous-development-cycle",
   "schema": "continuous-development-cycle/v3",
-  "version": "3.6.10"
+  "version": "3.6.11"
 }

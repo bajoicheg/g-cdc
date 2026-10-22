@@ -3,9 +3,12 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.6.10
+# Continuous Development Cycle v3.6.11
 
-This 3.6.10 candidate consolidates qualified native history transport/reuse, original UNKNOWN recovery, operational budget bounds and successful-preparation rejection closure over independently released 3.6.9. It is developed under released 3.6.9. Provider eligibility, account configuration and host containment remain separate. No host policy, prior IDs, UNKNOWN, budgets or spending are rewritten by this package.
+This 3.6.11 candidate adds the qualified optional pinned decoder-only acceleration. It is developed under independently released3.6.10. The original canonical encoder, strict error fallback and history/authority gates are unchanged. The CPython3.12 manylinux x86_64 wheel is bundled with its provenance and licenses; unsupported platforms retain stdlib. Source preparation is separate from exact hosted qualification, native release, installed runtime and client adoption.
+
+
+Historical3.6.10 composition: this prior candidate consolidates qualified native history transport/reuse, original UNKNOWN recovery, operational budget bounds and successful-preparation rejection closure over independently released 3.6.9. It is developed under released 3.6.9. Provider eligibility, account configuration and host containment remain separate. No host policy, prior IDs, UNKNOWN, budgets or spending are rewritten by this package.
 
 The prior release descriptions below are retained history.
 
