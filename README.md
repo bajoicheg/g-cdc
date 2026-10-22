@@ -13,7 +13,7 @@ Owner priority: no new Kimi work or dispatch; dedicated Kimi development/optimiz
 - `cdc-vps status --summary` retains bounded original saved RCA/report IDs and explicit UNKNOWN coverage across tasks. These are historical metadata, never current closure or authority; [consumer details](https://github.com/bajoicheg/codex-compute/blob/5c3dfd0d8bc2f532f5bfd321eebf43abab0f796f/docs/aggregate-summary-reporting.md).
 - `cdc-vps status --summary --task ORIGINAL_TASK_ID` selects before projection/IPC and observes recorded metadata; it grants no history/dispatch authority.
 - `cdc-vps status --task ORIGINAL_TASK_ID --human` renders the authenticated original outcome, RCA and fresh Moscow owner report.
-- `cdc-operator economy report --task ORIGINAL_TASK_ID` joins original reporting with spending; `--json` retains structured output.
+- `cdc-operator economy report` now includes bounded saved RCA and explicit UNKNOWN coverage with spending; `--task ORIGINAL_TASK_ID` retains the authenticated selected-task view. `--json` preserves structured observations and all original ledger rows; [consumer contract](https://github.com/bajoicheg/codex-compute/blob/6777e0304eaeeea1938bb893adb8b57e728d4fb8/docs/economy-reporting.md).
 
 Native finish receipts and retrospective compact input preserve original RCA/provider-usage identity and UNKNOWN/partial coverage. Historical receipts do not refresh authority, backfill old UNKNOWN or change the ledger. [Current proofs and limits](docs/current-status.md), [registered-project audit](docs/reporting-adoption-audit.md), [multi-provider guidance](docs/multiprovider.md).
 
