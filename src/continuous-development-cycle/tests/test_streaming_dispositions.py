@@ -174,16 +174,20 @@ class StreamingDispositionTests(unittest.TestCase):
     def test_actual_head_move_with_identical_selected_row_is_rejected(self):
         newer = self.commit(canonical(self.document), self.head)
         read_objects = self.store._read_document_objects
+        moved = False
         def moving(revisions):
-            moved = False
+            nonlocal moved
+            revisions=tuple(revisions)
             for document in read_objects(revisions):
-                if not moved:
+                if revisions != (self.head,) and not moved:
                     self.publish(newer)
                     moved = True
                 yield document
         with patch.object(self.store, '_read_document_objects', side_effect=moving):
             with self.assertRaisesRegex(ValueError, 'history moved during authentication'):
                 self.validate()
+        self.assertTrue(moved)
+        self.assertEqual(self.store._remote_revision(),newer)
 
     def test_rewind_is_rejected_across_stream_and_general_history_apis(self):
         # Each pairing must remember the original longer chain in the existing

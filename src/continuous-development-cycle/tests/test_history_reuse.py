@@ -25,14 +25,18 @@ class HistoryReuseTests(unittest.TestCase):
         with patch.object(self.store,'_read_document_objects',wraps=self.store._read_document_objects) as read:
             first=native._history(self.store);self.assertGreater(read.call_count,0)
             read.reset_mock();second=native._history(self.store)
-            self.assertEqual(first,second);self.assertEqual(read.call_count,0)
+            self.assertEqual(first,second)
+            # Both fresh current-head reads now share the batched decoder.
+            # They remain mandatory; no verified ancestor may be redecoded.
+            self.assertEqual([revision for call in read.call_args_list for revision in call.args[0]],
+                             [self.revisions[-1],self.revisions[-1]])
     def test_new_head_only_decodes_the_unverified_suffix(self):
         old=native._history(self.store)
         revision=self.store.compare_and_swap(self.revisions[-1],{'value':{'number':3,'nested':['new']}})
         with patch.object(self.store,'_read_document_objects',wraps=self.store._read_document_objects) as read:
             result=native._history(self.store)
         self.assertEqual(result[:-1],old);self.assertEqual(result[-1][0],revision)
-        self.assertLessEqual(read.call_count,1)
+        self.assertEqual([item for call in read.call_args_list for item in call.args[0]],[revision,revision])
         self.assertFalse(any(revision in self.revisions for call in read.call_args_list for revision in call.args[0]))
     def test_returned_nested_documents_cannot_poison_reuse(self):
         expected=native._history(self.store)

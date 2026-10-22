@@ -186,14 +186,20 @@ class StreamingIntakeTests(unittest.TestCase):
                     self.authenticate()
         newer = self.commit(canonical(self.document), self.head)
         objects = self.store._read_document_objects
+        moved = False
         def moving(revisions):
-            for index, document in enumerate(objects(revisions)):
-                if index == 0:
+            nonlocal moved
+            revisions=tuple(revisions)
+            for document in objects(revisions):
+                if revisions != (self.head,) and not moved:
                     self.publish(newer)
+                    moved = True
                 yield document
         with patch.object(self.store, '_read_document_objects', side_effect=moving):
             with self.assertRaisesRegex(ValueError, 'history moved during authentication'):
                 self.authenticate()
+        self.assertTrue(moved)
+        self.assertEqual(self.store._remote_revision(),newer)
 
 
 if __name__ == '__main__':

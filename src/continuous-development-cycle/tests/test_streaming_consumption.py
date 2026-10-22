@@ -108,7 +108,10 @@ class StreamingConsumptionTests(unittest.TestCase):
             yield from read(revisions)
         with patch.object(self.store, '_read_document_objects', side_effect=observe_objects):
             self.assertEqual(self.observe(failure)['state'], 'unresolved_original')
-        self.assertEqual(seen, [self.head, prefix])
+        # Current-head reads now use the same decoder; the historical prefix
+        # must still be authenticated exactly once without task projection.
+        self.assertEqual([revision for revision in seen if revision != anchor], [self.head, prefix])
+        self.assertEqual(seen.count(anchor), 3)
         self.assertEqual(self.snapshot()['documents'], [])
         # Existing detached full-history API still loads a chain-only entry.
         history = native._history(self.store)
@@ -253,6 +256,12 @@ class StreamingConsumptionTests(unittest.TestCase):
         failure = self.unresolved()
         read = self.store._read_document_objects; observed = []
         def tracked(revisions):
+            revisions=tuple(revisions)
+            if revisions == (head,):
+                # A fresh current document must survive its read. Track only
+                # historical generations, the subject of the retention bound.
+                yield from read(revisions)
+                return
             for document in read(revisions):
                 generation = Generation(document)
                 reference = weakref.ref(generation)

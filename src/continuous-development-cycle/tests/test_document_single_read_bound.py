@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / 'scripts'))
 from git_document_store import GitDocumentStore, MAX_BYTES, canonical
+import git_document_store as document_store
 from git_remote_identity import remote_identity
 
 
@@ -64,6 +65,7 @@ class DocumentSingleReadBoundTests(unittest.TestCase):
         oversized_blob = self.git('rev-parse', oversized + ':document.json').encode('ascii')
         small = self.commit(b'{}\n', parent=oversized)
         real_run = subprocess.run
+        real_send = document_store._ObjectPipe.send
 
         for channel in ('current', 'historical', 'single'):
             with self.subTest(channel=channel):
@@ -77,7 +79,13 @@ class DocumentSingleReadBoundTests(unittest.TestCase):
                                 requests.append((option, kwargs.get('input', b'')))
                     return real_run(args, *positional, **kwargs)
 
-                with patch('git_document_store.subprocess.run', side_effect=observe):
+                def observe_session(pipe, specifications, deadline):
+                    option=next(value for value in ('--batch-check','--batch') if value in pipe.process.args)
+                    requests.append((option, ('\n'.join(specifications)+'\n').encode('ascii')))
+                    return real_send(pipe,specifications,deadline)
+
+                with patch('git_document_store.subprocess.run', side_effect=observe), \
+                        patch.object(document_store._ObjectPipe,'send',observe_session):
                     with self.assertRaises(ValueError):
                         if channel == 'current':
                             self.store.read()

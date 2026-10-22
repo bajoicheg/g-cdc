@@ -225,8 +225,12 @@ class PrehandleTests(unittest.TestCase):
         operation['intent']=native.op.prepare(operation['intent']['binding'],start['attempt_id'],start['lease_source_ref'],self.at)
         for event in self.row['budget']['events']:
             event['attempt_id']=start['attempt_id'];event['operation_key']=operation['intent']['operation_key']
-        sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'src'))
-        from cdc_vps import state,kimi
+        # The real host consumer is a pinned release-qualification fixture,
+        # outside the distributed SDK. Runtime/configuration are never loaded.
+        fixture_root=Path(__file__).resolve().parents[3]/'bootstrap/fixtures/cdc-taskstore'
+        sys.path.insert(0,str(fixture_root))
+        self.addCleanup(lambda:sys.path.remove(str(fixture_root)))
+        from cdc_taskstore_fixture import state,kimi
         registry={'executors':[{'name':'executor-one'}]}
         queue=importlib.import_module('continuation_queue').initialize('example/project','refs/heads/main')
         self.document={'schema':native.INTAKE_SCHEMA,'registry_digest':state.digest(registry),'created_at_utc':self.at,

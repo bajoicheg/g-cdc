@@ -24,6 +24,15 @@ class CanonicalDecoderFastpathTests(unittest.TestCase):
             result=payloads[position:position+len(specifications)];position+=len(specifications)
             return result
         store._batch_objects=batch
+        # Decoder tests own an in-memory transport for both current POSIX
+        # sessions and the original non-POSIX fallback. No Git is involved.
+        store.repo=Path('decoder-fixture')
+        class Session:
+            def __enter__(self):return self
+            def __exit__(self,*exc):return False
+            read=staticmethod(batch)
+        session=patch.object(g,'_ObjectBatchSession',return_value=Session())
+        session.start();self.addCleanup(session.stop)
         return store,calls
 
     def test_canonical_history_uses_no_python_key_callbacks_and_keeps_typed_values(self):

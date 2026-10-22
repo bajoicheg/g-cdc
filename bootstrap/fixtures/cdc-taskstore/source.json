@@ -1,0 +1,26 @@
+{
+  "schema": "cdc-host-consumer-qualification-fixture/v1",
+  "repository": "bajoicheg/codex-compute",
+  "source_commit": "9fb09c4a08fc52006d16ad2a88bc4ee546595b8d",
+  "original_source_directory": "src/cdc_vps",
+  "sha256": {
+    "original_state.py": "3448527eb03cfeee0618888839306fff76e24d3a0b0d3cd678356dde98536614",
+    "original_policy.py": "98b5e0ad7986caa34b0f4f4ba686f64f664945e1bdec2ad9a971f9dc55cebd56"
+  },
+  "distribution": "Whole-release qualification only, outside src/continuous-development-cycle; no host configuration or installed module import",
+  "dependency_slots": "The same original registry/runtime.module/unused launch-validator patches; real read-method closure and generic validators are unmodified. Deployment policy and effect methods are absent.",
+  "extraction": "Only byte-exact transitive TaskStore read-method closure plus generic fields/identifier/project_for validators; deployment registry, hosts, accounts, Source routing and all effect methods are excluded.",
+  "read_methods_sha256": {
+    "__init__": "479f21f3cf4fad33a52bc91f5699c5fea54cb884039b63445908491ef6055dbc",
+    "_fresh_parent_chain": "154722c1a3e84e3650a77b908b025bc9e8f2bc81ac57f38b9b0233ded3f1a0c1",
+    "_observation_context": "5db48ddb3699326275e0515e359ff3264067744d3c872e44bea831c80cad1d01",
+    "_preparation_context": "4169294e5ecb2652148f1e8030a25beeb0e697206d51fa9343ada71830e3389c",
+    "_read_once": "d745fe014fe57b57b2d2088575b4fad8484d3d1a0cf977a36c1af88cb5b824aa",
+    "_remember_preparation_projection": "e0723fcab0b602351899d8a454251fa9c380a79ec69b842e693c642471244250",
+    "_retired_rows": "76cec491657852f9d48709061130098a52b4f76bb9f59a7a5cb1195aae6f3f75",
+    "_validate_retired": "d60159cfda32ed117ba35583969661cf38b667b006e2664da45a2e12f0936c11",
+    "_validate_retired_once": "dab0085c0590d50ad9eb6fa900c9b63e830585855b99da70727dcb33c9acdcf6",
+    "read": "0d90b8acc3390eb1ef1fa9a0a62c4906c4e5decd8838dc36fb83974ede83d86e",
+    "validate_no_send": "da232b4876aa86e5c0dbc4c7eff0cb372c4c0465bcd416a9b79211a3c5e1e39c"
+  }
+}
