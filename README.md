@@ -20,6 +20,8 @@ Preparation returns one typed next action, not execution authority. Continue thr
 
 ## Operational boundaries
 
+The retrospective now retains saved reporting/RCA identity and backlog references in its compact input, with explicit UNKNOWN, bounded coverage and observation-only trust. Material RCA transitions remain visible even when counters are unchanged. See the [retrospective RCA guide](https://github.com/bajoicheg/codex-compute/blob/6cbeaffac79dcc3654b16da4dbd1b1e7753a7602/docs/retrospective-reporting-rca.md) and [installed evidence](docs/current-status.md#retrospective-reportingrca-consumer-22-october). No Kimi or acceptance replay was used.
+
 The existing selected-task economy report now joins original outcome/RCA evidence with spending: `cdc-operator economy report --task ORIGINAL_TASK_ID` (or `--json`). Original ledger rows and spent remain unchanged; denied or absent reporting stays UNKNOWN. See the [economy reporting guide](https://github.com/bajoicheg/codex-compute/blob/6fb18c4912a059e3848d10460fc2d06f181ce647/docs/economy-reporting.md) and [installed scope](docs/current-status.md#economy-reportingrca-consumer-22-october). Implemented without Kimi; broader #113 adoption remains open.
 
 The existing VPS owner status path now exposes authenticated reporting/RCA through `cdc-vps status --task ORIGINAL_TASK_ID --human`: fresh Moscow format, original outcome, explicit UNKNOWN and open RCA/backlog references. This is one installed consumer of #113, implemented without Kimi. See the [consumer guide](https://github.com/bajoicheg/codex-compute/blob/0934ed42a44ec9cdcfe57167905f8804e2b4557a/docs/owner-status-report.md) and [installed evidence](docs/current-status.md#owner-status-reportingrca-consumer-22-october). Broader adoption remains open.
