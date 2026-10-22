@@ -39,3 +39,9 @@ For a new Source branch, first use one separately admitted native metadata owner
 - [ ] Publish/release only through actual admitted managed expected-head finish and original guarded effects. Record exact results; update status/backlog and actual scoped spending. Installation and downstream adoption remain separate authorized steps.
 
 **Completion evidence:** Exact source/package/driver identities, component provenance, actual scoped checks/reviews and admitted Source/receiving/terminal/release receipts. Missing authority or output remains explicitly pending; a prepared candidate is not a release.
+
+## First composition gate and bounded correction
+
+Original candidate `b0eccd87813036202e9a4201ac1aead3a30d77a7` was published by the original native Source handle. Original CI `39808077714`, attempt1, is retained: the host-bridge partition ran42 cases with0 skips and one clock-fixture error. Its stale-activity retry test advanced the bridge clock by601 seconds while the newly refreshed reporting clock remained real. This is not release evidence.
+
+Correct only that existing fixture to advance both clocks consistently. Keep every assertion, case ID, production byte, original Source record, UNKNOWN and charge intact. The previously failing case then passed in16.166 seconds. Do not rerun the old candidate or provider acceptance. The corrected source needs its own exact receiving gate and a separate prospectively admitted residual Source budget; the original budget is never enlarged or reset. The already completed document-only bootstrap and PR118 are reused as actual receiving state. Native candidate/main/release remain the existing three sequential Source phases.

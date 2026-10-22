@@ -244,6 +244,7 @@ print(json.dumps({'handle':h,'original_controller':os.getpid()}),flush=True)
 
     def test_finish_retry_after_stale_activity_revalidates_same_owner_result(self):
         from datetime import datetime, timedelta, timezone
+        import reporting_contract as reporting
         handle = bridge.start(self.start_request())
         self.wait_for(handle, 'awaiting_release')
         with patch.object(bridge, '_publish', side_effect=OSError('transient before publication')):
@@ -251,8 +252,14 @@ print(json.dumps({'handle':h,'original_controller':os.getpid()}),flush=True)
                 bridge.finish(self.finish_request(handle))
         _, first = self.lease_store.read()
         identity = (first['owner_id'], first['generation'], first['invocation']['invocation_id'])
-        delayed = (datetime.now(timezone.utc) + timedelta(seconds=601)).isoformat().replace('+00:00','Z')
-        with patch.object(bridge, '_utc', return_value=delayed):
+        delayed_at = datetime.now(timezone.utc) + timedelta(seconds=601)
+        delayed = delayed_at.isoformat().replace('+00:00','Z')
+        class RuntimeDateTime(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return delayed_at.astimezone(tz)
+        with patch.object(bridge, '_utc', return_value=delayed), \
+                patch.object(reporting, 'datetime', RuntimeDateTime):
             finished = bridge.finish(self.finish_request(handle))
         self.assertEqual(finished['state'], 'released')
         self.assertTrue(finished['scope_complete'])
