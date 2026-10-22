@@ -4,7 +4,7 @@ Canonical source status as of **2026-10-22 (Europe/Moscow)**: `bajoicheg/g-cdc` 
 
 The [candidate manifest](release/candidate.json) remains labeled `candidate`, with preparation source `445820c43da276fa525447dee91957c0707cab3c`. Preparation metadata is distinct from published ref/source evidence and is not an installation or adoption receipt. See the [source lock](release/source.lock.json).
 
-The current VPS immutable SDK is **VERSION 3.6.8**, root `cdc-3.6.8-readjson-20261022`, TREE `3b724453aa353d1bbcea48b44a496068526942c7` (prior reportref/reportfresh snapshots retained), with separately installed mutable host/operator/checkpoint fixes from 20–22 October. This is **not a 3.6.9 VPS installation**. These documentation changes do not move the release ref or constitute a new release.
+The current VPS immutable SDK is **VERSION 3.6.8**, root `cdc-3.6.8-preppass-20261022`, TREE `28270b73291fba98a7a721379db98a19921d9597` (prior readjson/reportref/reportfresh snapshots retained), with separately installed mutable host/operator/checkpoint fixes from 20–22 October. This is **not a 3.6.9 VPS installation**. These documentation changes do not move the release ref or constitute a new release.
 
 See [current status and evidence](docs/current-status.md) and the [roadmap](docs/roadmap.md). Original documentation remains in Git history.
 
@@ -20,6 +20,9 @@ The retrospective now retains the same saved usage UNKNOWN, original IDs, covera
 
 <!-- CDC_TASKSTORE_CANONICAL_JSON_READ_20261022 -->
 [Authenticated cold TaskStore read](https://github.com/bajoicheg/codex-compute/blob/4c5b77adc72e6fefb82e81ef7cccaa23a7138be4/docs/taskstore-canonical-json-read.md) now avoids redundant Python key callbacks for exact canonical history, retaining every validation gate and strict rejection path. One actual installed unprofiled cold authenticated TaskStore.read: **90.79→89.04 seconds** (1.93% lower observed duration). These are two single observations, with one additional runtime-pin commit after migration; no material latency improvement is established (the small difference may be ordinary variance), nor any end-to-end/model-token savings. [Installed scope](docs/current-status.md#authenticated-cold-taskstore-read-22-october) remains distinct from canonical release.
+
+<!-- CDC_PREPARATION_SINGLE_PASS_20261022 -->
+[Original preparation data](https://github.com/bajoicheg/codex-compute/blob/6a7d54ba05cb310030bd41baccb420eb5ebf171d/docs/preparation-single-history-pass.md) now shares the full authenticated history pass and retains every fresh custody gate. The actual installed read→preparation-data consumer pipeline measured **135.97→100.65s** (25.98% lower observed duration): two historical streams`[1597,1597]` become one`[1598]` after the one runtime-pin commit. The entire original selected-row projection prefix and all51 task rows/queue/IDs/UNKNOWN/budgets/spent are exact. These are two single read-only observations on an already terminal task, not a native launch, full prepared-admission or end-to-end model acceptance claim. [Installed scope](docs/current-status.md#one-history-pass-for-preparation-data-22-october) is separate from canonical release.
 
 ## Cloud entry
 
