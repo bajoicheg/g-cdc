@@ -100,6 +100,47 @@ class ProjectBudgetStoreTests(unittest.TestCase):
         self.git(self.repo, 'push', 'coordination', 'HEAD:' + REF)
         return self.remote_head()
 
+    def test_parallel_bound_appends_through_original_registered_cas(self):
+        self.policy.update(task_limits={}, wake_limits={}, max_parallel_agents=3)
+        self.ledger = budget.new_ledger('retained-task', 'old-wake', self.policy)
+        self.seed()
+        store = self.store()
+        for name in ('a', 'b', 'c'):
+            revision, _ = store.read()
+            store.append_event(revision, self.event(name, kind='agent_start'))
+        def finish(name):
+            revision, _ = store.read()
+            store.append_event(revision, {'type':'outcome', 'event_id':'outcome-'+name,
+                'task_id':'retained-task', 'wake_id':'old-wake', 'at_utc':NOW,
+                'reservation_id':name, 'status':'succeeded',
+                'usage':{'tokens':None, 'elapsed_seconds':None}, 'failure':None})
+        finish('a')
+        before, prior = store.read()
+        prior_tree = self.git(self.remote, 'ls-tree', '-z', before)
+        event = {'type':'parallel_limit', 'event_id':'narrow-current',
+            'task_id':'retained-task', 'wake_id':'old-wake', 'at_utc':NOW,
+            'max_parallel_agents':2, 'reference':'fixture:old ceiling unchanged'}
+        receipt = store.append_event(before, event)
+        after, value = store.read()
+        self.assertFalse(receipt['authorizes_launch'])
+        self.assertEqual(value['events'], prior['events']+[event])
+        self.assertEqual(value['policy'], prior['policy'])
+        self.assertEqual(value['policy_digest'], prior['policy_digest'])
+        self.assertEqual(budget.summarize(value)['task']['agent_starts'], 3)
+        self.assertEqual(store.read_revision(before), prior)
+        for entry in prior_tree.split(b'\0'):
+            if entry and entry.split(b'\t', 1)[1] != b'budget.json':
+                self.assertIn(entry, self.git(self.remote, 'ls-tree', '-z', after).split(b'\0'))
+        with self.assertRaisesRegex(ValueError, 'maximum parallel agents'):
+            store.append_event(after, self.event('d', kind='agent_start'))
+        self.assertEqual(self.remote_head(), after)
+        finish('b')
+        revision, _ = store.read()
+        store.append_event(revision, self.event('d', kind='agent_start'))
+        final = store.read()[1]
+        self.assertEqual(budget.summarize(final)['task']['agent_starts'], 4)
+        self.assertEqual(final['events'][:len(value['events'])], value['events'])
+
     def test_whole_file_append_preserves_neighbors_and_retained_identity(self):
         store = self.store(); before, old = store.read()
         prior_tree = self.git(self.remote, 'ls-tree', '-z', before)

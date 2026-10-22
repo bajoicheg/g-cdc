@@ -103,8 +103,23 @@ def _resolved_grant_ids(record):
     return {x["grant_id"] for x in record.get("submission_resolutions",[])}
 
 def _validate_release(value, generation):
-    op._object(value, {"owner_id", "generation", "invocation_id", "at_utc",
-                       "checkpoint_ref", "external_reconciliation", "completion_reason"}, "last_release")
+    release_fields = {"owner_id", "generation", "invocation_id", "at_utc",
+                      "checkpoint_ref", "external_reconciliation", "completion_reason"}
+    if isinstance(value, dict) and "administrative_disposition" in value:
+        op._object(value, release_fields | {"administrative_disposition"}, "administrative last_release")
+        entry = value["administrative_disposition"]
+        op._object(entry, {"schema", "reference", "digest", "original_effect", "actual_wait", "replay_forbidden"}, "administrative release reference")
+        if (entry["schema"] != "postlaunch-intake-disposition/v1" or entry["original_effect"] != "UNKNOWN"
+                or entry["actual_wait"] is not None or entry["replay_forbidden"] is not True
+                or value["completion_reason"] != "administrative_unknown_retired"
+                or value["external_reconciliation"] != "unknown_preserved"):
+            raise ValueError("administrative release must preserve UNKNOWN/no wait/no replay")
+        op._text(entry["reference"], "durable administrative tombstone reference")
+        op._digest(entry["digest"], "durable administrative tombstone digest")
+    else:
+        op._object(value, release_fields, "last_release")
+        if value["completion_reason"] == "administrative_unknown_retired":
+            raise ValueError("administrative release requires durable tombstone binding")
     _uuid(value["owner_id"])
     _generation(value["generation"])
     _nullable_text(value["invocation_id"], "released invocation_id")

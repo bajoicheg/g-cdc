@@ -12,6 +12,7 @@ from git_object_integrity import git_object_environment
 
 import argparse
 import copy
+import errno
 import ctypes
 from datetime import datetime, timezone
 import hashlib
@@ -94,8 +95,46 @@ def _process(pid):
                    if line.startswith("NSpid:"))
         signal_pid = int(nspids[len(own) - 1]) if len(nspids) >= len(own) else None
         return {"state": row[0], "parent": int(row[1]), "birth": row[19], "signal_pid": signal_pid}
-    except (OSError, ValueError, IndexError):
+    except (OSError, ValueError, IndexError, StopIteration):
         return None
+
+
+def _signal_descendant(target, identity, sig):
+    """Pin the translated syscall PID, then recheck its procfs birth.
+
+    Procfs PIDs and syscall PIDs can differ: _process translates NSpid.
+    A pidfd closes the check/kill reuse race; it grants no UID/LSM authority.
+    No numeric kill fallback is safe if pidfds are unavailable.
+    """
+    evidence = {"pid": target, "birth": identity["birth"],
+                "signal_pid": identity["signal_pid"], "signal": int(sig)}
+    current = _process(target)
+    if (not current or current["birth"] != identity["birth"]
+            or current["signal_pid"] != identity["signal_pid"]):
+        return {**evidence, "result": "identity_changed"}
+    if type(current["signal_pid"]) is not int or current["signal_pid"] <= 0:
+        return {**evidence, "result": "namespace_unavailable"}
+    if not hasattr(os, "pidfd_open") or not hasattr(signal, "pidfd_send_signal"):
+        return {**evidence, "result": "pidfd_unavailable"}
+    fd = None
+    try:
+        fd = os.pidfd_open(current["signal_pid"], 0)
+        checked = _process(target)
+        if (not checked or checked["birth"] != identity["birth"]
+                or checked["signal_pid"] != current["signal_pid"]):
+            return {**evidence, "result": "identity_changed"}
+        signal.pidfd_send_signal(fd, sig)
+        return {**evidence, "result": "sent"}
+    except OSError as exc:
+        return {**evidence, "result": "error", "errno": exc.errno,
+                "error_type": type(exc).__name__, "error": str(exc)}
+    finally:
+        if fd is not None:
+            os.close(fd)
+
+
+# TERM grace remains .2s. Successful KILL is still not an ECHILD proof.
+_TERMINATION_BOUND_SECONDS = 1.0
 
 
 def _descendants(parent):
@@ -324,12 +363,30 @@ def _supervise(directory):
             if termination:
                 sig = signal.SIGKILL if time.monotonic() - stopping_at >= .2 else signal.SIGTERM
                 for target, identity in _descendants(proc_pid).items():
-                    current = _process(target)
-                    if current and current["birth"] == identity["birth"]:
-                        try:
-                            os.kill(current["signal_pid"], sig)
-                        except ProcessLookupError:
-                            pass
+                    outcome = _signal_descendant(target, identity, sig)
+                    previous = receipt.get("signal_failure", {})
+                    if (outcome["result"] != "sent" and
+                            (not previous or
+                             (outcome.get("errno") is not None and previous.get("errno") is None) or
+                             (outcome.get("errno") == errno.EPERM and previous.get("errno") != errno.EPERM))):
+                        # Persist first failure; prefer actual errno, especially EPERM.
+                        # ESRCH is not closure; never replace an EPERM with success.
+                        receipt.update(status="unknown", quiescent=False,
+                                       termination_reason=termination,
+                                       reason="termination signal unproved; descendant quiescence unproved",
+                                       signal_failure={**outcome, "observed_at_utc": _utc()},
+                                       elapsed_seconds=elapsed,
+                                       runtime_seconds=min(elapsed, request["timeout_seconds"]))
+                        _write(directory / "receipt.json", receipt)
+                if time.monotonic() - stopping_at >= _TERMINATION_BOUND_SECONDS:
+                    receipt.update(status="unknown", quiescent=False,
+                                   termination_reason=termination,
+                                   reason="termination deadline exceeded; descendant quiescence unproved",
+                                   failure="bounded termination failed", exit_code=exit_code,
+                                   elapsed_seconds=elapsed,
+                                   runtime_seconds=min(elapsed, request["timeout_seconds"]))
+                    _write(directory / "receipt.json", receipt)
+                    return
             time.sleep(.01)
         elapsed = time.monotonic() - started
         terminal_status=termination or ("succeeded" if exit_code == 0 else "failed")
@@ -366,6 +423,7 @@ def _supervise(directory):
                 _write(directory/"receipt.json",receipt)
                 time.sleep(.02)
                 elapsed=time.monotonic()-started
+        receipt.pop("reason", None)
         receipt.update(status=terminal_status,quiescent=True,finished_at_utc=_utc(),exit_code=exit_code,
                        elapsed_seconds=elapsed,runtime_seconds=min(elapsed,request["timeout_seconds"]),
                        failure=terminal_failure)
@@ -784,7 +842,111 @@ class ManagedExecutorRuntime:
             return VerifiedTerminalProof(_TERMINAL_PROOF_SEAL,self,lease_store,release_receipt,evidence)
         return evidence
 
+    def rejection(self, task_id, attempt_id):
+        return _read_json(self._terminal_hold_directory(task_id, attempt_id) / 'rejected-preparation.json')
+
+    def reject_preparation(self, task_id, attempt_id, *, disposition, lease_store, reconcile=False):
+        """Issue the negative artifact, then reconcile only after real release/proof."""
+        from managed_executor_store import GitManagedExecutorStore
+        from git_lease_store import GitLeaseStore
+        if (type(self) is not ManagedExecutorRuntime or type(self.backend) is not LocalCommandBackend
+                or type(self.store) is not GitManagedExecutorStore or type(lease_store) is not GitLeaseStore):
+            raise ValueError('authentic rejection runtime required')
+        if self._task(task_id)['role'] != 'writer':
+            raise ValueError('rejection requires writer')
+        request = self._request(task_id, attempt_id)
+        if request is None:
+            raise ValueError('original rejection request missing')
+        historical = self.store.read_revision(request['claim']['store_revision'])
+        original = next(row for row in historical['tasks'] if row['id'] == task_id)
+        if (pool.canonical_state_ref(historical) != request['claim']['state_ref']
+                or historical['revision'] != request['claim']['state_revision']
+                or original['status'] != 'running' or original['active_attempt_id'] != attempt_id
+                or original['reservation_token'] != request['claim']['reservation_token']):
+            raise ValueError('rejection original launch claim mismatch')
+        directory = Path(request['journal_directory'])
+        intent = _read_json(_terminal_hold_paths(directory)['intent'])
+        owned = _read_json(_terminal_hold_paths(directory)['owned'])
+        descriptor = _read_json(directory / 'terminal-capability-descriptor.json')
+        from managed_terminal_capability import _digest as capability_digest, invocation_identity
+        if not all(isinstance(value, dict) for value in (intent, owned, descriptor)):
+            raise ValueError('original issued rejection ownership missing')
+        payload = descriptor.get('payload', {})
+        derived = 'managed-terminal:' + capability_digest(invocation_identity(payload)).split(':', 1)[1]
+        if (descriptor.get('schema') != 'original-managed-capability-descriptor/v1'
+                or payload.get('schema') != 'managed-terminal-capability/v2'
+                or any(value.get('capability_ref') != capability_digest(payload) for value in (descriptor, intent, owned))
+                or any(value.get('invocation_id') != derived for value in (payload, intent, owned))
+                or payload.get('request_ref') != _digest(request) or payload.get('launch_id') != _digest(request)
+                or payload.get('managed_store_ref') != self.store.ref or payload.get('managed_store_id') != self.store.store_id
+                or any(payload.get(key) != request['identity'][key] for key in ('pool_id', 'task_id', 'attempt_id'))
+                or disposition['invocation_id'] != derived or disposition['owner_id'] != owned['owner_id']
+                or disposition['generation'] != owned['generation']
+                or disposition['reservation_token'] != request['claim']['reservation_token']
+                or disposition['runtime_launch_id'] != _digest(request)
+                or intent['lease_repository'] != disposition['lease_repository']
+                or intent['lease_source_ref'] != disposition['lease_source_ref']):
+            raise ValueError('rejection original capability/assignment mismatch')
+        original_lease = lease_store.read_revision(owned['lease_revision'])
+        if (original_lease['owner_id'] != owned['owner_id'] or original_lease['generation'] != owned['generation']
+                or original_lease['invocation']['invocation_id'] != derived):
+            raise ValueError('rejection original lease mismatch')
+        path = directory / 'rejected-preparation.json'
+        artifact = self.rejection(task_id, attempt_id)
+        if artifact is not None:
+            if artifact.get('disposition') != disposition or artifact.get('request_ref') != _digest(request):
+                raise ValueError('conflicting durable rejection')
+        else:
+            observation = self.observe(task_id, attempt_id)
+            if observation.get('status') != 'awaiting_release' or observation.get('pending_terminal_status') != 'succeeded':
+                raise ValueError('rejection requires actual successful worker awaiting release')
+            revision, state = self.store.read()
+            row = next(row for row in state['tasks'] if row['id'] == task_id)
+            if row['status'] != 'running' or row['active_attempt_id'] != attempt_id or row['reservation_token'] != request['claim']['reservation_token']:
+                raise ValueError('rejection requires original active allocation')
+            artifact = {'schema': 'managed-rejected-preparation/v1', 'identity': request['identity'],
+                        'claim': request['claim'], 'request_ref': _digest(request), 'launch_id': _digest(request),
+                        'disposition': copy.deepcopy(disposition), 'observation': observation}
+            _write(path, artifact)
+        if not reconcile:
+            return artifact
+        released = self.reconcile_execution_lease_hold(lease_store, task_id, attempt_id)
+        if released['status'] != 'released':
+            raise ValueError('rejection reconciliation requires actual release')
+        receipt = released['release_marker']['release_receipt']
+        historical_release = lease_store.read_revision(receipt['lease_revision'])
+        if (historical_release['owner_id'] is not None or historical_release['last_release'] != receipt['release']
+                or receipt['release']['owner_id'] != owned['owner_id']
+                or receipt['release']['generation'] != owned['generation']
+                or receipt['release']['invocation_id'] != derived
+                or receipt['release']['checkpoint_ref'] != disposition['checkpoint_ref']):
+            raise ValueError('rejection historical release mismatch')
+        proof = self.verify_terminal(task_id, attempt_id)
+        terminal = self.observe(task_id, attempt_id)
+        if proof['status'] != 'succeeded' or terminal['status'] != 'succeeded':
+            raise ValueError('rejected worker success changed')
+        closure_path = directory / 'rejected-preparation-closure.json'
+        closure = _read_json(closure_path)
+        if closure is None:
+            closure = {'schema': 'managed-rejected-preparation-closure/v1', 'rejection_ref': _digest(artifact),
+                       'release_receipt': receipt, 'terminal_observation': terminal, 'physical_proof': proof}
+            _write(closure_path, closure)
+        if (closure['rejection_ref'] != _digest(artifact) or closure['release_receipt'] != receipt
+                or closure['terminal_observation'] != terminal):
+            raise ValueError('rejection closure binding changed')
+        record = {'attempt_id': attempt_id, 'rejection_ref': _digest(closure),
+                  'review_ref': disposition['review_ref'], 'request_ref': _digest(request), 'launch_id': _digest(request),
+                  'runtime_seconds': terminal['runtime_seconds'], 'elapsed_seconds': terminal['elapsed_seconds']}
+        revision, state = self.store.read()
+        updated = pool.reject_preparation(self.plan, state, task_id, attempt_id,
+                    reservation_token=request['claim']['reservation_token'], rejection=record, expected_revision=state['revision'])
+        if updated != state:
+            self.store.compare_and_swap(revision, updated)
+        return record
+
     def accept(self, task_id, attempt_id, *, result_commit, output_refs, evidence_refs, cost_units=0):
+        if self.rejection(task_id, attempt_id) is not None:
+            raise ValueError('rejected preparation cannot be accepted')
         receipt = self.observe(task_id, attempt_id)
         if receipt["status"] != "succeeded" or not receipt["quiescent"]:
             raise ValueError("result requires observed quiescent process success")

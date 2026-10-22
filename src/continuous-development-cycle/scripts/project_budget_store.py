@@ -168,6 +168,11 @@ class GitProjectBudgetStore:
         metadata, name = rows[0].split(b'\t', 1); mode, kind, oid = metadata.split()
         if name != self.path.encode() or mode not in {b'100644', b'100755'} or kind != b'blob':
             raise ValueError('original budget must be one regular blob')
+        size = self._git('cat-file', '-s', oid.decode('ascii')).strip()
+        if not re.fullmatch(rb'[0-9]+', size):
+            raise ValueError('invalid original budget blob size')
+        if int(size) > MAX_BYTES:
+            raise ValueError('budget document exceeds 4 MiB')
         payload = self._git('cat-file', 'blob', oid.decode('ascii'))
         ledger, span, text = _decode(payload, self.field)
         budget.validate_ledger(ledger)
@@ -186,25 +191,30 @@ class GitProjectBudgetStore:
         rows=self._git('rev-list','--reverse','--ancestry-path','--parents',anchor+'..'+current).decode().splitlines()
         chain=[[anchor]]+_linear_chain(rows,anchor=anchor)
         if chain[-1][0]!=current:raise ValueError('original budget parent chain incomplete')
-        context=_context(self,'project-budget',ledger_digest(self.binding))
+        context=_context(self,'project-budget-tip/v2',ledger_digest(self.binding))
         prior=_cache.get(context)
         if prior is not None:
             if historical and prior['chain'][:len(chain)]==chain:
-                return copy.deepcopy(dict(prior['ledgers'])[current])
+                # The fresh canonical chain matches an already authenticated prefix.
+                # Only its tip snapshot is retained; load the selected immutable
+                # object when the requested revision is earlier than that tip.
+                if current==prior['chain'][-1][0]:
+                    return prior['tip']
+                return self._object(current)[0]
             if chain[:len(prior['chain'])]!=prior['chain']:
                 raise ValueError('canonical budget history rewound or rewritten')
-            ledgers=prior['ledgers'];previous=ledgers[-1][1]
+            previous=prior['tip'];verified=len(prior['chain'])
         else:
             previous=self._object(anchor)[0]
             if ledger_digest(previous)!=self.binding['anchor_ledger_digest']:
                 raise ValueError('original budget anchor digest mismatch')
-            ledgers=[[anchor,previous]]
-        for parts in chain[len(ledgers):]:
+            verified=1
+        for parts in chain[verified:]:
             revision=parts[0];value=self._object(revision)[0];_extends(previous,value)
             if any(wake not in self.binding['wake_authorizations'] for wake in value['wake_ids'][len(previous['wake_ids']):]):
                 raise ValueError('new budget wake lacks trusted owner authorization')
-            ledgers.append([revision,value]);previous=value
-        if not historical:_cache.put(context,{'chain':chain,'ledgers':ledgers})
+            previous=value
+        if not historical:_cache.put(context,{'chain':chain,'tip':previous})
         return previous
 
     def read(self):

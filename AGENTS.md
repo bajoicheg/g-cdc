@@ -1,3 +1,11 @@
+# Current qualified overlay composition — 22 October 2026
+
+The owner-authorized autonomous CDC goal selects compatible consolidation as the next P1. Prepare CDC 3.6.10 under independently released 3.6.9, importing only the 32 exact installed overlay paths in the private three-way inventory. Preserve all released Phase1 assets, native authority, original IDs/UNKNOWN/budgets/spent, runtime floor 3.3.0 and previous records. Read docs/superpowers/plans/2026-10-22-qualified-overlay-consolidation.md.
+
+No new runtime algorithm, provider/account policy, Kimi model, Gemini connection or paused scheduler activation. Host configuration stays outside the package. Reuse component evidence; no old real acceptance replay. Independent bootstrap precedes candidate imports; inspect test inventory before the one exact hosted composition gate. Ordered independent SPEC then QUALITY and fresh Source/receiving/budget/guard/one-use/expected-head controls precede publication. Preparation is not release or adoption.
+
+Historical instructions below remain intact; the current scope supersedes their older task selection.
+
 # Current CDC3.5.4 command terminal evidence — 2026-10-12
 
 Owner continuation authorizes this NEW Source backlog scope, not a replay of

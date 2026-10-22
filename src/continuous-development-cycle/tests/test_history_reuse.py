@@ -22,18 +22,18 @@ class HistoryReuseTests(unittest.TestCase):
         p=subprocess.run(['git','-C',str(cwd or self.repo),*args],input=input_text,text=True,capture_output=True,check=True)
         return p.stdout.strip()
     def test_same_head_does_not_decode_verified_ancestors_again(self):
-        with patch.object(self.store,'_read_document_object',wraps=self.store._read_document_object) as read:
+        with patch.object(self.store,'_read_document_objects',wraps=self.store._read_document_objects) as read:
             first=native._history(self.store);self.assertGreater(read.call_count,0)
             read.reset_mock();second=native._history(self.store)
             self.assertEqual(first,second);self.assertEqual(read.call_count,0)
     def test_new_head_only_decodes_the_unverified_suffix(self):
         old=native._history(self.store)
         revision=self.store.compare_and_swap(self.revisions[-1],{'value':{'number':3,'nested':['new']}})
-        with patch.object(self.store,'_read_document_object',wraps=self.store._read_document_object) as read:
+        with patch.object(self.store,'_read_document_objects',wraps=self.store._read_document_objects) as read:
             result=native._history(self.store)
         self.assertEqual(result[:-1],old);self.assertEqual(result[-1][0],revision)
         self.assertLessEqual(read.call_count,1)
-        self.assertFalse(any(call.args[0] in self.revisions for call in read.call_args_list))
+        self.assertFalse(any(revision in self.revisions for call in read.call_args_list for revision in call.args[0]))
     def test_returned_nested_documents_cannot_poison_reuse(self):
         expected=native._history(self.store)
         changed=native._history(self.store);changed[0][1]['value']['nested'].append('caller change')
@@ -73,11 +73,11 @@ class BatchDispositionTests(unittest.TestCase):
         proof=fixture.proof()
         native.retire_prelaunch_intake_cas(fixture.store,fixture.rev,'task-one',proof,at='2026-10-13T12:00:00Z')
         return fixture
-    def test_batch_uses_one_fresh_history_and_returns_detached_structural_entries(self):
+    def test_batch_streams_one_fresh_snapshot_and_returns_detached_structural_entries(self):
         fixture=self.fixture();revision,document=fixture.store.read();row=document['tasks']['task-one']
         function=getattr(native,'validate_prelaunch_dispositions',None)
         self.assertIsNotNone(function,'batch native disposition validation is required')
-        with patch.object(native,'_history',wraps=native._history) as history:
+        with patch.object(native,'_history_snapshot',wraps=native._history_snapshot) as history:
             entries=function(fixture.store,revision,{'task-one':row})
             self.assertEqual(history.call_count,1)
         self.assertEqual(entries['task-one'],row['result']['administrative_disposition'])

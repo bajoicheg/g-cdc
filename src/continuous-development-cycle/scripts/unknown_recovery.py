@@ -13,6 +13,7 @@ from datetime import datetime, timezone, timedelta
 import stat
 import subprocess
 import uuid
+import sys
 from pathlib import Path
 import operation_intent as op
 from git_document_store import GitDocumentStore
@@ -24,8 +25,8 @@ INTAKE_SCHEMA='cdc-vps-control/v1'
 DISPOSITION_SCHEMA='prelaunch-intake-disposition/v1'
 
 
-def _history(store):
-    """Fresh channel/graph authentication; reuse only an immutable decoded prefix."""
+def _history_snapshot(store):
+    """Fresh endpoint, current document and complete graph, shared by readers."""
     if type(store) not in (GitDocumentStore,GitLeaseStore):raise ValueError('actual native Git store required')
     from immutable_history_cache import _cache,_context,_linear_chain
     current,current_document=store.read()
@@ -39,12 +40,24 @@ def _history(store):
     prior=_cache.get(context)
     if prior is not None and chain[:len(prior['chain'])]!=prior['chain']:
         raise ValueError('native history rewound or rewritten')
+    return current,current_document,chain,context,prior
+
+
+def _history(store):
+    """Compatibility API for callers requiring detached full document history."""
+    from immutable_history_cache import _cache
+    current,current_document,chain,context,prior=_history_snapshot(store)
     result=[] if prior is None else [(revision,document) for revision,document in prior['documents']]
-    for parts in chain[len(result):]:
-        revision=parts[0]
-        document=(current_document if revision==current else
-                  store._read_document_object(revision) if type(store) is GitDocumentStore else store._read_record(revision))
-        result.append((revision,document))
+    suffix = [parts[0] for parts in chain[len(result):]]
+    if type(store) is GitDocumentStore:
+        # Current document was already checked by the fresh read above.
+        historical = [revision for revision in suffix if revision != current]
+        decoded = iter(store._read_document_objects(historical)) if historical else iter(())
+        for revision in suffix:
+            result.append((revision, current_document if revision == current else next(decoded)))
+    else:
+        for revision in suffix:
+            result.append((revision, current_document if revision == current else store._read_record(revision)))
     if current!=store.read()[0]:raise ValueError('native history moved during authentication')
     _cache.put(context,{'chain':chain,'documents':result})
     return result
@@ -215,7 +228,7 @@ def _bootstrap_artifacts(row,pins,controller,guardian_pin):
     return documentary
 
 
-def _preparation_receipt(store,row,pins,budget_store,history):
+def _preparation_receipt(store,row,pins,budget_store,first):
     """Observe an original event; this never reserves, closes or grants launch."""
     preparation=row['operation'].get('reservation_preparation')
     if preparation is None:
@@ -262,7 +275,6 @@ def _preparation_receipt(store,row,pins,budget_store,history):
         if sum(e==event for e in ledger['events'])!=1 or any(e['type']=='outcome' and e['reservation_id']==event['event_id'] for e in ledger['events']):raise ValueError('exact original unresolved project reservation required')
     parent=preparation['root_parent_revision'];parent_row=_row(store.read_revision(parent),task['id'])
     if parent_row['state']!='queued' or parent_row['task']!=task or parent_row.get('operation') is not None or parent_row.get('result') is not None or parent_row['budget']['events']:raise ValueError('original queued preparation predecessor required')
-    first=next(((revision,_row(document,task['id'])) for revision,document in history if (document.get('tasks',{}).get(task['id']) or {}).get('operation') is not None),None)
     if first is None:raise ValueError('original prepared Root row absent')
     revision,initial=first;operation=initial['operation']
     if store._git('rev-parse',revision+'^')!=parent or initial['state']!='reserved' or operation['intent']['state']!='prepared' or operation.get('guardian') is not None or 'project_budget' in operation:raise ValueError('original project preparation boundary changed')
@@ -394,31 +406,42 @@ def _authenticate_intake(store,task_id,source,pins,*,retired=False,project_budge
     required={'original_revision','row_digest','source_revision','source_digest','creator','guardian','guardian_nonce','pool_ref','launch_roots','custody'}
     if not isinstance(pins,dict) or not required<=set(pins) or set(pins)-required-{'artifact_pins','channels','preconsume_exit','guardian_bootstrap_failure','preparation_budget','creator_guardian_wait'}:raise ValueError('independent trusted original contract pins required')
     if 'creator_guardian_wait' in pins and 'preconsume_exit' not in pins:raise ValueError('creator wait requires the exact original preconsume controller wait')
-    history=_history(store);original=store.read_revision(pins['original_revision']);original_row=_row(original,task_id)
-    if op._hash(original_row)!=pins['row_digest'] or _consumed(original_row):raise ValueError('pinned original unconsumed task row required')
-    from managed_host_bridge import _validate_start
-    _validate_start(original_row['operation']['start_request'])
-    request=original_row['operation']['start_request']
-    if source.ref!=request['lease_coordination_ref'] or original_row['operation']['attempt_id']!=request['attempt_id'] or request['task_id']!=task_id:raise ValueError('original native source/start/attempt channel mismatch')
-    import budget
-    budget.validate_ledger(original_row['budget'])
-    original_intent=original_row['operation']['intent'];op.validate_intent(original_intent)
-    if original_intent['binding']['repository']!=request['lease_repository'] or original_intent['binding']['candidate_sha']!=request['plan']['base_sha'] or original_intent['source_ref']!=request['lease_source_ref'] or original_intent['attempt_id']!=request['attempt_id']:raise ValueError('original native intake intent/start contract mismatch')
-    progress=_preparation_receipt(store,original_row,pins,project_budget_store,history)
-    digest=_contract(original_row);seen=False;admitted=False;intent_rank=-1;receipt_seen=False;submitted=None
-    for revision,doc in history:
+    from immutable_history_cache import _cache
+    head,head_document,chain,context,prior=_history_snapshot(store)
+    del prior
+    error=None
+    try:
+        if pins['original_revision'] not in {parts[0] for parts in chain}:
+            raise ValueError('original intake anchor is outside current history')
+        original=store.read_revision(pins['original_revision']);original_row=_row(original,task_id)
+        if op._hash(original_row)!=pins['row_digest'] or _consumed(original_row):raise ValueError('pinned original unconsumed task row required')
+        from managed_host_bridge import _validate_start
+        _validate_start(original_row['operation']['start_request'])
+        request=original_row['operation']['start_request']
+        if source.ref!=request['lease_coordination_ref'] or original_row['operation']['attempt_id']!=request['attempt_id'] or request['task_id']!=task_id:raise ValueError('original native source/start/attempt channel mismatch')
+        import budget
+        budget.validate_ledger(original_row['budget'])
+        original_intent=original_row['operation']['intent'];op.validate_intent(original_intent)
+        if original_intent['binding']['repository']!=request['lease_repository'] or original_intent['binding']['candidate_sha']!=request['plan']['base_sha'] or original_intent['source_ref']!=request['lease_source_ref'] or original_intent['attempt_id']!=request['attempt_id']:raise ValueError('original native intake intent/start contract mismatch')
+        digest=_contract(original_row);seen=False;admitted=False;intent_rank=-1;receipt_seen=False;submitted=None;progress=None
+    except (ValueError,TypeError,KeyError,AttributeError) as rejected:
+        error=rejected.with_traceback(None)
+    def check(revision,doc):
+        nonlocal seen,admitted,intent_rank,receipt_seen,submitted,progress
         rows=doc.get('tasks',{})
         row=rows.get(task_id)
         if row is None:
             if seen:raise ValueError('original native task row was deleted')
-            continue
+            return
         seen=True
         budget.validate_ledger(row['budget'])
         if {key:value for key,value in row['budget'].items() if key not in {'events','wake_ids'}}!={key:value for key,value in original_row['budget'].items() if key not in {'events','wake_ids'}} or original_row['budget']['wake_ids'][:len(row['budget']['wake_ids'])]!=row['budget']['wake_ids']:raise ValueError('original charged budget policy/identity history changed')
         if row.get('task')!=original_row['task']:raise ValueError('original task contract changed in history')
         if row.get('operation') is None:
             if admitted or row.get('state')!='queued' or row.get('result') is not None:raise ValueError('native admission/history erased')
-            continue
+            return
+        if not admitted:
+            progress=_preparation_receipt(store,original_row,pins,project_budget_store,(revision,row))
         admitted=True
         if _consumed(row) and not (retired and row['state']=='retired_unknown'):raise ValueError('original controller/start/output history consumed')
         historical=copy.deepcopy(row['operation']);canonical=copy.deepcopy(original_row['operation'])
@@ -455,7 +478,27 @@ def _authenticate_intake(store,task_id,source,pins,*,retired=False,project_budge
         if row['budget']!=original_row['budget']:
             old_events=row['budget'].get('events');events=original_row['budget'].get('events')
             if not isinstance(old_events,list) or not isinstance(events,list) or events[:len(old_events)]!=old_events or revision==pins['original_revision']:raise ValueError('original budget event ancestry changed')
+    # Decode every complete immutable tree/canonical JSON even after semantic
+    # denial. Keep only fixed original/current and first-preparation state.
+    revisions=[parts[0] for parts in chain[:-1]]
+    decoded=iter(store._read_document_objects(revisions)) if revisions else iter(())
+    for parts in chain:
+        revision=parts[0]
+        document=head_document if revision==head else next(decoded)
+        if error is None:
+            try:
+                if revision==pins['original_revision'] and _row(document,task_id)!=original_row:
+                    raise ValueError('authenticated original intake row changed')
+                check(revision,document)
+            except (ValueError,TypeError,KeyError,AttributeError) as rejected:
+                error=rejected.with_traceback(None)
+        document=None
+    del decoded
+    if head!=store.read()[0]:raise ValueError('native history moved during authentication')
+    _cache.put(context,{'chain':chain,'documents':[]})
+    if error is not None:raise error
     revision,document=store.read();current=_row(document,task_id)
+    if revision!=head or document!=head_document:raise ValueError('native intake observation moved')
     if retired:validate_prelaunch_disposition(current)
     elif current!=original_row or current.get('state') not in (('unknown','starting','start_unknown','running') if 'guardian_bootstrap_failure' in pins else ('unknown','starting','start_unknown')):raise ValueError('exact original prelaunch UNKNOWN row required')
     srev,sdoc=source.read()
@@ -490,6 +533,8 @@ def authenticate_prelaunch_intake(store,task_id,*,source_store,trusted_contract,
 def _validate_prelaunch_disposition_row(row):
     """Structural history validation only; serialized data supplies no authority."""
     entry=(row.get('result') or {}).get('administrative_disposition')
+    if isinstance(entry,dict) and entry.get('schema')==POSTLAUNCH_SCHEMA:return _validate_postlaunch_disposition_row(row)
+    if isinstance(entry,dict) and entry.get('schema')==PREHANDLE_SCHEMA:return _validate_prehandle_disposition_row(row)
     fields={'schema','task_id','contract_digest','original_effect','actual_wait','replay_forbidden','original_revision','original_row','trusted_contract','retired_at_utc'}
     op._object(entry,fields,'native prelaunch disposition')
     if row.get('state')!='retired_unknown' or entry['schema']!=DISPOSITION_SCHEMA or entry['original_effect']!='UNKNOWN' or entry['actual_wait'] is not None or entry['replay_forbidden'] is not True or _contract(row)!=entry['contract_digest']:raise ValueError('prelaunch disposition must preserve UNKNOWN/no wait/no replay')
@@ -503,19 +548,41 @@ def _validate_prelaunch_disposition_row(row):
 def validate_intake_transition(previous,document,*,store,expected_revision,recovery_capability=None):
     if (not previous or previous.get('schema')!=INTAKE_SCHEMA) and document.get('schema')!=INTAKE_SCHEMA:return
     if not previous or previous.get('schema')!=INTAKE_SCHEMA:
-        if any(row.get('state')=='retired_unknown' for row in document.get('tasks',{}).values()):raise ValueError('raw initialization cannot mint native disposition')
+        if any(row.get('state')=='retired_unknown' or (row.get('result') or {}).get('unstarted_cancellation') is not None for row in document.get('tasks',{}).values()):raise ValueError('raw initialization cannot mint native disposition')
         return
     if document.get('schema')!=INTAKE_SCHEMA:raise ValueError('native intake schema cannot be replaced')
     old_rows=previous['tasks'];new_rows=document['tasks'];retired=[]
+    for task_id,row in old_rows.items():
+        proposed=new_rows.get(task_id)
+        if (row.get('result') or {}).get('unstarted_cancellation') is not None:
+            entry=validate_queued_cancellation(row)
+            if proposed!=row:raise ValueError('unstarted cancellation cannot be removed or rearmed')
+            if entry['schema']==RESERVED_SCHEMA:retired.append((_contract(row),semantic_intake_contract(row)))
+        elif proposed is not None and (proposed.get('result') or {}).get('unstarted_cancellation') is not None:
+            if type(recovery_capability) is PrehandleIntakeDispositionProof:
+                recovery_capability.revalidate_cancellation(store,expected_revision,task_id,proposed)
+            elif type(recovery_capability) is UnstartedQueuedCancellation:
+                recovery_capability.revalidate(store,expected_revision,task_id,proposed)
+            else:raise ValueError('native queued cancellation capability required')
+            expected=copy.deepcopy(previous);expected['tasks'][task_id]=copy.deepcopy(proposed)
+            if expected!=document:raise ValueError('queued cancellation cannot mutate unrelated state')
+            if validate_queued_cancellation(proposed)['schema']==RESERVED_SCHEMA:retired.append((_contract(row),semantic_intake_contract(row)))
+        elif row.get('state')=='queued' and proposed is not None and proposed.get('state')=='cancelled' and proposed.get('operation') is None:
+            raise ValueError('typed native unstarted cancellation required')
+    for task_id,row in new_rows.items():
+        if task_id not in old_rows and (row.get('state')=='retired_unknown' or (row.get('result') or {}).get('unstarted_cancellation') is not None):
+            raise ValueError('cannot initialize a native disposition')
     for task_id,row in old_rows.items():
         if row.get('state')=='retired_unknown':
             validate_prelaunch_disposition(row)
             if new_rows.get(task_id)!=row:raise ValueError('native tombstone/history cannot be changed or removed')
             retired.append((_contract(row),semantic_intake_contract(row)))
         elif (new_rows.get(task_id) or {}).get('state')=='retired_unknown':
-            if type(recovery_capability) is not PrelaunchIntakeDispositionProof or recovery_capability._retired or recovery_capability._revision!=expected_revision:raise ValueError('native tombstone CAS requires issued exact revision proof')
+            if type(recovery_capability) not in (PrelaunchIntakeDispositionProof,PostlaunchIntakeDispositionProof,PrehandleIntakeDispositionProof) or recovery_capability._retired or recovery_capability._revision!=expected_revision:raise ValueError('native tombstone CAS requires issued exact revision proof')
             recovery_capability.revalidate_for(store,task_id)
             entry=validate_prelaunch_disposition(new_rows[task_id])
+            if (entry['schema']==POSTLAUNCH_SCHEMA)!=(type(recovery_capability) is PostlaunchIntakeDispositionProof):raise ValueError('native disposition capability type mismatch')
+            if (entry['schema']==PREHANDLE_SCHEMA)!=(type(recovery_capability) is PrehandleIntakeDispositionProof):raise ValueError('native prehandle capability type mismatch')
             if entry['original_row']!=row or entry['trusted_contract']!=recovery_capability._pins or entry['retired_at_utc']!=recovery_capability._at:raise ValueError('native disposition proposal substituted')
             expected=copy.deepcopy(previous);expected['tasks'][task_id]=copy.deepcopy(new_rows[task_id])
             if expected!=document:raise ValueError('tombstone CAS cannot mutate unrelated fields')
@@ -526,7 +593,8 @@ def validate_intake_transition(previous,document,*,store,expected_revision,recov
             recovery_capability.revalidate(store,expected_revision,task_id,document)
         if (row.get('operation') or {}).get('start_consumption') is not None and ((new_rows.get(task_id) or {}).get('operation') or {}).get('start_consumption')!=row['operation']['start_consumption']:raise ValueError('native one-use start consumption is immutable')
     for task_id,row in new_rows.items():
-        if row.get('state')!='retired_unknown' and any((row.get('operation') is not None and _contract(row)==contract) or semantic_intake_contract(row)==semantic for contract,semantic in retired):raise ValueError('retired original start contract cannot replay under another task/attempt')
+        frozen=row.get('state')=='retired_unknown' or ((row.get('result') or {}).get('unstarted_cancellation') or {}).get('schema')==RESERVED_SCHEMA
+        if not frozen and any((row.get('operation') is not None and _contract(row)==contract) or semantic_intake_contract(row)==semantic for contract,semantic in retired):raise ValueError('retired original start contract cannot replay under another task/attempt')
 
 
 def retire_prelaunch_intake_cas(store,expected_revision,task_id,proof,*,at):
@@ -560,9 +628,12 @@ def observe_prelaunch_intake_disposition(store,task_id,*,contract_digest,source_
 
 def assert_intake_start_allowed(store,task_id,start_request_digest):
     _,document=store.read();row=_row(document,task_id)
-    if row.get('state')=='retired_unknown' or _consumed(row) or _contract(row)!=start_request_digest:raise ValueError('native intake start blocked by tombstone/consumption/contract')
+    if row.get('state') in {'retired_unknown','cancelled'} or _consumed(row) or _contract(row)!=start_request_digest:raise ValueError('native intake start blocked by tombstone/consumption/contract')
     for other in document['tasks'].values():
         if other.get('state')=='retired_unknown' and (validate_prelaunch_disposition(other)['contract_digest']==start_request_digest or semantic_intake_contract(other)==semantic_intake_contract(row)):raise ValueError('original contract replay prohibited')
+        if ((other.get('result') or {}).get('unstarted_cancellation') or {}).get('schema')==RESERVED_SCHEMA:
+            validate_queued_cancellation(other)
+            if _contract(other)==start_request_digest or semantic_intake_contract(other)==semantic_intake_contract(row):raise ValueError('cancelled reserved original contract replay prohibited')
     return row
 
 
@@ -618,31 +689,61 @@ def _observe_original_consumption(failure):
     store=failure._store;identity=failure._identity
     if type(store) is not GitDocumentStore or identity.get('pid')!=os.getpid():raise ValueError('original live consumption caller required')
     _identity(identity,absent=False)
-    history=_history(store)
-    indexes={revision:index for index,(revision,_) in enumerate(history)}
-    if failure._revision not in indexes:raise ValueError('original consumption anchor is outside current history')
-    segment=history[indexes[failure._revision]:];before=segment[0][1];row=_row(before,failure._task)
-    if before.get('schema')!=INTAKE_SCHEMA:raise ValueError('original native intake schema required')
-    if _consumed(row) or _contract(row)!=failure._digest:raise ValueError('original unconsumed contract changed')
-    import budget
-    budget.validate_ledger(row['budget']);registry=before.get('registry_digest')
-    after=copy.deepcopy(row);after['operation']['start_consumption']={'schema':'native-intake-start-consumption/v1',
-        'contract_digest':failure._digest,'controller':copy.deepcopy(identity)}
+    from immutable_history_cache import _cache
+    head,head_document,chain,context,prior=_history_snapshot(store)
+    del prior
+    indexes={parts[0]:index for index,parts in enumerate(chain)}
     proposal=failure._proposal;confirmed=proposal is not None and proposal in indexes
-    if confirmed:
-        if failure._document is None or store.read_revision(proposal)!=failure._document:
-            raise ValueError('original issued proposal document changed')
-        if store._git('rev-list','--parents','-n','1',proposal).split()!=[proposal,failure._revision]:
-            raise ValueError('original consumption proposal parent changed')
-    consumed=False
-    for revision,document in segment:
-        if (document.get('registry_digest')!=registry or ('registry_digest' in document)!=('registry_digest' in before)
-                or document.get('schema')!=INTAKE_SCHEMA):raise ValueError('original registry changed during consumption')
-        if confirmed and revision==proposal:consumed=True
-        expected=after if consumed else row
-        if _row(document,failure._task)!=expected:raise ValueError('original task, charged budget or consumption history changed')
+    row=after=None;registry=None;registry_present=False;consumed=False;error=None
+    try:
+        if failure._revision not in indexes:raise ValueError('original consumption anchor is outside current history')
+    except ValueError as rejected:
+        error=rejected.with_traceback(None)
+
+    # Authenticate every immutable tree/JSON, including the prefix before the
+    # original anchor. Only the selected row and the fresh full head survive
+    # a generation; neither a document list nor row projections accumulate.
+    revisions=[parts[0] for parts in chain[:-1]]
+    decoded=iter(store._read_document_objects(revisions)) if revisions else iter(())
+    for parts in chain:
+        revision=parts[0]
+        document=head_document if revision==head else next(decoded)
+        if error is None and indexes[revision]>=indexes[failure._revision]:
+            try:
+                if revision==failure._revision:
+                    row=copy.deepcopy(_row(document,failure._task))
+                    if document.get('schema')!=INTAKE_SCHEMA:raise ValueError('original native intake schema required')
+                    if _consumed(row) or _contract(row)!=failure._digest:raise ValueError('original unconsumed contract changed')
+                    import budget
+                    budget.validate_ledger(row['budget']);registry=document.get('registry_digest')
+                    registry_present='registry_digest' in document
+                    after=copy.deepcopy(row);after['operation']['start_consumption']={'schema':'native-intake-start-consumption/v1',
+                        'contract_digest':failure._digest,'controller':copy.deepcopy(identity)}
+                    if confirmed:
+                        if failure._document is None:raise ValueError('original issued proposal document changed')
+                        if chain[indexes[proposal]]!=[proposal,failure._revision]:
+                            raise ValueError('original consumption proposal parent changed')
+                if confirmed and revision==proposal:
+                    if document!=failure._document:raise ValueError('original issued proposal document changed')
+                    consumed=True
+                if (document.get('registry_digest')!=registry or ('registry_digest' in document)!=registry_present
+                        or document.get('schema')!=INTAKE_SCHEMA):raise ValueError('original registry changed during consumption')
+                expected=after if consumed else row
+                if _row(document,failure._task)!=expected:raise ValueError('original task, charged budget or consumption history changed')
+            except (ValueError, TypeError, KeyError, AttributeError) as rejected:
+                # Semantic rejection must not stop object authentication or
+                # erase the complete observed lineage used for rewind checks.
+                error=rejected.with_traceback(None)
+        document=None
+    del decoded
+    # Do not remember a partial graph if immutable decoding or this fresh
+    # endpoint/head check failed. The compatibility _history API can still
+    # load detached full documents from a chain-only cache entry when needed.
+    if head!=store.read()[0]:raise ValueError('native history moved during authentication')
+    _cache.put(context,{'chain':chain,'documents':[]})
+    if error is not None:raise error
     revision,current=store.read()
-    if revision!=history[-1][0] or current!=history[-1][1]:raise ValueError('native consumption observation moved')
+    if revision!=head or current!=head_document:raise ValueError('native consumption observation moved')
     _identity(identity,absent=False)
     if confirmed:state='confirmed_original';retry=False
     elif failure._phase=='before_cas' or proposal is None:state='unconsumed_before_effect';retry=True
@@ -705,29 +806,239 @@ def _disposition_from_history(store, task_id, current, history, documents):
             if historic!=current:raise ValueError('native tombstone history rewritten')
             found=True
         elif found:raise ValueError('native tombstone was rearmed')
-        elif _consumed(historic):raise ValueError('prelaunch disposition has consumed controller/effect ancestry')
+        elif entry['schema']==DISPOSITION_SCHEMA and _consumed(historic):raise ValueError('prelaunch disposition has consumed controller/effect ancestry')
     if not found:raise ValueError('native disposition not authoritative')
     return copy.deepcopy(entry)
 
 
-def validate_prelaunch_dispositions(store, expected_revision, rows):
-    """Authenticate selected tombstones against one fresh native history snapshot.
+def _prelaunch_dispositions_fold(store, expected_revision, rows, revision, document):
+    selected={};entries={};found=set();anchored=set();failure=None
+    try:
+        if revision!=expected_revision:raise ValueError('serialized disposition snapshot differs from authoritative head')
+        for task_id,row in rows.items():
+            current=_row(document,task_id)
+            if current!=row:raise ValueError('serialized disposition differs from authoritative original row')
+            selected[task_id]=current
+            entries[task_id]=_validate_prelaunch_disposition_row(current)
+    except (ValueError, TypeError, KeyError, AttributeError) as error:
+        # Complete object authentication still precedes any semantic rejection,
+        # as in _history. Remember its lineage even if selected rows are bad.
+        failure=error.with_traceback(None)
+    document=None
 
-    Returned entries remain structural observations: no wait, terminal or send
-    capability is created. The exact caller head and every supplied row must
-    match the independently read native channel, including at the end.
+    while True:
+        item = yield
+        if item is None:break
+        sha,historical = item
+        if failure is None:
+            try:
+                for task_id,current in selected.items():
+                    entry=entries[task_id]
+                    if sha==entry['original_revision']:
+                        original=_row(historical,task_id)
+                        _intake_channels(store,original,entry['trusted_contract'])
+                        if original!=entry['original_row'] or entry['task_id']!=task_id:
+                            raise ValueError('disposition original ancestry/task mismatch')
+                        anchored.add(task_id)
+                    historic=historical.get('tasks',{}).get(task_id)
+                    if historic is None:
+                        if task_id in found:raise ValueError('native tombstone/history deleted')
+                        continue
+                    if historic.get('state')=='retired_unknown':
+                        if historic!=current:raise ValueError('native tombstone history rewritten')
+                        found.add(task_id)
+                    elif task_id in found:raise ValueError('native tombstone was rearmed')
+                    elif entry['schema']==DISPOSITION_SCHEMA and _consumed(historic):raise ValueError('prelaunch disposition has consumed controller/effect ancestry')
+            except (ValueError, TypeError, KeyError, AttributeError) as error:
+                failure=error.with_traceback(None)
+        historical=original=historic=item=None
+    if failure is not None:raise failure
+    if anchored!=selected.keys():raise ValueError('disposition original ancestry/task mismatch')
+    if found!=selected.keys():raise ValueError('native disposition not authoritative')
+    return {task_id:copy.deepcopy(entry) for task_id,entry in entries.items()}
+
+
+_DISPOSITION_ROWS_MAX = 64
+_DISPOSITION_ROWS_BYTES = 8 * 1024 * 1024
+
+
+class _DispositionRowValidation:
+    """One-call structural reuse only, followed by fresh original validation.
+
+    Exact canonical bytes distinguish every JSON type/value. Cache entries are
+    detached and bounded in both count and combined serialized key/row bytes.
+    No verdict survives the intake walk or grants a recovery capability.
     """
-    if type(store) is not GitDocumentStore or not isinstance(rows,dict):raise ValueError('actual original native intake channel and rows required')
-    history=_history(store)
-    revision,document=history[-1]
-    if revision!=expected_revision:raise ValueError('serialized disposition snapshot differs from authoritative head')
-    documents=dict(history);result={}
-    for task_id,row in rows.items():
-        current=_row(document,task_id)
-        if current!=row:raise ValueError('serialized disposition differs from authoritative original row')
-        result[task_id]=_disposition_from_history(store,task_id,current,history,documents)
-    if store.read()[0]!=revision:raise ValueError('native disposition head moved during validation')
-    return result
+    def __init__(self):
+        self._rows = {}
+        self._bytes = 0
+
+    def check(self, row):
+        key = op._canonical(row)
+        if key in self._rows:
+            return
+        _validate_prehandle_disposition_row(row)
+        size = 2 * len(key)
+        if len(self._rows) < _DISPOSITION_ROWS_MAX and self._bytes + size <= _DISPOSITION_ROWS_BYTES:
+            self._rows[key] = copy.deepcopy(row)
+            self._bytes += size
+
+    def revalidate(self):
+        # The original validator includes current start routes, repository and
+        # path custody. Never return a successful walk using only a prior check.
+        for row in self._rows.values():
+            _validate_prehandle_disposition_row(row)
+
+
+_PREPARATION_PROJECTION_MAX_BYTES = 128 * 1024 * 1024
+
+
+def validate_intake_dispositions(store, expected_revision, retired_rows, cancelled_rows):
+    """Existing API and disposition result remain unchanged."""
+    return _validate_intake_dispositions(store, expected_revision, retired_rows, cancelled_rows)[0]
+
+
+def validate_intake_dispositions_projecting(store, expected_revision, retired_rows, cancelled_rows, task_id):
+    """Authenticate as usual and return bounded selected-row DATA for custody replay.
+
+    A projection is returned only after all original object/semantic/final-head
+    checks pass. None means the existing consumer must perform its usual walk.
+    It never represents start, disposition, lease or terminal authority.
+    """
+    op._text(task_id, 'preparation projection task')
+    return _validate_intake_dispositions(store, expected_revision, retired_rows, cancelled_rows,
+                                         project_task_id=task_id)
+
+
+def _validate_intake_dispositions(store, expected_revision, retired_rows, cancelled_rows, *, project_task_id=None):
+    """Authenticate all selected dispositions in one pass over immutable objects.
+
+    Consumers retain only selected rows, anchors and semantic state. A semantic
+    denial is delayed until every object and the final head are authenticated;
+    the existing cache remembers only complete lineage, never authority.
+    Returned retired entries are detached; cancellations grant no capability.
+    """
+    if (type(store) is not GitDocumentStore or not isinstance(retired_rows, dict)
+            or not isinstance(cancelled_rows, dict)):
+        raise ValueError('actual original native intake channel and rows required')
+    from immutable_history_cache import _cache, _HistoryCache
+    revision, document, chain, context, prior = _history_snapshot(store)
+    del prior
+    folds = []; failures = []; results = {}
+    structural_rows = _DispositionRowValidation()
+    projected = [] if project_task_id is not None else None
+    projection_bytes = len(_HistoryCache._encode({'chain':chain, 'documents':[]}))
+    if projection_bytes > _PREPARATION_PROJECTION_MAX_BYTES:projected = None
+
+    def add(key, fold):
+        try:
+            next(fold)
+        except (ValueError, TypeError, KeyError, AttributeError) as error:
+            failures.append(error.with_traceback(None))
+            fold.close()
+        else:
+            folds.append((key, fold))
+
+    add('retired', _prelaunch_dispositions_fold(
+        store, expected_revision, retired_rows, revision, document))
+    # The selected entry's original row is joined to its authenticated anchor
+    # by the prelaunch consumer; no separate original-document read is needed.
+    for task_id, row in retired_rows.items():
+        try:
+            entry = _validate_prelaunch_disposition_row(row)
+            if entry['schema'] == POSTLAUNCH_SCHEMA:
+                add(('postlaunch', task_id), _postlaunch_history_fold(
+                    task_id, entry['trusted_contract'], entry['original_row'], retired=True))
+            elif entry['schema'] == PREHANDLE_SCHEMA:
+                add(('prehandle', task_id), _prehandle_history_fold(
+                    task_id, entry['trusted_contract'], entry['original_row'], retired=True,
+                    row_validator=structural_rows.check))
+        except (ValueError, TypeError, KeyError, AttributeError) as error:
+            failures.append(error.with_traceback(None))
+    for task_id, row in cancelled_rows.items():
+        try:
+            if _row(document, task_id) != row:
+                raise ValueError('queued cancellation row substituted')
+            entry = validate_queued_cancellation(row)
+            if entry['schema'] == RESERVED_SCHEMA:
+                add(('reserved', task_id), _prehandle_history_fold(
+                    task_id, entry['trusted_contract'], entry['original_row'], retired=True,
+                    row_validator=structural_rows.check))
+            else:
+                add(('queued', task_id), _queued_history_fold(
+                    task_id, entry['original_revision'], entry['original_row'], cancelled=True))
+        except (ValueError, TypeError, KeyError, AttributeError) as error:
+            failures.append(error.with_traceback(None))
+
+    # Selected dictionaries do not retain their parent document. Release the
+    # fresh full head before decoding history; read it afresh at its generation.
+    document = None
+    try:
+        revisions = [parts[0] for parts in chain[:-1]]
+        decoded = iter(store._read_document_objects(revisions)) if revisions else iter(())
+        for parts in chain:
+            if parts[0] == revision:
+                actual, historical = store.read()
+                if actual != revision:raise ValueError('native history moved during authentication')
+            else:historical = next(decoded)
+            try:_assert_intake_disposition_replay_absent(historical, structural_rows.check)
+            except (ValueError,TypeError,KeyError,AttributeError) as error:failures.append(error.with_traceback(None))
+            for key, fold in folds:
+                if fold.gi_frame is None:continue
+                try:fold.send((parts[0], historical))
+                except (ValueError, TypeError, KeyError, AttributeError) as error:
+                    # Malformed selected semantic data cannot truncate object
+                    # authentication, even if it fails outside a fold's guard.
+                    if key == 'retired':failures.insert(0, error.with_traceback(None))
+                    else:failures.append(error.with_traceback(None))
+                    fold.close()
+            if projected is not None:
+                rows = historical.get('tasks', {})
+                if not isinstance(rows, dict):
+                    projected = None
+                else:
+                    selected = {'tasks':{project_task_id:rows[project_task_id]} if project_task_id in rows else {}}
+                    item = (parts[0], selected)
+                    projection_bytes += len(_HistoryCache._encode(item)) + 1
+                    if projection_bytes > _PREPARATION_PROJECTION_MAX_BYTES:
+                        projected = None  # Data-only optimization; original consumer can walk afresh.
+                    else:
+                        projected.append(copy.deepcopy(item))
+            rows = selected = item = None
+            historical = None
+        del decoded
+        if store.read()[0] != revision:
+            raise ValueError('native history moved during authentication')
+        _cache.put(context, {'chain': chain, 'documents': []})
+        for key, fold in folds:
+            if fold.gi_frame is None:continue
+            try:
+                fold.send(None)
+            except StopIteration as done:
+                results[key] = done.value
+            except (ValueError, TypeError, KeyError, AttributeError) as error:
+                if key == 'retired':failures.insert(0, error.with_traceback(None))
+                else:failures.append(error.with_traceback(None))
+        try:structural_rows.revalidate()
+        except (ValueError, TypeError, KeyError, AttributeError) as error:
+            failures.append(error.with_traceback(None))
+        final_revision, final_document = store.read()
+        if final_revision != revision or final_revision != expected_revision:
+            raise ValueError('native disposition head moved during validation')
+        for task_id, row in cancelled_rows.items():
+            if _row(final_document, task_id) != row:
+                raise ValueError('queued cancellation row substituted')
+        if failures:raise failures[0]
+        projection = None if projected is None else {
+            'task_id':project_task_id, 'revision':revision, 'chain':chain, 'documents':projected}
+        return results['retired'], projection
+    finally:
+        for _, fold in folds:fold.close()
+
+
+def validate_prelaunch_dispositions(store, expected_revision, rows):
+    """Return detached selected entries after complete native authentication."""
+    return validate_intake_dispositions(store, expected_revision, rows, {})
 
 
 def validate_prelaunch_disposition(store_or_row,task_id=None,row=None):
@@ -735,19 +1046,892 @@ def validate_prelaunch_disposition(store_or_row,task_id=None,row=None):
     if task_id is None:return _validate_prelaunch_disposition_row(store_or_row)
     store=store_or_row
     if type(store) is not GitDocumentStore:raise ValueError('actual original native intake channel required')
-    history=_history(store);revision,document=history[-1];current=_row(document,task_id)
-    if row is not None and current!=row:raise ValueError('serialized disposition differs from authoritative original row')
-    result=_disposition_from_history(store,task_id,current,history,dict(history))
-    if store.read()[0]!=revision:raise ValueError('native disposition head moved during validation')
-    return result
+    revision,document=store.read()
+    if revision is None:raise ValueError('original native history missing')
+    try:current=_row(document,task_id)
+    except (ValueError,TypeError,KeyError,AttributeError):current=None
+    # Let the shared walk retain authenticated lineage before semantic denial.
+    return validate_prelaunch_dispositions(store,revision,{task_id:current if row is None else row})[task_id]
 
 
 def assert_new_intake_allowed(store,task):
     if type(store) is not GitDocumentStore:raise ValueError('native intake admission store required')
     revision,document=store.read()
     retired={task_id:row for task_id,row in document['tasks'].items() if row.get('state')=='retired_unknown'}
-    if retired:validate_prelaunch_dispositions(store,revision,retired)
+    cancelled={task_id:row for task_id,row in document['tasks'].items() if ((row.get('result') or {}).get('unstarted_cancellation') or {}).get('schema')==RESERVED_SCHEMA}
+    if retired or cancelled:validate_intake_dispositions(store,revision,retired,cancelled)
     for task_id,row in document['tasks'].items():
-        if row.get('state')=='retired_unknown':
+        if row.get('state')=='retired_unknown' or task_id in cancelled:
             if semantic_intake_contract({'task':task})==semantic_intake_contract(row):raise ValueError('retired original task contract replay prohibited')
+    return True
+
+
+POSTLAUNCH_SCHEMA = 'postlaunch-intake-disposition/v1'
+QUEUED_SCHEMA = 'unstarted-intake-cancellation/v1'
+
+
+def _protected_json(path, digest, *, uid, gid, mode):
+    """Read pinned bytes without following links; custody is part of evidence."""
+    path = Path(path)
+    op._digest(digest, 'protected evidence digest')
+    if not path.is_absolute() or any(p.is_symlink() for p in (path, *path.parents)):
+        raise ValueError('absolute protected evidence without symlinks required')
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        with os.fdopen(fd, 'rb') as stream:
+            before = os.fstat(stream.fileno())
+            if (not stat.S_ISREG(before.st_mode) or before.st_nlink != 1
+                    or (before.st_uid, before.st_gid, stat.S_IMODE(before.st_mode)) != (uid, gid, mode)):
+                raise ValueError('protected evidence ownership/mode/link mismatch')
+            data = stream.read(4 * 1024 * 1024 + 1)
+            after = os.fstat(stream.fileno())
+        def stable(info):
+            return tuple(getattr(info, name) for name in ('st_dev', 'st_ino', 'st_mode', 'st_uid', 'st_gid', 'st_nlink', 'st_size', 'st_mtime_ns', 'st_ctime_ns'))
+        if stable(before) != stable(after) or stable(path.stat()) != stable(after) or len(data) > 4 * 1024 * 1024:
+            raise ValueError('protected evidence changed during read')
+        if 'sha256:' + hashlib.sha256(data).hexdigest() != digest:
+            raise ValueError('protected evidence bytes substituted')
+        from git_document_store import unique_object
+        return json.loads(data, object_pairs_hook=unique_object)
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise ValueError('protected evidence unavailable') from error
+
+
+def _recorded_births(value):
+    found = []
+    def walk(item):
+        if isinstance(item, dict):
+            if {'pid', 'birth', 'boot_id'} <= item.keys():
+                identity = {k: item[k] for k in ('pid', 'birth', 'boot_id')}
+                if identity not in found: found.append(identity)
+            for child in item.values(): walk(child)
+        elif isinstance(item, list):
+            for child in item: walk(child)
+    walk(value)
+    return found
+
+
+def _postlaunch_physical(row, pins, session, request, receipt, lease_revision, lease, historical_births):
+    physical = pins['physical']
+    op._object(physical, {'path', 'sha256', 'controller_root', 'controller_uid', 'controller_gid', 'worker_uid'}, 'protected physical pin')
+    for name in ('controller_uid', 'controller_gid', 'worker_uid'):
+        if type(physical[name]) is not int or physical[name] <= 0:
+            raise ValueError('configured physical custody IDs required')
+    path = Path(physical['path'])
+    if path.parent != Path(physical['controller_root']) / row['task']['id']:
+        raise ValueError('physical evidence must be in original task controller directory')
+    evidence = _protected_json(path, physical['sha256'], uid=0, gid=physical['controller_gid'], mode=0o640)
+    fields = {'schema', 'task_id', 'attempt_id', 'handle_id', 'start_request_digest',
+              'runtime_request_digest', 'boot_id', 'observed_at_utc', 'owner_decision_reference',
+              'lease_revision', 'lease_digest', 'owner_id', 'generation', 'invocation_id',
+              'known_births', 'producer_scope', 'pending_shared_commands', 'service_stopped', 'projects_paused'}
+    op._object(evidence, fields, 'current root physical evidence')
+    expected = {'schema': 'native-postlaunch-physical/v1', 'task_id': row['task']['id'],
+        'attempt_id': row['operation']['attempt_id'], 'handle_id': session['handle_id'],
+        'start_request_digest': _contract(row), 'runtime_request_digest': native_digest(request),
+        'boot_id': _boot(), 'owner_decision_reference': pins['owner_decision_reference'],
+        'lease_revision': lease_revision, 'lease_digest': op._hash(lease),
+        'owner_id': lease['owner_id'], 'generation': lease['generation'],
+        'invocation_id': lease['invocation']['invocation_id'],
+        'pending_shared_commands': False, 'service_stopped': True, 'projects_paused': True}
+    if any(evidence[k] != v for k, v in expected.items()):
+        raise ValueError('physical original task/handle/request/lease/closure mismatch')
+    age = (datetime.now(timezone.utc) - op._timestamp(evidence['observed_at_utc'], 'physical observation')).total_seconds()
+    if not 0 <= age <= 1800: raise ValueError('stale or future physical evidence')
+    # Include every immutable recorded controller/guardian and native worker birth.
+    known = copy.deepcopy(historical_births)
+    for process in receipt['process_births']:
+        identity = {'pid': process['pid'], 'birth': process['birth'], 'boot_id': receipt['boot_id']}
+        if identity not in known: known.append(identity)
+    supervisor = {'pid': receipt['supervisor_proc_pid'], 'birth': receipt['supervisor_birth'], 'boot_id': receipt['boot_id']}
+    if supervisor not in known: known.append(supervisor)
+    if not known or sorted(evidence['known_births'], key=op._hash) != sorted(known, key=op._hash):
+        raise ValueError('complete original known births required')
+    scope = evidence['producer_scope']
+    op._object(scope, {'worker_uid', 'cwd', 'pid_namespace', 'cgroups', 'all_worker_uid_processes_checked',
+                      'cwd_namespace_processes_checked', 'cgroups_checked', 'matching_producers'}, 'root producer exclusion scope')
+    if (scope['worker_uid'] != physical['worker_uid'] or scope['cwd'] != request['cwd']
+            or not isinstance(scope['pid_namespace'], str) or not scope['pid_namespace']
+            or not isinstance(scope['cgroups'], list) or not scope['cgroups']
+            or any(not isinstance(c, str) or not c.startswith('/') for c in scope['cgroups'])
+            or any(scope[k] is not True for k in ('all_worker_uid_processes_checked', 'cwd_namespace_processes_checked', 'cgroups_checked'))
+            or scope['matching_producers'] != []):
+        raise ValueError('living or unexcluded detached producer')
+    for identity in known: _identity(identity, absent=True)
+    return evidence
+
+
+def _authenticated_walk(store):
+    """Authenticate full immutable documents with one generation in memory."""
+    from immutable_history_cache import _cache
+    head, current, chain, context, prior = _history_snapshot(store)
+    del prior
+    revisions = [parts[0] for parts in chain[:-1]]
+    decoded = iter(store._read_document_objects(revisions)) if revisions else iter(())
+    for parts in chain:
+        document = current if parts[0] == head else next(decoded)
+        yield parts[0], document
+        document = None
+    if store.read()[0] != head: raise ValueError('native history moved during authentication')
+    _cache.put(context, {'chain': chain, 'documents': []})
+
+
+def _postlaunch_history(store, task_id, pins, *, retired=False):
+    original = _row(store.read_revision(pins['original_revision']), task_id)
+    return _run_history_fold(store, _postlaunch_history_fold(task_id, pins, original, retired=retired))
+
+
+def _postlaunch_history_fold(task_id, pins, original, *, retired=False):
+    if (original['state'] not in {'running', 'unknown'} or not _consumed(original)
+            or not original['operation'].get('handle_id') or op._hash(original) != pins['row_digest']):
+        raise ValueError('exact consumed original postlaunch row required')
+    import budget
+    budget.validate_ledger(original['budget'])
+    anchored = False; failure = None; current = None; head = None; prior_row = None; births = []; tombstone_revision = None
+    while True:
+        document = item = None
+        item = yield
+        if item is None:break
+        revision, document = item
+        head = revision; current = document.get('tasks', {}).get(task_id)
+        if current is not None and not anchored and failure is None:
+            try:
+                if current['task'] != original['task']: raise ValueError('original immutable task contract changed')
+                budget.validate_ledger(current['budget'])
+                if prior_row is not None:
+                    if current['budget']['events'][:len(prior_row['budget']['events'])] != prior_row['budget']['events']:
+                        raise ValueError('original consumed budget ancestry erased')
+                    for key in set(prior_row['budget']) - {'events', 'wake_ids'}:
+                        if current['budget'].get(key) != prior_row['budget'][key]:
+                            raise ValueError('original budget policy or identity ancestry changed')
+                    previous_wakes = prior_row['budget']['wake_ids']
+                    if current['budget']['wake_ids'][:len(previous_wakes)] != previous_wakes:
+                        raise ValueError('original budget wake ancestry erased')
+                    prior_op = prior_row.get('operation') or {}; current_op = current.get('operation') or {}
+                    for key in ('start_request', 'start_request_digest', 'attempt_id', 'executor', 'start_consumption', 'handle_id'):
+                        if prior_op.get(key) is not None and prior_op[key] != current_op.get(key):
+                            raise ValueError('original immutable admission/handle/consumption ancestry changed')
+                    prior_controllers = prior_op.get('controllers', [])
+                    if current_op.get('controllers', [])[:len(prior_controllers)] != prior_controllers:
+                        raise ValueError('original recorded controller ancestry erased')
+                for birth in _recorded_births(current.get('operation')):
+                    if birth not in births: births.append(birth)
+                prior_row = copy.deepcopy(current)
+            except (ValueError, KeyError, TypeError) as error: failure = error.with_traceback(None)
+        elif current is None and prior_row is not None and failure is None:
+            failure = ValueError('original intake ancestry deleted')
+        if revision == pins['original_revision']: anchored = True
+        if anchored and failure is None:
+            try:
+                if current == original and tombstone_revision is None: continue
+                if retired and current is not None and current.get('state') == 'retired_unknown':
+                    entry = _validate_postlaunch_disposition_row(current)
+                    if entry['original_row'] == original and entry['trusted_contract'] == pins:
+                        if tombstone_revision is None: tombstone_revision = revision
+                        continue
+                raise ValueError('original consumed row or budget changed after anchor')
+            except (ValueError, KeyError, TypeError) as error: failure = error.with_traceback(None)
+    if failure is not None: raise failure
+    if not anchored: raise ValueError('original row outside native ancestry')
+    if retired and current.get('state') != 'retired_unknown': raise ValueError('durable original tombstone required')
+    return head, original, births, tombstone_revision
+
+
+def _verify_postlaunch_runtime_argv(start, session, request, pins):
+    """Join the genuine managed-host gate to its sealed original worker argv."""
+    if request['argv'] == start['argv']:
+        if 'worker_gate' in pins: raise ValueError('direct original argv cannot carry unrelated gate pins')
+        return
+    gate = pins.get('worker_gate')
+    op._object(gate, {'module_path', 'module_sha256', 'payload_sha256', 'payload_custody'}, 'original worker gate pins')
+    payload = Path(session['gate_directory']) / 'worker-payload.json'
+    module = Path(gate['module_path'])
+    expected = [sys.executable, '-B', str(module), '--worker-gate', str(payload)]
+    if request['argv'] != expected or not module.is_absolute() or module.name != 'managed_host_bridge.py' or module.parent.name != 'scripts':
+        raise ValueError('original managed-host gate argv substituted')
+    for path in (module, *module.parents):
+        info = path.lstat()
+        if path.is_symlink() or info.st_uid != 0 or info.st_mode & 0o022:
+            raise ValueError('original worker gate source custody changed')
+    descriptor = os.open(module, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    try:
+        before = os.fstat(descriptor)
+        if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1: raise ValueError('original worker gate source file required')
+        raw = os.read(descriptor, 1024*1024+1); after = os.fstat(descriptor)
+        if len(raw)>1024*1024 or (before.st_ino,before.st_size,before.st_mtime_ns,before.st_ctime_ns)!=(after.st_ino,after.st_size,after.st_mtime_ns,after.st_ctime_ns):
+            raise ValueError('original worker gate source changed')
+        if 'sha256:'+hashlib.sha256(raw).hexdigest()!=gate['module_sha256']: raise ValueError('original worker gate source pin changed')
+    finally: os.close(descriptor)
+    custody=gate['payload_custody']
+    op._object(custody, {'uid','gid','mode'}, 'original worker gate payload custody')
+    if custody != {'uid':pins['physical']['controller_uid'],'gid':pins['physical']['controller_gid'],'mode':0o600}:
+        raise ValueError('original worker gate payload principal changed')
+    actual=_protected_json(payload,gate['payload_sha256'],**custody)
+    expected_payload={'schema':'managed-host-worker-gate/v1','handle_id':session['handle_id'],
+        'argv':start['argv'],'go_path':str(Path(session['gate_directory'])/'go.json'),
+        'abort_path':str(Path(session['gate_directory'])/'abort.json')}
+    if actual!=expected_payload: raise ValueError('original worker gate payload substituted')
+
+
+def _authenticate_postlaunch(store, task_id, source, pins, *, retired=False):
+    if type(store) is not GitDocumentStore or type(source) is not GitLeaseStore:
+        raise ValueError('actual original typed native channels required')
+    op._object(pins, {'original_revision', 'row_digest', 'source_revision', 'source_digest', 'channels',
+                     'session_sha256', 'request_sha256', 'receipt_sha256', 'artifact_custody', 'physical', 'owner_decision_reference'} | ({'worker_gate'} if 'worker_gate' in pins else set()), 'postlaunch trusted contract')
+    op._text(pins['owner_decision_reference'], 'owner decision reference')
+    revision, row, historical_births, tombstone_revision = _postlaunch_history(store, task_id, pins, retired=retired)
+    _intake_channels(store, row, pins, source)
+    start = row['operation']['start_request']; handle = row['operation']['handle_id']
+    from managed_host_bridge import _validate_session, _session_context, _canonical, _validate_start
+    from git_remote_identity import repository_root
+    _validate_start(start)
+    intent = row['operation']['intent']
+    op.validate_intent(intent)
+    if (intent['attempt_id'] != start['attempt_id'] or intent['source_ref'] != start['lease_source_ref']
+            or intent['binding']['candidate_sha'] != start['plan']['base_sha']
+            or row['task']['source_sha'] != start['plan']['base_sha']):
+        raise ValueError('original native intent/source/attempt binding changed')
+    reserves = [event for event in row['budget']['events'] if event['type'] == 'reserve' and event['kind'] == 'compute_start']
+    if (len(reserves) != 1 or reserves[0]['attempt_id'] != start['attempt_id']
+            or reserves[0]['operation_key'] != intent['operation_key']):
+        raise ValueError('original one-shot consumed compute reservation missing')
+    physical = pins['physical']
+    op._object(pins['artifact_custody'], {'session', 'request', 'receipt'}, 'original artifact custody')
+    for label, custody in pins['artifact_custody'].items():
+        op._object(custody, {'uid', 'gid', 'mode'}, 'original native file custody')
+        if (type(custody['uid']) is not int or type(custody['gid']) is not int
+                or custody['uid'] not in {physical['controller_uid'], physical['worker_uid']}
+                or custody['gid'] < 0 or custody['mode'] not in {0o600, 0o640, 0o644}
+                or label == 'session' and custody['uid'] != physical['controller_uid']):
+            raise ValueError('original native artifact custody substituted')
+    session_path = Path(start['handle_root']) / (handle + '.json')
+    session = _validate_session(_protected_json(session_path, pins['session_sha256'], **pins['artifact_custody']['session']))
+    identity = {'repo_root': str(repository_root(start['repo_root'])), 'store': start['plan']['coordination_store_id'],
+                'coordination_ref': start['plan']['coordination_ref'], 'pool_id': start['plan']['pool_id'],
+                'task_id': task_id, 'attempt_id': start['attempt_id']}
+    if handle != str(uuid.uuid5(uuid.NAMESPACE_URL, _canonical(identity))): raise ValueError('original derived handle mismatch')
+    context = {k: start[k] for k in ('repo_root', 'remote', 'plan', 'journal_root', 'handle_root',
+        'lease_coordination_ref', 'lease_repository', 'lease_source_ref', 'task_id', 'attempt_id', 'reservation_token', 'owner_id')}
+    context.update(handle_id=handle, argv_digest=native_digest(start['argv']),
+        publication_ref='refs/heads/cdc/managed-host-publish-' + handle.replace('-', ''),
+        gate_directory=str(Path(start['handle_root']) / 'gates' / handle))
+    if 'coordination_remote' in start:
+        context.update(coordination_remote=start['coordination_remote'], source_remote_id=start['source_remote_id'])
+    if _session_context(session) != context: raise ValueError('original session/start immutable context substituted')
+    directory = Path(start['journal_root']) / native_digest({k: identity[k] for k in ('pool_id', 'task_id', 'attempt_id')}).split(':')[1]
+    request = _protected_json(directory / 'request.json', pins['request_sha256'], **pins['artifact_custody']['request'])
+    receipt = _protected_json(directory / 'receipt.json', pins['receipt_sha256'], **pins['artifact_custody']['receipt'])
+    from managed_executor_store import GitManagedExecutorStore
+    import managed_executor_pool as pool
+    from managed_executor_runtime import ManagedExecutorRuntime
+    pool_store = GitManagedExecutorStore(start['repo_root'], start.get('coordination_remote', start['remote']),
+        start['plan']['coordination_ref'], start['plan'])
+    # Construct no backend or journal: authentication cannot create directories or observe/send effects.
+    runtime = object.__new__(ManagedExecutorRuntime); runtime.plan = start['plan']
+    expected_identity = runtime._identity(task_id, start['attempt_id'])
+    if (request.get('schema') != 'managed-executor-start/v1' or request['identity'] != expected_identity
+            or request['repo_root'] != str(repository_root(start['repo_root']))
+            or request['journal_directory'] != str(directory)):
+        raise ValueError('original runtime request substituted')
+    _verify_postlaunch_runtime_argv(start, session, request, pins)
+    task = next(t for t in start['plan']['tasks'] if t['id'] == task_id)
+    if (row['operation']['executor'] != task['executor_id'] or row['operation']['attempt_id'] != start['attempt_id']
+            or task['id'] != row['task']['id']): raise ValueError('original intake/pool executor/attempt binding changed')
+    cwd = str((Path(start['repo_root']).parent / task['worktree']).resolve()) if task['role'] == 'writer' else str(directory / 'worktree')
+    if request['cwd'] != cwd: raise ValueError('original runtime cwd substituted')
+    claim = request['claim']; claim_revision = claim['store_revision']
+    pool_head, state = pool_store.read()
+    if pool_store._git('rev-parse', '--is-shallow-repository') != 'false': raise ValueError('complete pool history required')
+    from immutable_history_cache import _linear_chain
+    chain = _linear_chain(reversed(pool_store._git('rev-list', '--parents', pool_head).splitlines()))
+    if len(chain) > 10000: raise ValueError('pool history exceeds authentication bound')
+    states = {parts[0]: pool_store.read_revision(parts[0]) for parts in chain}
+    claimed = states.get(claim_revision)
+    parts = next((parts for parts in chain if parts[0] == claim_revision), [])
+    if len(parts) != 2 or claimed is None: raise ValueError('original launch claim ancestry missing')
+    before = states[parts[1]]
+    expected_state = pool.mark_running(start['plan'], before, task_id, start['attempt_id'],
+        expected_revision=before['revision'], reservation_token=start['reservation_token'])
+    expected_claim = dict(schema='managed-executor-launch-claim/v1', store_revision=claim_revision,
+        state_revision=claimed['revision'], state_ref=pool.canonical_state_ref(claimed), task_id=task_id,
+        attempt_id=start['attempt_id'], reservation_token=start['reservation_token'], launch_allowed=True,
+        **{name: False for name in pool.AUTHORITY_FIELDS})
+    if claimed != expected_state or claim != expected_claim: raise ValueError('original consumed pool allocation/claim substituted')
+    allocation = next(t for t in claimed['tasks'] if t['id'] == task_id)
+    op._object(request, {'schema','identity','claim','argv','repo_root','cwd','timeout_seconds','journal_directory'}, 'original native runtime request')
+    if request['timeout_seconds'] != task['max_runtime_seconds'] - allocation['runtime_seconds']:
+        raise ValueError('original consumed runtime budget changed')
+    seen = False
+    for parts in chain:
+        if parts[0] == claim_revision: seen = True
+        if seen and next(t for t in states[parts[0]]['tasks'] if t['id'] == task_id) != allocation:
+            raise ValueError('original pool allocation changed or rearmed')
+    if pool_store.read() != (pool_head, state): raise ValueError('pool history moved')
+    if (session.get('runtime_launch_id') != native_digest(request) or receipt.get('request_ref') != native_digest(request)
+            or receipt.get('launch_id') != native_digest(request) or receipt.get('identity') != expected_identity
+            or receipt.get('claim') != claim or receipt.get('quiescent') is not False):
+        raise ValueError('original nonterminal runtime/session receipt mismatch')
+    lease_revision, lease = source.read()
+    if (lease_revision != pins['source_revision'] or op._hash(lease) != pins['source_digest']
+            or source.read_revision(lease_revision) != lease or lease['schema'] != 'execution-lease/v2'
+            or lease['owner_id'] != session['owner_id'] or lease['owner_id'] != start['owner_id']
+            or lease['generation'] != session['generation'] or lease['invocation']['invocation_id'] != session['invocation_id']
+            or session['lease_revision'] != lease_revision or lease['external_guard'] is not None
+            or lease['finalization']['pending_shared_writes'] is not False
+            or (lease['repository'], lease['source_ref']) != (start['lease_repository'], start['lease_source_ref'])):
+        raise ValueError('original held lease/guard binding changed')
+    _postlaunch_physical(row, pins, session, request, receipt, lease_revision, lease, historical_births)
+    if source.read() != (lease_revision, lease) or store.read()[0] != revision:
+        raise ValueError('postlaunch volatile head changed')
+    return revision, row, lease, tombstone_revision
+
+
+class PostlaunchIntakeDispositionProof:
+    def __init__(self, seal, store, task_id, source, pins, at, *, retired=False):
+        if seal is not _SEAL: raise ValueError('native issued postlaunch proof required')
+        self._seal = seal; self._store = store; self._task = task_id; self._source = source
+        self._pins = copy.deepcopy(pins); self._at = at; self._retired = retired
+        self._revision, self._row, self._lease, self._tombstone_revision = _authenticate_postlaunch(store, task_id, source, pins, retired=retired)
+        self._binding = op._hash([self._pins, at, retired, self._revision, self._row, self._lease, self._tombstone_revision])
+    def revalidate_for(self, store, task_id):
+        if (self._seal is not _SEAL or store is not self._store or task_id != self._task
+                or self._binding != op._hash([self._pins, self._at, self._retired, self._revision, self._row, self._lease, self._tombstone_revision])):
+            raise ValueError('postlaunch native capability substituted or mutated')
+        revision, row, lease, tombstone_revision = _authenticate_postlaunch(store, task_id, self._source, self._pins, retired=self._retired)
+        if revision != self._revision or row != self._row or lease != self._lease or tombstone_revision != self._tombstone_revision:
+            raise ValueError('postlaunch capability head changed; observe without replay')
+        return row
+
+
+def authenticate_postlaunch_intake(store, task_id, *, source_store, trusted_contract, at):
+    op._timestamp(at, 'postlaunch disposition time')
+    return PostlaunchIntakeDispositionProof(_SEAL, store, task_id, source_store, trusted_contract, at)
+
+
+def _validate_postlaunch_disposition_row(row):
+    entry = (row.get('result') or {}).get('administrative_disposition')
+    op._object(entry, {'schema', 'task_id', 'contract_digest', 'original_effect', 'actual_wait', 'replay_forbidden',
+        'original_revision', 'original_row', 'trusted_contract', 'retired_at_utc'}, 'postlaunch disposition')
+    original = entry['original_row']
+    expected = copy.deepcopy(original); expected.update(state='retired_unknown', result={'administrative_disposition': entry})
+    if (row != expected or entry['schema'] != POSTLAUNCH_SCHEMA or entry['task_id'] != row['task']['id']
+            or entry['original_effect'] != 'UNKNOWN' or entry['actual_wait'] is not None or entry['replay_forbidden'] is not True
+            or original['state'] not in {'running', 'unknown'} or not original['operation'].get('handle_id')
+            or entry['contract_digest'] != _contract(original) or entry['original_revision'] != entry['trusted_contract']['original_revision']
+            or op._hash(original) != entry['trusted_contract']['row_digest']):
+        raise ValueError('postlaunch tombstone must preserve exact original consumed UNKNOWN liabilities')
+    op._timestamp(entry['retired_at_utc'], 'postlaunch disposition time')
+    return entry
+
+
+def retire_postlaunch_intake_cas(store, expected_revision, task_id, proof, *, at):
+    if type(proof) is not PostlaunchIntakeDispositionProof or proof._retired or at != proof._at:
+        raise ValueError('native issued original postlaunch capability required')
+    row = proof.revalidate_for(store, task_id)
+    revision, document = store.read()
+    if revision != expected_revision or revision != proof._revision: raise ValueError('stale postlaunch intake head')
+    changed = copy.deepcopy(document)
+    entry = dict(schema=POSTLAUNCH_SCHEMA, task_id=task_id, contract_digest=_contract(row), original_effect='UNKNOWN',
+        actual_wait=None, replay_forbidden=True, original_revision=proof._pins['original_revision'],
+        original_row=copy.deepcopy(row), trusted_contract=copy.deepcopy(proof._pins), retired_at_utc=at)
+    changed['tasks'][task_id].update(state='retired_unknown', result={'administrative_disposition': entry})
+    new_revision = store.compare_and_swap(expected_revision, changed, recovery_capability=proof)
+    if store.read() != (new_revision, changed): raise ValueError('postlaunch reply moved; observe without replay')
+    return {'revision': new_revision, 'row': changed['tasks'][task_id]}
+
+
+def observe_postlaunch_intake_disposition(store, task_id, *, source_store, trusted_contract, at):
+    """Read-only lost-reply/crash observation; grants only the remaining lease phase."""
+    op._timestamp(at, 'administrative release time')
+    return PostlaunchIntakeDispositionProof(_SEAL, store, task_id, source_store, trusted_contract, at, retired=True)
+
+
+def _administrative_release(record, entry, reference, at):
+    import execution_lease_v2 as lease_api
+    lease_api.validate(record)
+    if (record['owner_id'] is None or record['external_guard'] is not None
+            or record['finalization']['pending_shared_writes'] is not False):
+        raise ValueError('administrative release requires exact unguarded held owner')
+    result = copy.deepcopy(record)
+    result['last_release'] = dict(owner_id=record['owner_id'], generation=record['generation'],
+        invocation_id=record['invocation']['invocation_id'], at_utc=at, checkpoint_ref=record['finalization']['checkpoint_ref'],
+        external_reconciliation='unknown_preserved', completion_reason='administrative_unknown_retired',
+        administrative_disposition={'schema': POSTLAUNCH_SCHEMA, 'reference': reference, 'digest': op._hash(entry),
+                                    'original_effect': 'UNKNOWN', 'actual_wait': None, 'replay_forbidden': True})
+    result.update(owner_id=None, acquired_at_utc=None, heartbeat_at_utc=None, expires_at_utc=None, invocation=None, finalization=None)
+    return lease_api.validate(result)
+
+
+class AdministrativeUnknownLeaseRelease:
+    def __init__(self, seal, proof):
+        if seal is not _SEAL or type(proof) is not PostlaunchIntakeDispositionProof or not proof._retired:
+            raise ValueError('native durable postlaunch disposition required')
+        self._seal = seal; self._proof = proof
+    def revalidate(self, store, revision, previous, proposed):
+        proof = self._proof
+        if self._seal is not _SEAL or store is not proof._source or revision != proof._pins['source_revision']:
+            raise ValueError('administrative lease endpoint/revision substituted')
+        proof.revalidate_for(proof._store, proof._task)
+        if previous != proof._lease: raise ValueError('administrative lease original changed')
+        _, document = proof._store.read()
+        entry = _validate_postlaunch_disposition_row(_row(document, proof._task))
+        reference = proof._store.store_id + ':' + proof._store.ref + '@' + proof._tombstone_revision + '#' + proof._task
+        if proposed != _administrative_release(previous, entry, reference, proof._at):
+            raise ValueError('administrative lease release contains unrelated mutation')
+
+
+def release_postlaunch_unknown_lease_cas(source_store, expected_revision, proof):
+    if type(proof) is not PostlaunchIntakeDispositionProof or not proof._retired:
+        raise ValueError('observed durable native postlaunch tombstone required')
+    proof.revalidate_for(proof._store, proof._task)
+    revision, record = source_store.read()
+    if source_store is not proof._source or revision != expected_revision or revision != proof._pins['source_revision']:
+        raise ValueError('stale original administrative lease release')
+    _, document = proof._store.read()
+    entry = _validate_postlaunch_disposition_row(_row(document, proof._task))
+    reference = proof._store.store_id + ':' + proof._store.ref + '@' + proof._tombstone_revision + '#' + proof._task
+    changed = _administrative_release(record, entry, reference, proof._at)
+    new_revision = source_store.compare_and_swap(expected_revision, changed,
+        retirement_capability=AdministrativeUnknownLeaseRelease(_SEAL, proof))
+    if source_store.read() != (new_revision, changed): raise ValueError('administrative lease reply moved; observe without replay')
+    return {'revision': new_revision, 'record': changed}
+
+
+def _queued_original(row):
+    import budget
+    budget.validate_ledger(row['budget'])
+    if row['state'] != 'queued' or row['operation'] is not None or row['result'] is not None or row['budget']['events']:
+        raise ValueError('only original unstarted zero-charge queued row may be cancelled')
+
+
+def validate_queued_cancellation(row):
+    entry = (row.get('result') or {}).get('unstarted_cancellation')
+    if isinstance(entry,dict) and entry.get('schema')==RESERVED_SCHEMA:return _validate_prehandle_disposition_row(row)
+    op._object(entry, {'schema', 'task_id', 'original_revision', 'original_row', 'original_row_digest',
+                      'reason', 'owner_decision_reference', 'at_utc', 'no_send'}, 'unstarted cancellation')
+    original = entry['original_row']; _queued_original(original)
+    expected = copy.deepcopy(original); expected.update(state='cancelled', result={'unstarted_cancellation': entry})
+    if (row != expected or entry['schema'] != QUEUED_SCHEMA or entry['task_id'] != row['task']['id']
+            or entry['original_row_digest'] != op._hash(original) or entry['no_send'] is not True
+            or entry['reason'] not in {'cancelled', 'superseded'}):
+        raise ValueError('typed cancellation cannot change original row/budget or invent operation')
+    op._text(entry['owner_decision_reference'], 'queued owner decision'); op._timestamp(entry['at_utc'], 'queued cancellation time')
+    return entry
+
+
+def _run_history_fold(store, fold):
+    next(fold)
+    try:
+        for item in _authenticated_walk(store):
+            fold.send(item)
+        try:fold.send(None)
+        except StopIteration as done:return done.value
+    finally:fold.close()
+
+
+def _authenticate_queued(store, task_id, revision, original, *, cancelled=False):
+    if type(store) is not GitDocumentStore: raise ValueError('actual native intake store required')
+    return _run_history_fold(store, _queued_history_fold(task_id, revision, original, cancelled=cancelled))
+
+
+def _queued_history_fold(task_id, revision, original, *, cancelled=False):
+    _queued_original(original)
+    anchored = False; seen = False; failure = None; head = None; tombstone = None
+    while True:
+        document = item = row = None
+        item = yield
+        if item is None:break
+        sha, document = item
+        head = sha
+        if failure is not None: continue
+        try:
+            row = document.get('tasks', {}).get(task_id)
+            if sha == revision:
+                if row != original: raise ValueError('queued original ancestry substituted')
+                anchored = True
+            if row is None:
+                if seen: raise ValueError('queued original history deleted')
+                continue
+            seen = True
+            if row == original and tombstone is None: continue
+            if cancelled and anchored and row.get('state') == 'cancelled':
+                entry = validate_queued_cancellation(row)
+                if (entry['original_row'] == original and entry['original_revision'] == revision
+                        and (tombstone is None or tombstone == row)):
+                    tombstone = copy.deepcopy(row); continue
+            raise ValueError('queued history consumed, changed or rearmed')
+        except (ValueError, KeyError, TypeError) as error: failure = error.with_traceback(None)
+    if failure is not None: raise failure
+    if not anchored: raise ValueError('queued original ancestry missing')
+    if cancelled and tombstone is None: raise ValueError('durable queued cancellation missing')
+    return head
+
+
+class UnstartedQueuedCancellation:
+    def __init__(self, seal, store, revision, task_id, row, entry):
+        if seal is not _SEAL: raise ValueError('native queued cancellation required')
+        self._seal = seal; self._store = store; self._revision = revision; self._task = task_id
+        self._row = copy.deepcopy(row); self._entry = copy.deepcopy(entry)
+        self._binding = op._hash([revision, task_id, row, entry])
+    def revalidate(self, store, revision, task_id, proposed):
+        if (self._seal is not _SEAL or store is not self._store or revision != self._revision or task_id != self._task
+                or self._binding != op._hash([self._revision, self._task, self._row, self._entry])
+                or validate_queued_cancellation(proposed) != self._entry
+                or _authenticate_queued(store, task_id, revision, self._row) != revision):
+            raise ValueError('native queued cancellation binding changed')
+
+
+def cancel_unstarted_queued_cas(store, expected_revision, task_id, *, original_row_digest, reason, owner_decision_reference, at):
+    revision, document = store.read(); row = _row(document, task_id)
+    if revision != expected_revision or op._hash(row) != original_row_digest: raise ValueError('stale queued cancellation binding')
+    _authenticate_queued(store, task_id, revision, row)
+    entry = dict(schema=QUEUED_SCHEMA, task_id=task_id, original_revision=revision, original_row=copy.deepcopy(row),
+        original_row_digest=original_row_digest, reason=reason, owner_decision_reference=owner_decision_reference, at_utc=at, no_send=True)
+    changed = copy.deepcopy(document); changed['tasks'][task_id].update(state='cancelled', result={'unstarted_cancellation': entry})
+    validate_queued_cancellation(changed['tasks'][task_id])
+    proof = UnstartedQueuedCancellation(_SEAL, store, revision, task_id, row, entry)
+    new_revision = store.compare_and_swap(revision, changed, recovery_capability=proof)
+    if store.read() != (new_revision, changed): raise ValueError('queued cancellation reply moved; observe without replay')
+    return {'revision': new_revision, 'row': changed['tasks'][task_id]}
+
+
+def validate_queued_cancellations(store, expected_revision, rows):
+    if any(((row.get('result') or {}).get('unstarted_cancellation') or {}).get('schema')==RESERVED_SCHEMA for row in rows.values()):
+        validate_intake_dispositions(store,expected_revision,{},rows)
+        return True
+    for task_id, row in rows.items():
+        entry = validate_queued_cancellation(row)
+        if _authenticate_queued(store, task_id, entry['original_revision'], entry['original_row'], cancelled=True) != expected_revision:
+            raise ValueError('queued cancellation head moved')
+        if _row(store.read()[1], task_id) != row: raise ValueError('queued cancellation row substituted')
+    if store.read()[0] != expected_revision: raise ValueError('queued cancellation head moved')
+    return True
+
+
+def observe_postlaunch_unknown_lease_release(store, task_id, *, source_store, trusted_contract):
+    """Observe the exact completed lease phase after an uncertain reply; never CAS."""
+    if type(store) is not GitDocumentStore or type(source_store) is not GitLeaseStore:
+        raise ValueError('actual native observation channels required')
+    head, original, _, tombstone = _postlaunch_history(store, task_id, trusted_contract, retired=True)
+    _intake_channels(store, original, trusted_contract, source_store)
+    entry = validate_prelaunch_disposition(_row(store.read()[1], task_id))
+    original_lease = source_store.read_revision(trusted_contract['source_revision'])
+    if op._hash(original_lease) != trusted_contract['source_digest']: raise ValueError('original lease observation substituted')
+    reference = store.store_id + ':' + store.ref + '@' + tombstone + '#' + task_id
+    found = None
+    for revision, record in _history(source_store):
+        release = record.get('last_release')
+        if isinstance(release, dict) and release.get('administrative_disposition', {}).get('reference') == reference:
+            expected = _administrative_release(original_lease, entry, reference, release['at_utc'])
+            if release != expected['last_release']: raise ValueError('administrative lease receipt substituted')
+            if found is None:
+                if record != expected or source_store._git('rev-parse', revision + '^') != trusted_contract['source_revision']:
+                    raise ValueError('administrative release ancestry or unrelated state changed')
+                found = {'schema': 'postlaunch-unknown-lease-release-observation/v1', 'state': 'confirmed_original',
+                    'release_revision': revision, 'release': copy.deepcopy(release), 'replay_forbidden': True}
+    if store.read()[0] != head: raise ValueError('original tombstone observation head moved')
+    if found is None: raise ValueError('original administrative release not confirmed; do not replay')
+    return found
+
+
+PREHANDLE_SCHEMA = 'consumed-prehandle-intake-disposition/v1'
+RESERVED_SCHEMA = 'unconsumed-reserved-intake-cancellation/v1'
+
+
+def _prehandle_original(row):
+    """Only the original charged reservation before any native handle exists."""
+    import budget
+    budget.validate_ledger(row['budget'])
+    operation = row.get('operation')
+    if not isinstance(operation, dict) or row.get('result') is not None:
+        raise ValueError('original nonterminal reserved/consumed row required')
+    from managed_host_bridge import _validate_start
+    start = operation['start_request']; _validate_start(start)
+    digest = _contract(row)
+    intent = operation['intent']; op.validate_intent(intent)
+    if (operation['attempt_id'] != start['attempt_id'] or row['task']['id'] != start['task_id']
+            or row['task']['source_sha'] != start['plan']['base_sha']
+            or intent['attempt_id'] != start['attempt_id'] or intent['source_ref'] != start['lease_source_ref']
+            or intent['binding']['repository'] != start['lease_repository']
+            or intent['binding']['candidate_sha'] != start['plan']['base_sha']
+            or any(operation.get(k) is not None for k in ('handle_id','checkpoint_ref','finish_result'))):
+        raise ValueError('original prehandle immutable contract required')
+    task = next((t for t in start['plan']['tasks'] if t['id'] == start['task_id']), None)
+    if task is None or task['executor_id'] != operation['executor']:
+        raise ValueError('original prehandle pool/executor binding required')
+    reserves = [e for e in row['budget']['events'] if e['type']=='reserve' and e['kind']=='compute_start']
+    if (len(reserves)!=1 or reserves[0]['attempt_id']!=start['attempt_id']
+            or reserves[0]['operation_key']!=intent['operation_key']):
+        raise ValueError('exact original compute reservation required')
+    consumption = operation.get('start_consumption')
+    if consumption is not None:
+        op._object(consumption, {'schema','contract_digest','controller'}, 'original start consumption')
+        if (consumption['schema']!='native-intake-start-consumption/v1' or consumption['contract_digest']!=digest
+                or row['state'] not in {'unknown','running','starting','start_unknown'}):
+            raise ValueError('original consumed prehandle UNKNOWN required')
+        return 'retired_unknown'
+    if row['state']!='reserved' or _consumed(row) or operation.get('guardian') is not None:
+        raise ValueError('unconsumed reserved row without guardian required')
+    return 'cancelled'
+
+
+def _prehandle_history_fold(task_id, pins, original, *, retired=False, row_validator=None):
+    disposition = _prehandle_original(original)
+    if op._hash(original)!=pins['row_digest']:
+        raise ValueError('original prehandle row digest changed')
+    anchored=False; seen=False; prior=None; births=[]; failure=None; head=None; tombstone=None
+    import budget
+    while True:
+        item = yield
+        if item is None: break
+        revision, document = item; head=revision
+        if failure is not None: continue
+        try:
+            row=document.get('tasks',{}).get(task_id)
+            if row is None:
+                if seen: raise ValueError('original prehandle row deleted')
+                continue
+            seen=True
+            if revision==pins['original_revision']:
+                if row!=original: raise ValueError('original prehandle anchor substituted')
+            if anchored:
+                if row==original and tombstone is None: continue
+                if retired:
+                    if row_validator is None:
+                        entry=_validate_prehandle_disposition_row(row)
+                    else:
+                        row_validator(row)
+                        key='administrative_disposition' if row.get('state')=='retired_unknown' else 'unstarted_cancellation'
+                        entry=row['result'][key]
+                    if entry['original_row']==original and entry['trusted_contract']==pins:
+                        if tombstone is not None and row!=tombstone: raise ValueError('prehandle disposition changed')
+                        tombstone=copy.deepcopy(row); continue
+                raise ValueError('original prehandle row or budget changed after anchor')
+            if row['task']!=original['task'] or row.get('result') is not None:
+                raise ValueError('original prehandle task/result history changed')
+            budget.validate_ledger(row['budget'])
+            operation=row.get('operation')
+            if operation is None:
+                if row['state']!='queued' or row['budget']['events'] or prior is not None and prior.get('operation') is not None:
+                    raise ValueError('original prehandle admission erased')
+            else:
+                if _contract(row)!=_contract(original) or any(operation.get(k) is not None for k in ('handle_id','finish_result','checkpoint_ref')):
+                    raise ValueError('native session/effect ancestry blocks prehandle disposition')
+                intent=operation['intent'];op.validate_intent(intent)
+                canonical=original['operation']['intent']
+                for key in set(canonical)-{'state','updated_at_utc','durable_intent'}:
+                    if intent.get(key)!=canonical[key]:raise ValueError('original prehandle intent contract changed')
+                if intent['state'] not in {'prepared','submitting','unknown'} or intent.get('task') is not None:
+                    raise ValueError('original prehandle intent consumed')
+                for key in ('start_request','start_request_digest','attempt_id','executor','reservation_preparation'):
+                    if operation.get(key)!=original['operation'].get(key):raise ValueError('original prehandle admission contract changed')
+                if disposition=='cancelled' and (_consumed(row) or operation.get('guardian') is not None):
+                    raise ValueError('reserved cancellation has consumed ancestry')
+                for identity in _recorded_births(operation):
+                    if identity not in births:births.append(identity)
+            if prior is not None:
+                previous=prior['budget'];current=row['budget']
+                if ({k:v for k,v in previous.items() if k not in {'events','wake_ids'}}!={k:v for k,v in current.items() if k not in {'events','wake_ids'}}
+                        or current['events'][:len(previous['events'])]!=previous['events']
+                        or current['wake_ids'][:len(previous['wake_ids'])]!=previous['wake_ids']):
+                    raise ValueError('original prehandle budget ancestry erased')
+                before=prior.get('operation') or {};after=operation or {}
+                for key in ('guardian','start_consumption','controller_identity','project_budget'):
+                    if before.get(key) is not None and before[key]!=after.get(key):raise ValueError('original prehandle custody ancestry erased')
+                if 'controllers' in before and ('controllers' not in after or after['controllers'][:len(before['controllers'])]!=before['controllers']):
+                    raise ValueError('original prehandle controller ancestry erased')
+                if before.get('intent') and after.get('intent'):
+                    rank={'prepared':0,'submitting':1,'unknown':2}
+                    if rank[after['intent']['state']]<rank[before['intent']['state']]:raise ValueError('original prehandle intent rewound')
+            prior=copy.deepcopy(row)
+            if revision==pins['original_revision']:anchored=True
+        except (ValueError, KeyError, TypeError, StopIteration) as error:failure=error.with_traceback(None)
+    if failure is not None:raise failure
+    if not anchored:raise ValueError('original prehandle anchor outside native ancestry')
+    if retired and tombstone is None:raise ValueError('durable prehandle disposition missing')
+    for identity in _recorded_births(original['operation']):
+        if identity not in births:births.append(identity)
+    return head, births
+
+
+def _prehandle_native_paths(start):
+    from managed_host_bridge import _canonical
+    from git_remote_identity import repository_root
+    identity={'repo_root':str(repository_root(start['repo_root'])),'store':start['plan']['coordination_store_id'],
+        'coordination_ref':start['plan']['coordination_ref'],'pool_id':start['plan']['pool_id'],
+        'task_id':start['task_id'],'attempt_id':start['attempt_id']}
+    handle=str(uuid.uuid5(uuid.NAMESPACE_URL,_canonical(identity)))
+    return handle, [Path(start['handle_root'])/(handle+'.json'),Path(start['handle_root'])/'gates'/handle,
+        Path(start['handle_root'])/'locks'/(handle+'.lock'),Path(start['journal_root'])/native_digest(
+            {k:identity[k] for k in ('pool_id','task_id','attempt_id')}).split(':',1)[1]]
+
+
+def _prehandle_physical(store,row,source,pins,births):
+    physical=pins['physical']
+    op._object(physical, {'path','sha256','controller_root','worker_launch_root','controller_uid','controller_gid','worker_uid','worker_gid'}, 'prehandle physical custody')
+    for key in ('controller_uid','controller_gid','worker_uid','worker_gid'):
+        if type(physical[key]) is not int or physical[key]<=0:raise ValueError('configured original prehandle principals required')
+    start=row['operation']['start_request'];task_id=row['task']['id'];executor=row['operation']['executor']
+    for name in (task_id,executor):
+        if not isinstance(name,str) or not name or name in {'.','..'} or '/' in name or '\\' in name:raise ValueError('exact prehandle custody identity required')
+    controller=Path(physical['controller_root'])/task_id
+    launch=Path(physical['worker_launch_root'])/executor/task_id
+    certificate=Path(physical['path'])
+    for root in (controller,launch,certificate,Path(start['handle_root']),Path(start['journal_root'])):
+        if not root.is_absolute() or str(root.resolve())!=str(root) or any(p.is_symlink() for p in (root,*root.parents)):
+            raise ValueError('exact protected prehandle roots without symlinks required')
+    if certificate==controller or controller in certificate.parents or certificate==launch or launch in certificate.parents:
+        raise ValueError('physical certificate must be outside original launch artifacts')
+    evidence=_protected_json(certificate,physical['sha256'],uid=0,gid=physical['controller_gid'],mode=0o640)
+    expected={'schema':'native-prehandle-physical/v1','task_id':task_id,'attempt_id':start['attempt_id'],
+        'start_request_digest':_contract(row),'original_revision':pins['original_revision'],'original_row_digest':pins['row_digest'],
+        'intake_store_id':store.store_id,'intake_ref':store.ref,'source_store_id':source.store_id,'source_ref':source.ref,
+        'source_revision':pins['source_revision'],'source_digest':pins['source_digest'],'boot_id':_boot(),
+        'owner_decision_reference':pins['owner_decision_reference'],'disposition':_prehandle_original(row),
+        'controller_root':str(controller),'worker_launch_root':str(launch),'native_session_absent':True,
+        'worker_output_empty':True,'pending_shared_commands':False,'service_stopped':True,'socket_stopped':True,'projects_paused':True}
+    op._object(evidence,set(expected)|{'observed_at_utc','known_births','producer_scope','artifact_pins'},'root prehandle physical certificate')
+    if any(evidence[k]!=v for k,v in expected.items()):raise ValueError('physical prehandle task/source/closure binding changed')
+    age=(datetime.now(timezone.utc)-op._timestamp(evidence['observed_at_utc'],'prehandle physical observation')).total_seconds()
+    if not 0<=age<=1800:raise ValueError('stale or future prehandle physical evidence')
+    if sorted(evidence['known_births'],key=op._hash)!=sorted(births,key=op._hash):raise ValueError('complete original prehandle births required')
+    scope=evidence['producer_scope']
+    op._object(scope,{'worker_uid','launch_root','cwd','pid_namespace','cgroups','all_worker_uid_processes_checked','cwd_namespace_processes_checked','cgroups_checked','matching_producers'},'root prehandle producer exclusion')
+    if (scope['worker_uid']!=physical['worker_uid'] or scope['launch_root']!=str(launch) or scope['cwd']!=str(launch/'worktree')
+            or not isinstance(scope['pid_namespace'],str) or not scope['pid_namespace'] or not isinstance(scope['cgroups'],list) or not scope['cgroups']
+            or any(not isinstance(c,str) or not c.startswith('/') for c in scope['cgroups'])
+            or any(scope[k] is not True for k in ('all_worker_uid_processes_checked','cwd_namespace_processes_checked','cgroups_checked'))
+            or scope['matching_producers']!=[]):raise ValueError('living or unexcluded original prehandle producer')
+    for identity in births:_identity(identity,absent=True)
+    handle,paths=_prehandle_native_paths(start)
+    for path in paths:
+        if any(p.is_symlink() for p in (path,*path.parents)) or path.exists():raise ValueError('native session/gate/lock/journal blocks prehandle disposition')
+    for ref in (start['plan']['coordination_ref'],'refs/heads/cdc/managed-host-publish-'+handle.replace('-','')):
+        source._git('check-ref-format',ref)
+        if source._git('ls-remote','--refs',source.remote,ref):raise ValueError('native original pool/publication exists')
+    output=launch/'output'
+    if output.is_symlink() or output.exists() and (not output.is_dir() or any(output.iterdir())):raise ValueError('original prehandle worker output must be empty')
+    artifacts=evidence['artifact_pins']
+    if not isinstance(artifacts,dict):raise ValueError('complete root artifact manifest required')
+    seen=set()
+    for root in (controller,launch):
+        if root.exists() and not root.is_dir():raise ValueError('original custody directory required')
+        for path in ([root,*root.rglob('*')] if root.exists() else []):
+            info=path.lstat()
+            if path.is_symlink() or not (stat.S_ISREG(info.st_mode) or stat.S_ISDIR(info.st_mode)) or info.st_mode & 0o002:
+                raise ValueError('special, linked or unprotected original prehandle artifact')
+            if path.is_dir():
+                if info.st_uid not in {0,physical['controller_uid']} or path!=output and info.st_mode & 0o020:
+                    raise ValueError('worker writable original custody directory')
+                continue
+            key=str(path);pin=artifacts.get(key)
+            op._object(pin,{'sha256','uid','gid','mode'},'root original artifact pin')
+            if (info.st_uid not in {0,physical['controller_uid']} or info.st_nlink!=1 or info.st_mode & 0o022
+                    or (info.st_uid,info.st_gid,stat.S_IMODE(info.st_mode))!=(pin['uid'],pin['gid'],pin['mode'])
+                    or 'sha256:'+hashlib.sha256(path.read_bytes()).hexdigest()!=pin['sha256']):raise ValueError('protected original prehandle artifact changed')
+            seen.add(key)
+    if seen!=set(artifacts):raise ValueError('root original artifact manifest incomplete or substituted')
+    for identity in births:_identity(identity,absent=True)
+
+
+def _authenticate_prehandle(store,task_id,source,pins,*,authenticated_births=None):
+    if type(store) is not GitDocumentStore or type(source) is not GitLeaseStore:raise ValueError('actual original native prehandle channels required')
+    op._object(pins,{'original_revision','row_digest','source_revision','source_digest','channels','owner_decision_reference','physical'},'trusted original prehandle contract')
+    op._text(pins['owner_decision_reference'],'prehandle owner decision')
+    revision,document=store.read();row=_row(document,task_id)
+    if revision!=pins['original_revision'] or op._hash(row)!=pins['row_digest']:raise ValueError('stale exact original prehandle head/row')
+    _prehandle_original(row);_intake_channels(store,row,pins,source)
+    if authenticated_births is None:
+        head,births=_run_history_fold(store,_prehandle_history_fold(task_id,pins,row))
+        if head!=revision:raise ValueError('prehandle native history moved')
+    else:births=copy.deepcopy(authenticated_births)
+    srev,lease=source.read();start=row['operation']['start_request']
+    if (srev!=pins['source_revision'] or op._hash(lease)!=pins['source_digest'] or lease['schema']!='execution-lease/v2'
+            or lease['owner_id'] is not None or lease['external_guard'] is not None
+            or (lease.get('finalization') or {}).get('pending_shared_writes',False) is not False
+            or (lease['repository'],lease['source_ref'])!=(start['lease_repository'],start['lease_source_ref'])):
+        raise ValueError('exact unowned unguarded original prehandle source lease required')
+    _prehandle_physical(store,row,source,pins,births)
+    if store.read()!=(revision,document) or source.read()!=(srev,lease):raise ValueError('prehandle volatile head changed')
+    return revision,row,births
+
+
+class PrehandleIntakeDispositionProof:
+    """Ephemeral administrative custody; never a terminal, wait or send proof."""
+    def __init__(self,seal,store,task_id,source,pins,at):
+        if seal is not _SEAL:raise ValueError('package issued prehandle disposition required')
+        self._seal=seal;self._store=store;self._task=task_id;self._source=source;self._pins=copy.deepcopy(pins);self._at=at;self._retired=False
+        self._revision,self._row,self._births=_authenticate_prehandle(store,task_id,source,pins)
+        self._binding=op._hash([self._pins,self._at,self._revision,self._row,self._births])
+    def revalidate_for(self,store,task_id):
+        if (self._seal is not _SEAL or store is not self._store or task_id!=self._task
+                or self._binding!=op._hash([self._pins,self._at,self._revision,self._row,self._births])):raise ValueError('prehandle capability substituted or mutated')
+        # Only this package-issued process-local capability can reuse its exact
+        # immutable head verdict. Fresh head/source/physical checks still run.
+        revision,row,_=_authenticate_prehandle(store,task_id,self._source,self._pins,authenticated_births=self._births)
+        if revision!=self._revision or row!=self._row:raise ValueError('prehandle capability head changed')
+        return row
+    def revalidate_cancellation(self,store,revision,task_id,proposed):
+        row=self.revalidate_for(store,task_id);entry=_validate_prehandle_disposition_row(proposed)
+        if (revision!=self._revision or _prehandle_original(row)!='cancelled' or entry['original_row']!=row
+                or entry['trusted_contract']!=self._pins or entry['retired_at_utc']!=self._at):raise ValueError('reserved cancellation capability binding changed')
+
+
+def authenticate_prehandle_intake(store,task_id,*,source_store,trusted_contract,at):
+    op._timestamp(at,'prehandle disposition time')
+    return PrehandleIntakeDispositionProof(_SEAL,store,task_id,source_store,trusted_contract,at)
+
+
+def _validate_prehandle_disposition_row(row):
+    disposition=row.get('state');key='administrative_disposition' if disposition=='retired_unknown' else 'unstarted_cancellation'
+    entry=(row.get('result') or {}).get(key)
+    op._object(entry,{'schema','task_id','contract_digest','original_effect','actual_wait','replay_forbidden','original_revision','original_row','trusted_contract','retired_at_utc','reason','no_send'},'native prehandle disposition')
+    original=entry['original_row'];expected=copy.deepcopy(original);expected.update(state=disposition,result={key:entry})
+    required=_prehandle_original(original);schema=PREHANDLE_SCHEMA if required=='retired_unknown' else RESERVED_SCHEMA
+    if (row!=expected or disposition!=required or entry['schema']!=schema or entry['task_id']!=row['task']['id']
+            or entry['contract_digest']!=_contract(original) or entry['original_revision']!=entry['trusted_contract']['original_revision']
+            or op._hash(original)!=entry['trusted_contract']['row_digest'] or entry['actual_wait'] is not None
+            or entry['replay_forbidden'] is not True or entry['original_effect']!=('UNKNOWN' if required=='retired_unknown' else 'NOT_SENT')
+            or entry['reason']!=('consumed_prehandle_start_failure' if required=='retired_unknown' else 'owner_cancelled_unconsumed_reservation')
+            or entry['no_send'] is not (required=='cancelled')):raise ValueError('prehandle disposition cannot alter original liability or claim terminal success')
+    op._timestamp(entry['retired_at_utc'],'prehandle disposition time')
+    op._text(entry['trusted_contract']['owner_decision_reference'],'prehandle owner decision')
+    return entry
+
+
+def dispose_prehandle_intake_cas(store,expected_revision,task_id,proof,*,at):
+    if type(proof) is not PrehandleIntakeDispositionProof or proof._retired or at!=proof._at:raise ValueError('issued original prehandle proof required')
+    row=proof.revalidate_for(store,task_id);revision,document=store.read()
+    if revision!=expected_revision or revision!=proof._revision:raise ValueError('stale original prehandle CAS')
+    disposition=_prehandle_original(row);consumed=disposition=='retired_unknown'
+    key='administrative_disposition' if consumed else 'unstarted_cancellation'
+    entry=dict(schema=PREHANDLE_SCHEMA if consumed else RESERVED_SCHEMA,task_id=task_id,contract_digest=_contract(row),
+        original_effect='UNKNOWN' if consumed else 'NOT_SENT',actual_wait=None,replay_forbidden=True,
+        original_revision=proof._pins['original_revision'],original_row=copy.deepcopy(row),trusted_contract=copy.deepcopy(proof._pins),
+        retired_at_utc=at,reason='consumed_prehandle_start_failure' if consumed else 'owner_cancelled_unconsumed_reservation',no_send=not consumed)
+    changed=copy.deepcopy(document);changed['tasks'][task_id].update(state=disposition,result={key:entry})
+    _validate_prehandle_disposition_row(changed['tasks'][task_id])
+    new_revision=store.compare_and_swap(expected_revision,changed,recovery_capability=proof)
+    if store.read()!=(new_revision,changed):raise ValueError('prehandle disposition reply moved; observe without replay')
+    return {'revision':new_revision,'row':copy.deepcopy(changed['tasks'][task_id])}
+
+
+def assert_intake_disposition_replay_absent(document):
+    """Structural current/history consumer guard; supplies no recovery authority."""
+    return _assert_intake_disposition_replay_absent(document)
+
+
+def _assert_intake_disposition_replay_absent(document, row_validator=None):
+    rows=document.get('tasks',{})
+    for task_id,row in rows.items():
+        if row.get('state')=='retired_unknown' and ((row.get('result') or {}).get('administrative_disposition') or {}).get('schema')==PREHANDLE_SCHEMA:
+            (row_validator or _validate_prehandle_disposition_row)(row)
+        elif ((row.get('result') or {}).get('unstarted_cancellation') or {}).get('schema')==RESERVED_SCHEMA:
+            (row_validator or validate_queued_cancellation)(row)
+        else:continue
+        for other_id,other in rows.items():
+            if other_id==task_id:continue
+            if (semantic_intake_contract(other)==semantic_intake_contract(row)
+                    or other.get('operation') is not None and _contract(other)==_contract(row)):
+                raise ValueError('original disposed intake contract cannot replay under another task/attempt')
     return True

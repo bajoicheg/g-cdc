@@ -8,7 +8,9 @@ import json
 import os
 import re
 import secrets
+import select
 import subprocess
+import time
 
 from git_remote_identity import isolated_remote_args, remote_identity, repository_root
 from parallel_task_planner import portable_path_key
@@ -34,6 +36,167 @@ def unique_object(pairs):
             raise ValueError("duplicate coordination JSON key")
         value[key] = item
     return value
+
+
+_BATCH_TIMEOUT = 20
+
+
+class _ObjectPipe:
+    """One local cat-file pipe; bounded framing and deadline, no authority."""
+
+    def __init__(self, repo, option):
+        self.buffer = bytearray()
+        try:
+            self.process = subprocess.Popen(
+                ["git", "-C", str(repo), "cat-file", option],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                env=git_object_environment(GIT_TERMINAL_PROMPT="0"), bufsize=0)
+        except (OSError, subprocess.SubprocessError):
+            raise ValueError("Git document coordination unavailable") from None
+        try:
+            os.set_blocking(self.process.stdin.fileno(), False)
+            os.set_blocking(self.process.stdout.fileno(), False)
+        except BaseException:
+            self.finish(False)
+            raise
+
+    def _ready(self, deadline, *, writing=False):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ValueError("historical object batch timed out")
+        fd = (self.process.stdin if writing else self.process.stdout).fileno()
+        ready = select.select([] if writing else [fd], [fd] if writing else [], [], remaining)
+        if not ready[1 if writing else 0]:
+            raise ValueError("historical object batch timed out")
+        return fd
+
+    def send(self, specifications, deadline):
+        # The empty request has the fixed ' missing' reply: a frame boundary,
+        # never an additional object or caller-controlled Git expression.
+        request = ("\n".join(specifications) + "\n\n").encode("ascii")
+        offset = 0
+        while offset < len(request):
+            try:
+                offset += os.write(self._ready(deadline, writing=True), request[offset:])
+            except (OSError, subprocess.SubprocessError):
+                raise ValueError("Git document coordination unavailable") from None
+
+    def _fill(self, deadline):
+        try:
+            data = os.read(self._ready(deadline), 65536)
+        except OSError:
+            raise ValueError("Git document coordination unavailable") from None
+        if not data:
+            raise ValueError("incomplete historical object batch")
+        self.buffer.extend(data)
+
+    def line(self, deadline):
+        while True:
+            end = self.buffer.find(b"\n")
+            if end >= 0:
+                if end > 256:
+                    raise ValueError("invalid historical object header")
+                result = bytes(self.buffer[:end + 1]); del self.buffer[:end + 1]
+                return result
+            if len(self.buffer) > 256:
+                raise ValueError("invalid historical object header")
+            self._fill(deadline)
+
+    def take(self, size, deadline):
+        while len(self.buffer) < size:
+            self._fill(deadline)
+        result = bytes(self.buffer[:size]); del self.buffer[:size]
+        return result
+
+    def boundary(self, deadline):
+        if self.line(deadline) != b" missing\n" or self.buffer:
+            raise ValueError("unexpected historical object batch data")
+
+    def finish(self, check):
+        try:
+            if check:
+                self.process.stdin.close()
+                deadline = time.monotonic() + _BATCH_TIMEOUT
+                if self.buffer or os.read(self._ready(deadline), 1):
+                    raise ValueError("unexpected historical object batch data")
+                remaining = max(0.001, deadline - time.monotonic())
+                if self.process.wait(timeout=remaining):
+                    raise ValueError("Git document coordination command failed")
+        except (OSError, subprocess.SubprocessError):
+            raise ValueError("Git document coordination unavailable") from None
+        finally:
+            if self.process.poll() is None:
+                self.process.terminate()
+                try:
+                    self.process.wait(timeout=1)
+                except subprocess.TimeoutExpired:
+                    self.process.kill(); self.process.wait(timeout=1)
+            self.process.stdin.close(); self.process.stdout.close()
+
+
+class _ObjectBatchSession:
+    """Ephemeral POSIX transport for one generator; no cross-call state."""
+
+    def __init__(self, repo):
+        self.repo = repo; self.pipes = []; self.closed = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, kind, value, traceback):
+        self.close(kind is None)
+
+    def close(self, check):
+        self.closed = True
+        error = None
+        for pipe in self.pipes:
+            try:
+                pipe.finish(check)
+            except (OSError, ValueError, subprocess.SubprocessError) as exc:
+                if error is None: error = exc
+        self.pipes = []
+        if error is not None:
+            raise ValueError("Git historical object session did not close cleanly") from error
+
+    def read(self, specifications, object_type, max_bytes):
+        if (self.closed or not 1 <= len(specifications) <= 16
+                or object_type not in {"tree", "blob"}
+                or max_bytes != (128 if object_type == "tree" else MAX_BYTES)
+                or any(type(spec) is not str or re.fullmatch(
+                    r"(?:[0-9a-f]{40}|[0-9a-f]{64})(?:\^\{tree\})?", spec) is None
+                       for spec in specifications)):
+            raise ValueError("invalid historical object batch")
+        if not self.pipes:
+            try:
+                self.pipes.append(_ObjectPipe(self.repo, "--batch-check"))
+                self.pipes.append(_ObjectPipe(self.repo, "--batch"))
+            except BaseException:
+                self.close(False)
+                raise
+        check, body = self.pipes
+        deadline = time.monotonic() + _BATCH_TIMEOUT
+        check.send(specifications, deadline)
+        headers = [check.line(deadline) for _ in specifications]
+        check.boundary(deadline)
+        checked = []
+        for header in headers:
+            parts = header.split()
+            if (len(parts) != 3 or not REVISION.fullmatch(parts[0].decode("ascii"))
+                    or parts[1] != object_type.encode("ascii") or not parts[2].isdigit()
+                    or int(parts[2]) > max_bytes):
+                raise ValueError("invalid historical object type or size")
+            checked.append((header, int(parts[2])))
+        deadline = time.monotonic() + _BATCH_TIMEOUT
+        body.send(specifications, deadline)
+        values = []
+        for header, size in checked:
+            if body.line(deadline) != header:
+                raise ValueError("historical object batch changed")
+            values.append(body.take(size, deadline))
+            if body.take(1, deadline) != b"\n":
+                raise ValueError("incomplete historical object body")
+        body.boundary(deadline)
+        return values
 
 
 class GitDocumentStore:
@@ -97,12 +260,7 @@ class GitDocumentStore:
             raise ValueError("document coordination ref must point to a commit")
         if self._git("ls-tree", "--name-only", revision).splitlines() != [STATE_FILE]:
             raise ValueError("dedicated coordination tree must contain only document.json")
-        payload = self._git("show", f"{revision}:{STATE_FILE}") + "\n"
-        if len(payload.encode("utf-8")) > MAX_BYTES:
-            raise ValueError("coordination document exceeds 4 MiB")
-        document = json.loads(payload, object_pairs_hook=unique_object)
-        if canonical(document) != payload:
-            raise ValueError("coordination document must have canonical JSON encoding")
+        document = self._read_document_object(revision)
         if revision != self._remote_revision():
             raise ValueError("coordination ref moved during read")
         return revision, document
@@ -126,13 +284,105 @@ class GitDocumentStore:
 
     def _read_document_object(self, revision):
         """Decode a genuine immutable object from an already authenticated snapshot."""
-        if self._git("ls-tree", "--name-only", revision).splitlines() != [STATE_FILE]:
-            raise ValueError("historical coordination tree must contain only document.json")
-        payload = self._git("show", f"{revision}:{STATE_FILE}") + "\n"
-        document = json.loads(payload, object_pairs_hook=unique_object)
-        if canonical(document) != payload:
-            raise ValueError("historical coordination document must have canonical JSON encoding")
+        document, = self._read_document_objects([revision])
         return document
+
+    def _batch_objects(self, specifications, object_type, max_bytes):
+        """Read a small immutable batch, checking sizes before materializing bodies.
+
+        Specifications are constructed here from full object IDs, never caller
+        expressions. Both subprocesses disable replacement refs and grafts.
+        """
+        request = ("\n".join(specifications) + "\n").encode("ascii")
+        env = git_object_environment(GIT_TERMINAL_PROMPT="0")
+
+        def run(option):
+            try:
+                result = subprocess.run(
+                    ["git", "-C", str(self.repo), "cat-file", option], input=request,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, timeout=20)
+            except (OSError, subprocess.SubprocessError):
+                raise ValueError("Git document coordination unavailable") from None
+            if result.returncode:
+                raise ValueError("Git document coordination command failed")
+            return result.stdout
+
+        headers = run("--batch-check").splitlines()
+        if len(headers) != len(specifications):
+            raise ValueError("incomplete historical object batch")
+        checked = []
+        for header in headers:
+            parts = header.split()
+            if (len(parts) != 3 or not REVISION.fullmatch(parts[0].decode("ascii"))
+                    or parts[1] != object_type.encode("ascii") or not parts[2].isdigit()
+                    or int(parts[2]) > max_bytes):
+                raise ValueError("invalid historical object type or size")
+            checked.append((header, int(parts[2])))
+        raw = run("--batch")
+        offset = 0
+        values = []
+        for header, size in checked:
+            prefix = header + b"\n"
+            if raw[offset:offset + len(prefix)] != prefix:
+                raise ValueError("historical object batch changed")
+            offset += len(prefix)
+            value = raw[offset:offset + size]
+            offset += size
+            if len(value) != size or raw[offset:offset + 1] != b"\n":
+                raise ValueError("incomplete historical object body")
+            offset += 1
+            values.append(value)
+        if offset != len(raw):
+            raise ValueError("unexpected historical object batch data")
+        return values
+
+    def _read_document_objects(self, revisions):
+        """Decode every authenticated revision, with bounded batched Git I/O.
+
+        This is transport only: callers still authenticate the complete native
+        graph, endpoint and fresh head. No process/persistent authority is added.
+        At most 16 trees or 16 bounded document blobs are materialized at once.
+        """
+        from itertools import islice
+        from contextlib import nullcontext
+        revisions = iter(revisions)
+        session = _ObjectBatchSession(self.repo) if os.name == "posix" else None
+        with session if session is not None else nullcontext():
+            batch = session.read if session is not None else self._batch_objects
+            while True:
+                chunk = list(islice(revisions, 16))
+                if not chunk:
+                    return
+                if any(not isinstance(revision, str) or not REVISION.fullmatch(revision)
+                       for revision in chunk):
+                    raise ValueError("invalid historical document revision")
+                trees = batch([revision + "^{tree}" for revision in chunk], "tree", 128)
+                blobs = []
+                for revision, tree in zip(chunk, trees):
+                    # Exactly one root entry named document.json; reject trees,
+                    # gitlinks and any additional entry before reading JSON.
+                    header, separator, oid = tree.partition(b"\0")
+                    if (not separator or not re.fullmatch(rb"[0-7]+ document\.json", header)
+                            or len(oid) != len(revision) // 2):
+                        raise ValueError("historical coordination tree must contain only document.json")
+                    blobs.append(oid.hex())
+                for payload in batch(blobs, "blob", MAX_BYTES):
+                    # Match _git's text/universal-newline and trailing-LF handling.
+                    payload = payload.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n").rstrip("\n") + "\n"
+                    # Exact canonical equality already excludes duplicate keys.
+                    # Decode valid history in C; preserve the original strict
+                    # decoder and its error ordering for every rejected payload.
+                    try:
+                        document = json.loads(payload)
+                        exact = canonical(document) == payload
+                    except (ValueError, TypeError, RecursionError):
+                        exact = False
+                    if not exact:
+                        document = None
+                        document = json.loads(payload, object_pairs_hook=unique_object)
+                        if canonical(document) != payload:
+                            raise ValueError("historical coordination document must have canonical JSON encoding")
+                    yield document
 
     def compare_and_swap(self, expected_revision, document, *, recovery_capability=None):
         payload = canonical(document)

@@ -1,7 +1,7 @@
 {
-  "description": "Provider-neutral Codex/Gemini/Kimi agents over retained authenticated native history, budget and original-attempt recovery controls.",
+  "description": "Qualified native history, UNKNOWN recovery, budget and rejection-closure fixes composed over the released provider-neutral 3.6.9 package.",
   "entrypoint": "SKILL.md",
   "name": "continuous-development-cycle",
   "schema": "continuous-development-cycle/v3",
-  "version": "3.6.9"
+  "version": "3.6.10"
 }

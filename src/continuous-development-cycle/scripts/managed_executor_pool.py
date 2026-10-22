@@ -23,7 +23,7 @@ SHA = re.compile(r"^[0-9a-f]{40}$")
 STORE_ID = re.compile(r"^sha256:[0-9a-f]{64}$")
 DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
 ROLES = {"writer", "read_only", "review"}
-TASK_STATUSES = {"planned", "queued", "running", "succeeded", "failed", "cancelled", "stale", "omitted"}
+TASK_STATUSES = {"planned", "queued", "running", "succeeded", "failed", "cancelled", "stale", "omitted", "review_rejected"}
 ACTIVE = {"queued", "running"}
 RECOVERABLE = {"failed", "cancelled", "stale"}
 AUTHORITY_FIELDS = (
@@ -315,7 +315,7 @@ def validate_state(plan, state):
     runtime_sum = 0
     cost_sum = 0
     for task in state["tasks"]:
-        if not isinstance(task, dict) or set(task) != TASK_STATE_FIELDS:
+        if not isinstance(task, dict) or set(task) not in (TASK_STATE_FIELDS, TASK_STATE_FIELDS | {'rejected_preparations'}):
             raise ValueError("managed executor task state fields mismatch")
         task_id = task["id"]
         if task_id not in pmap:
@@ -353,6 +353,40 @@ def validate_state(plan, state):
             raise ValueError("only succeeded task may retain accepted result")
         if task["status"] != "succeeded" and (task["integrated"] or task["discarded"]):
             raise ValueError("only succeeded task may retain result disposition")
+        history = task.get('rejected_preparations', [])
+        if 'rejected_preparations' in task and (not isinstance(history, list) or not history):
+            raise ValueError('rejected preparations must be a nonempty history')
+        rejected_ids = []
+        rejected_runtime = 0
+        for rejection in history:
+            fields = {'attempt_id', 'rejection_ref', 'review_ref', 'request_ref', 'launch_id', 'runtime_seconds', 'elapsed_seconds'}
+            if not isinstance(rejection, dict) or set(rejection) != fields:
+                raise ValueError('rejected preparation record invalid')
+            for name in ('attempt_id', 'review_ref'):
+                _text(rejection[name], name)
+            for name in ('rejection_ref', 'request_ref', 'launch_id'):
+                if not isinstance(rejection[name], str) or not DIGEST.fullmatch(rejection[name]):
+                    raise ValueError('rejected preparation digest invalid')
+            runtime = _nonnegative_number(rejection['runtime_seconds'], 'rejection runtime')
+            elapsed = _nonnegative_number(rejection['elapsed_seconds'], 'rejection elapsed')
+            if runtime > elapsed or rejection['request_ref'] != rejection['launch_id']:
+                raise ValueError('rejected preparation observation inconsistent')
+            if rejection['attempt_id'] not in task['attempt_ids']:
+                raise ValueError('rejected attempt missing from history')
+            rejected_ids.append(rejection['attempt_id'])
+            rejected_runtime += runtime
+        if len(set(rejected_ids)) != len(rejected_ids) or rejected_runtime > task['runtime_seconds']:
+            raise ValueError('rejected preparation history inconsistent')
+        if history:
+            positions = [task['attempt_ids'].index(value) for value in rejected_ids]
+            if positions != sorted(positions) or pmap[task_id]['role'] != 'writer':
+                raise ValueError('rejected preparation assignment/history inconsistent')
+            if task['active_attempt_id'] in rejected_ids:
+                raise ValueError('rejected attempt cannot remain active')
+            if task['status'] in {'succeeded', 'failed', 'cancelled', 'stale'} and task['attempt_ids'][-1] in rejected_ids:
+                raise ValueError('rejected attempt cannot have execution/result disposition')
+        if task['status'] == 'review_rejected' and (not history or rejected_ids[-1] != task['attempt_ids'][-1]):
+            raise ValueError('review_rejected requires latest rejected preparation')
         runtime_sum += _nonnegative_number(task["runtime_seconds"], f"{task_id}.runtime_seconds")
         cost_sum += _nonnegative_number(task["cost_units"], f"{task_id}.cost_units")
         if task["runtime_seconds"] > pmap[task_id]["max_runtime_seconds"]:
@@ -681,8 +715,6 @@ def accept_result(plan, state, *, task_id, attempt_id, result_ref, base_sha,
             task, base_sha, result_commit, git_worktree)
         if {portable_path_key(x) for x in observed_changed_paths} != {portable_path_key(x) for x in changed_paths}:
             raise ValueError("reported changed paths do not match exact Git diff")
-        if {portable_path_key(x) for x in touched_paths} != {portable_path_key(x) for x in changed_paths}:
-            raise ValueError("reported changed paths do not match history touched paths")
         if not _result_paths_within_claim(task, observed_changed_paths):
             raise ValueError("Git diff changed paths escape declared write set")
         if not _result_paths_within_claim(task, touched_paths):
@@ -741,13 +773,39 @@ def fail_attempt(plan, state, task_id, attempt_id, *, terminal_status, reservati
     return validate_state(plan, _advance_revision(result))
 
 
+def reject_preparation(plan, state, task_id, attempt_id, *, reservation_token, rejection, expected_revision):
+    """Record a runtime-issued negative review; never accept a candidate."""
+    validate_state(plan, state)
+    _expect_revision(state, expected_revision)
+    current = _state_map(state).get(task_id)
+    if current is None or rejection.get('attempt_id') != attempt_id:
+        raise ValueError('rejection attempt mismatch')
+    prior = next((row for row in current.get('rejected_preparations', []) if row['attempt_id'] == attempt_id), None)
+    if prior is not None:
+        if prior != rejection:
+            raise ValueError('conflicting rejected preparation')
+        return copy.deepcopy(state)
+    if (_task_map(plan)[task_id]['role'] != 'writer' or current['status'] != 'running'
+            or current['active_attempt_id'] != attempt_id or current['reservation_token'] != reservation_token
+            or current['accepted_result_ref'] is not None or current['integrated'] or current['discarded']):
+        raise ValueError('rejection requires exact running writer reservation')
+    runtime = _nonnegative_number(rejection['runtime_seconds'], 'runtime_seconds')
+    result = copy.deepcopy(state)
+    row = _state_map(result)[task_id]
+    row.setdefault('rejected_preparations', []).append(copy.deepcopy(rejection))
+    row.update(status='review_rejected', active_attempt_id=None, reservation_token=None,
+               runtime_seconds=row['runtime_seconds'] + runtime)
+    result['runtime_consumed_seconds'] += runtime
+    return validate_state(plan, _advance_revision(result))
+
+
 def retry_task(plan, state, task_id, *, expected_revision):
     validate_state(plan, state)
     _expect_revision(state, expected_revision)
     result = copy.deepcopy(state)
     current = _state_map(result).get(task_id)
-    if current is None or current["status"] not in RECOVERABLE:
-        raise ValueError("retry requires failed/cancelled/stale task")
+    if current is None or current["status"] not in RECOVERABLE | {'review_rejected'}:
+        raise ValueError("retry requires failed/cancelled/stale/review_rejected task")
     if min(_remaining_task_budget(_task_map(plan)[task_id], current)) <= 0:
         raise ValueError("task budget exhausted; explicit authorized replanning required")
     current["status"] = "planned"
@@ -803,6 +861,8 @@ def assess(plan, state):
     runnable = ready_task_ids(plan, state)
     for task in plan["tasks"]:
         current = smap[task["id"]]
+        if current['status'] == 'review_rejected':
+            blockers.append(f"{task['id']}:review_correction_required")
         if current["status"] in ACTIVE:
             blockers.append(f"{task['id']}:active")
         if current["status"] == "succeeded" and not current["integrated"] and not current["discarded"]:

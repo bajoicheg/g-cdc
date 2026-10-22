@@ -144,3 +144,8 @@ neighbor and lexical preservation, concurrent sibling CAS, stale/lost replies,
 history rewrites, task/policy substitution, malformed documents, quota denial,
 operation aliases and retained liabilities across a legitimate wake. Complete
 release qualification and ordered independent reviews precede live adoption.
+
+
+## Bounded history payload retention
+
+Each read still authenticates the current endpoint, full original anchored parent chain and fresh final ref. Cold validation streams all intermediate immutable ledgers with their original policy/event/wake checks, keeping only needed preceding/current payloads. The existing detached process-local cache retains the verified tip and chain, not every historical ledger. An earlier selected historical revision is loaded from its actual immutable object only after matching that freshly authenticated canonical prefix. The original4MiB document bound is checked before reading a blob body; Git fetch/pack resources and parsed-object overhead are separate. No new launch, lease, provider or owner authority is supplied by cached data.
