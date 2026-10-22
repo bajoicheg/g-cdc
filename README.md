@@ -12,6 +12,9 @@ See [current status and evidence](docs/current-status.md) and the [roadmap](docs
 
 Installed optional Codex provider usage now follows original checkpoint-pinned streams into saved task reporting. The first new useful Codex documentation task succeeded; its conservative saved usage UNKNOWN was retained after a typed runtime-shape correction. See [the actual outcome and limits](docs/current-status.md#original-provider-stream-usage-22-october).
 
+<!-- CDC_RETROSPECTIVE_PROVIDER_USAGE_20261022 -->
+The retrospective now retains the same saved usage UNKNOWN, original IDs, coverage and complete totals atomically. [Installed consumer evidence](docs/current-status.md#saved-provider-usage-in-retrospective-22-october) is distinct from live billing and canonical release.
+
 ## Cloud entry
 
 Read the actual project [AGENTS.md](AGENTS.md), source HEAD, checkpoint, lease/guard and journal before setup or a new request. Preserve known operations. Use the [Cloud profile](docs/cdc-cloud-profile.json), [entry implementation](src/continuous-development-cycle/scripts/codex_cloud_entrypoint.py) and [packaged guidance](src/continuous-development-cycle/references/cloud-fast-start.md). Build the current project-local input observations according to that guidance and pass their actual JSON path with `prepare --inputs`; the repository does not supply a shared ready input file.

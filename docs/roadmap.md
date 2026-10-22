@@ -9,12 +9,13 @@ As of **2026-10-22 (Europe/Moscow)**. See [current status](current-status.md) fo
 | Published 3.6.9 source | `release/v3.6.9` → `eef5be087a76f9cb877352ff720d449a060ee9dd` (2026-10-16), package tree `1a3f49bc95f2b3da04671cbe3b924a5f98b6c714`. Candidate preparation metadata remains distinct; publication is not adoption. |
 | #86 preserve-tree lease handling | Source preserves non-lease root entries, lease mode and expected-parent push; affected legacy migration acceptance remains conditional. |
 | #111 receiving admission/binding | Preflight, delivery and host bridge source exist; actual receiving delivery acceptance remains separate. |
-| #113 reporting/RCA boundaries | Reporting contract, final gate and host bridge source exist; authentic live producer/consumer callback remains open. |
+| #113 reporting/RCA boundaries | Reporting contract, final gate and host bridge source exist; bounded live callbacks are recorded in installed scope; remaining reporting/continuation and all-project adoption remain open. |
 
 ## Done in the installed VPS scope
 
 | Scope | Evidence and limit |
 | --- | --- |
+| 22 October retrospective saved usage | <!-- CDC_RETROSPECTIVE_PROVIDER_USAGE_20261022 --> [Applied consumer](https://github.com/bajoicheg/codex-compute/commit/8c69fdb848dd62d02f9639f41e632df64faa7f2b) retains original IDs, UNKNOWN/partial, coverage and complete totals. Four new cases and one actual discovered installed build_input read; cursor/backlog/outcomes unchanged, no new model/Kimi/CI or acceptance replay. [Bounds and limits](current-status.md#saved-provider-usage-in-retrospective-22-october); broader #113 remains open. |
 | 22 October original provider usage | Optional pinned-stream producer and selected/owner consumer installed; one useful ordinary Codex doc task genuinely succeeded. Its saved UNKNOWN is preserved. Typed five-counter correction and read-only original observation give 204,260 input (177,792 cached) + 3,195 output; this is not a second emitted receipt or backfill. Eight distinct focused cases passed in 7+1 executions. [Exact limits](current-status.md#original-provider-stream-usage-22-october); broader #113/#101 remains open. |
 | Immutable SDK | VERSION `3.6.8`, `cdc-3.6.8-reportfresh-20261022`, TREE `565288391ea560d5ae9723ebd15a4a17f26fb30e` (prior snapshot preserved); not a 3.6.9 installation. |
 | 20 October operational fixes | Compact TaskStore/status; authenticated UNKNOWN administrative dispositions retaining original UNKNOWN; typed Kimi artifact consumer and scheduler registration; backup/heartbeat manifest repair with ordinary/Cloud recovery. Exact private evidence refs are in current status. |
