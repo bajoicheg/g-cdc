@@ -10,6 +10,7 @@ Owner priority: no new Kimi work or dispatch; dedicated Kimi development/optimiz
 
 ## Existing operator consumers
 
+- `cdc-vps status --summary` retains bounded original saved RCA/report IDs and explicit UNKNOWN coverage across tasks. These are historical metadata, never current closure or authority; [consumer details](https://github.com/bajoicheg/codex-compute/blob/5c3dfd0d8bc2f532f5bfd321eebf43abab0f796f/docs/aggregate-summary-reporting.md).
 - `cdc-vps status --summary --task ORIGINAL_TASK_ID` selects before projection/IPC and observes recorded metadata; it grants no history/dispatch authority.
 - `cdc-vps status --task ORIGINAL_TASK_ID --human` renders the authenticated original outcome, RCA and fresh Moscow owner report.
 - `cdc-operator economy report --task ORIGINAL_TASK_ID` joins original reporting with spending; `--json` retains structured output.
