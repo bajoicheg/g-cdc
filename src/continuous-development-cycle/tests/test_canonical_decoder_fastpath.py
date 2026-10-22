@@ -37,12 +37,26 @@ class CanonicalDecoderFastpathTests(unittest.TestCase):
 
     def test_canonical_history_uses_no_python_key_callbacks_and_keeps_typed_values(self):
         values=[{}, {'text':'é𝄞\n','nested':[{'x':1,'y':None},True,False],
-                    'numbers':[-0.0,1.0,1e-200,10**50]}, {'escaped':'"\\\t','𝄞':'value'}]
+                    'numbers':[-0.0,1.0,1e-200,2**63-1]}, {'escaped':'"\\\t','𝄞':'value'}]
         payloads=[g.canonical(value).encode() for value in values]
         store,_=self.store(payloads)
         with patch.object(g,'unique_object',side_effect=AssertionError('redundant Python key callback')):
             actual=list(store._read_document_objects([f'{i+1:040x}' for i in range(len(values))]))
         self.assertEqual([g.canonical(value) for value in actual],[p.decode() for p in payloads])
+
+    def test_inexact_decoder_keeps_large_integer_through_original_strict_fallback(self):
+        value={'large':10**50,'nested':{'negative':-(10**50)}}
+        payload=g.canonical(value).encode();store,_=self.store([payload])
+        # A supported optional decoder can return a float for an out-of-range
+        # integer. Exact canonical inequality must retain the strict fallback.
+        inexact={'large':float(10**50),'nested':{'negative':-float(10**50)}}
+        with patch.object(g,'_json_loads',return_value=inexact), \
+                patch.object(g,'unique_object',wraps=g.unique_object) as strict:
+            actual=list(store._read_document_objects(['a'*40]))
+        self.assertTrue(strict.called)
+        self.assertEqual(actual,[value])
+        self.assertIs(type(actual[0]['large']),int)
+        self.assertEqual(g.canonical(actual[0]).encode(),payload)
 
     def test_rejected_payloads_keep_original_duplicate_and_other_error_diagnostics(self):
         cases=[(b'{"a":1,"a":2}\n',ValueError,'duplicate coordination JSON key'),
