@@ -4,7 +4,7 @@ Canonical source status as of **2026-10-22 (Europe/Moscow)**: `bajoicheg/g-cdc` 
 
 The [candidate manifest](release/candidate.json) remains labeled `candidate`, with preparation source `445820c43da276fa525447dee91957c0707cab3c`. Preparation metadata is distinct from published ref/source evidence and is not an installation or adoption receipt. See the [source lock](release/source.lock.json).
 
-The current VPS immutable SDK is **VERSION 3.6.8**, root `cdc-3.6.8-reportref-20261022`, TREE `3fe9cba7643ea5094a9dc8ff2f784fd9b3721ebd` (prior reportfresh snapshot retained), with separately installed mutable host/operator/checkpoint fixes from 20–22 October. This is **not a 3.6.9 VPS installation**. These documentation changes do not move the release ref or constitute a new release.
+The current VPS immutable SDK is **VERSION 3.6.8**, root `cdc-3.6.8-readjson-20261022`, TREE `3b724453aa353d1bbcea48b44a496068526942c7` (prior reportref/reportfresh snapshots retained), with separately installed mutable host/operator/checkpoint fixes from 20–22 October. This is **not a 3.6.9 VPS installation**. These documentation changes do not move the release ref or constitute a new release.
 
 See [current status and evidence](docs/current-status.md) and the [roadmap](docs/roadmap.md). Original documentation remains in Git history.
 
@@ -17,6 +17,9 @@ The retrospective now retains the same saved usage UNKNOWN, original IDs, covera
 
 <!-- CDC_REPORTING_ALIGNMENT_AND_COLLECTION_20261022 -->
 [Registered-project reporting audit](docs/reporting-adoption-audit.md) records Source/package/instruction drift and explicit UNKNOWN client adoption. The installed per-report reference correction and actual native-collection consumer are documented separately from canonical release.
+
+<!-- CDC_TASKSTORE_CANONICAL_JSON_READ_20261022 -->
+[Authenticated cold TaskStore read](https://github.com/bajoicheg/codex-compute/blob/4c5b77adc72e6fefb82e81ef7cccaa23a7138be4/docs/taskstore-canonical-json-read.md) now avoids redundant Python key callbacks for exact canonical history, retaining every validation gate and strict rejection path. One actual installed unprofiled cold authenticated TaskStore.read: **90.79→89.04 seconds** (1.93% lower observed duration). These are two single observations, with one additional runtime-pin commit after migration; no material latency improvement is established (the small difference may be ordinary variance), nor any end-to-end/model-token savings. [Installed scope](docs/current-status.md#authenticated-cold-taskstore-read-22-october) remains distinct from canonical release.
 
 ## Cloud entry
 
