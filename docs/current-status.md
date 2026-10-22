@@ -6,6 +6,10 @@ As of **2026-10-22 (Europe/Moscow)**, based on the operator's bounded evidence s
 
 **Owner priority, 22 October:** all dedicated Kimi development, optimization, rollout and repeat acceptance work is at the very bottom of the backlog. General CDC reporting/RCA, efficiency, Cloud setup and release reconciliation remain useful work; using Kimi is not a prerequisite for the next P1. Existing installed registration and execution evidence are retained. This priority update does not change runtime scheduler configuration. Preserve original IDs, UNKNOWN and spent; do not repeat completed acceptance.
 
+## Owner status reporting/RCA consumer, 22 October
+
+Installed [operational source](https://github.com/bajoicheg/codex-compute/commit/0934ed42a44ec9cdcfe57167905f8804e2b4557a) adds `cdc-vps status --task ORIGINAL_TASK_ID --human` to the existing owner CLI. It uses the native reporting contract to emit a fresh Russian Moscow report and consumes the original invocation's authenticated Git RCA inventory, including open dispositions and durable backlog references. Six new consumer cases passed; one installed CLI invocation through the actual registered socket displayed an existing Codex task's unchanged failed/UNKNOWN outcome and authentic admitted_open RCA. The original control revision and document digest stayed identical across installation and the read. No Kimi/native-model/subagent/CI start or completed acceptance replay was used. Original task/attempt/handle IDs, UNKNOWN, budgets and spent remain in their original private records. This applies one VPS reporting consumer; broader #113 integration and all-project adoption remain open. Immutable SDK3.6.8, canonical release refs and dispatch configuration are unchanged. See the [consumer guide](https://github.com/bajoicheg/codex-compute/blob/0934ed42a44ec9cdcfe57167905f8804e2b4557a/docs/owner-status-report.md).
+
 ## Three layers
 
 | Layer | Completed scope and evidence | Residual acceptance |
