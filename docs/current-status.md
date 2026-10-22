@@ -2,6 +2,10 @@
 
 As of **2026-10-22 (Europe/Moscow)**, based on the operator's bounded evidence summary. Source presence, source acceptance, installation, actual execution and consumer adoption are distinct. This update records installed recovery, retained historical failures/operator application, and one new useful genuinely successful registered Kimi task. It adds no canonical release or broad consumer adoption.
 
+## Current owner priority
+
+**Owner priority, 22 October:** all dedicated Kimi development, optimization, rollout and repeat acceptance work is at the very bottom of the backlog. General CDC reporting/RCA, efficiency, Cloud setup and release reconciliation remain useful work; using Kimi is not a prerequisite for the next P1. Existing installed registration and execution evidence are retained. This priority update does not change runtime scheduler configuration. Preserve original IDs, UNKNOWN and spent; do not repeat completed acceptance.
+
 ## Three layers
 
 | Layer | Completed scope and evidence | Residual acceptance |

@@ -27,10 +27,10 @@ As of **2026-10-22 (Europe/Moscow)**. See [current status](current-status.md) fo
 
 ## Remaining selection
 
-No new unresolved active P0 is established by the bounded audit. Highest useful remaining P1 work:
+No new unresolved active P0 is established by the bounded audit. Highest useful remaining P1 work (dedicated Kimi work is deferred to the final section):
 
 1. Resolve #100's exact hosted Cloud setup/policy binding through supported GUI configuration. Readiness remains UNKNOWN. Authentication/backend binding and the exhausted configuration-reader search do not justify another login, API search or inventory sweep.
-2. Extend #113's reporting/RCA producer/consumer evidence from this bounded successful native guide task to its remaining real consumers; this task's native receipts, truthful report and durable backlog disposition do not establish all-project adoption. Preserve original requirements until behavioral acceptance exists.
+2. Extend #113's provider-neutral reporting/RCA producer/consumer evidence to one remaining real consumer. The bounded successful native guide task does not establish all-project adoption. Preserve original requirements until behavioral evidence exists. Use the available authorised execution path; Kimi is not a prerequisite. General #101 efficiency work remains eligible when grounded in an actual CDC bottleneck, without promoting dedicated Kimi optimization.
 3. Reconcile installed operational fixes into a future canonical release only after genuine scope selection, compatibility assessment and required gates. No version is selected and no consolidation release is claimed.
 
 #111 and #112 are conditional checks at the next real authorized receiving delivery, not reasons to manufacture a delivery or start speculative callsite repairs. #112 still needs detached-preview/assigned-branch result end-to-end acceptance. #86 is conditional on an affected legacy migration; source preserves-tree behavior does not prove full live adoption or establish a new active P0. #101 remains open across broader acceptance boundaries. Keep #86/#100/#101/#111/#112/#113 open and preserve historical checklists.
@@ -38,3 +38,9 @@ No new unresolved active P0 is established by the bounded audit. Highest useful 
 ## Deferred phases and owner pauses
 
 See [multi-provider guidance](multiprovider.md). Real Gemini connection remains deferred. Future provider-routing evaluation (including LiteLLM/Jev), n8n triggers through CDC authority, Temporal only for a demonstrated durability gap, and independently authorized Fleet rollout/benchmarking remain deferred. Fleet and inherited paused schedulers stay paused; retired Supervisor remains retired. Canceled controller/pool qualification plans are not next actions. Product/GAD ownership and separate production adoption authority remain intact. Runtime/package changes and consumer adoption continue through their separately authorized gates.
+
+## Lowest priority: dedicated Kimi work
+
+**Owner priority, 22 October:** all dedicated Kimi development, optimization, rollout and repeat acceptance work is at the very bottom of the backlog. General CDC reporting/RCA, efficiency, Cloud setup and release reconciliation remain useful work; using Kimi is not a prerequisite for the next P1. Existing installed registration and execution evidence are retained. This priority update does not change runtime scheduler configuration. Preserve original IDs, UNKNOWN and spent; do not repeat completed acceptance.
+
+The previously suggested analysis of Kimi-specific native-path latency belongs here. The last observed terminal interval and worker runtime alone do not establish its cause. Dedicated follow-up is deferred behind the other backlog work; the completed quickstart and native success remain reusable evidence.
