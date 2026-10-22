@@ -10,6 +10,8 @@ See [current status and evidence](docs/current-status.md) and the [roadmap](docs
 
 **Owner priority, 22 October:** all dedicated Kimi development, optimization, rollout and repeat acceptance work is at the very bottom of the backlog. General CDC reporting/RCA, efficiency, Cloud setup and release reconciliation remain useful work; using Kimi is not a prerequisite for the next P1. Existing installed registration and execution evidence are retained. This priority update does not change runtime scheduler configuration. Preserve original IDs, UNKNOWN and spent; do not repeat completed acceptance.
 
+Installed optional Codex provider usage now follows original checkpoint-pinned streams into saved task reporting. The first new useful Codex documentation task succeeded; its conservative saved usage UNKNOWN was retained after a typed runtime-shape correction. See [the actual outcome and limits](docs/current-status.md#original-provider-stream-usage-22-october).
+
 ## Cloud entry
 
 Read the actual project [AGENTS.md](AGENTS.md), source HEAD, checkpoint, lease/guard and journal before setup or a new request. Preserve known operations. Use the [Cloud profile](docs/cdc-cloud-profile.json), [entry implementation](src/continuous-development-cycle/scripts/codex_cloud_entrypoint.py) and [packaged guidance](src/continuous-development-cycle/references/cloud-fast-start.md). Build the current project-local input observations according to that guidance and pass their actual JSON path with `prepare --inputs`; the repository does not supply a shared ready input file.

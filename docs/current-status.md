@@ -1,10 +1,22 @@
 # Current CDC status
 
-As of **2026-10-22 (Europe/Moscow)**, based on the operator's bounded evidence summary. Source presence, source acceptance, installation, actual execution and consumer adoption are distinct. This update records installed recovery, retained historical failures/operator application, and one new useful genuinely successful registered Kimi task. It adds no canonical release or broad consumer adoption.
+As of **2026-10-22 (Europe/Moscow)**, based on the operator's bounded evidence summary. Source presence, source acceptance, installation, actual execution and consumer adoption are distinct. This update records installed recovery, retained historical failures/operator application, and useful registered native executions, most recently a successful Codex documentation task. It adds no canonical release or broad consumer adoption.
 
 ## Current owner priority
 
 **Owner priority, 22 October:** all dedicated Kimi development, optimization, rollout and repeat acceptance work is at the very bottom of the backlog. General CDC reporting/RCA, efficiency, Cloud setup and release reconciliation remain useful work; using Kimi is not a prerequisite for the next P1. Existing installed registration and execution evidence are retained. This priority update does not change runtime scheduler configuration. Preserve original IDs, UNKNOWN and spent; do not repeat completed acceptance.
+
+## Original provider-stream usage, 22 October
+
+[Initial producer/consumer source](https://github.com/bajoicheg/codex-compute/commit/9f4413bb7a64e46b9c3b4c39934801b40396425a) is installed in the mutable VPS service. Optional `result.provider_usage` joins the original task, attempt, handle, sealed Codex executor/start, checkpoint, expected phases, thread and raw stream SHA. Saved metadata grants no live billing, quota, budget or native authority; the legacy sealed model comparison is unchanged. Missing, malformed, ambiguous or unpinned evidence remains UNKNOWN. Partial phase coverage keeps known observations while the full total remains UNKNOWN.
+
+One useful registered task `cdc-codex-usage-guide-20261022`, attempt `cdc-codex-usage-guide-20261022-a1`, handle `82e53e61-aca3-5878-bdc1-50f8b7fd4fd8`, genuinely succeeded on `cdcexec2` through ordinary full-config Codex-only dispatch. It used one native writer, published [the status guide](https://github.com/bajoicheg/codex-compute/commit/fd54fda932a26968e875e6576e7781371579ae71), and completed with SDK `VerifiedTerminalProof` and a free lease. All 49 prior rows, budgets, UNKNOWN and spent were preserved; no Kimi probe, CI or ready acceptance replay ran.
+
+The new canonical receipt reached selected JSON and the owner human report as **UNKNOWN**, correctly rejecting a previously unsupported five-counter runtime shape. [Compatibility correction](https://github.com/bajoicheg/codex-compute/commit/50f88db44b10e4a9a23dc2ba13e6c1ae5d6f026d) now supports exactly the legacy three counters or the typed five-counter form, validating cache-write/reasoning subcounters without adding them again to input/output. Seven original focused cases plus one new actual-shape red/green regression passed.
+
+Installed read-only parsing of that same original checkpoint-pinned stream observes **204,260 input** (including **177,792 cached**), **3,195 output**, **207,455 total**; uncached input is 26,468. The raw provider also disclosed cache-write 0 and reasoning-output 38. Thread `01a16316-5dca-7361-b260-5cc23864d3c3`, stream SHA-256 `8d99ba931fcdc4f207ea4ecb0b3f8c46473a13907fd43411ad37fb59b6675ef0`. This corrected observation and its virtual consumer projection are **not a newly emitted TaskStore receipt**. The saved UNKNOWN remains unchanged, without backfill or a second model run.
+
+[Safe result, apply/check receipts and expense snapshot](https://github.com/bajoicheg/codex-compute/tree/963cf0da5926532603e44717d5def39d0744a1f2/ops/native-provider-usage-20261022) retain this distinction. All 50 terminal rows survived the correction unchanged; service/socket and both original timers are active, dispatch is enabled, the full three-entry registry is intact and only the two Codex executors are enabled. The immutable reportfresh SDK and canonical 3.6.9 refs remain unchanged. Original open RCA is not resolved by documentation success; broader #113/#101 adoption and a future naturally useful known receipt remain open.
 
 ## Protected Codex-only dispatch selection, 22 October
 

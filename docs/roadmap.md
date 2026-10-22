@@ -15,6 +15,7 @@ As of **2026-10-22 (Europe/Moscow)**. See [current status](current-status.md) fo
 
 | Scope | Evidence and limit |
 | --- | --- |
+| 22 October original provider usage | Optional pinned-stream producer and selected/owner consumer installed; one useful ordinary Codex doc task genuinely succeeded. Its saved UNKNOWN is preserved. Typed five-counter correction and read-only original observation give 204,260 input (177,792 cached) + 3,195 output; this is not a second emitted receipt or backfill. Eight distinct focused cases passed in 7+1 executions. [Exact limits](current-status.md#original-provider-stream-usage-22-october); broader #113/#101 remains open. |
 | Immutable SDK | VERSION `3.6.8`, `cdc-3.6.8-reportfresh-20261022`, TREE `565288391ea560d5ae9723ebd15a4a17f26fb30e` (prior snapshot preserved); not a 3.6.9 installation. |
 | 20 October operational fixes | Compact TaskStore/status; authenticated UNKNOWN administrative dispositions retaining original UNKNOWN; typed Kimi artifact consumer and scheduler registration; backup/heartbeat manifest repair with ordinary/Cloud recovery. Exact private evidence refs are in current status. |
 | 21–22 October operational fixes | Widened bounded efficiency/scanner cache, safe prelaunch diagnostics, heartbeat semantic filtering. Private codex-compute operational source; not automatically in canonical package 3.6.9. |
