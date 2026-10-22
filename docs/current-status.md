@@ -19,6 +19,8 @@ Earlier operator update22October2026: the existing active goal was extended by f
 | Host operations | Qualified mutable VPS/operator/retrospective fixes applied. Source/loader/registry/manifests match; service/socket/dispatch and original checkpoint/retrospective timers restored. New selection/probes enable cdcexec1/cdcexec2 only; full registry with Kimi retained. |
 | Pauses and limits | Fleet paused, real Gemini deferred; Kimi work excluded from new dispatch. Original roles/accounts/IDs/UNKNOWN/budgets/spent and native permission gates preserved. No all-project adoption claim. |
 
+Latest documentation/backlog entry: [#113](https://github.com/bajoicheg/g-cdc/issues/113) exposes current applied/open scopes; [the complete original issue body](history/issue-113-through-2026-10-22.md) is preserved verbatim for historical requirements and costs. An [applied operator collector correction](https://github.com/bajoicheg/codex-compute/tree/ceb70755b7b66b3cacbb35aad4f038f304bef38b/ops/operator/canonical-report-serialization-20261022) fixes the observed post-proof Revision TypeError/partial-report failure, rejects closed callers before SDK imports and preserves the original report bytes. This is separate from canonical release and VPS runtime.
+
 ## Latest installed efficiency evidence
 
 The measurements below belong to the retained pre-consolidation VERSION3.6.8 snapshots. Canonical3.6.10 reuses those component proofs; no new latency or monetary saving is inferred.
@@ -28,6 +30,8 @@ The latest installed POSIX history transport reduces local `cat-file` processes 
 Prior [bounded exact-row reuse](https://github.com/bajoicheg/codex-compute/blob/8dd12eb946a879890abec6c4a18c0b26d4f57d09/docs/intake-row-validation-reuse.md) retains its distinct102.21→81.20s (20.56%) observation, structural checks515→15/local Git6396→396, with fresh original final custody validation. [Preparation pass reuse](https://github.com/bajoicheg/codex-compute/commit/6a7d54ba05cb310030bd41baccb420eb5ebf171d) separately measured135.97→100.65s (25.98%), two walks→one, original selected-row prefix/tasks/queue exact. Decoder-only90.79→89.04s did not establish material improvement. These are separate retained read-only observations, not cumulative speedup or native/end-to-end/fleet acceptance.
 
 Earlier measured slices: selected metadata47→1 rows and55,614→1,426 JSON bytes; eligible-directory discovery restored52 outcomes in20 directories. Semantic heartbeat filtering prevents unchanged observations from launching the retrospective model. Original data/cursor/budget and ordinary delta gates remain. [Exact earlier scope and tests](status-evidence-history.md).
+
+An [offline canonical-JSON feasibility probe](https://github.com/bajoicheg/codex-compute/tree/073a7b947b6b78568f9c6732ec325db82cbbbdd8/ops/operator/canonical-json-engine-feasibility-20261022) rejected both proposed shortcuts: plain alternative encoding accepts a noncanonical float spelling; the canonical-preserving encoder candidate had median29.789ms versus29.815ms baseline (ratio0.99915) on one retained1.864MB document. This establishes no material gain. No dependency was installed in production and no SDK/runtime changed. Keep cold latency open; do not replay these probes without new evidence.
 
 ## Reporting, RCA and actual native results
 
