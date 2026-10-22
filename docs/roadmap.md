@@ -1,5 +1,7 @@
 # Current CDC roadmap
 
+The next-work view excludes two already installed scopes: **EFF-18 supported current parallel bound** and **EFF-22 successful-worker/external-review rejection closure**, both qualified and installed on 20 October and still present in the current SDK. Their original requirements remain as history in #101. Worker-internal negative review/exit2 remains a separate adapter residual; canonical consolidation and consumer adoption are separate. [Current evidence](https://github.com/bajoicheg/codex-compute/blob/9fb09c4a08fc52006d16ad2a88bc4ee546595b8d/ops/operator/history-object-duplication-observation-20261022/backlog-reconciliation.json).
+
 **22 October 2026.** [Current status](current-status.md) separates established source, installed behavior, real native results and unproved adoption. [Prior full roadmap](https://github.com/bajoicheg/g-cdc/blob/c54896b26fb73baa8c4e26169a40fef2a6a0a653/docs/roadmap.md) and existing issue checklists retain every original requirement and historical result.
 
 <a id="done-in-canonical-source"></a>
