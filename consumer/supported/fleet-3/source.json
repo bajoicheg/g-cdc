@@ -1,6 +1,6 @@
 {
   "adapter_sha256": "b227bbfb567a1ff6072933f91f5afbec23517dc095236a8bd601985855155b68",
-  "candidate_package_tree": "a9c960bb88920194c43ee53565cf1afccfd71ecd",
+  "candidate_package_tree": "71b03eb6f1fdcf296d08292b304c8fba0c97fc86",
   "candidate_version": "3.6.12",
   "checkpoint_sha256": "9308c0276f0e39347bd13b5109f67b369cb5f198067548f687a785809807ee72",
   "installed_package_tree": "f580a8946c0510540a4be3f4422ab3404875274b",
@@ -10,5 +10,5 @@
   "projection": true,
   "repository": "fleet-projection/project-3",
   "schema": "cdc-supported-consumer-projection/v1",
-  "source_commit": "f702eef76592b92e98182aef079574583fe0d992"
+  "source_commit": "d21c196f5a37fb830db2bccb463c1773a1c214d1"
 }
