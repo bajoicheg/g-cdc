@@ -1,5 +1,13 @@
 # CDC release process
 
+Apply the [persistent execution contract](../src/continuous-development-cycle/references/lean-execution-core.md)
+through preparation, required validation and publication. Use one coherent
+executor pipeline and qualified evidence within its original scope. Completed
+acceptance and unchanged FULL are not replayed for reassurance. Independent
+mandatory exact-candidate, native, platform and release gates remain required;
+reused algorithm coverage does not become fresh exact-SHA release evidence.
+Record prepared, published, released, installed and adopted boundaries separately.
+
 1. Start from the immutable stable N-1 source lock.
 2. Run independent bootstrap validation before candidate imports.
 3. Materialize the candidate core under `src/continuous-development-cycle`.

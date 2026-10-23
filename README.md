@@ -1,5 +1,12 @@
 # Continuous Development Cycle
 
+Every CDC-managed project and resumed operation applies the [persistent execution
+contract](src/continuous-development-cycle/references/lean-execution-core.md).
+The user need not repeat identity/UNKNOWN/spent preservation, scoped evidence
+reuse, minimum coordination/checks and concrete result/actual-usage reporting.
+Project setup carries the same central reference in its checkpoint template;
+deployment and consumer adoption remain separate evidence boundaries.
+
 Current evidence: **23 October 2026**. [Status](docs/current-status.md) records what is installed and actually observed; [roadmap](docs/roadmap.md) records open work. [Detailed prior evidence](docs/status-evidence-history.md) remains immutable and does not need to be loaded on every resume. [Current efficiency](https://github.com/bajoicheg/g-cdc/issues/101) and [reporting](https://github.com/bajoicheg/g-cdc/issues/113) backlogs have bounded current entries; [the complete latest efficiency issue archive](docs/history/issue-101-through-2026-10-22-1916.md) and the [complete original reporting issue archive](docs/history/issue-113-through-2026-10-22.md) preserve all earlier requirements, IDs, UNKNOWN and spent.
 
 Canonical **release/v3.6.11** is `ec8dd91371db2d193d4a83a4e1612f48f3e1a261`, package TREE `51dc9c7f53af42e374ed81e4d00929c54865d126`. The [exact 1801-case hosted gate](https://github.com/bajoicheg/g-cdc/actions/runs/39865949109), original candidate/main proofs and distinct genuine native evidence-final success qualify this package. The VPS [loads the same immutable SDK](https://github.com/bajoicheg/codex-compute/blob/91d370fea397a9bdce6fdfd89faed1c02293daf4/ops/operator/sdk3611-canonical-adoption-20261023/installed.json) at `/opt/cdc-tools/cdc-3.6.11-canonical-20261023`. It includes the qualified decoder; earlier measurements are retained without a new performance claim. Operator reporting/helpers, registered-project Source adoption and Windows/client loaders remain separate; see [current status](docs/current-status.md) and [roadmap](docs/roadmap.md). Original failures, UNKNOWN, IDs, budgets/spent and pauses remain intact. [Candidate metadata](release/candidate.json) and [source lock](release/source.lock.json) retain the exact release bindings.

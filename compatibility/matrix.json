@@ -3,7 +3,7 @@
     "development-work-status/v4"
   ],
   "consumer_contract": "cdc-consumer-lock/v1",
-  "developed_under_version": "3.6.10",
+  "developed_under_version": "3.6.11",
   "lease_schemas": [
     "execution-lease/v2"
   ],
@@ -38,7 +38,8 @@
     "3.6.7",
     "3.6.8",
     "3.6.9",
-    "3.6.10"
+    "3.6.10",
+    "3.6.11"
   ],
-  "target_version": "3.6.11"
+  "target_version": "3.6.12"
 }

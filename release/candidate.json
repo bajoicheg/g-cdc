@@ -1,6 +1,6 @@
 {
   "canonical_repository": "bajoicheg/g-cdc",
-  "developed_under_version": "3.6.10",
+  "developed_under_version": "3.6.11",
   "evidence": {
     "bootstrap": [
       "bootstrap/validate_release.py"
@@ -25,5 +25,5 @@
   "schema": "cdc-release-candidate/v1",
   "source_commit": "6bea37f1a8c3dc0c750e4e85ba306707e99f892d",
   "status": "candidate",
-  "version": "3.6.11"
+  "version": "3.6.12"
 }

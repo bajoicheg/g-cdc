@@ -1,7 +1,7 @@
 {
-  "description": "Qualified optional decoder-only acceleration with unchanged canonical encoder, strict fallback and native authority over released 3.6.10.",
+  "description": "Persistent execution contract for every CDC-managed project and resume, with unchanged runtime and mandatory authority/release gates over released 3.6.11.",
   "entrypoint": "SKILL.md",
   "name": "continuous-development-cycle",
   "schema": "continuous-development-cycle/v3",
-  "version": "3.6.11"
+  "version": "3.6.12"
 }

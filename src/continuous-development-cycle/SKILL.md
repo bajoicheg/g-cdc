@@ -3,9 +3,17 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.6.11
+# Continuous Development Cycle v3.6.12
 
-This 3.6.11 candidate adds the qualified optional pinned decoder-only acceleration. It is developed under independently released3.6.10. The original canonical encoder, strict error fallback and history/authority gates are unchanged. The CPython3.12 manylinux x86_64 wheel is bundled with its provenance and licenses; unsupported platforms retain stdlib. Source preparation is separate from exact hosted qualification, native release, installed runtime and client adoption.
+This 3.6.12 documentation-only candidate makes the persistent execution contract
+the common entry for every CDC-managed project and resumed operation, developed
+under independently released 3.6.11. The user need not restate identity/history
+preservation, bounded UNKNOWN recovery, evidence reuse, minimum coordination and
+actual spending in each task. Runtime algorithms, provider eligibility and
+mandatory release/authority gates are unchanged. Preparation, qualification,
+native release, installed runtime and consumer adoption remain separate facts.
+
+Historical 3.6.11 adds the qualified optional pinned decoder-only acceleration, developed under independently released 3.6.10. The original canonical encoder, strict error fallback and history/authority gates are unchanged. The CPython3.12 manylinux x86_64 wheel is bundled with its provenance and licenses; unsupported platforms retain stdlib.
 
 
 Historical3.6.10 composition: this prior candidate consolidates qualified native history transport/reuse, original UNKNOWN recovery, operational budget bounds and successful-preparation rejection closure over independently released 3.6.9. It is developed under released 3.6.9. Provider eligibility, account configuration and host containment remain separate. No host policy, prior IDs, UNKNOWN, budgets or spending are rewritten by this package.
@@ -52,14 +60,20 @@ separate evidence. Load only current phase references; history remains linked.
 
 ## Start and resume
 
+Read and apply the persistent contract in `references/lean-execution-core.md`
+at every project entry and continuation, including existing projects. This is
+the central working contract; a missing repeated user reminder does not disable
+it. Project checkpoints reference it rather than copying a second policy.
+
 Verify the independently released runtime actually loaded: VERSION, manifest,
 installed bytes and canonical release evidence must agree. Develop a new CDC
 candidate under that released driver. Minimum executable runtime is 3.3.0;
 older records remain readable data, not executable authority.
 
 Read current applicable instructions, adapter and compact checkpoint/capsule.
-Refresh source identity/ref/HEAD, policy digest, ownership revision, external
-operation, budget and required evidence. Live observations override history.
+Reuse qualified unchanged observations; refresh source identity/ref/HEAD, policy,
+ownership, external operation, budget and required evidence when changed or
+when the next action requires a fresh admission. Live observations override history.
 Use `scripts/cdc.py` resume with a capsule and a fresh probe: one typed next
 action is a recommendation, never execution permission. A mismatch reconciles,
 existing external work is reconciled before a new start, and blockers wait.
@@ -136,8 +150,9 @@ FAST/MEDIUM/FULL come from the existing quality policy. Core and critical
 boundaries stay FULL. Mandatory product/platform/release gates are never
 removed. Reuse evidence only when relevant dependencies, command, parameters,
 check definition and environment remain covered, preserving its original SHA.
-Source/ownership observations remain fresh per action. A repeat requires
-changed inputs, concrete risk and insufficient-prior-proof reasons; after two
+Source/ownership observations remain fresh per action. Use the minimum sufficient
+cycle; a repeat requires changed inputs or a concrete uncovered risk, with an
+insufficient-prior-proof reason; after two
 cycles revise strategy. Budget pressure changes strategy, not quality gates.
 
 Batch compatible small changes into one frozen candidate and aggregate
@@ -165,15 +180,19 @@ Use Russian chat and English source documentation. Emit one fresh Moscow
 and final report. Read the runtime clock at the emission boundary; never infer
 minutes from previous updates. Use no timezone suffix or seconds. After a completed logical
 operation append rounded whole minutes, e.g. `(4 мин)`. Add tokens only from a
-measured counter with provenance; omit unknown tokens
-entirely. `scripts/operation_report.py` formats this contract and retains
+measured counter with provenance; mark unavailable scope, tokens and money
+UNKNOWN with a reason. Count monotonic totals over the stated measurement window,
+each distinct child once, App/native/provider separately; cached input and
+reasoning are subsets of input and output. Never sum cumulative snapshots or
+invent zero. `scripts/operation_report.py` retains
 observed phase times and outcomes. Worker-duration sums are consumption, not
 wall time; no unobserved speedup, savings or quality improvement claims.
 
 ## Review, release and adoption
 
-Independent review covers behavior/spec and quality; critical work retains
-required ordered independent reviews. Verify actual evidence before success
+Independent review follows the actual project/release admission contract;
+critical work retains required ordered independent reviews. Do not launch an
+extra reviewing model or control from self-distrust. Verify actual evidence before success
 claims. Freeze an exact release-candidate SHA and use the release phase for
 bootstrap, package, compatibility, fault, supported-consumer and final CI gates.
 Source release, installed runtime and consumer adoption are separate states.

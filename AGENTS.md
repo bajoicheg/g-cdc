@@ -1,3 +1,16 @@
+# Persistent CDC project entry — 23 October 2026
+
+Apply the loaded CDC package's [persistent execution contract](src/continuous-development-cycle/references/lean-execution-core.md)
+at every project entry and resumed operation. The user need not repeat it.
+Preserve original IDs, UNKNOWN, budgets/spent and append-only history; use one
+bounded UNKNOWN reconciliation, scoped evidence reuse, minimum necessary checks
+and coordination, and concrete result/actual-usage reporting. Current user
+authorization controls scope and duration; expired historical windows below do
+not authorize continuation. Mandatory native/project/release gates remain intact.
+Source preparation, native publication, canonical release, installation and
+consumer adoption require their own evidence. Historical instructions below are
+retained history and do not override this entry or current user instructions.
+
 # Current canonical SDK and application — 22 October 2026
 
 Canonical **release/v3.6.11** is `ec8dd91371db2d193d4a83a4e1612f48f3e1a261`, package TREE `51dc9c7f53af42e374ed81e4d00929c54865d126`. The [exact 1801-case hosted gate](https://github.com/bajoicheg/g-cdc/actions/runs/39865949109), original candidate/main proofs and distinct genuine native evidence-final success qualify this package. The VPS [loads the same immutable SDK](https://github.com/bajoicheg/codex-compute/blob/91d370fea397a9bdce6fdfd89faed1c02293daf4/ops/operator/sdk3611-canonical-adoption-20261023/installed.json) at `/opt/cdc-tools/cdc-3.6.11-canonical-20261023`. It includes the qualified decoder; earlier measurements are retained without a new performance claim. Operator reporting/helpers, registered-project Source adoption and Windows/client loaders remain separate; see [current status](docs/current-status.md) and [roadmap](docs/roadmap.md). Original failures, UNKNOWN, IDs, budgets/spent and pauses remain intact.
