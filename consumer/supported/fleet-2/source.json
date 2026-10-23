@@ -10,5 +10,5 @@
   "projection": true,
   "repository": "fleet-projection/project-2",
   "schema": "cdc-supported-consumer-projection/v1",
-  "source_commit": "d21c196f5a37fb830db2bccb463c1773a1c214d1"
+  "source_commit": "f2db9a73219668d2d3c3bb8e655e015e5e090e8f"
 }
