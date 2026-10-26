@@ -15,15 +15,23 @@ from git_document_store import canonical
 
 
 class PrehandleTests(unittest.TestCase):
+    legacy_guardian = False
+
     def setUp(self):
         from test_native_unknown_recovery import IntakeTests
         self.fixture=IntakeTests();self.fixture.setUp();self.addCleanup(self.fixture.doCleanups)
         self.store=self.fixture.store;self.source=self.fixture.source;self.root=self.fixture.root
         self.row=copy.deepcopy(self.fixture.row)
-        self.row['operation']['start_consumption']={'schema':'native-intake-start-consumption/v1',
-            'contract_digest':native._contract(self.row),'controller':dict(self.fixture.pins['creator'])}
-        self.row['operation']['controller_identity']=dict(self.fixture.pins['creator'])
-        self.row['operation']['controllers']=[dict(self.fixture.pins['creator'])]
+        if not self.legacy_guardian:
+            self.row['operation']['start_consumption']={'schema':'native-intake-start-consumption/v1',
+                'contract_digest':native._contract(self.row),'controller':dict(self.fixture.pins['creator'])}
+        if self.legacy_guardian:
+            self.row['operation']['guardian']['nonce']='a'*32
+            self.fixture.git('push','origin',':'+self.store.ref)
+            self.fixture.rev=self.store.compare_and_swap(None,{'schema':native.INTAKE_SCHEMA,'tasks':{'task-one':self.row}})
+        else:
+            self.row['operation']['controller_identity']=dict(self.fixture.pins['creator'])
+            self.row['operation']['controllers']=[dict(self.fixture.pins['creator'])]
         self.document={'schema':native.INTAKE_SCHEMA,'tasks':{'task-one':self.row}}
         self.head=self.raw_commit(self.document,self.fixture.rev)
         self.at=datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
@@ -44,7 +52,23 @@ class PrehandleTests(unittest.TestCase):
             return read(path,digest,uid=os.getuid(),gid=gid,mode=mode)
         self.addCleanup(patch.stopall)
         patch.object(native,'_protected_json',side_effect=certificate_reader).start()
+        if self.legacy_guardian:self.write_legacy_exit()
         self.write_certificate()
+
+    def write_legacy_exit(self):
+        root=self.root/"controllers"/"task-one";nonce=self.row["operation"]["guardian"]["nonce"]
+        identity=dict(self.fixture.pins["creator"],pid=99999993)
+        stderr=(b"CDC_VPS_ORIGINAL_CONTROLLER_RECONCILIATION_REQUIRED\n"
+            b"CDC_VPS_REJECTION_CODE=CONTRACT_OR_SCOPE_REJECTED\n"
+            b'CDC_VPS_REJECTION_SITE={"module":"cdc_vps.state","function":"_validate_retired_once","line":192,"type":"ValueError"}\n')
+        streams={"stdout":b"","stderr":stderr,"guardian.stdout":b"","guardian.stderr":b""}
+        for suffix,data in streams.items():
+            path=root/(nonce+"."+suffix);path.write_bytes(data);path.chmod(0o600)
+        receipt={"schema":"cdc-vps-controller-wait/v1","task_id":"task-one",
+            "identity":self.row["operation"]["guardian"]["identity"],"controller":identity,"exit_code":2,"observed_at_utc":self.at}
+        for label in ("stdout","stderr"):
+            receipt[label+"_path"]=str(root/(nonce+"."+label));receipt[label+"_sha256"]=hashlib.sha256(streams[label]).hexdigest()
+        path=root/(nonce+".receipt.json");path.write_text(json.dumps(receipt));path.chmod(0o600)
 
     def raw_commit(self,document,parent):
         blob=self.store._git('hash-object','-w','--stdin',input_text=canonical(document))
@@ -206,7 +230,7 @@ class PrehandleTests(unittest.TestCase):
         with self.assertRaises(ValueError):native.assert_new_intake_allowed(self.store,replay['task'])
 
     def test_history_cannot_erase_original_controller_or_native_handle(self):
-        for field,value in [('handle_id','actual-original-native-handle'),('controllers',self.row['operation']['controllers']+[{'pid':99999989,'birth':'111','boot_id':native._boot()}])]:
+        for field,value in [('handle_id','actual-original-native-handle'),('controllers',self.row['operation'].get('controllers',[])+[{'pid':99999989,'birth':'111','boot_id':native._boot()}])]:
             before=copy.deepcopy(self.document);before['tasks']['task-one']['operation'][field]=value
             middle=self.raw_commit(before,self.head);self.head=self.raw_commit(self.document,middle)
             self.pins.update(original_revision=self.head);self.write_certificate()
@@ -257,10 +281,67 @@ class PrehandleTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.store.compare_and_swap(result['revision'],changed)
 
     def test_original_unconsumed_prelaunch_api_still_accepts_its_own_case(self):
-        self.fixture.git('push','origin',':'+self.store.ref)
-        self.fixture.rev=self.store.compare_and_swap(None,{'schema':native.INTAKE_SCHEMA,'tasks':{'task-one':self.fixture.row}})
-        self.fixture.pins['original_revision']=self.fixture.rev
-        self.assertIsInstance(self.fixture.proof(),native.PrelaunchIntakeDispositionProof)
+        from test_native_unknown_recovery import IntakeTests
+        fixture=IntakeTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
+        self.assertIsInstance(fixture.proof(),native.PrelaunchIntakeDispositionProof)
+
+
+class LegacyGuardianPrehandleTests(PrehandleTests):
+    """Original guardian-only UNKNOWN needs root custody, never invented consumption."""
+    legacy_guardian = True
+
+    def test_legacy_unknown_keeps_missing_consumption_and_distinct_truthful_receipt(self):
+        result=self.dispose();row=result['row'];entry=row['result']['administrative_disposition']
+        self.assertNotIn('start_consumption',row['operation'])
+        self.assertIsNone(row['operation']['controller_identity'])
+        self.assertNotIn('controllers',row['operation'])
+        self.assertEqual(entry['schema'],'legacy-guardian-prehandle-intake-disposition/v1')
+        self.assertEqual(entry['reason'],'legacy_guardian_prehandle_unknown')
+        self.assertEqual(entry['original_effect'],'UNKNOWN');self.assertFalse(entry['no_send'])
+        self.assertEqual(row['operation'],self.row['operation']);self.assertEqual(row['budget'],self.row['budget'])
+        self.assertIsInstance(native.validate_prelaunch_disposition(self.store,'task-one'),dict)
+        with self.assertRaises(ValueError):native.assert_intake_start_allowed(self.store,'task-one',native._contract(self.row))
+
+    def test_legacy_requires_unknown_and_guardian_without_canonical_controller(self):
+        variants=[]
+        for state in ('queued','reserved','running','starting','succeeded'):
+            changed=copy.deepcopy(self.row);changed['state']=state;variants.append(changed)
+        changed=copy.deepcopy(self.row);changed['operation'].pop('guardian');variants.append(changed)
+        for key,value in [('controller_identity',self.fixture.pins['creator']),('controllers',[self.fixture.pins['creator']]),('controllers',[])]:
+            changed=copy.deepcopy(self.row);changed['operation'][key]=value;variants.append(changed)
+        for row in variants:
+            with self.subTest(row=row):
+                with self.assertRaises(ValueError):native._prehandle_original(row)
+
+    def test_legacy_cannot_erase_real_consumption_from_ancestry(self):
+        before=copy.deepcopy(self.document)
+        before['tasks']['task-one']['operation']['start_consumption']={
+            'schema':'native-intake-start-consumption/v1','contract_digest':native._contract(self.row),
+            'controller':dict(self.fixture.pins['creator'])}
+        middle=self.raw_commit(before,self.head);self.head=self.raw_commit(self.document,middle)
+        self.pins.update(original_revision=self.head);self.write_certificate()
+        with self.assertRaises(ValueError):self.proof()
+
+    def test_legacy_missing_or_semantically_substituted_wait_is_denied(self):
+        path=self.root/'controllers'/'task-one'/('a'*32+'.receipt.json');original=path.read_bytes()
+        path.unlink();self.write_certificate()
+        with self.assertRaises(ValueError):self.proof()
+        for key,value in [('task_id','other'),('exit_code',0),('identity',self.fixture.pins['creator']),
+                          ('controller',self.row['operation']['guardian']['identity'])]:
+            receipt=json.loads(original);receipt[key]=value;path.write_text(json.dumps(receipt));path.chmod(0o600)
+            self.write_certificate()
+            with self.subTest(key=key):
+                with self.assertRaises(ValueError):self.proof()
+
+    def test_legacy_live_receipt_controller_and_non_rejection_stderr_are_denied(self):
+        path=self.root/'controllers'/'task-one'/('a'*32+'.receipt.json');receipt=json.loads(path.read_text())
+        receipt['controller']={'pid':os.getpid(),'birth':native._process(os.getpid())['birth'],'boot_id':native._boot()}
+        path.write_text(json.dumps(receipt));self.write_certificate()
+        with self.assertRaises(ValueError):self.proof()
+        self.write_legacy_exit();stderr=self.root/'controllers'/'task-one'/('a'*32+'.stderr')
+        stderr.write_bytes(b'arbitrary application output\n');receipt=json.loads(path.read_text())
+        receipt['stderr_sha256']=hashlib.sha256(stderr.read_bytes()).hexdigest();path.write_text(json.dumps(receipt));self.write_certificate()
+        with self.assertRaises(ValueError):self.proof()
 
 
 if __name__=='__main__':unittest.main()
