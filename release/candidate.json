@@ -23,7 +23,7 @@
   },
   "package_tree": "edbbf7aa83175092d8885e3d569ed5ce21640c50",
   "schema": "cdc-release-candidate/v1",
-  "source_commit": "f9fcc0464b05d894da263804335370583b64044d",
+  "source_commit": "0a4cd7e357f2412eb2af47da03139a26967b9838",
   "status": "candidate",
   "version": "3.6.13"
 }
