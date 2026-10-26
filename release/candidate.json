@@ -1,6 +1,6 @@
 {
   "canonical_repository": "bajoicheg/g-cdc",
-  "developed_under_version": "3.6.11",
+  "developed_under_version": "3.6.12",
   "evidence": {
     "bootstrap": [
       "bootstrap/validate_release.py"
