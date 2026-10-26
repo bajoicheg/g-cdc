@@ -9,5 +9,5 @@
   "development_driver_version": "3.6.11",
   "direct_product_repo_development": false,
   "schema": "cdc-source-lock/v1",
-  "target_version": "3.6.12"
+  "target_version": "3.6.13"
 }

@@ -3,9 +3,14 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.6.12
+# Continuous Development Cycle v3.6.13
 
-This 3.6.12 documentation-only candidate makes the persistent execution contract
+This 3.6.13 candidate accepts the bounded legacy preconsume rejection-site
+diagnostic as documentary evidence, retaining all original custody, digest,
+independent-channel, UNKNOWN and spending checks. It adds no terminal, refund or
+resend authority. Developed under independently released3.6.11.
+
+Historical3.6.12 documentation-only candidate makes the persistent execution contract
 the common entry for every CDC-managed project and resumed operation, developed
 under independently released 3.6.11. The user need not restate identity/history
 preservation, bounded UNKNOWN recovery, evidence reuse, minimum coordination and

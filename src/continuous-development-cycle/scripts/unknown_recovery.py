@@ -119,6 +119,32 @@ def _intake_channels(store,row,pins,source=None):
         source._assert_remote_identity()
 
 
+def _preconsume_rejection_stderr(raw):
+    """Recognize documentary legacy diagnostics; never derive authority from them."""
+    marker=b'CDC_VPS_ORIGINAL_CONTROLLER_RECONCILIATION_REQUIRED\n'
+    codes=('INTAKE_OBSERVATION_CHANGED','INTAKE_CONSUMPTION_UNRESOLVED','HOST_IO_REJECTED','CONTRACT_OR_SCOPE_REJECTED')
+    accepted={marker}|{marker+('CDC_VPS_REJECTION_CODE='+code+'\n').encode() for code in codes}
+    if raw in accepted:return True
+    lines=raw.splitlines(keepends=True)
+    prefix=b'CDC_VPS_REJECTION_SITE='
+    if (len(lines)!=3 or b''.join(lines[:2]) not in accepted or lines[0]!=marker
+            or not lines[1].startswith(b'CDC_VPS_REJECTION_CODE=')
+            or not lines[2].startswith(prefix) or not lines[2].endswith(b'\n')):return False
+    payload=lines[2][len(prefix):-1]
+    if len(payload)>1024:return False
+    try:site=json.loads(payload,object_pairs_hook=op._unique_object)
+    except (ValueError,UnicodeError):return False
+    if not isinstance(site,dict) or set(site)!={'module','function','line','type'}:return False
+    identifier=lambda value,limit: (isinstance(value,str) and len(value)<=limit
+        and value.isascii() and value.isidentifier())
+    module=site['module'];function=site['function']
+    return (isinstance(module,str) and len(module)<=256
+        and all(identifier(part,256) for part in module.split('.'))
+        and (function=='<module>' or identifier(function,96))
+        and identifier(site['type'],96) and type(site['line']) is int
+        and 0<=site['line']<2**31)
+
+
 def _preconsume_artifacts(row,pins,controller,guardian_pin):
     """A protected infrastructure wait is documentary, never a terminal wait."""
     evidence=pins.get('preconsume_exit')
@@ -152,10 +178,7 @@ def _preconsume_artifacts(row,pins,controller,guardian_pin):
     if observed>datetime.now(timezone.utc)+timedelta(seconds=5):raise ValueError('original controller wait observation is in the future')
     for label in ('stdout','stderr'):
         if receipt[label+'_path']!=str(controller/names[label]) or receipt[label+'_sha256']!=evidence[label+'_sha256'].split(':',1)[1]:raise ValueError('original controller stream path/digest mismatch')
-    marker=b'CDC_VPS_ORIGINAL_CONTROLLER_RECONCILIATION_REQUIRED\n'
-    codes=('INTAKE_OBSERVATION_CHANGED','INTAKE_CONSUMPTION_UNRESOLVED','HOST_IO_REJECTED','CONTRACT_OR_SCOPE_REJECTED')
-    accepted={marker}|{marker+('CDC_VPS_REJECTION_CODE='+code+'\n').encode() for code in codes}
-    if raw['stdout'] or raw['guardian_stdout'] or raw['guardian_stderr'] or raw['stderr'] not in accepted:raise ValueError('only original preconsume controller rejection artifacts are admissible')
+    if raw['stdout'] or raw['guardian_stdout'] or raw['guardian_stderr'] or not _preconsume_rejection_stderr(raw['stderr']):raise ValueError('only original preconsume controller rejection artifacts are admissible')
     _identity(identity,absent=True)
     documentary={str(controller/name):raw[label] for label,name in names.items()}
     creator_wait=controller/(nonce+'.guardian-wait.json')

@@ -97,6 +97,56 @@ sys.exit(code)
         return self.api().authenticate_prelaunch_intake(self.store,'task-one',source_store=self.source,
             trusted_contract=pins or self.pins,at='2026-10-14T12:00:00Z')
 
+    def test_original_bounded_site_is_documentary_without_terminal_or_refund(self):
+        raw = (b'CDC_VPS_ORIGINAL_CONTROLLER_RECONCILIATION_REQUIRED\n'
+               b'CDC_VPS_REJECTION_CODE=CONTRACT_OR_SCOPE_REJECTED\n'
+               b'CDC_VPS_REJECTION_SITE={"function": "_validate_retired_once", "line": 192, '
+               b'"module": "cdc_vps.state", "type": "ValueError"}\n')
+        stderr = self.controller / (self.nonce + '.stderr')
+        stderr.write_bytes(raw)
+        self.wait['stderr_sha256'] = hashlib.sha256(raw).hexdigest()
+        self.wait_path.write_text(json.dumps(self.wait))
+        self.pins['preconsume_exit'].update(stderr_sha256=self.hash(stderr),
+            receipt_sha256=self.hash(self.wait_path))
+        self.creator_wait()
+        before = self.source.read(), self.project_budget.read()
+        proof = self.authenticate()
+        result = self.api().retire_prelaunch_intake_cas(self.store, self.rev, 'task-one', proof, at=proof._at)
+        entry = result['row']['result']['administrative_disposition']
+        self.assertEqual(entry['original_effect'], 'UNKNOWN')
+        self.assertIsNone(entry['actual_wait'])
+        self.assertEqual(entry['original_row'], self.row)
+        self.assertEqual(result['row']['budget'], self.row['budget'])
+        self.assertEqual((self.source.read(), self.project_budget.read()), before)
+        self.assertEqual(stderr.read_bytes(), raw)
+        observed = self.api().observe_prelaunch_intake_disposition(self.store, 'task-one',
+            contract_digest=native_digest(self.req))
+        self.assertEqual(observed.revalidate_for(self.store, 'task-one')['state'], 'retired_unknown')
+
+    def test_site_grammar_is_closed_and_cannot_carry_authority_or_extra_output(self):
+        accepts = self.api()._preconsume_rejection_stderr
+        marker = b'CDC_VPS_ORIGINAL_CONTROLLER_RECONCILIATION_REQUIRED\n'
+        prefix = marker + b'CDC_VPS_REJECTION_CODE=CONTRACT_OR_SCOPE_REJECTED\n'
+        site = {'module': 'cdc_vps.state', 'function': '_validate_retired_once',
+                'line': 192, 'type': 'ValueError'}
+        encode = lambda value: b'CDC_VPS_REJECTION_SITE=' + json.dumps(value).encode() + b'\n'
+        self.assertTrue(accepts(marker))
+        self.assertTrue(accepts(prefix))
+        self.assertTrue(accepts(prefix + encode(site)))
+        unavailable = dict(site, module='unavailable', function='unavailable', line=0)
+        self.assertTrue(accepts(prefix + encode(unavailable)))
+        for bad in (dict(site, authorizes_slot_release=True), dict(site, line=True),
+                    dict(site, line=-1), dict(site, line=2**31), dict(site, module='/tmp/x'),
+                    dict(site, module='x'*257), dict(site, function='x'*97),
+                    dict(site, type='ValueError: secret'), dict(site, module='a..b')):
+            with self.subTest(site=bad): self.assertFalse(accepts(prefix + encode(bad)))
+        for bad in (marker + encode(site), prefix + encode(site) + b'extra\n',
+                    prefix + encode(site)[:-1], prefix + b'CDC_VPS_REJECTION_SITE={}\n',
+                    prefix + b'CDC_VPS_REJECTION_SITE={"line":1,"line":2}\n',
+                    prefix + b'CDC_VPS_REJECTION_SITE=' + b' '*1025 + b'{}\n',
+                    prefix + b'CDC_VPS_REJECTION_SITE=\xff\n'):
+            with self.subTest(raw=bad[:100]): self.assertFalse(accepts(bad))
+
     def test_two_original_endpoints_and_actual_wait_retire_without_terminal_or_refund(self):
         self.assertNotEqual(self.source.store_id,self.store.store_id)
         before=self.source.read();budget_before=self.project_budget.read();proof=self.authenticate();m=self.api()

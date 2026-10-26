@@ -256,3 +256,14 @@ operation, task and budgets archived, `original_effect=UNKNOWN` and
 `actual_wait=null`. The independently released 3.6.3 historical reader accepts
 this canonical tombstone and continues to reject its original contract under a
 new ID; its runtime need not be upgraded to mint or reinterpret this proof.
+
+
+## Bounded legacy rejection-site diagnostic (3.6.13)
+
+Original preconsume rejection stderr may contain the established marker and
+closed rejection code followed by one `CDC_VPS_REJECTION_SITE=` JSON object.
+Its only fields are `module`, `function`, `line` and `type`; all are bounded
+and the integer line excludes booleans. This third line is documentary only.
+Protected original bytes and their digests, independent Root/project channels,
+identity and fresh absence barriers are still required. Retirement retains
+UNKNOWN and reserved/spent history, never invents a wait or authorizes replay.
