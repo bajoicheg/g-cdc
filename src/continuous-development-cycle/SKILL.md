@@ -3,7 +3,12 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.6.13
+# Continuous Development Cycle v3.6.14
+
+This 3.6.14 candidate adds bounded legacy guardian prehandle UNKNOWN retirement
+through the existing sealed proof and fresh physical/source barriers. It retains
+all IDs, history, reservations and spending. It invents no consumption or
+NOT_SENT assertion. Developed under independently released CDC 3.6.13.
 
 This 3.6.13 candidate accepts the bounded legacy preconsume rejection-site
 diagnostic as documentary evidence, retaining all original custody, digest,

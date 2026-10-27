@@ -267,3 +267,16 @@ and the integer line excludes booleans. This third line is documentary only.
 Protected original bytes and their digests, independent Root/project channels,
 identity and fresh absence barriers are still required. Retirement retains
 UNKNOWN and reserved/spent history, never invents a wait or authorizes replay.
+
+
+## Legacy guardian prehandle UNKNOWN (3.6.14)
+
+The existing prehandle disposition accepts a separate legacy schema only for an
+UNKNOWN row with its original guardian, no start_consumption, no controller
+identity and no controllers key. The original protected exit-2 rejection and
+all five artifact digests remain required. Optional protected wait is documentary.
+Full ancestry, exact original/source heads, fresh Root physical quiescence and
+one-use CAS remain mandatory. Reason is `legacy_guardian_prehandle_unknown`,
+outcome UNKNOWN and no_send=false. No creator birth or consumption is invented.
+Serialized receipts cannot authorize effects. Historical shape validation does
+not depend on current PID absence; effect authentication requires fresh absence.

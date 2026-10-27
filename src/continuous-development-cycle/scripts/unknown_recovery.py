@@ -152,7 +152,9 @@ def _preconsume_artifacts(row,pins,controller,guardian_pin):
     op._object(evidence,{'schema','controller','receipt_sha256','stdout_sha256','stderr_sha256','guardian_stdout_sha256','guardian_stderr_sha256'},'original preconsume controller exit')
     if evidence['schema']!='native-preconsume-controller-exit/v1':raise ValueError('unsupported preconsume exit evidence')
     identity=evidence['controller'];_identity(identity,absent=True)
-    if identity['pid'] in {pins['guardian']['pid'],pins['creator']['pid']}:raise ValueError('distinct original controller birth required')
+    recorded_pids={pins['guardian']['pid']}
+    if pins.get('creator') is not None:recorded_pids.add(pins['creator']['pid'])
+    if identity['pid'] in recorded_pids:raise ValueError('distinct original controller birth required')
     nonce=pins['guardian_nonce']
     if not isinstance(nonce,str) or re.fullmatch('[0-9a-f]{32}',nonce) is None:raise ValueError('original controller nonce must be canonical')
     names={'receipt':nonce+'.receipt.json','stdout':nonce+'.stdout','stderr':nonce+'.stderr',
@@ -557,7 +559,7 @@ def _validate_prelaunch_disposition_row(row):
     """Structural history validation only; serialized data supplies no authority."""
     entry=(row.get('result') or {}).get('administrative_disposition')
     if isinstance(entry,dict) and entry.get('schema')==POSTLAUNCH_SCHEMA:return _validate_postlaunch_disposition_row(row)
-    if isinstance(entry,dict) and entry.get('schema')==PREHANDLE_SCHEMA:return _validate_prehandle_disposition_row(row)
+    if isinstance(entry,dict) and entry.get('schema') in {PREHANDLE_SCHEMA,LEGACY_PREHANDLE_SCHEMA}:return _validate_prehandle_disposition_row(row)
     fields={'schema','task_id','contract_digest','original_effect','actual_wait','replay_forbidden','original_revision','original_row','trusted_contract','retired_at_utc'}
     op._object(entry,fields,'native prelaunch disposition')
     if row.get('state')!='retired_unknown' or entry['schema']!=DISPOSITION_SCHEMA or entry['original_effect']!='UNKNOWN' or entry['actual_wait'] is not None or entry['replay_forbidden'] is not True or _contract(row)!=entry['contract_digest']:raise ValueError('prelaunch disposition must preserve UNKNOWN/no wait/no replay')
@@ -605,7 +607,7 @@ def validate_intake_transition(previous,document,*,store,expected_revision,recov
             recovery_capability.revalidate_for(store,task_id)
             entry=validate_prelaunch_disposition(new_rows[task_id])
             if (entry['schema']==POSTLAUNCH_SCHEMA)!=(type(recovery_capability) is PostlaunchIntakeDispositionProof):raise ValueError('native disposition capability type mismatch')
-            if (entry['schema']==PREHANDLE_SCHEMA)!=(type(recovery_capability) is PrehandleIntakeDispositionProof):raise ValueError('native prehandle capability type mismatch')
+            if (entry['schema'] in {PREHANDLE_SCHEMA,LEGACY_PREHANDLE_SCHEMA})!=(type(recovery_capability) is PrehandleIntakeDispositionProof):raise ValueError('native prehandle capability type mismatch')
             if entry['original_row']!=row or entry['trusted_contract']!=recovery_capability._pins or entry['retired_at_utc']!=recovery_capability._at:raise ValueError('native disposition proposal substituted')
             expected=copy.deepcopy(previous);expected['tasks'][task_id]=copy.deepcopy(new_rows[task_id])
             if expected!=document:raise ValueError('tombstone CAS cannot mutate unrelated fields')
@@ -972,7 +974,7 @@ def _validate_intake_dispositions(store, expected_revision, retired_rows, cancel
             if entry['schema'] == POSTLAUNCH_SCHEMA:
                 add(('postlaunch', task_id), _postlaunch_history_fold(
                     task_id, entry['trusted_contract'], entry['original_row'], retired=True))
-            elif entry['schema'] == PREHANDLE_SCHEMA:
+            elif entry['schema'] in {PREHANDLE_SCHEMA, LEGACY_PREHANDLE_SCHEMA}:
                 add(('prehandle', task_id), _prehandle_history_fold(
                     task_id, entry['trusted_contract'], entry['original_row'], retired=True,
                     row_validator=structural_rows.check))
@@ -1658,6 +1660,7 @@ def observe_postlaunch_unknown_lease_release(store, task_id, *, source_store, tr
 
 
 PREHANDLE_SCHEMA = 'consumed-prehandle-intake-disposition/v1'
+LEGACY_PREHANDLE_SCHEMA = 'legacy-guardian-prehandle-intake-disposition/v1'
 RESERVED_SCHEMA = 'unconsumed-reserved-intake-cancellation/v1'
 
 
@@ -1693,9 +1696,57 @@ def _prehandle_original(row):
                 or row['state'] not in {'unknown','running','starting','start_unknown'}):
             raise ValueError('original consumed prehandle UNKNOWN required')
         return 'retired_unknown'
+    if (row['state']=='unknown' and operation.get('guardian') is not None
+            and operation.get('controller_identity') is None and 'controllers' not in operation):
+        guardian=operation['guardian']
+        op._object(guardian,{'identity','nonce'},'original legacy guardian')
+        identity=guardian['identity']
+        op._object(identity,{'pid','birth','boot_id'},'original legacy guardian identity')
+        if (type(identity['pid']) is not int or identity['pid']<=0
+                or not isinstance(identity['birth'],str) or not identity['birth'].isdigit()
+                or not isinstance(identity['boot_id'],str) or not identity['boot_id']):
+            raise ValueError('original legacy guardian birth identity required')
+        if not isinstance(guardian['nonce'],str) or re.fullmatch('[0-9a-f]{32}',guardian['nonce']) is None:
+            raise ValueError('original legacy guardian nonce required')
+        return 'retired_unknown'
     if row['state']!='reserved' or _consumed(row) or operation.get('guardian') is not None:
         raise ValueError('unconsumed reserved row without guardian required')
     return 'cancelled'
+
+
+def _prehandle_receipt_kind(row):
+    disposition=_prehandle_original(row)
+    if disposition=='cancelled':return RESERVED_SCHEMA,'owner_cancelled_unconsumed_reservation'
+    if row['operation'].get('start_consumption') is None:
+        return LEGACY_PREHANDLE_SCHEMA,'legacy_guardian_prehandle_unknown'
+    return PREHANDLE_SCHEMA,'consumed_prehandle_start_failure'
+
+
+def _legacy_prehandle_artifacts(row,physical,controller,artifacts):
+    # Full ancestry and root quiescence supply the missing creator exclusion.
+    # The actual protected rejection wait supplies controller birth; neither is
+    # a native consumption, terminal wait, or proof that no effect was sent.
+    guardian=row['operation']['guardian'];nonce=guardian['nonce']
+    names={'receipt':'.receipt.json','stdout':'.stdout','stderr':'.stderr',
+           'guardian_stdout':'.guardian.stdout','guardian_stderr':'.guardian.stderr'}
+    paths={key:controller/(nonce+suffix) for key,suffix in names.items()}
+    if any(str(path) not in artifacts for path in paths.values()):
+        raise ValueError('complete original legacy rejection wait required')
+    try:
+        payload=paths['receipt'].read_bytes()
+        if len(payload)>65536:raise ValueError('bounded original legacy wait required')
+        receipt=json.loads(payload,object_pairs_hook=op._unique_object)
+        identity=receipt['controller']
+    except (OSError,ValueError,KeyError,TypeError):
+        raise ValueError('original legacy rejection wait required') from None
+    pins={'guardian':guardian['identity'],'guardian_nonce':nonce,
+        'custody':{'controller_uid':physical['controller_uid']},
+        'preconsume_exit':dict(schema='native-preconsume-controller-exit/v1',controller=identity,
+            **{key+'_sha256':artifacts[str(path)]['sha256'] for key,path in paths.items()})}
+    wait=controller/(nonce+'.guardian-wait.json')
+    if str(wait) in artifacts:
+        pins['creator_guardian_wait']={'schema':'native-creator-guardian-wait/v1','sha256':artifacts[str(wait)]['sha256']}
+    _preconsume_artifacts(row,pins,controller,{'gid':physical['controller_gid']})
 
 
 def _prehandle_history_fold(task_id, pins, original, *, retired=False, row_validator=None):
@@ -1854,6 +1905,8 @@ def _prehandle_physical(store,row,source,pins,births):
                     or 'sha256:'+hashlib.sha256(path.read_bytes()).hexdigest()!=pin['sha256']):raise ValueError('protected original prehandle artifact changed')
             seen.add(key)
     if seen!=set(artifacts):raise ValueError('root original artifact manifest incomplete or substituted')
+    if _prehandle_receipt_kind(row)[0]==LEGACY_PREHANDLE_SCHEMA:
+        _legacy_prehandle_artifacts(row,physical,controller,artifacts)
     for identity in births:_identity(identity,absent=True)
 
 
@@ -1910,12 +1963,12 @@ def _validate_prehandle_disposition_row(row):
     entry=(row.get('result') or {}).get(key)
     op._object(entry,{'schema','task_id','contract_digest','original_effect','actual_wait','replay_forbidden','original_revision','original_row','trusted_contract','retired_at_utc','reason','no_send'},'native prehandle disposition')
     original=entry['original_row'];expected=copy.deepcopy(original);expected.update(state=disposition,result={key:entry})
-    required=_prehandle_original(original);schema=PREHANDLE_SCHEMA if required=='retired_unknown' else RESERVED_SCHEMA
+    required=_prehandle_original(original);schema,reason=_prehandle_receipt_kind(original)
     if (row!=expected or disposition!=required or entry['schema']!=schema or entry['task_id']!=row['task']['id']
             or entry['contract_digest']!=_contract(original) or entry['original_revision']!=entry['trusted_contract']['original_revision']
             or op._hash(original)!=entry['trusted_contract']['row_digest'] or entry['actual_wait'] is not None
             or entry['replay_forbidden'] is not True or entry['original_effect']!=('UNKNOWN' if required=='retired_unknown' else 'NOT_SENT')
-            or entry['reason']!=('consumed_prehandle_start_failure' if required=='retired_unknown' else 'owner_cancelled_unconsumed_reservation')
+            or entry['reason']!=reason
             or entry['no_send'] is not (required=='cancelled')):raise ValueError('prehandle disposition cannot alter original liability or claim terminal success')
     op._timestamp(entry['retired_at_utc'],'prehandle disposition time')
     op._text(entry['trusted_contract']['owner_decision_reference'],'prehandle owner decision')
@@ -1928,10 +1981,11 @@ def dispose_prehandle_intake_cas(store,expected_revision,task_id,proof,*,at):
     if revision!=expected_revision or revision!=proof._revision:raise ValueError('stale original prehandle CAS')
     disposition=_prehandle_original(row);consumed=disposition=='retired_unknown'
     key='administrative_disposition' if consumed else 'unstarted_cancellation'
-    entry=dict(schema=PREHANDLE_SCHEMA if consumed else RESERVED_SCHEMA,task_id=task_id,contract_digest=_contract(row),
+    schema,reason=_prehandle_receipt_kind(row)
+    entry=dict(schema=schema,task_id=task_id,contract_digest=_contract(row),
         original_effect='UNKNOWN' if consumed else 'NOT_SENT',actual_wait=None,replay_forbidden=True,
         original_revision=proof._pins['original_revision'],original_row=copy.deepcopy(row),trusted_contract=copy.deepcopy(proof._pins),
-        retired_at_utc=at,reason='consumed_prehandle_start_failure' if consumed else 'owner_cancelled_unconsumed_reservation',no_send=not consumed)
+        retired_at_utc=at,reason=reason,no_send=not consumed)
     changed=copy.deepcopy(document);changed['tasks'][task_id].update(state=disposition,result={key:entry})
     _validate_prehandle_disposition_row(changed['tasks'][task_id])
     new_revision=store.compare_and_swap(expected_revision,changed,recovery_capability=proof)
@@ -1947,7 +2001,7 @@ def assert_intake_disposition_replay_absent(document):
 def _assert_intake_disposition_replay_absent(document, row_validator=None):
     rows=document.get('tasks',{})
     for task_id,row in rows.items():
-        if row.get('state')=='retired_unknown' and ((row.get('result') or {}).get('administrative_disposition') or {}).get('schema')==PREHANDLE_SCHEMA:
+        if row.get('state')=='retired_unknown' and ((row.get('result') or {}).get('administrative_disposition') or {}).get('schema') in {PREHANDLE_SCHEMA,LEGACY_PREHANDLE_SCHEMA}:
             (row_validator or _validate_prehandle_disposition_row)(row)
         elif ((row.get('result') or {}).get('unstarted_cancellation') or {}).get('schema')==RESERVED_SCHEMA:
             (row_validator or validate_queued_cancellation)(row)
