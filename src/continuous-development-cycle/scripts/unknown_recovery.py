@@ -576,6 +576,8 @@ def validate_intake_transition(previous,document,*,store,expected_revision,recov
         if any(row.get('state')=='retired_unknown' or (row.get('result') or {}).get('unstarted_cancellation') is not None for row in document.get('tasks',{}).values()):raise ValueError('raw initialization cannot mint native disposition')
         return
     if document.get('schema')!=INTAKE_SCHEMA:raise ValueError('native intake schema cannot be replaced')
+    if type(recovery_capability) is _ReleasedRegistryMigration:
+        recovery_capability.revalidate(store,expected_revision,previous,document)
     old_rows=previous['tasks'];new_rows=document['tasks'];retired=[]
     for task_id,row in old_rows.items():
         proposed=new_rows.get(task_id)
@@ -799,17 +801,81 @@ def reconcile_intake_start_consumption(failure):
     return IntakeStartConsumptionObservation(_SEAL,failure)
 
 
-def migrate_intake_registry_cas(store,expected_revision,old_digest,new_digest):
+def _released_registry_reconciliations(store,document,proofs):
+    """Authenticate stopped originals without assigning them terminal metadata."""
+    from managed_executor_runtime import VerifiedTerminalProof
+    import managed_host_bridge as bridge
+    blocked={key:row for key,row in document['tasks'].items()
+        if row.get('state') not in {'queued','succeeded','failed','cancelled','timed_out','retired_unknown'}}
+    if not isinstance(proofs,dict) or set(proofs)!=set(blocked):
+        raise ValueError('every active attempt needs its exact released original reconciliation')
+    for task_id,row in blocked.items():
+        proof=proofs[task_id]
+        if type(proof) is not VerifiedTerminalProof:
+            raise ValueError('live package-owned original terminal reconciliation required')
+        operation=row.get('operation') or {};start=operation.get('start_request') or {}
+        task=row.get('task') or {};finish=operation.get('finish_result') or {}
+        if (row.get('state')!='terminal_pending' or row.get('result') is not None
+                or task.get('id')!=task_id or task.get('schema')!='cdc-vps-task/v2'
+                or task.get('role')!='writer' or (task.get('budget') or {}).get('ci_starts')!=0
+                or proof.get('task_id')!=task_id or proof.get('attempt_id')!=operation.get('attempt_id')
+                or proof.get('status')!='failed' or not proof.get('boot_reconciliation')
+                or operation.get('start_request_digest')!=op._hash(start)
+                or finish.get('worker_status')!='failed' or finish.get('managed_finish_allowed') is not True):
+            raise ValueError('only exact original released FAILED metadata may accompany runtime migration')
+        try:
+            session=bridge._load_session(start['handle_root'],operation['handle_id'])
+        except (OSError,ValueError,KeyError,TypeError):
+            raise ValueError('original released native handle unavailable') from None
+        if (session.get('state')!='released' or session.get('worker_status')!='failed'
+                or session.get('publication') is not None or session.get('plan')!=proof._runtime.plan
+                or any(session.get(key)!=start.get(key) for key in
+                    ('plan','owner_id','attempt_id','reservation_token','task_id','lease_source_ref','handle_root','repo_root','remote'))
+                or task.get('source_sha')!=session['plan']['base_sha']
+                or proof._runtime.store.store_id!=store.store_id
+                or proof._store.ref!=start.get('lease_coordination_ref')
+                or finish.get('release_receipt')!=session.get('release_receipt')):
+            raise ValueError('original runtime migration Source/handle/release custody mismatch')
+        binding=proof.get('ownership') or {}
+        if session.get('invocation_id')!=binding.get('invocation_id'):
+            raise ValueError('original runtime migration invocation mismatch')
+        checked=proof.revalidate_for(proof._store,binding['invocation_id'],
+            {'owner_id':binding['owner_id'],'generation':binding['generation']},session['release_receipt'])
+        if checked.get('status')!='failed' or not checked.get('boot_reconciliation'):
+            raise ValueError('fresh failed original boot reconciliation required')
+
+
+class _ReleasedRegistryMigration:
+    def __init__(self,seal,store,revision,previous,proposed,proofs):
+        if seal is not _SEAL:raise ValueError('native runtime migration capability required')
+        self._seal=seal;self._store=store;self._revision=revision
+        self._previous=copy.deepcopy(previous);self._proposed=copy.deepcopy(proposed);self._proofs=dict(proofs)
+    def revalidate(self,store,revision,previous,proposed):
+        if (type(self) is not _ReleasedRegistryMigration or self._seal is not _SEAL
+                or store is not self._store or revision!=self._revision
+                or previous!=self._previous or proposed!=self._proposed):
+            raise ValueError('original released runtime migration proposal substituted')
+        expected=copy.deepcopy(previous);expected['registry_digest']=proposed['registry_digest']
+        if expected!=proposed:raise ValueError('runtime migration may change only registry digest')
+        _released_registry_reconciliations(store,previous,self._proofs)
+
+
+def migrate_intake_registry_cas(store,expected_revision,old_digest,new_digest,*,terminal_reconciliations=None):
     """Root configured registry pin migration; no row, charge or queue edits."""
     if type(store) is not GitDocumentStore:raise ValueError('actual native store required')
     op._digest(old_digest,'old trusted registry digest');op._digest(new_digest,'new trusted registry digest')
     revision,document=store.read()
     if revision!=expected_revision or document.get('schema')!=INTAKE_SCHEMA or document.get('registry_digest')!=old_digest or old_digest==new_digest:raise ValueError('stale registry migration binding')
-    if any(row.get('state') not in {'queued','succeeded','failed','cancelled','timed_out','retired_unknown'} for row in document['tasks'].values()):raise ValueError('registry migration requires all active attempts reconciled')
+    pending=any(row.get('state') not in {'queued','succeeded','failed','cancelled','timed_out','retired_unknown'} for row in document['tasks'].values())
+    if pending and terminal_reconciliations is None:raise ValueError('registry migration requires all active attempts reconciled')
+    if terminal_reconciliations is not None:_released_registry_reconciliations(store,document,terminal_reconciliations)
     for row in document['tasks'].values():
         if row.get('state')=='retired_unknown':validate_prelaunch_disposition(row)
     changed=copy.deepcopy(document);changed['registry_digest']=new_digest
-    revision=store.compare_and_swap(expected_revision,changed)
+    capability=None if terminal_reconciliations is None else _ReleasedRegistryMigration(
+        _SEAL,store,expected_revision,document,changed,terminal_reconciliations)
+    revision=(store.compare_and_swap(expected_revision,changed) if capability is None
+        else store.compare_and_swap(expected_revision,changed,recovery_capability=capability))
     actual,value=store.read()
     if actual!=revision or value!=changed:raise ValueError('registry migration reply changed; observe authoritative store')
     return {'revision':revision,'document':changed}

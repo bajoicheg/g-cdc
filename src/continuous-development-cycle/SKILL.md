@@ -3,7 +3,13 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.6.14
+# Continuous Development Cycle v3.6.15
+
+This 3.6.15 candidate adds an explicit protected local-journal boot transition
+for an already failed and genuinely released original invocation. Ordinary
+terminal verification remains strict. Read `references/released-crossboot-recovery.md`
+only for that recovery; root historical host evidence alone grants no terminal,
+lease, replay, publication or refund authority. Develop under released3.6.14.
 
 This 3.6.14 candidate adds bounded legacy guardian prehandle UNKNOWN retirement
 through the existing sealed proof and fresh physical/source barriers. It retains

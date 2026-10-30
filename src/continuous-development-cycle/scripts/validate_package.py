@@ -85,6 +85,12 @@ from consumer_adoption import assess as assess_consumer_adoption
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
+    'scripts/managed_boot_transition.py',
+    'references/released-crossboot-recovery.md',
+    'tests/test_managed_boot_transition.py',
+    'tests/test_released_terminal_boot_recovery.py',
+    'tests/test_root_managed_boot_record.py',
+    'tests/test_released_terminal_registry_migration.py',
     'references/agent-workers.md',
     'schemas/agent-task-v1.schema.json',
     'scripts/agent_check_runner.py',

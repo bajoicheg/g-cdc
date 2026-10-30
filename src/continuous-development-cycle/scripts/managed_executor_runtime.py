@@ -170,19 +170,24 @@ class VerifiedTerminalProof(dict):
     JSON serialization remains ordinary evidence, never this live capability.
     Every use rechecks the original runtime/control chain and physical absence.
     """
-    def __init__(self,seal,runtime,lease_store,release_receipt,evidence):
+    def __init__(self,seal,runtime,lease_store,release_receipt,evidence,*,boot_transition_path=None):
         if seal is not _TERMINAL_PROOF_SEAL:raise ValueError('package-owned terminal proof required')
         super().__init__(evidence)
         self._seal=seal;self._runtime=runtime;self._store=lease_store
         self._receipt=copy.deepcopy(release_receipt)
         self._task_id=evidence['task_id'];self._attempt_id=evidence['attempt_id']
+        self._boot_transition_path=boot_transition_path
     def revalidate_for(self,store,invocation_id,owned,receipt):
         from git_lease_store import GitLeaseStore
         if type(self) is not VerifiedTerminalProof or self._seal is not _TERMINAL_PROOF_SEAL or type(store) is not GitLeaseStore:
             raise ValueError('authentic original terminal proof required')
         if (store.store_id,store.ref)!=(self._store.store_id,self._store.ref) or receipt!=self._receipt:
             raise ValueError('native owner-final endpoint/release binding substituted')
-        current=self._runtime.verify_terminal(self._task_id,self._attempt_id,include_controller=True,lease_store=store,release_receipt=receipt)
+        if self._boot_transition_path is None:
+            current=self._runtime.verify_terminal(self._task_id,self._attempt_id,include_controller=True,lease_store=store,release_receipt=receipt)
+        else:
+            current=self._runtime.verify_released_terminal_after_reboot(self._task_id,self._attempt_id,
+                lease_store=store,release_receipt=receipt,boot_transition_path=self._boot_transition_path)
         binding=current['ownership']
         if binding['invocation_id']!=invocation_id or owned!={'owner_id':binding['owner_id'],'generation':binding['generation']}:
             raise ValueError('native owner-final original invocation substituted')
@@ -771,6 +776,21 @@ class ManagedExecutorRuntime:
 
     def verify_terminal(self,task_id,attempt_id,*,include_controller=False,lease_store=None,release_receipt=None):
         """Package-owned original journal + Git claim + current physical proof."""
+        return self._verify_terminal(task_id,attempt_id,include_controller=include_controller,
+            lease_store=lease_store,release_receipt=release_receipt)
+
+    def verify_released_terminal_after_reboot(self,task_id,attempt_id,*,lease_store,release_receipt,boot_transition_path):
+        """Explicit failed/released original only; no launch or lease capability."""
+        from managed_boot_transition import authenticate
+        request=self._request(task_id,attempt_id)
+        if request is None:raise ValueError('original runtime request missing')
+        observation=self.backend.observe(request,self._saved_receipt(request))
+        self._validate_receipt(request,observation)
+        transition=authenticate(boot_transition_path,request,observation,release_receipt)
+        return self._verify_terminal(task_id,attempt_id,include_controller=True,lease_store=lease_store,
+            release_receipt=release_receipt,boot_transition=transition)
+
+    def _verify_terminal(self,task_id,attempt_id,*,include_controller=False,lease_store=None,release_receipt=None,boot_transition=None):
         from managed_executor_store import GitManagedExecutorStore
         if type(self) is not ManagedExecutorRuntime or type(self.backend) is not LocalCommandBackend or type(self.store) is not GitManagedExecutorStore or type(self.journal) is not ExecutionJournal:
             raise ValueError('authentic package-owned terminal runtime required')
@@ -781,8 +801,16 @@ class ManagedExecutorRuntime:
             raise ValueError('actual supervisor not terminal/quiescent')
         proof=observation.get('quiescence_proof');births=observation.get('process_births')
         if not isinstance(proof,dict) or proof.get('method')!='waitpid_ECHILD':raise ValueError('authentic supervisor quiescence proof required; wrapper exit is insufficient')
-        if (proof.get('boot_id')!=observation.get('boot_id') or proof['boot_id']!=_boot() or proof.get('supervisor_birth')!=observation.get('supervisor_birth') or proof.get('request_ref')!=_digest(request) or not isinstance(births,list) or proof.get('process_births_digest')!=_digest(births)):
+        if (proof.get('boot_id')!=observation.get('boot_id') or proof.get('supervisor_birth')!=observation.get('supervisor_birth') or proof.get('request_ref')!=_digest(request) or not isinstance(births,list) or proof.get('process_births_digest')!=_digest(births)):
             raise ValueError('original birth/request/boot quiescence binding mismatch')
+        reconciliation=None
+        if boot_transition is None:
+            if proof['boot_id']!=_boot():raise ValueError('original birth/request/boot quiescence binding mismatch')
+        else:
+            from managed_boot_transition import _VerifiedBootTransition
+            if type(boot_transition) is not _VerifiedBootTransition or not include_controller:
+                raise ValueError('authentic released original boot transition required')
+            reconciliation=boot_transition.revalidate(request,observation,release_receipt)
         historical=self.store.read_revision(request['claim']['store_revision'])
         if pool.canonical_state_ref(historical)!=request['claim']['state_ref'] or historical['revision']!=request['claim']['state_revision']:
             raise ValueError('terminal original canonical Git launch claim mismatch')
@@ -821,6 +849,8 @@ class ManagedExecutorRuntime:
             release_record=lease_store.read_revision(release_receipt['lease_revision'])
             rel=release_receipt['release']
             if release_record['owner_id'] is not None or release_record['last_release']!=rel or rel['owner_id']!=owned['owner_id'] or rel['generation']!=owned['generation'] or rel['invocation_id']!=derived:raise ValueError('terminal canonical historical release mismatch')
+            if reconciliation is not None and release_record.get('external_guard') is not None:
+                raise ValueError('original reboot reconciliation requires released unguarded custody')
             births.append({'pid':intent['controller_proc_pid'],'birth':intent['controller_birth'],'role':'controller'})
             ownership={'invocation_id':derived,'owner_id':owned['owner_id'],'generation':owned['generation'],'original_owned_revision':owned['lease_revision'],'release_revision':release_receipt['lease_revision']}
         seen=set()
@@ -831,6 +861,7 @@ class ManagedExecutorRuntime:
             if _process(pid) is not None:raise ValueError('physical PID still present; no wrapper-exit shortcut')
         if not {observation.get('worker_pid'),observation.get('supervisor_proc_pid')}<=seen:raise ValueError('terminal exact worker/supervisor PID set missing')
         evidence={'schema':'managed-runtime-terminal-proof/v1','task_id':task_id,'attempt_id':attempt_id,'request_ref':_digest(request),'status':observation['status'],'exit_code':observation['exit_code'],'quiescence_method':'waitpid_ECHILD','boot_id':proof['boot_id'],'processes':births,'fresh_physical_absence':True,'observed_at_utc':_utc(),'original_claim_revision':request['claim']['store_revision'],'ownership':ownership,'authorizes_release':False}
+        if reconciliation is not None:evidence['boot_reconciliation']=reconciliation
         if include_controller:
             _,current_state=self.store.read()
             current_task=next((row for row in current_state['tasks'] if row['id']==task_id),None)
@@ -839,7 +870,8 @@ class ManagedExecutorRuntime:
                 if (current_task is None or current_task['status']!='succeeded' or not current_task['integrated'] or
                     not isinstance(result,dict) or current_task['accepted_result_ref']!=_digest(result) or result.get('attempt_id')!=attempt_id):
                     raise ValueError('native owner-final requires actual accepted/integrated pool result')
-            return VerifiedTerminalProof(_TERMINAL_PROOF_SEAL,self,lease_store,release_receipt,evidence)
+            return VerifiedTerminalProof(_TERMINAL_PROOF_SEAL,self,lease_store,release_receipt,evidence,
+                boot_transition_path=None if boot_transition is None else str(boot_transition._path))
         return evidence
 
     def rejection(self, task_id, attempt_id):

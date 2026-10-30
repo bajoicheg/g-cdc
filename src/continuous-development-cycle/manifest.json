@@ -1,7 +1,7 @@
 {
-  "description": "Persistent execution contract for every CDC-managed project and resume, with unchanged runtime and mandatory authority/release gates over released 3.6.11.",
+  "description": "Explicit protected original-host boot reconciliation for already failed and released managed invocations; ordinary terminal proof and all native authority gates retained.",
   "entrypoint": "SKILL.md",
   "name": "continuous-development-cycle",
   "schema": "continuous-development-cycle/v3",
-  "version": "3.6.14"
+  "version": "3.6.15"
 }
