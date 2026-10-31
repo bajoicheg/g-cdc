@@ -16,7 +16,7 @@ class ReleasedBootTerminalTests(unittest.TestCase):
   cls.fixture=fixture_module.ManagedHostBridgeTests();cls.fixture.setUp()
   cls.addClassCleanup(cls.fixture.doCleanups)
   f=cls.fixture;request=f.start_request()
-  request['argv']=[sys.executable,'-c','import time,sys;time.sleep(.4);sys.exit(7)']
+  request['argv']=[sys.executable,'-c',getattr(cls,'worker_code','import time,sys;time.sleep(.4);sys.exit(7)')]
   start=f.root/'start.json';start.write_text(json.dumps(request));output=f.root/'finished.json'
   code='''import sys,json,time
 from pathlib import Path

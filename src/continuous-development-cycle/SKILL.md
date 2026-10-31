@@ -3,7 +3,13 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.6.15
+# Continuous Development Cycle v3.6.16
+
+This 3.6.16 candidate permits a provably different-birth foreign process reusing
+only an original descendant PID in the explicit root-authenticated released
+FAILED reboot route. Original process identity absence is recorded separately
+from numeric PID reuse and revalidated at every use. Ordinary same-boot and
+controller/worker/supervisor presence denials stay strict. Develop under released3.6.15.
 
 This 3.6.15 candidate adds an explicit protected local-journal boot transition
 for an already failed and genuinely released original invocation. Ordinary

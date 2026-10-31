@@ -853,15 +853,33 @@ class ManagedExecutorRuntime:
                 raise ValueError('original reboot reconciliation requires released unguarded custody')
             births.append({'pid':intent['controller_proc_pid'],'birth':intent['controller_birth'],'role':'controller'})
             ownership={'invocation_id':derived,'owner_id':owned['owner_id'],'generation':owned['generation'],'original_owned_revision':owned['lease_revision'],'release_revision':release_receipt['lease_revision']}
-        seen=set()
+        seen=set();reused_descendants=[]
         for item in births:
             pid=item.get('pid');birth=item.get('birth')
             if type(pid) is not int or pid<=0 or pid in seen or not isinstance(birth,str) or not birth.isdigit():raise ValueError('recorded birth missing/invalid; UNKNOWN remains UNKNOWN')
             seen.add(pid)
-            if _process(pid) is not None:raise ValueError('physical PID still present; no wrapper-exit shortcut')
+            current=_process(pid)
+            if current is None and reconciliation is not None:
+                # The ordinary process reader also returns None on unreadable
+                # procfs data. Only a missing proc directory proves absence.
+                try:Path(f'/proc/{pid}').stat()
+                except FileNotFoundError:pass
+                except OSError as error:raise ValueError('physical PID identity unavailable') from error
+                else:raise ValueError('physical PID identity unavailable')
+            if current is not None:
+                current_birth=current.get('birth')
+                # Only the explicitly authenticated reboot route may distinguish
+                # an old descendant from a foreign process reusing its PID. Main
+                # process presence and ordinary same-boot proof remain strict.
+                if (reconciliation is None or item.get('role')!='descendant' or
+                    not isinstance(current_birth,str) or not current_birth.isascii() or
+                    not current_birth.isdecimal() or int(current_birth)==int(birth)):
+                    raise ValueError('physical PID still present; no wrapper-exit shortcut')
+                reused_descendants.append({'pid':pid,'original_birth':birth,'current_birth':current_birth})
         if not {observation.get('worker_pid'),observation.get('supervisor_proc_pid')}<=seen:raise ValueError('terminal exact worker/supervisor PID set missing')
         evidence={'schema':'managed-runtime-terminal-proof/v1','task_id':task_id,'attempt_id':attempt_id,'request_ref':_digest(request),'status':observation['status'],'exit_code':observation['exit_code'],'quiescence_method':'waitpid_ECHILD','boot_id':proof['boot_id'],'processes':births,'fresh_physical_absence':True,'observed_at_utc':_utc(),'original_claim_revision':request['claim']['store_revision'],'ownership':ownership,'authorizes_release':False}
         if reconciliation is not None:evidence['boot_reconciliation']=reconciliation
+        if reused_descendants:evidence['reused_descendant_pids']=reused_descendants
         if include_controller:
             _,current_state=self.store.read()
             current_task=next((row for row in current_state['tasks'] if row['id']==task_id),None)
