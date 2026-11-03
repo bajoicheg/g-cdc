@@ -5,6 +5,7 @@ from __future__ import annotations
 from git_object_integrity import git_object_environment
 
 import json
+import hashlib
 import os
 import re
 import secrets
@@ -24,6 +25,12 @@ from parallel_task_planner import portable_path_key
 STATE_FILE = "document.json"
 REVISION = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 MAX_BYTES = 4 * 1024 * 1024
+# Optional physical task objects retain the original per-object bound. Logical
+# decoding is separately bounded; it never relaxes legacy canonical().
+MAX_LOGICAL_BYTES = 128 * 1024 * 1024
+MAX_TASK_SHARDS = 16384
+TASK_STORAGE_SCHEMA = "git-document-task-shards/v1"
+TASK_DIRECTORY = "tasks"
 
 
 def canonical(document):
@@ -208,11 +215,15 @@ class _ObjectBatchSession:
 class GitDocumentStore:
     """Non-force remote CAS; every proposal has an unpredictable commit nonce.
 
-    This ref must be dedicated to document.json. Reads reject any other root
-    content, so this store cannot silently erase another coordination format.
+    The default ref contains only document.json. Explicit task_shards opt-in
+    also permits one immutable task-object tree for original control documents.
+    Every other root entry is rejected before any proposal can be published.
     """
 
-    def __init__(self, repo, remote, coordination_ref, coordination_store_id, *, protected_refs=()):
+    def __init__(self, repo, remote, coordination_ref, coordination_store_id, *, protected_refs=(), task_shards=False):
+        if type(task_shards) is not bool:
+            raise ValueError("task shard opt-in must be boolean")
+        self.task_shards = task_shards
         self.repo = repository_root(repo)
         self.remote = remote
         self.ref = coordination_ref
@@ -226,6 +237,21 @@ class GitDocumentStore:
         if portable_path_key(self.ref) in protected:
             raise ValueError("coordination ref must be portable-isolated from product refs")
         self._assert_remote_identity()
+
+    def canonical(self, document):
+        """Bounded logical comparison, never a capability or alternate store."""
+        if not self.task_shards:
+            return canonical(document)
+        if (not isinstance(document, dict) or document.get("schema") != "cdc-vps-control/v1"
+                or type(document.get("tasks")) is not dict
+                or len(document["tasks"]) > MAX_TASK_SHARDS
+                or any(type(key) is not str for key in document["tasks"])):
+            raise ValueError("bounded original control task document required")
+        payload = json.dumps(document, sort_keys=True, separators=(",", ":"),
+                             ensure_ascii=False, allow_nan=False) + "\n"
+        if len(payload.encode("utf-8")) > MAX_LOGICAL_BYTES:
+            raise ValueError("logical task document exceeds decoding bound")
+        return payload
 
     def _assert_remote_identity(self):
         if remote_identity(self.repo, self.remote) != self.store_id:
@@ -264,7 +290,8 @@ class GitDocumentStore:
         self._git(*config, "fetch", "--no-tags", "--no-write-fetch-head", "--refmap=", remote, self.ref)
         if self._git("cat-file", "-t", revision) != "commit":
             raise ValueError("document coordination ref must point to a commit")
-        if self._git("ls-tree", "--name-only", revision).splitlines() != [STATE_FILE]:
+        names = self._git("ls-tree", "--name-only", revision).splitlines()
+        if names != [STATE_FILE] and not (self.task_shards and names == [STATE_FILE, TASK_DIRECTORY]):
             raise ValueError("dedicated coordination tree must contain only document.json")
         document = self._read_document_object(revision)
         if revision != self._remote_revision():
@@ -293,7 +320,7 @@ class GitDocumentStore:
         document, = self._read_document_objects([revision])
         return document
 
-    def _batch_objects(self, specifications, object_type, max_bytes):
+    def _batch_objects(self, specifications, object_type, max_bytes, *, max_total_bytes=None):
         """Read a small immutable batch, checking sizes before materializing bodies.
 
         Specifications are constructed here from full object IDs, never caller
@@ -324,6 +351,8 @@ class GitDocumentStore:
                     or int(parts[2]) > max_bytes):
                 raise ValueError("invalid historical object type or size")
             checked.append((header, int(parts[2])))
+        if max_total_bytes is not None and sum(size for _, size in checked) > max_total_bytes:
+            raise ValueError("aggregate task objects exceed logical decoding bound")
         raw = run("--batch")
         offset = 0
         values = []
@@ -364,15 +393,25 @@ class GitDocumentStore:
                     raise ValueError("invalid historical document revision")
                 trees = batch([revision + "^{tree}" for revision in chunk], "tree", 128)
                 blobs = []
+                task_trees = []
                 for revision, tree in zip(chunk, trees):
-                    # Exactly one root entry named document.json; reject trees,
-                    # gitlinks and any additional entry before reading JSON.
+                    # Authenticate the exact legacy root or the exact opted-in
+                    # two-entry root before reading any document or task JSON.
                     header, separator, oid = tree.partition(b"\0")
-                    if (not separator or not re.fullmatch(rb"[0-7]+ document\.json", header)
-                            or len(oid) != len(revision) // 2):
-                        raise ValueError("historical coordination tree must contain only document.json")
-                    blobs.append(oid.hex())
-                for payload in batch(blobs, "blob", MAX_BYTES):
+                    width = len(revision) // 2
+                    if (separator and re.fullmatch(rb"[0-7]+ document\.json", header)
+                            and len(oid) == width):
+                        blobs.append(oid.hex()); task_trees.append(None)
+                    elif (self.task_shards and header == b"100644 document.json"
+                            and len(oid) == width * 2 + len(b"40000 tasks\0")
+                            and oid[width:width + len(b"40000 tasks\0")] == b"40000 tasks\0"):
+                        blobs.append(oid[:width].hex()); task_trees.append(oid[-width:].hex())
+                    else:
+                        raise ValueError("historical coordination tree must contain only document.json or opted-in task shards")
+                for payload, task_tree in zip(batch(blobs, "blob", MAX_BYTES), task_trees):
+                    if task_tree is not None:
+                        yield self._read_task_document(payload, task_tree, len(task_tree) // 2)
+                        continue
                     # Match _git's text/universal-newline and trailing-LF handling.
                     payload = payload.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n").rstrip("\n") + "\n"
                     # Exact canonical equality already excludes duplicate keys.
@@ -390,15 +429,98 @@ class GitDocumentStore:
                             raise ValueError("historical coordination document must have canonical JSON encoding")
                     yield document
 
+    @staticmethod
+    def _decode_task_object(payload):
+        # Shard objects have exact canonical bytes, without text normalization.
+        value = json.loads(payload.decode("utf-8"), object_pairs_hook=unique_object)
+        if canonical(value).encode("utf-8") != payload:
+            raise ValueError("task storage requires exact canonical JSON objects")
+        return value
+
+    def _read_task_document(self, payload, task_tree, width):
+        manifest = self._decode_task_object(payload)
+        if (set(manifest) != {"schema", "document", "task_count", "logical_sha256"}
+                or manifest["schema"] != TASK_STORAGE_SCHEMA
+                or type(manifest["task_count"]) is not int
+                or not 0 <= manifest["task_count"] <= MAX_TASK_SHARDS
+                or type(manifest["logical_sha256"]) is not str
+                or not re.fullmatch(r"[0-9a-f]{64}", manifest["logical_sha256"])
+                or type(manifest["document"]) is not dict
+                or manifest["document"].get("schema") != "cdc-vps-control/v1"
+                or "tasks" in manifest["document"]):
+            raise ValueError("invalid task storage manifest")
+        tree, = self._batch_objects([task_tree], "tree", MAX_BYTES)
+        entries = []; offset = 0
+        while offset < len(tree):
+            end = tree.find(b"\0", offset)
+            if end < 0 or not re.fullmatch(rb"100644 [0-9a-f]{64}\.json", tree[offset:end]):
+                raise ValueError("invalid task storage index path or mode")
+            name = tree[offset + len(b"100644 "):end].decode("ascii")
+            oid = tree[end + 1:end + 1 + width]
+            if (len(oid) != width or (entries and name <= entries[-1][0])
+                    or len(entries) >= MAX_TASK_SHARDS):
+                raise ValueError("duplicate or unbounded task storage index")
+            entries.append((name, oid.hex())); offset = end + 1 + width
+        if len(entries) != manifest["task_count"]:
+            raise ValueError("task storage index count mismatch")
+        document = manifest["document"]; document["tasks"] = {}
+        total = len(payload)
+        for start in range(0, len(entries), 16):
+            chunk = entries[start:start + 16]
+            objects = self._batch_objects([oid for _, oid in chunk], "blob", MAX_BYTES,
+                                         max_total_bytes=MAX_LOGICAL_BYTES - total)
+            total += sum(len(raw) for raw in objects)
+            for (name, _), raw in zip(chunk, objects):
+                entry = self._decode_task_object(raw)
+                if (set(entry) != {"task_id", "row"} or type(entry["task_id"]) is not str
+                        or type(entry["row"]) is not dict
+                        or type(entry["row"].get("task")) is not dict
+                        or entry["row"]["task"].get("id") != entry["task_id"]
+                        or hashlib.sha256(entry["task_id"].encode("utf-8")).hexdigest() + ".json" != name
+                        or entry["task_id"] in document["tasks"]):
+                    raise ValueError("task storage original ID/index binding mismatch")
+                document["tasks"][entry["task_id"]] = entry["row"]
+        logical = self.canonical(document)
+        if hashlib.sha256(logical.encode("utf-8")).hexdigest() != manifest["logical_sha256"]:
+            raise ValueError("task storage logical document digest mismatch")
+        return document
+
+    def _write_task_tree(self, document, logical):
+        metadata = {key: value for key, value in document.items() if key != "tasks"}
+        manifest = {"schema": TASK_STORAGE_SCHEMA, "document": metadata,
+                    "task_count": len(document["tasks"]),
+                    "logical_sha256": hashlib.sha256(logical.encode("utf-8")).hexdigest()}
+        payload = canonical(manifest); total = len(payload.encode("utf-8")); entries = []
+        for task_id, row in document["tasks"].items():
+            if (type(row) is not dict or type(row.get("task")) is not dict
+                    or row["task"].get("id") != task_id):
+                raise ValueError("original task row ID binding required")
+            raw = canonical({"task_id": task_id, "row": row})
+            total += len(raw.encode("utf-8"))
+            if total > MAX_LOGICAL_BYTES:
+                raise ValueError("aggregate task objects exceed logical decoding bound")
+            blob = self._git("hash-object", "-w", "--stdin", input_text=raw)
+            name = hashlib.sha256(task_id.encode("utf-8")).hexdigest() + ".json"
+            entries.append((name, blob))
+        if len({name for name, _ in entries}) != len(entries):
+            raise ValueError("task storage index collision")
+        tasks = self._git("mktree", input_text="".join(
+            f"100644 blob {blob}\t{name}\n" for name, blob in sorted(entries)))
+        blob = self._git("hash-object", "-w", "--stdin", input_text=payload)
+        return self._git("mktree", input_text=f"100644 blob {blob}\t{STATE_FILE}\n040000 tree {tasks}\t{TASK_DIRECTORY}\n")
+
     def compare_and_swap(self, expected_revision, document, *, recovery_capability=None):
-        payload = canonical(document)
+        payload = self.canonical(document)
         current, previous = self.read()
         if expected_revision != current:
             raise ValueError("stale expected document revision")
         from unknown_recovery import validate_intake_transition
         validate_intake_transition(previous, document, store=self, expected_revision=expected_revision, recovery_capability=recovery_capability)
-        blob = self._git("hash-object", "-w", "--stdin", input_text=payload)
-        tree = self._git("mktree", input_text=f"100644 blob {blob}\t{STATE_FILE}\n")
+        if self.task_shards:
+            tree = self._write_task_tree(document, payload)
+        else:
+            blob = self._git("hash-object", "-w", "--stdin", input_text=payload)
+            tree = self._git("mktree", input_text=f"100644 blob {blob}\t{STATE_FILE}\n")
         parent = ["-p", expected_revision] if expected_revision else []
         commit = self._git("commit-tree", tree, *parent,
                            input_text="Update CDC coordination\n\nCAS proposal: " + secrets.token_hex(32) + "\n")

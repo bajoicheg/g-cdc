@@ -1,0 +1,43 @@
+{
+  "added_cases": [
+    "test_released_success_registry_migration.ReleasedSuccessRegistryMigrationTests.test_changed_original_launch_custody_is_denied",
+    "test_released_success_registry_migration.ReleasedSuccessRegistryMigrationTests.test_missing_serialized_foreign_or_boot_relabelled_proof_is_denied",
+    "test_released_success_registry_migration.ReleasedSuccessRegistryMigrationTests.test_native_cas_revalidates_success_and_cannot_change_budget",
+    "test_released_success_registry_migration.ReleasedSuccessRegistryMigrationTests.test_original_process_presence_and_foreign_boot_deny_fresh_capability",
+    "test_released_success_registry_migration.ReleasedSuccessRegistryMigrationTests.test_original_row_source_attempt_release_and_finish_substitution_is_denied",
+    "test_released_success_registry_migration.ReleasedSuccessRegistryMigrationTests.test_real_original_same_boot_success_changes_only_registry_and_storage",
+    "test_released_success_registry_migration.ReleasedSuccessRegistryMigrationTests.test_session_owner_generation_publication_and_start_custody_is_denied",
+    "test_task_sharded_document_store.ShardedPreservationTests.test_native_disposition_and_preparation_projection_read_mixed_format_history",
+    "test_task_sharded_document_store.ShardedPreservationTests.test_sharded_sha256_repository_uses_complete_object_ids",
+    "test_task_sharded_document_store.ShardedPreservationTests.test_task_blob_and_aggregate_caps_checked_before_body_materialization",
+    "test_task_sharded_document_store.TaskShardedDocumentTests.test_forged_manifest_index_and_blob_are_denied",
+    "test_task_sharded_document_store.TaskShardedDocumentTests.test_large_logical_document_has_bounded_physical_head_and_legacy_caps",
+    "test_task_sharded_document_store.TaskShardedDocumentTests.test_lost_push_reply_keeps_atomic_proposal_without_retry",
+    "test_task_sharded_document_store.TaskShardedDocumentTests.test_mixed_history_detached_rows_and_reuse",
+    "test_task_sharded_document_store.TaskShardedDocumentTests.test_optin_is_boolean_and_requires_supported_schema",
+    "test_task_sharded_document_store.TaskShardedDocumentTests.test_row_metadata_task_and_logical_limits_stop_before_push",
+    "test_task_sharded_document_store.TaskShardedDocumentTests.test_stale_cas_and_interrupted_preparation_never_publish"
+  ],
+  "added_modules": [
+    "test_task_sharded_document_store",
+    "test_released_success_registry_migration"
+  ],
+  "declared_skips": 0,
+  "discovery_only": true,
+  "exact_candidate_hosted_qualification": "PENDING",
+  "first_implementation_commit": "b83be01c4c3ec13940c180f2c9fdbad81d433584",
+  "implementation_commit": "a9b35beba402b970827f1b0b9f831c3016a8761f",
+  "inventory_sha256": "d7ad61137281f0dba915091637c026d03193150f49063e6fcd76083aaada8bd1",
+  "native_release": "PENDING",
+  "package_tree": "f5480729b23a9b470e7b9d221d5a61034e292b7d",
+  "partitions": {
+    "host-bridge": 42,
+    "remaining": 1828
+  },
+  "private_fixture_included": false,
+  "schema": "cdc-qualified-test-inventory/v1",
+  "tests_executed_in_this_inventory_step": 0,
+  "total_tests": 1870,
+  "unchanged_driver_full_run_id": 41184809539,
+  "version": "3.6.17"
+}

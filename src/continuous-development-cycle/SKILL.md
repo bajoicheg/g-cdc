@@ -3,7 +3,18 @@ name: continuous-development-cycle
 description: Use when substantial software development must continue across long sessions, interruptions, CI runs, repository migrations, watchdog resumes, development chat cleanup, Work/Codex orchestration, Codex Compute setup or failures, or limited compute budgets.
 ---
 
-# Continuous Development Cycle v3.6.16
+# Continuous Development Cycle v3.6.17
+
+This 3.6.17 candidate adds explicit opt-in bounded immutable task storage on
+GitDocumentStore's original native channel. Legacy mode retains its 4 MiB bound;
+opted-in reads reconstruct all original control task rows through mixed history.
+Original IDs, UNKNOWN, budgets/spent, typed authority and single-parent CAS stay
+strict. Read `references/task-sharded-control-storage.md` before enabling storage;
+no old pinned actor may still act at activation. A live native same-boot proof
+of the exact already released SUCCEEDED writer may preserve terminal_pending
+unchanged while only registry pins and physical storage migrate; original metadata
+completion then follows through the new runtime. Existing FAILED reboot recovery
+stays strict and separate. Develop under released3.6.16.
 
 This 3.6.16 candidate permits a provably different-birth foreign process reusing
 only an original descendant PID in the explicit root-authenticated released

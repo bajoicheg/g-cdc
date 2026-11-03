@@ -85,6 +85,9 @@ from consumer_adoption import assess as assess_consumer_adoption
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
+    'references/task-sharded-control-storage.md',
+    'tests/test_task_sharded_document_store.py',
+    'tests/test_released_success_registry_migration.py',
     'scripts/managed_boot_transition.py',
     'references/released-crossboot-recovery.md',
     'tests/test_managed_boot_transition.py',

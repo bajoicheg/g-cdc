@@ -801,6 +801,70 @@ def reconcile_intake_start_consumption(failure):
     return IntakeStartConsumptionObservation(_SEAL,failure)
 
 
+def _released_success_registry_reconciliation(store,task_id,row,proof):
+    """Same-boot original success only; storage migration grants no completion."""
+    import managed_host_bridge as bridge
+    operation=row.get('operation') or {};start=operation.get('start_request') or {}
+    task=row.get('task') or {};finish=operation.get('finish_result') or {}
+    if (row.get('state')!='terminal_pending' or row.get('result') is not None
+            or task.get('id')!=task_id or task.get('schema')!='cdc-vps-task/v2'
+            or task.get('role')!='writer' or type((task.get('budget') or {}).get('ci_starts')) is not int
+            or task['budget']['ci_starts']!=0
+            or proof.get('task_id')!=task_id or proof.get('attempt_id')!=operation.get('attempt_id')
+            or proof.get('status')!='succeeded' or 'boot_reconciliation' in proof
+            or proof._boot_transition_path is not None
+            or operation.get('start_request_digest')!=op._hash(start)
+            or finish.get('worker_status')!='succeeded' or finish.get('scope_complete') is not True
+            or finish.get('managed_finish_allowed') is not True):
+        raise ValueError('exact original same-boot released success required for registry migration')
+    try:
+        session=bridge._load_session(start['handle_root'],operation['handle_id'])
+    except (OSError,ValueError,KeyError,TypeError):
+        raise ValueError('original successful released native handle unavailable') from None
+    binding=proof.get('ownership') or {}
+    if (session.get('state')!='released' or session.get('worker_status')!='succeeded'
+            or session.get('plan')!=proof._runtime.plan
+            or start.get('schema')!='managed-host-start/v1'
+            or set(start) not in (bridge._START_FIELDS,bridge._START_FIELDS|{'coordination_remote','source_remote_id'})
+            or any(session.get(key)!=start.get(key) for key in bridge._START_FIELDS-{'schema','argv'})
+            or any(session.get(key)!=start.get(key) for key in ('coordination_remote','source_remote_id'))
+            or session.get('argv_digest')!=bridge._digest(start.get('argv'))
+            or task.get('source_sha')!=session['plan']['base_sha']
+            or bridge._task(session['plan'],task_id)['role']!='writer'
+            or proof._runtime.store.store_id!=store.store_id
+            or proof._store.ref!=start.get('lease_coordination_ref') or proof._store.store_id!=store.store_id
+            or finish.get('release_receipt')!=session.get('release_receipt')
+            or session.get('invocation_id')!=binding.get('invocation_id')
+            or any(session.get(key)!=binding.get(key) for key in ('owner_id','generation'))
+            or finish.get('published_commit')!=session.get('result_commit')
+            or not isinstance(session.get('publication'),dict)):
+        raise ValueError('original successful runtime migration Source/handle/release custody mismatch')
+    # Authenticate the recorded successful conditional publication without
+    # sending, recovering or touching the original source/lease/pool history.
+    control,source_id=bridge._routes(session)
+    publication_store=GitDocumentStore(session['repo_root'],control,session['publication_ref'],
+        store.store_id,protected_refs=[session['lease_source_ref'],session['lease_coordination_ref'],
+                                      session['plan']['coordination_ref']])
+    publisher=bridge.GitLaneIntegrationPublisher(session['repo_root'],session['remote'],
+        session['lease_source_ref'],source_id,attempt_store=publication_store,attempt_store_id=store.store_id)
+    result=session['result_commit'];base=session['plan']['base_sha']
+    item={'lane_id':task_id,'result_commit':result}
+    intent={'operation_id':bridge._digest({'handle_id':session['handle_id'],'result_commit':result,
+                'observed_shared_head':base,'shared_ref':session['lease_source_ref']}),
+            'lane_id':task_id,'result_commit':result,'observed_shared_head':base,'intended_integrated_head':result}
+    attempt=publisher._get_attempt(item,intent)
+    if (attempt is None or attempt['status']!='confirmed'
+            or session['publication']!=publisher._evidence(item,intent,attempt=attempt,conditional=True)):
+        raise ValueError('original confirmed conditional publication evidence required')
+    checked=proof.revalidate_for(proof._store,binding['invocation_id'],
+        {'owner_id':binding['owner_id'],'generation':binding['generation']},session['release_receipt'])
+    if (checked.get('status')!='succeeded' or 'boot_reconciliation' in checked
+            or any(proof.get(key)!=checked.get(key) for key in
+                ('schema','task_id','attempt_id','request_ref','status','boot_id',
+                 'original_claim_revision','ownership','processes','fresh_physical_absence'))):
+        raise ValueError('fresh unchanged original same-boot success proof required')
+
+
 def _released_registry_reconciliations(store,document,proofs):
     """Authenticate stopped originals without assigning them terminal metadata."""
     from managed_executor_runtime import VerifiedTerminalProof
@@ -813,6 +877,9 @@ def _released_registry_reconciliations(store,document,proofs):
         proof=proofs[task_id]
         if type(proof) is not VerifiedTerminalProof:
             raise ValueError('live package-owned original terminal reconciliation required')
+        if proof.get('status')=='succeeded' and 'boot_reconciliation' not in proof:
+            _released_success_registry_reconciliation(store,task_id,row,proof)
+            continue
         operation=row.get('operation') or {};start=operation.get('start_request') or {}
         task=row.get('task') or {};finish=operation.get('finish_result') or {}
         if (row.get('state')!='terminal_pending' or row.get('result') is not None
