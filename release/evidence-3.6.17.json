@@ -1,0 +1,24 @@
+{
+  "schema": "cdc-release-evidence/v1",
+  "status": "released",
+  "version": "3.6.17",
+  "canonical_repository": "bajoicheg/g-cdc",
+  "release_ref": "refs/heads/release/v3.6.17",
+  "release_commit": "20d6830c94c7123994400f3e3dce5840e23a5e79",
+  "candidate_source_commit": "7ab7857460511b849aaf42f45a9a300cb0b88384",
+  "package_tree": "f5480729b23a9b470e7b9d221d5a61034e292b7d",
+  "canonical_full": {
+    "run_id": 41729109795,
+    "run_attempt": 1,
+    "source_sha": "20d6830c94c7123994400f3e3dce5840e23a5e79",
+    "url": "https://github.com/bajoicheg/g-cdc/actions/runs/41729109795"
+  },
+  "source_terminal": {
+    "status": "succeeded",
+    "native_physical_closure_verified": true
+  },
+  "independent_reviews": {
+    "SPEC": "PASS",
+    "QUALITY": "PASS"
+  }
+}
